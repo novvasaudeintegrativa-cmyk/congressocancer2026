@@ -729,9 +729,12 @@
     border-color:var(--vermelho-vivo);
     background:linear-gradient(160deg, var(--vermelho-vivo), var(--bordo-escuro));
     padding:52px 44px;
+    width:50%;
+    align-self:center;
     z-index:1;
   }
   .card-lote.vip:hover{transform:scale(1.03);}
+  .card-lote.vip ul{text-align:center;}
   .card-lote.bloqueado{
     filter:grayscale(1);
     opacity:0.55;
@@ -818,10 +821,10 @@
     margin-top:var(--space-lg);
   }
   .card-lote.vip .btn{
-    width:50%;
+    width:100%;
   }
   @media (max-width: 760px){
-    .card-lote.vip .btn{width:100%;}
+    .card-lote.vip{width:100%;}
   }
   .lotes-nota{
     text-align:center;
