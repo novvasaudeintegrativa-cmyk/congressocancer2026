@@ -732,6 +732,38 @@
     z-index:1;
   }
   .card-lote.vip:hover{transform:scale(1.03);}
+  .card-lote.bloqueado{
+    filter:grayscale(1);
+    opacity:0.55;
+  }
+  .card-lote.bloqueado:hover{transform:none;box-shadow:none;}
+  .card-lote.bloqueado .btn{
+    background:rgba(255,255,255,0.10);
+    color:var(--texto-fraco);
+    box-shadow:none;
+    pointer-events:none;
+    cursor:not-allowed;
+  }
+  .card-lote .status-lote{
+    display:inline-block;
+    font-size:12px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    padding:4px 12px;
+    border-radius:999px;
+    margin-bottom:var(--space-sm);
+  }
+  .card-lote .status-lote.aberto{
+    background:rgba(31,157,85,0.18);
+    color:#3ddc84;
+    border:1px solid rgba(31,157,85,0.5);
+  }
+  .card-lote .status-lote.block{
+    background:rgba(255,255,255,0.07);
+    color:var(--texto-fraco);
+    border:1px solid rgba(255,255,255,0.18);
+  }
   .card-lote .nome-lote{
     font-family:var(--fonte-titulo);
     font-weight:800;
@@ -1609,6 +1641,7 @@
         </div>
         <div class="grid-lotes-3">
           <div class="card-lote">
+            <span class="status-lote aberto">Aberto</span>
             <div class="nome-lote">Lote 1</div>
             <div class="preco-box">
               <span class="preco-prefixo">12x de</span>
@@ -1623,7 +1656,8 @@
             </ul>
             <a href="#contato" class="btn btn-vermelho">Comprar Lote 1</a>
           </div>
-          <div class="card-lote">
+          <div class="card-lote bloqueado">
+            <span class="status-lote block">🔒 Bloqueado</span>
             <div class="nome-lote">Lote 2</div>
             <div class="preco-box">
               <span class="preco-prefixo">12x de</span>
@@ -1636,14 +1670,15 @@
               <li>Networking com especialistas</li>
               <li>Certificado digital de 16h</li>
             </ul>
-            <a href="#contato" class="btn btn-vermelho">Comprar Lote 2</a>
+            <a href="#contato" class="btn btn-vermelho" aria-disabled="true" tabindex="-1">Em breve</a>
           </div>
-          <div class="card-lote">
+          <div class="card-lote bloqueado">
+            <span class="status-lote block">🔒 Bloqueado</span>
             <div class="nome-lote">Lote 3</div>
             <div class="preco-box">
               <span class="preco-prefixo">12x de</span>
-              <span class="preco-parcela">R$ 89,70</span>
-              <span class="preco-avista">à vista R$ 897</span>
+              <span class="preco-parcela">R$ 99,70</span>
+              <span class="preco-avista">à vista R$ 997</span>
             </div>
             <ul>
               <li>Palestras exclusivas</li>
@@ -1651,7 +1686,7 @@
               <li>Networking com especialistas</li>
               <li>Certificado digital de 16h</li>
             </ul>
-            <a href="#contato" class="btn btn-vermelho">Comprar Lote 3</a>
+            <a href="#contato" class="btn btn-vermelho" aria-disabled="true" tabindex="-1">Em breve</a>
           </div>
         </div>
       </div>
