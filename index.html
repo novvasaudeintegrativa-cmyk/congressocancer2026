@@ -1149,8 +1149,18 @@
   }
   .cta-final h2{font-size:var(--text-h3);margin-bottom:var(--space-md);}
   .cta-final p{color:var(--texto-suave);max-width:520px;margin:0 auto var(--space-lg) auto;}
-  .cta-final-logo{margin-top:var(--space-lg);text-align:center;}
-  .cta-final-logo img{width:288px;max-width:80%;height:auto;display:inline-block;}
+  .cta-final-logo{margin-top:var(--space-xs);text-align:center;}
+  .cta-final-logo img{
+    width:144px;max-width:60%;height:auto;display:inline-block;
+    animation:pulse-logo 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse-logo{
+    0%,100%{transform:scale(1);}
+    50%{transform:scale(1.08);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .cta-final-logo img{animation:none;}
+  }
 
   /* INFORMAÇÕES ÚTEIS — restaurantes e padarias */
   .uteis{background:radial-gradient(circle at 50% 50%, rgba(184,45,61,0.4), transparent 62%), linear-gradient(180deg,#3C0101 0%, #170608 50%, #3C0101 100%);}
@@ -1757,7 +1767,7 @@
       <p>Entre em contato com o nosso time e seja avisado assim que as inscrições e a grade completa de palestrantes forem liberadas.</p>
       <a href="https://wa.me/5511934873737" class="btn btn-primary btn-pulse">Falar no WhatsApp</a>
       <div class="cta-final-logo">
-        <img src="Imgs/3dWhatsApp.png" alt="WhatsApp" width="288" height="288">
+        <img src="Imgs/3dWhatsApp.png" alt="WhatsApp" width="144" height="144">
       </div>
     </div>
   </section>
