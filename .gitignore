@@ -1,0 +1,21 @@
+# Dependencias
+node_modules/
+
+# Ambiente / segredos
+.env
+.env.*
+!.env.example
+
+# Sistema operacional
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Editores
+.vscode/
+.idea/
+
+# Temporarios
+*.log
+_tmp*
+_qa_measure_tmp*.js
