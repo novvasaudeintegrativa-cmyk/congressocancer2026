@@ -2054,5 +2054,22 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     })();
   </script>
 
+  <!-- Meta Pixel: eventos de conversao -->
+  <script>
+    (function(){
+      if (typeof fbq !== 'function') return;
+      document.querySelectorAll('a[href*="chk.eduzz.com"]').forEach(function(a){
+        a.addEventListener('click', function(){
+          fbq('track', 'InitiateCheckout', { content_name: (a.textContent || '').trim() });
+        });
+      });
+      document.querySelectorAll('a[href*="wa.me"], a[href*="api.whatsapp.com"]').forEach(function(a){
+        a.addEventListener('click', function(){
+          fbq('track', 'Contact', { content_name: 'WhatsApp' });
+        });
+      });
+    })();
+  </script>
+
 </body>
 </html>
