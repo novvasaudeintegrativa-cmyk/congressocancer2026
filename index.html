@@ -1235,10 +1235,41 @@
     background:#000;
     color:var(--texto-fraco);
     text-align:center;
-    padding:26px 20px;
+    padding:36px 20px 28px;
     font-size:13px;
     border-top:1px solid rgba(255,255,255,0.08);
   }
+  .footer-realizacao{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+    margin:0 auto 24px;
+    padding-bottom:24px;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+    max-width:520px;
+  }
+  .footer-realizacao-label{
+    font-family:var(--fonte-titulo);
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    font-size:13px;
+    color:var(--dourado);
+  }
+  .footer-logos{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:44px;
+    flex-wrap:wrap;
+  }
+  .footer-logos img{
+    height:52px;
+    width:auto;
+    max-width:44%;
+  }
+  .footer-copy{margin:0;}
 
   @media (max-width: 900px){
     .publico-grid, .cert-grid, .podcast-grid{grid-template-columns:1fr;}
@@ -1835,7 +1866,14 @@
   </section>
 
   <footer>
-    Novva Saúde Integrativa · Todos os direitos reservados © 2026
+    <div class="footer-realizacao">
+      <span class="footer-realizacao-label">Realização</span>
+      <div class="footer-logos">
+        <img src="Imgs/NovvaSaude.png" alt="Novva Saúde Integrativa">
+        <img src="Imgs/Nutrigenes.png" alt="NutriGenes">
+      </div>
+    </div>
+    <p class="footer-copy">Novva Saúde Integrativa &amp; NutriGenes · Todos os direitos reservados © 2026</p>
   </footer>
 
   <!-- POP-UPS DE CURRÍCULO -->
