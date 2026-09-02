@@ -701,14 +701,16 @@
   /* LOTES */
   .lotes{background:radial-gradient(circle at 50% 50%, rgba(184,45,61,0.45), transparent 65%), linear-gradient(180deg,#3C0101 0%, #170608 50%, #3C0101 100%);}
   .grid-lotes{
-    display:grid;
-    grid-template-columns:repeat(2, 1fr);
+    display:flex;
+    flex-direction:column;
     gap:30px;
-    margin-top:44px;
-    max-width:900px;
-    margin-left:auto;
-    margin-right:auto;
-    align-items:center;
+    margin:44px auto 0;
+    max-width:960px;
+  }
+  .grid-lotes-3{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:24px;
   }
   .card-lote{
     border:1.5px solid var(--borda-card);
@@ -726,11 +728,10 @@
   .card-lote.vip{
     border-color:var(--vermelho-vivo);
     background:linear-gradient(160deg, var(--vermelho-vivo), var(--bordo-escuro));
-    padding:58px 40px;
-    transform:scale(1.05);
+    padding:52px 44px;
     z-index:1;
   }
-  .card-lote.vip:hover{transform:scale(1.12);}
+  .card-lote.vip:hover{transform:scale(1.03);}
   .card-lote .nome-lote{
     font-family:var(--fonte-titulo);
     font-weight:800;
@@ -743,18 +744,32 @@
     color:#fff;
     font-size:var(--text-h3-5);
   }
-  .card-lote .preco{
-    font-family:var(--fonte-titulo);
-    font-weight:800;
-    font-size:26px;
-    margin-bottom:2px;
-  }
-  .card-lote .preco-parcelado{
-    font-size:13px;
-    color:var(--texto-fraco);
+  .card-lote .preco-box{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
     margin-bottom:18px;
   }
-  .card-lote.vip .preco-parcelado{color:rgba(255,255,255,0.75);}
+  .card-lote .preco-prefixo{
+    font-size:13px;
+    font-weight:600;
+    color:var(--texto-fraco);
+  }
+  .card-lote .preco-parcela{
+    font-family:var(--fonte-titulo);
+    font-weight:800;
+    font-size:40px;
+    line-height:1;
+    color:#fff;
+  }
+  .card-lote .preco-avista{
+    font-size:13px;
+    color:var(--texto-fraco);
+  }
+  .card-lote.vip .preco-parcela{font-size:56px;}
+  .card-lote.vip .preco-prefixo,
+  .card-lote.vip .preco-avista{color:rgba(255,255,255,0.78);}
   .card-lote ul{
     list-style:none;
     text-align:left;
@@ -1174,13 +1189,15 @@
     .prog-grid{grid-template-columns:1fr;}
     section{padding:60px 0; min-height:0;}
   }
+  @media (max-width: 760px){
+    .grid-lotes-3{grid-template-columns:1fr;}
+  }
   @media (max-width: 640px){
     .slot-grid{grid-template-columns:repeat(2, 1fr);}
   }
   @media (max-width: 520px){
     .grid-palestrantes{grid-template-columns:1fr;}
     .slot-grid{grid-template-columns:1fr 1fr;}
-    .grid-lotes{grid-template-columns:1fr;}
     .data-badge{font-size:24px;padding:14px 22px;}
   }
 
@@ -1574,22 +1591,13 @@
       <h2 class="section-title">Garanta sua Vaga</h2>
       <p class="section-sub">Valores da edição 2026 ainda não confirmados — referência abaixo baseada na 4ª edição (2026), a atualizar assim que definido.</p>
       <div class="grid-lotes">
-        <div class="card-lote">
-          <div class="nome-lote">Lote 1</div>
-          <div class="preco">R$ 497</div>
-          <div class="preco-parcelado">ou 12x de R$ 49,70</div>
-          <ul>
-            <li>Palestras exclusivas</li>
-            <li>Feira com 30+ stands</li>
-            <li>Networking com especialistas</li>
-            <li>Certificado digital de 16h</li>
-          </ul>
-          <a href="#contato" class="btn btn-vermelho">Comprar Lote 1</a>
-        </div>
         <div class="card-lote vip">
           <div class="nome-lote">VIP</div>
-          <div class="preco">R$ 1.497</div>
-          <div class="preco-parcelado">ou 12x de R$ 149,70</div>
+          <div class="preco-box">
+            <span class="preco-prefixo">12x de</span>
+            <span class="preco-parcela">R$ 149,70</span>
+            <span class="preco-avista">à vista R$ 1.497</span>
+          </div>
           <ul>
             <li>Sala VIP exclusiva com networking</li>
             <li>Feira com 30+ expositores</li>
@@ -1598,6 +1606,53 @@
             <li>Certificado digital de 16h</li>
           </ul>
           <a href="#contato" class="btn btn-branco btn-pulse-branco">Comprar Lote VIP</a>
+        </div>
+        <div class="grid-lotes-3">
+          <div class="card-lote">
+            <div class="nome-lote">Lote 1</div>
+            <div class="preco-box">
+              <span class="preco-prefixo">12x de</span>
+              <span class="preco-parcela">R$ 49,70</span>
+              <span class="preco-avista">à vista R$ 497</span>
+            </div>
+            <ul>
+              <li>Palestras exclusivas</li>
+              <li>Feira com 30+ stands</li>
+              <li>Networking com especialistas</li>
+              <li>Certificado digital de 16h</li>
+            </ul>
+            <a href="#contato" class="btn btn-vermelho">Comprar Lote 1</a>
+          </div>
+          <div class="card-lote">
+            <div class="nome-lote">Lote 2</div>
+            <div class="preco-box">
+              <span class="preco-prefixo">12x de</span>
+              <span class="preco-parcela">R$ 69,70</span>
+              <span class="preco-avista">à vista R$ 697</span>
+            </div>
+            <ul>
+              <li>Palestras exclusivas</li>
+              <li>Feira com 30+ stands</li>
+              <li>Networking com especialistas</li>
+              <li>Certificado digital de 16h</li>
+            </ul>
+            <a href="#contato" class="btn btn-vermelho">Comprar Lote 2</a>
+          </div>
+          <div class="card-lote">
+            <div class="nome-lote">Lote 3</div>
+            <div class="preco-box">
+              <span class="preco-prefixo">12x de</span>
+              <span class="preco-parcela">R$ 89,70</span>
+              <span class="preco-avista">à vista R$ 897</span>
+            </div>
+            <ul>
+              <li>Palestras exclusivas</li>
+              <li>Feira com 30+ stands</li>
+              <li>Networking com especialistas</li>
+              <li>Certificado digital de 16h</li>
+            </ul>
+            <a href="#contato" class="btn btn-vermelho">Comprar Lote 3</a>
+          </div>
         </div>
       </div>
       <p class="lotes-nota">Formas de pagamento: cartão de crédito, boleto ou Pix.</p>
