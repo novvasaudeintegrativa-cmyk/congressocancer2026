@@ -67,7 +67,7 @@ create or replace view public.v_eventos_por_dia as
 select (created_at at time zone 'America/Sao_Paulo')::date as dia,
        event, count(*) as total
 from public.events
-where created_at >= now() - interval '60 days'
+where created_at >= now() - interval '90 days'
 group by 1, 2
 order by 1 desc, 2;
 
