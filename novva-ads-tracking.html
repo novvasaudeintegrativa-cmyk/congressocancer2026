@@ -372,7 +372,7 @@
         [{t:'Quando',f:function(r){ return new Date(r.created_at).toLocaleString('pt-BR'); }},
          {t:'Evento',k:'event'},
          {t:'Detalhe',f:function(r){ return r.props ? JSON.stringify(r.props) : ''; }},
-         {t:'Página',k:'path'},{t:'Origem',k:'origem'}], res[5]);
+         {t:'Página',k:'path'},{t:'Disp.',k:'device'},{t:'Origem',k:'origem'}], res[5]);
       $('meta').textContent = 'atualizado ' + new Date().toLocaleTimeString('pt-BR') + ' · janela de 30 dias';
     }).catch(function(e){
       $('meta').innerHTML = '<span class="erro">erro: ' + e.message + '</span>';

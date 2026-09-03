@@ -36,7 +36,7 @@ create table if not exists public.events (
   path         text,
   referrer     text,
   screen_w     int,
-  ua           text,
+  device       text,
   utm_source   text,
   utm_medium   text,
   utm_campaign text,
@@ -46,8 +46,9 @@ create table if not exists public.events (
   fbclid       text
 );
 
--- ---------- UTM / campanhas (rodar sozinho se a tabela ja existia) ----------
+-- ---------- Migracao p/ tabela que ja existia (rodar sozinho) ----------
 alter table public.events
+  add column if not exists device       text,
   add column if not exists utm_source   text,
   add column if not exists utm_medium   text,
   add column if not exists utm_campaign text,
@@ -55,6 +56,9 @@ alter table public.events
   add column if not exists utm_content  text,
   add column if not exists gclid        text,
   add column if not exists fbclid       text;
+
+-- o site agora manda `device` (mobile/tablet/desktop) no lugar do user agent
+alter table public.events drop column if exists ua;
 
 create index if not exists events_created_at_idx   on public.events (created_at desc);
 create index if not exists events_event_idx        on public.events (event);
@@ -148,15 +152,71 @@ order by sessoes desc
 limit 50;
 
 create or replace view public.v_recentes as
-select created_at, event, props, path,
+select created_at, event, props, path, device,
   coalesce(nullif(split_part(split_part(referrer, '//', 2), '/', 1), ''), '(direto)') as origem,
   utm_source, utm_campaign,
   session_id
 from public.events
 order by created_at desc limit 200;
 
-grant select on public.v_kpis_30d, public.v_eventos_por_dia, public.v_rolagem,
-                public.v_tempo_pagina, public.v_videos, public.v_referrers,
+-- ========== ROLLUP DIARIO (historico permanente, ocupa KB/mes) ==========
+-- Agrega o cru por dia; mesmo que um dia a tabela `events` seja podada,
+-- tendencia / UTM / funil / video ficam preservados aqui.
+create table if not exists public.events_daily (
+  dia          date not null,
+  event        text not null,
+  placement    text not null default '',
+  utm_source   text not null default '',
+  utm_medium   text not null default '',
+  utm_campaign text not null default '',
+  total        int  not null default 0,
+  sessoes      int  not null default 0,
+  primary key (dia, event, placement, utm_source, utm_medium, utm_campaign)
+);
+
+create or replace function public.rollup_events(
+  d date default ((now() at time zone 'America/Sao_Paulo')::date - 1)
+) returns void language sql as $$
+  insert into public.events_daily
+    (dia, event, placement, utm_source, utm_medium, utm_campaign, total, sessoes)
+  select
+    d, event,
+    coalesce(props->>'placement', ''),
+    coalesce(utm_source, ''), coalesce(utm_medium, ''), coalesce(utm_campaign, ''),
+    count(*), count(distinct session_id)
+  from public.events
+  where (created_at at time zone 'America/Sao_Paulo')::date = d
+  group by 1, 2, 3, 4, 5, 6
+  on conflict (dia, event, placement, utm_source, utm_medium, utm_campaign)
+  do update set total = excluded.total, sessoes = excluded.sessoes;
+$$;
+
+-- backfill dos dias que ja existem (roda uma vez, idempotente)
+do $$
+declare dd date;
+begin
+  for dd in
+    select distinct (created_at at time zone 'America/Sao_Paulo')::date from public.events
+  loop
+    perform public.rollup_events(dd);
+  end loop;
+end $$;
+
+-- agenda: todo dia 00:10 America/Sao_Paulo (03:10 UTC) roda "ontem"
+create extension if not exists pg_cron;
+select cron.unschedule('rollup-events-diario')
+  where exists (select 1 from cron.job where jobname = 'rollup-events-diario');
+select cron.schedule('rollup-events-diario', '10 3 * * *', $$select public.rollup_events();$$);
+
+-- historico de eventos por dia a partir do rollup (serie longa, sem limite de janela)
+create or replace view public.v_eventos_por_dia_hist as
+select dia, event, sum(total)::int as total
+from public.events_daily
+group by 1, 2
+order by 1 desc, 2;
+
+grant select on public.v_kpis_30d, public.v_eventos_por_dia, public.v_eventos_por_dia_hist,
+                public.v_rolagem, public.v_tempo_pagina, public.v_videos, public.v_referrers,
                 public.v_campanhas, public.v_recentes
   to anon;
 

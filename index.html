@@ -2130,6 +2130,14 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       } catch(e){}
       return Date.now().toString(36) + Math.random().toString(36).slice(2);
     }
+
+    /* classe de dispositivo em vez do user agent inteiro (linha ~40% menor no banco) */
+    function deviceClass(){
+      var ua = navigator.userAgent || '';
+      if (/\bTablet\b|\biPad\b|Android(?!.*\bMobi)/i.test(ua)) return 'tablet';
+      if (/Mobi|Android|iPhone|iPod|IEMobile|BlackBerry|Opera Mini/i.test(ua)) return 'mobile';
+      return 'desktop';
+    }
     var visitorId, sessionId;
     try { visitorId = localStorage.getItem('cc_vid') || uid(); localStorage.setItem('cc_vid', visitorId); }
     catch(e){ visitorId = uid(); }
@@ -2170,7 +2178,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
             path: location.pathname + location.search,
             referrer: document.referrer || null,
             screen_w: (window.screen && screen.width) || null,
-            ua: navigator.userAgent,
+            device: deviceClass(),
             utm_source: camp.utm_source,
             utm_medium: camp.utm_medium,
             utm_campaign: camp.utm_campaign,
