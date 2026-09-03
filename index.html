@@ -21,6 +21,8 @@
     --bordo: #5c171e;
     --vermelho: #8a222e;
     --vermelho-vivo: #b92d3d;
+    --laranja: #ff6a00;
+    --laranja-escuro: #e85d00;
     --dourado: #f2c744;
     --verde: #1f9d55;
     --verde-escuro: #167a42;
@@ -118,6 +120,25 @@
     box-shadow:0 10px 30px rgba(0,0,0,0.35);
   }
   .btn-branco:hover{background:#f2e6e6;}
+  .btn-laranja{
+    background:var(--laranja);
+    color:#fff;
+    box-shadow:0 10px 30px rgba(255,106,0,0.45);
+  }
+  .btn-laranja:hover{background:var(--laranja-escuro);}
+  .btn-pulse-laranja{
+    animation: pulse-cta-laranja 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse-cta-laranja{
+    0%, 100%{
+      transform:scale(1);
+      box-shadow:0 10px 30px rgba(255,106,0,0.45), 0 0 0 0 rgba(255,106,0,0.6);
+    }
+    50%{
+      transform:scale(1.045);
+      box-shadow:0 10px 30px rgba(255,106,0,0.45), 0 0 0 14px rgba(255,106,0,0);
+    }
+  }
   .btn-pulse{
     animation: pulse-cta 1.8s ease-in-out infinite;
   }
@@ -145,7 +166,7 @@
     }
   }
   @media (prefers-reduced-motion: reduce){
-    .btn-pulse, .btn-pulse-branco{animation:none;}
+    .btn-pulse, .btn-pulse-branco, .btn-pulse-laranja{animation:none;}
   }
   .aviso-exemplo{
     background:rgba(242,199,68,0.10);
@@ -1716,7 +1737,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       <p class="section-sub">Valores da edição 2026 ainda não confirmados — referência abaixo baseada na 4ª edição (2026), a atualizar assim que definido.</p>
       <div class="grid-lotes">
         <div class="card-lote vip">
-          <div class="nome-lote">VIP</div>
+          <div class="nome-lote">Lote VIP</div>
           <div class="preco-box">
             <span class="preco-prefixo">12x de</span>
             <span class="preco-parcela">R$ 149,70</span>
@@ -1729,7 +1750,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
             <li>Palestras exclusivas</li>
             <li>Certificado digital de 16h</li>
           </ul>
-          <a href="https://chk.eduzz.com/6W4G83QY0Z" class="btn btn-branco btn-pulse-branco">Comprar Lote VIP</a>
+          <a href="https://chk.eduzz.com/6W4G83QY0Z" class="btn btn-laranja btn-pulse-laranja">Comprar Lote VIP</a>
         </div>
         <div class="grid-lotes-3">
           <div class="card-lote">
@@ -1746,7 +1767,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
               <li>Networking com especialistas</li>
               <li>Certificado digital de 16h</li>
             </ul>
-            <a href="https://chk.eduzz.com/39ZRQ8ZBWE" class="btn btn-vermelho">Comprar Lote 1</a>
+            <a href="https://chk.eduzz.com/39ZRQ8ZBWE" class="btn btn-laranja">Comprar Lote 1</a>
           </div>
           <div class="card-lote bloqueado">
             <span class="status-lote block">🔒 Bloqueado</span>
