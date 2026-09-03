@@ -121,6 +121,20 @@
   .bar{height:16px;background:linear-gradient(90deg,var(--vermelho-vivo),var(--laranja));border-radius:5px;min-width:2px;}
   .bar-row span:last-child{color:var(--texto-suave);text-align:right;}
 
+  .destaque{border-color:var(--dourado);box-shadow:0 0 0 1px rgba(242,199,68,.22);}
+  .destaque h2{color:var(--dourado);}
+  .funil{display:flex;flex-wrap:wrap;gap:10px;}
+  .etapa{
+    flex:1;min-width:112px;
+    background:rgba(255,255,255,.04);
+    border:1px solid var(--borda-card);
+    border-radius:12px;padding:12px 14px;
+  }
+  .etapa .n{font-family:var(--fonte-titulo);font-size:23px;font-weight:800;line-height:1;}
+  .etapa .l{font-size:10.5px;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.05em;margin-top:6px;}
+  .etapa .pct{font-size:12px;color:var(--dourado);font-weight:700;margin-top:8px;}
+  .etapa .drop{font-size:10.5px;color:var(--texto-fraco);margin-top:2px;}
+
   .scroll-x{overflow-x:auto;}
   .erro{color:#ff8a8a;}
   .vazio{color:var(--texto-fraco);}
@@ -144,6 +158,11 @@
 
   <div class="kpis" id="kpis"></div>
 
+  <section class="destaque">
+    <h2>VSL — retenção (30 dias)</h2>
+    <div class="funil" id="vsl"></div>
+  </section>
+
   <section>
     <div class="sec-head">
       <h2>Eventos por dia</h2>
@@ -157,13 +176,14 @@
   </section>
 
   <section>
-    <h2>Profundidade de rolagem (30 dias)</h2>
-    <div id="rolagem"></div>
+    <h2>Profundidade da página — rolagem (30 dias)</h2>
+    <div class="funil" id="rolagem"></div>
   </section>
 
   <section>
-    <h2>Desempenho dos vídeos (30 dias)</h2>
-    <div class="scroll-x"><table id="videos"></table></div>
+    <h2>Vídeos — retenção geral (30 dias)</h2>
+    <div class="funil" id="videos-resumo"></div>
+    <div class="scroll-x" style="margin-top:16px"><table id="videos"></table></div>
   </section>
 
   <section>
@@ -252,15 +272,59 @@
     chart = new Chart($('chart-dia'), { type:'bar', data:data, options:opts });
   }
 
+  // uma "etapa" do funil: numero grande + rotulo + % da base (+ queda vs etapa anterior)
+  function etapa(n, label, base, prev){
+    var pct  = base ? Math.round(n / base * 100) + '%' : '—';
+    var drop = (prev != null && prev > 0)
+      ? '<div class="drop">−' + Math.max(0, Math.round((prev - n) / prev * 100)) + '% vs etapa anterior</div>' : '';
+    return '<div class="etapa"><div class="n">' + fmt(n) + '</div><div class="l">' + label +
+           '</div><div class="pct">' + pct + '</div>' + drop + '</div>';
+  }
+
+  function somaVideos(rows, filtro){
+    var acc = { plays:0, p25:0, p50:0, p75:0, p95:0, completes:0 };
+    rows.forEach(function(r){
+      var pos = (r.posicao || '').toLowerCase();
+      if (filtro && pos !== filtro) return;
+      ['plays','p25','p50','p75','p95','completes'].forEach(function(kk){ acc[kk] += (r[kk] || 0); });
+    });
+    return acc;
+  }
+
+  function funilVideo(v){
+    return etapa(v.plays, 'Deram play', v.plays) +
+           etapa(v.p25, 'Assistiram 25%', v.plays, v.plays) +
+           etapa(v.p50, 'Assistiram 50%', v.plays, v.p25) +
+           etapa(v.p75, 'Assistiram 75%', v.plays, v.p50) +
+           etapa(v.p95, 'Assistiram 95%', v.plays, v.p75) +
+           etapa(v.completes, 'Concluíram', v.plays, v.p95);
+  }
+
+  function renderVsl(videoRows){
+    var v = somaVideos(videoRows, 'vsl');
+    $('vsl').innerHTML = v.plays ? funilVideo(v)
+      : '<p class="vazio">Sem plays da VSL ainda. Entra aqui quando o vídeo do Vturb for publicado com <code>placement: \'vsl\'</code>.</p>';
+  }
+
+  function renderVideosResumo(videoRows){
+    var v = somaVideos(videoRows, null);
+    $('videos-resumo').innerHTML = v.plays ? funilVideo(v)
+      : '<p class="vazio">Sem plays de vídeo ainda.</p>';
+  }
+
+  // rolagem tratada como "até onde a pessoa desce na página"
   function renderRolagem(rows, pageviews){
-    var max = Math.max.apply(null, rows.map(function(r){ return r.total; }).concat([1]));
-    $('rolagem').innerHTML = rows.map(function(r){
-      var w = (r.total / max * 100).toFixed(1);
-      var pct = pageviews ? ' (' + (r.total / pageviews * 100).toFixed(0) + '%)' : '';
-      return '<div class="bar-row"><span>' + r.percent + '%</span>' +
-             '<span class="bar" style="width:' + w + '%"></span>' +
-             '<span>' + fmt(r.total) + pct + '</span></div>';
-    }).join('') || '<p class="vazio">sem dados</p>';
+    var by = {};
+    rows.forEach(function(r){ by[r.percent] = r.total; });
+    var base = pageviews || 0;
+    var html = etapa(base, 'Abriram a página', base);
+    var prev = base;
+    [25, 50, 75, 90].forEach(function(p){
+      var n = by[p] || 0;
+      html += etapa(n, 'Rolaram ' + p + '%', base, prev);
+      prev = n;
+    });
+    $('rolagem').innerHTML = html;
   }
 
   function table(el, cols, rows){
@@ -283,6 +347,8 @@
     ]).then(function(res){
       var k = res[0][0] || {};
       renderKpis(k);
+      renderVsl(res[3]);
+      renderVideosResumo(res[3]);
       renderDia(res[1], diaDays);
       renderRolagem(res[2], k.pageviews);
       table($('videos'),
