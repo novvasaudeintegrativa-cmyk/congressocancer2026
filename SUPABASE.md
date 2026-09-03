@@ -339,9 +339,12 @@ e grava a linha com a service role key (server-side).
 1. Supabase → menu esquerdo → **Edge Functions** → **Deploy a new function** →
    **Via editor** (editor no navegador).
 2. Nome: **`collect`**.
-3. Apague o exemplo e cole:
+3. Apague **todo** o conteúdo do `index.ts` e cole o código abaixo
+   (ele já inclui a 1ª linha de type defs que o editor mostra):
 
 ```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
 // Edge Function: collect — recebe evento do site, resolve geo por IP, grava em public.events
 const cors = {
   "Access-Control-Allow-Origin": "*",
