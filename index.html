@@ -217,6 +217,12 @@
     color:var(--texto-suave);
     font-size:var(--text-body);
   }
+  @media (min-width:900px){
+    /* No desktop o título usa 75% da largura da viewport (com um teto
+       pra não esticar demais em telas muito largas). */
+    .hero .hero-inner{max-width:min(75vw, 1400px);}
+    .hero h1{max-width:none;}
+  }
   @media (max-width:600px){
     .hero h1{font-size:23px;line-height:1.25;}
   }
