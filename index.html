@@ -2118,8 +2118,8 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
   <script>
   (function(){
     var ANALYTICS = {
-      url: '',   /* ex.: https://xxxxxxxx.supabase.co/rest/v1/events */
-      key: ''    /* anon key (publica) */
+      url: 'https://nbhekjgbszyuuxrynzfo.supabase.co/rest/v1/events',
+      key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iaGVramdic3p5dXV4cnluemZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzM0MDUsImV4cCI6MjA5MjMwOTQwNX0.d8f346ONCOHjr__C8RLmSJOFW0kZfqFkCGHmotwxiXc'  /* anon — publica por design */
     };
 
     /* id anonimo por navegador (sem PII) + id de sessao */
@@ -2138,15 +2138,16 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     function sendToDB(event, props){
       if (!ANALYTICS.url || !ANALYTICS.key) return;
       try {
+        var headers = {
+          'Content-Type': 'application/json',
+          'apikey': ANALYTICS.key,
+          'Prefer': 'return=minimal'
+        };
+        if (/^eyJ/.test(ANALYTICS.key)) headers['Authorization'] = 'Bearer ' + ANALYTICS.key;
         fetch(ANALYTICS.url, {
           method: 'POST',
           keepalive: true,
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': ANALYTICS.key,
-            'Authorization': 'Bearer ' + ANALYTICS.key,
-            'Prefer': 'return=minimal'
-          },
+          headers: headers,
           body: JSON.stringify({
             visitor_id: visitorId,
             session_id: sessionId,
