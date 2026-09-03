@@ -194,7 +194,8 @@
   }
 
   function rpc(fn, body){
-    var h = { 'Content-Type':'application/json', apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
+    var h = { 'Content-Type':'application/json', apikey: SUPABASE_KEY };
+    if (/^eyJ/.test(SUPABASE_KEY)) h.Authorization = 'Bearer ' + SUPABASE_KEY;  // JWT vai como Bearer; publishable so como apikey
     return fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, { method:'POST', headers:h, body: JSON.stringify(body||{}) })
       .then(function(r){ if(!r.ok) throw new Error(fn + ' → ' + r.status); return r.json(); });
   }

@@ -2171,9 +2171,9 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         var headers = {
           'Content-Type': 'application/json',
           'apikey': ANALYTICS.key,
-          'Authorization': 'Bearer ' + ANALYTICS.key,
           'Prefer': 'return=minimal'
         };
+        if (/^eyJ/.test(ANALYTICS.key)) headers['Authorization'] = 'Bearer ' + ANALYTICS.key;
         fetch(ANALYTICS.url, {
           method: 'POST',
           keepalive: true,
