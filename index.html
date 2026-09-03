@@ -1668,10 +1668,10 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
 
       <div class="video-row video-row--2">
         <div class="video-embed">
-          <iframe src="https://www.youtube-nocookie.com/embed/gK5YoJY8J4s" title="Retrospectiva do congresso — edição anterior" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <iframe id="ytv-evt-1" data-placement="evento-anterior" src="https://www.youtube-nocookie.com/embed/gK5YoJY8J4s?enablejsapi=1" title="Retrospectiva do congresso — edição anterior" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
         <div class="video-embed">
-          <iframe src="https://www.youtube-nocookie.com/embed/wqxK9KEv4JU" title="Bastidores do congresso — edição anterior" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <iframe id="ytv-evt-2" data-placement="evento-anterior" src="https://www.youtube-nocookie.com/embed/wqxK9KEv4JU?enablejsapi=1" title="Bastidores do congresso — edição anterior" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
       </div>
 
@@ -1716,13 +1716,13 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
 
       <div class="video-carousel" aria-label="Depoimentos de participantes">
         <div class="video-embed">
-          <iframe src="https://www.youtube-nocookie.com/embed/FSjgct-sR5o" title="Depoimento 1 de participante" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <iframe id="ytv-dep-1" data-placement="depoimento" src="https://www.youtube-nocookie.com/embed/FSjgct-sR5o?enablejsapi=1" title="Depoimento 1 de participante" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
         <div class="video-embed">
-          <iframe src="https://www.youtube-nocookie.com/embed/uYrG5VathKQ" title="Depoimento 2 de participante" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <iframe id="ytv-dep-2" data-placement="depoimento" src="https://www.youtube-nocookie.com/embed/uYrG5VathKQ?enablejsapi=1" title="Depoimento 2 de participante" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
         <div class="video-embed">
-          <iframe src="https://www.youtube-nocookie.com/embed/DI9DR1fqV9c" title="Depoimento 3 de participante" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          <iframe id="ytv-dep-3" data-placement="depoimento" src="https://www.youtube-nocookie.com/embed/DI9DR1fqV9c?enablejsapi=1" title="Depoimento 3 de participante" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
       </div>
     </div>
@@ -2122,6 +2122,94 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
           fbq('track', 'Contact', { content_name: 'WhatsApp' });
         });
       });
+    })();
+  </script>
+
+  <!-- Rastreamento: rolagem, tempo na pagina e video.
+       Videos hoje no YouTube; quando migrarem pro Vturb, chamar trackVideo()
+       dos callbacks do SmartPlayer com video_provider:'vturb'. -->
+  <script>
+    (function(){
+      if (typeof fbq !== 'function') return;
+
+      function trackVideo(evt, data){ fbq('trackCustom', evt, data || {}); }
+
+      /* 1. Profundidade de rolagem — 25/50/75/90%, uma vez cada */
+      (function(){
+        var marks = [25, 50, 75, 90], hit = {}, timer;
+        function check(){
+          var doc = document.documentElement;
+          var scrollable = doc.scrollHeight - window.innerHeight;
+          if (scrollable <= 0) return;
+          var pct = (window.scrollY || doc.scrollTop) / scrollable * 100;
+          marks.forEach(function(m){
+            if (!hit[m] && pct >= m){
+              hit[m] = 1;
+              fbq('trackCustom', 'ScrollDepth', { percent: m });
+            }
+          });
+          if (hit[90]) window.removeEventListener('scroll', onScroll);
+        }
+        function onScroll(){ clearTimeout(timer); timer = setTimeout(check, 200); }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        check();
+      })();
+
+      /* 2. Tempo na pagina — 30/60/120s */
+      [30, 60, 120].forEach(function(s){
+        setTimeout(function(){ fbq('trackCustom', 'TimeOnPage', { seconds: s }); }, s * 1000);
+      });
+
+      /* 3. Videos do YouTube — play / progresso / conclusao */
+      var iframes = document.querySelectorAll('iframe[src*="youtube-nocookie.com/embed/"], iframe[src*="youtube.com/embed/"]');
+      if (iframes.length){
+        iframes.forEach(function(f, i){
+          if (f.src.indexOf('enablejsapi=') === -1){
+            f.src += (f.src.indexOf('?') === -1 ? '?' : '&') + 'enablejsapi=1';
+          }
+          if (!f.id) f.id = 'ytv-auto-' + i;
+        });
+
+        window.onYouTubeIframeAPIReady = function(){
+          iframes.forEach(function(f){
+            var placement = f.getAttribute('data-placement') || 'youtube';
+            var title = f.getAttribute('title') || f.id;
+            var progressHit = {}, poll = null, played = false;
+            var meta = { video_provider: 'youtube', video_title: title, placement: placement };
+
+            var player = new YT.Player(f.id, {
+              events: {
+                onStateChange: function(e){
+                  if (e.data === YT.PlayerState.PLAYING){
+                    if (!played){ played = true; trackVideo('VideoPlay', meta); }
+                    clearInterval(poll);
+                    poll = setInterval(function(){
+                      var d = player.getDuration(), c = player.getCurrentTime();
+                      if (!d) return;
+                      var pct = c / d * 100;
+                      [25, 50, 75, 95].forEach(function(m){
+                        if (!progressHit[m] && pct >= m){
+                          progressHit[m] = 1;
+                          trackVideo('VideoProgress', { video_provider: 'youtube', video_title: title, placement: placement, percent: m });
+                        }
+                      });
+                    }, 1000);
+                  } else if (e.data === YT.PlayerState.ENDED){
+                    clearInterval(poll);
+                    trackVideo('VideoComplete', meta);
+                  } else if (e.data === YT.PlayerState.PAUSED){
+                    clearInterval(poll);
+                  }
+                }
+              }
+            });
+          });
+        };
+
+        var tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+      }
     })();
   </script>
 
