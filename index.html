@@ -288,6 +288,10 @@
     background-position:center, center, right center;
     background-size:cover, cover, cover;
   }
+  @media (min-width:901px){
+    /* No desktop a foto de fundo fica menor (encaixada pela altura). */
+    .publico{background-size:cover, cover, auto 80%;}
+  }
   .publico-grid{display:block;}
   .publico-col{max-width:min(52%, 560px);}
   .publico h2{font-size:var(--text-h3-5);margin-bottom:var(--space-md);}
@@ -323,7 +327,7 @@
   }
   @media (min-width:901px){
     /* No desktop a foto de fundo fica menor (encaixada pela altura). */
-    .moderno{background-size:cover, cover, auto 70%;}
+    .moderno{background-size:cover, cover, auto 80%;}
   }
   .moderno .container{display:flex;justify-content:flex-end;}
   .moderno-card{
