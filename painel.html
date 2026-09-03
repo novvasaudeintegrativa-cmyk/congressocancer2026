@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Painel de Eventos — Congresso Câncer 2026</title>
+<style>
+  :root{
+    --bg:#140406; --bg-2:#1c0709; --card:#22090c; --linha:rgba(217,53,72,0.30);
+    --texto:#fff; --suave:rgba(255,255,255,0.72); --fraco:rgba(255,255,255,0.45);
+    --vermelho:#b92d3d; --laranja:#ff6a00; --dourado:#f2c744; --verde:#1f9d55;
+    --fonte:'Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--texto);font-family:var(--fonte);line-height:1.5;}
+  header{padding:22px 24px;border-bottom:1px solid var(--linha);display:flex;flex-wrap:wrap;gap:12px 20px;align-items:baseline;justify-content:space-between;}
+  header h1{font-size:19px;margin:0;font-weight:800;letter-spacing:.01em;}
+  header .meta{font-size:13px;color:var(--fraco);}
+  header button{background:var(--laranja);color:#fff;border:0;border-radius:9px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px;}
+  header button:disabled{opacity:.5;cursor:default;}
+  main{padding:24px;max-width:1180px;margin:0 auto;}
+  .aviso{background:rgba(242,199,68,.10);border:1px dashed rgba(242,199,68,.5);color:var(--dourado);
+    padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:22px;}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:26px;}
+  .kpi{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:16px 18px;}
+  .kpi .n{font-size:26px;font-weight:800;}
+  .kpi .l{font-size:12px;color:var(--suave);text-transform:uppercase;letter-spacing:.04em;margin-top:4px;}
+  section{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:18px 20px;margin-bottom:22px;}
+  section h2{font-size:14px;margin:0 0 14px;text-transform:uppercase;letter-spacing:.05em;color:var(--suave);}
+  canvas{max-width:100%;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top;}
+  th{color:var(--fraco);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:.04em;}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .bar-row{display:grid;grid-template-columns:60px 1fr 70px;gap:10px;align-items:center;margin:6px 0;font-size:13px;}
+  .bar{height:16px;background:linear-gradient(90deg,var(--vermelho),var(--laranja));border-radius:4px;min-width:2px;}
+  .scroll-x{overflow-x:auto;}
+  .erro{color:#ff8a8a;}
+  code{background:rgba(255,255,255,.08);padding:1px 6px;border-radius:5px;font-size:12px;}
+  @media (prefers-color-scheme:light){
+    :root{--bg:#faf7f7;--card:#fff;--linha:rgba(0,0,0,.12);--texto:#1a1113;--suave:#5b4b4d;--fraco:#8a7a7c;}
+    .bar{opacity:.9;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Painel de Eventos · Congresso Câncer 2026</h1>
+    <div class="meta" id="meta">carregando…</div>
+  </div>
+  <button id="reload" type="button">Atualizar</button>
+</header>
+
+<main>
+  <div class="aviso" id="config-aviso" hidden>
+    Configure <code>SUPABASE_URL</code> e <code>SUPABASE_KEY</code> no topo deste arquivo
+    (a mesma anon key usada no <code>index.html</code>) e rode o <code>supabase-setup.sql</code> no projeto.
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section>
+    <h2>Eventos por dia (60 dias)</h2>
+    <canvas id="chart-dia" height="90"></canvas>
+  </section>
+
+  <section>
+    <h2>Profundidade de rolagem (30 dias)</h2>
+    <div id="rolagem"></div>
+  </section>
+
+  <section>
+    <h2>Desempenho dos vídeos (30 dias)</h2>
+    <div class="scroll-x"><table id="videos"></table></div>
+  </section>
+
+  <section>
+    <h2>Origens de tráfego (30 dias)</h2>
+    <div class="scroll-x"><table id="referrers"></table></div>
+  </section>
+
+  <section>
+    <h2>Últimos eventos</h2>
+    <div class="scroll-x"><table id="recentes"></table></div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function(){
+  // ================== CONFIG ==================
+  // Mesmos valores do bloco ANALYTICS do index.html.
+  var SUPABASE_URL = '';   // ex.: https://xxxxxxxx.supabase.co
+  var SUPABASE_KEY = '';    // anon key (publica)
+  // ===========================================
+
+  var $ = function(id){ return document.getElementById(id); };
+  var fmt = function(n){ return (n==null?0:n).toLocaleString('pt-BR'); };
+
+  if (!SUPABASE_URL || !SUPABASE_KEY){
+    $('config-aviso').hidden = false;
+    $('meta').textContent = 'sem configuração';
+    return;
+  }
+
+  function api(view, qs){
+    return fetch(SUPABASE_URL.replace(/\/$/,'') + '/rest/v1/' + view + (qs ? '?' + qs : ''), {
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+    }).then(function(r){ if(!r.ok) throw new Error(view + ' → ' + r.status); return r.json(); });
+  }
+
+  var chart;
+
+  function renderKpis(k){
+    var items = [
+      ['Page views', k.pageviews], ['Visitantes', k.visitantes], ['Sessões', k.sessoes],
+      ['Initiate Checkout', k.initiate_checkout], ['Contato WhatsApp', k.contatos_whatsapp],
+      ['Video plays', k.video_plays], ['Vídeos concluídos', k.video_completes]
+    ];
+    $('kpis').innerHTML = items.map(function(it){
+      return '<div class="kpi"><div class="n">' + fmt(it[1]) + '</div><div class="l">' + it[0] + '</div></div>';
+    }).join('');
+  }
+
+  function renderDia(rows){
+    var series = ['PageView','InitiateCheckout','VideoPlay','Contact'];
+    var cores  = ['#b92d3d','#ff6a00','#f2c744','#1f9d55'];
+    var dias = Array.from(new Set(rows.map(function(r){ return r.dia; }))).sort();
+    var byKey = {};
+    series.forEach(function(s){ byKey[s] = {}; });
+    rows.forEach(function(r){ if (byKey[r.event]) byKey[r.event][r.dia] = r.total; });
+    var data = {
+      labels: dias,
+      datasets: series.map(function(s, i){
+        return { label: s, data: dias.map(function(d){ return byKey[s][d] || 0; }),
+          borderColor: cores[i], backgroundColor: cores[i], tension: .3, pointRadius: 0, borderWidth: 2 };
+      })
+    };
+    var opts = { responsive:true, interaction:{mode:'index',intersect:false},
+      scales:{ x:{ ticks:{ color:'#999', maxTicksLimit:10 }, grid:{ color:'rgba(255,255,255,.05)' } },
+               y:{ beginAtZero:true, ticks:{ color:'#999' }, grid:{ color:'rgba(255,255,255,.05)' } } },
+      plugins:{ legend:{ labels:{ color:'#bbb' } } } };
+    if (chart) chart.destroy();
+    chart = new Chart($('chart-dia'), { type:'line', data:data, options:opts });
+  }
+
+  function renderRolagem(rows, pageviews){
+    var max = Math.max.apply(null, rows.map(function(r){ return r.total; }).concat([1]));
+    $('rolagem').innerHTML = rows.map(function(r){
+      var w = (r.total / max * 100).toFixed(1);
+      var pct = pageviews ? ' (' + (r.total / pageviews * 100).toFixed(0) + '%)' : '';
+      return '<div class="bar-row"><span>' + r.percent + '%</span>' +
+             '<span class="bar" style="width:' + w + '%"></span>' +
+             '<span>' + fmt(r.total) + pct + '</span></div>';
+    }).join('') || '<p class="meta">sem dados</p>';
+  }
+
+  function table(el, cols, rows){
+    var head = '<tr>' + cols.map(function(c){ return '<th class="' + (c.num?'num':'') + '">' + c.t + '</th>'; }).join('') + '</tr>';
+    var body = rows.map(function(row){
+      return '<tr>' + cols.map(function(c){
+        var v = c.f ? c.f(row) : row[c.k];
+        return '<td class="' + (c.num?'num':'') + '">' + (v==null?'':v) + '</td>';
+      }).join('') + '</tr>';
+    }).join('');
+    el.innerHTML = head + body || head + '<tr><td colspan="' + cols.length + '" class="meta">sem dados</td></tr>';
+  }
+
+  function load(){
+    $('reload').disabled = true;
+    $('meta').textContent = 'atualizando…';
+    Promise.all([
+      api('v_kpis_30d'), api('v_eventos_por_dia'), api('v_rolagem'),
+      api('v_videos'), api('v_referrers'), api('v_recentes')
+    ]).then(function(res){
+      var k = res[0][0] || {};
+      renderKpis(k);
+      renderDia(res[1]);
+      renderRolagem(res[2], k.pageviews);
+      table($('videos'),
+        [{t:'Vídeo',k:'video'},{t:'Posição',k:'posicao'},{t:'Plays',k:'plays',num:1},
+         {t:'25%',k:'p25',num:1},{t:'50%',k:'p50',num:1},{t:'75%',k:'p75',num:1},
+         {t:'95%',k:'p95',num:1},{t:'Fim',k:'completes',num:1}], res[3]);
+      table($('referrers'),
+        [{t:'Origem',k:'origem'},{t:'Sessões',k:'sessoes',num:1}], res[4]);
+      table($('recentes'),
+        [{t:'Quando',f:function(r){ return new Date(r.created_at).toLocaleString('pt-BR'); }},
+         {t:'Evento',k:'event'},
+         {t:'Detalhe',f:function(r){ return r.props ? JSON.stringify(r.props) : ''; }},
+         {t:'Página',k:'path'},{t:'Origem',k:'origem'}], res[5]);
+      $('meta').textContent = 'atualizado ' + new Date().toLocaleTimeString('pt-BR') + ' · janela de 30 dias';
+    }).catch(function(e){
+      $('meta').innerHTML = '<span class="erro">erro: ' + e.message + '</span>';
+    }).finally(function(){ $('reload').disabled = false; });
+  }
+
+  $('reload').addEventListener('click', load);
+  load();
+  setInterval(load, 60000);
+})();
+</script>
+</body>
+</html>
