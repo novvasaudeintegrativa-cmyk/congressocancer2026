@@ -323,16 +323,20 @@
   }
   .moderno .container{display:flex;justify-content:flex-end;}
   .moderno-card{
-    width:min(56%, 620px);
+    width:min(42%, 480px);
+    aspect-ratio:3 / 4;            /* card mais vertical que horizontal */
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
     border:2px solid var(--vermelho-vivo);
     border-radius:20px;
-    padding:var(--space-lg) var(--space-xl);
+    padding:var(--space-xl);
     background:rgba(18,2,4,0.9);
     box-shadow:0 0 40px rgba(185,45,61,0.3), 0 30px 70px rgba(0,0,0,0.5);
   }
   @media (max-width:900px){
     .moderno .container{justify-content:center;}
-    .moderno-card{width:100%;}
+    .moderno-card{width:100%;aspect-ratio:auto;}
   }
   .moderno-card h2{
     font-size:var(--text-body-5);
