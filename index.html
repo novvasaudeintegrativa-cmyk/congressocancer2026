@@ -2128,7 +2128,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
   (function(){
     var ANALYTICS = {
       url: 'https://nbhekjgbszyuuxrynzfo.supabase.co/functions/v1/collect',  /* Edge Function: geo por IP + insert */
-      key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iaGVramdic3p5dXV4cnluemZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzM0MDUsImV4cCI6MjA5MjMwOTQwNX0.d8f346ONCOHjr__C8RLmSJOFW0kZfqFkCGHmotwxiXc'  /* anon — publica por design */
+      key: 'sb_publishable_9tkMSyKBf4J_LS2dDfBcCQ_FnktHUhL'  /* publishable — publica por design */
     };
 
     /* id anonimo por navegador (sem PII) + id de sessao */
@@ -2171,9 +2171,9 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         var headers = {
           'Content-Type': 'application/json',
           'apikey': ANALYTICS.key,
+          'Authorization': 'Bearer ' + ANALYTICS.key,
           'Prefer': 'return=minimal'
         };
-        if (/^eyJ/.test(ANALYTICS.key)) headers['Authorization'] = 'Bearer ' + ANALYTICS.key;
         fetch(ANALYTICS.url, {
           method: 'POST',
           keepalive: true,
