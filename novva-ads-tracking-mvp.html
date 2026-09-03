@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Novva ADS Tracking — MVP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  @font-face{
+    font-family:'League Spartan';
+    src:url('Fonts/LeagueSpartan-Bold.otf') format('opentype');
+    font-weight:400 900; font-style:normal; font-display:swap;
+  }
+  :root{
+    --preto:#0a0505;
+    --bordo-escuro:#2b0b0e;
+    --vermelho:#8a222e;
+    --vermelho-vivo:#b92d3d;
+    --laranja:#ff6a00;
+    --laranja-escuro:#e85d00;
+    --dourado:#f2c744;
+    --verde:#1f9d55;
+    --texto:#fff;
+    --texto-suave:rgba(255,255,255,.74);
+    --texto-fraco:rgba(255,255,255,.46);
+    --borda-card:rgba(217,53,72,.55);
+    --card:rgba(139,34,46,.12);
+    --fonte-titulo:'League Spartan','Baloo 2','Segoe UI',sans-serif;
+    --fonte-corpo:'Roboto','Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(184,45,61,.35), transparent 55%),
+      linear-gradient(180deg,#3C0101 0%, #170608 42%, #0a0505 100%);
+    background-attachment:fixed;
+    color:var(--texto);
+    font-family:var(--fonte-corpo);
+    line-height:1.5;
+  }
+  .app{max-width:468px;margin:0 auto;padding:20px 16px 44px;}
+
+  .topo{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .topo .dia{font-size:11px;color:var(--texto-fraco);letter-spacing:.05em;margin:0 0 3px;text-transform:capitalize;}
+  .topo h1{font-family:var(--fonte-titulo);font-size:19px;font-weight:800;margin:0;letter-spacing:.04em;text-transform:uppercase;}
+  .topo button{
+    width:38px;height:38px;border-radius:50%;flex-shrink:0;
+    background:var(--card);border:1px solid var(--borda-card);color:var(--texto-suave);
+    font-size:16px;cursor:pointer;
+  }
+  .topo button:disabled{opacity:.5;}
+
+  .hero{
+    background:linear-gradient(160deg, var(--vermelho-vivo), var(--bordo-escuro));
+    border:1px solid var(--borda-card);
+    border-radius:20px;padding:20px;margin-bottom:14px;
+    box-shadow:0 20px 45px rgba(0,0,0,.4);
+  }
+  .hero .label{font-size:12.5px;color:rgba(255,255,255,.82);margin:0 0 4px;text-transform:uppercase;letter-spacing:.05em;}
+  .hero .numero{font-family:var(--fonte-titulo);font-size:40px;font-weight:800;margin:0;line-height:1;}
+  .hero .delta{font-size:12.5px;font-weight:700;margin:8px 0 0;color:var(--dourado);}
+  .hero .delta.neg{color:#ffb4b4;}
+  .acoes{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+    margin-top:18px;padding-top:15px;border-top:1px solid rgba(255,255,255,.28);
+  }
+  .acao{display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;}
+  .acao .ic{
+    width:36px;height:36px;border-radius:50%;
+    background:rgba(255,255,255,.16);
+    display:flex;align-items:center;justify-content:center;font-size:15px;
+  }
+  .acao span:last-child{font-size:10.5px;color:#fff;}
+
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .kpi{background:var(--card);border:1px solid var(--borda-card);border-radius:13px;padding:13px 14px;}
+  .kpi .l{font-size:11px;color:var(--texto-suave);margin:0 0 5px;text-transform:uppercase;letter-spacing:.04em;}
+  .kpi .n{font-family:var(--fonte-titulo);font-size:22px;font-weight:800;margin:0;}
+
+  .chips{display:flex;gap:7px;margin-bottom:12px;}
+  .chips button{
+    font-family:var(--fonte-titulo);
+    padding:5px 14px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.03em;cursor:pointer;
+    background:transparent;border:1px solid var(--borda-card);color:var(--texto-suave);
+  }
+  .chips button.on{background:var(--laranja);border-color:var(--laranja);color:#fff;}
+  #spark{width:100%;margin-bottom:22px;}
+
+  section{margin-bottom:22px;scroll-margin-top:14px;}
+  .sec{font-family:var(--fonte-titulo);font-size:12px;color:var(--dourado);margin:0 0 12px;text-transform:uppercase;letter-spacing:.07em;font-weight:800;}
+
+  .linhas{display:flex;flex-direction:column;gap:9px;}
+  .linha{
+    display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:baseline;
+    background:var(--card);border:1px solid var(--borda-card);border-radius:11px;padding:10px 13px;
+  }
+  .linha .t{font-size:13px;}
+  .linha .t small{display:block;color:var(--texto-fraco);font-size:11px;margin-top:1px;}
+  .linha .v{font-family:var(--fonte-titulo);font-weight:800;font-size:15px;text-align:right;}
+  .linha .pct{color:var(--dourado);font-size:11.5px;font-weight:700;}
+  .barra{grid-column:1/-1;height:5px;border-radius:3px;background:rgba(255,255,255,.10);overflow:hidden;margin-top:3px;}
+  .barra i{display:block;height:100%;background:linear-gradient(90deg,var(--vermelho-vivo),var(--laranja));}
+
+  .evento{display:flex;align-items:center;gap:11px;padding:10px 2px;border-bottom:1px solid rgba(255,255,255,.07);}
+  .evento:last-child{border-bottom:none;}
+  .evento .ic{
+    width:32px;height:32px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:14px;
+    background:rgba(255,255,255,.08);color:var(--texto-suave);
+  }
+  .evento .ic.checkout{background:rgba(255,106,0,.16);color:var(--laranja);}
+  .evento .ic.whats{background:rgba(31,157,85,.16);color:#5fd999;}
+  .evento .ic.video{background:rgba(242,199,68,.14);color:var(--dourado);}
+  .evento .info{flex:1;min-width:0;}
+  .evento .info p{margin:0;font-size:13px;}
+  .evento .info span{font-size:11px;color:var(--texto-fraco);}
+  .evento .hora{font-size:11px;color:var(--texto-fraco);flex-shrink:0;}
+
+  .vazio{color:var(--texto-fraco);font-size:12.5px;}
+  .rodape{color:var(--texto-fraco);font-size:11px;text-align:center;margin:26px 0 0;}
+  .erro{color:#ff9a9a;}
+  code{background:rgba(255,255,255,.10);padding:1px 5px;border-radius:4px;font-size:11px;}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="topo">
+    <div>
+      <p class="dia" id="dia">—</p>
+      <h1>Novva ADS Tracking</h1>
+    </div>
+    <button id="reload" type="button" title="Atualizar">&#8635;</button>
+  </div>
+
+  <div class="hero">
+    <p class="label">Visitantes · 30 dias</p>
+    <p class="numero" id="hero-num">—</p>
+    <p class="delta" id="hero-delta"></p>
+    <div class="acoes">
+      <a class="acao" href="#funil"><span class="ic">📊</span><span>funil</span></a>
+      <a class="acao" href="#campanhas"><span class="ic">🎯</span><span>campanhas</span></a>
+      <a class="acao" href="#videos"><span class="ic">▶</span><span>vídeos</span></a>
+      <a class="acao" href="#recentes"><span class="ic">🕗</span><span>recentes</span></a>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="chips" id="chips">
+    <button type="button" data-d="7">7d</button>
+    <button type="button" data-d="30" class="on">30d</button>
+    <button type="button" data-d="90">90d</button>
+  </div>
+  <canvas id="spark" height="54"></canvas>
+
+  <section id="funil">
+    <p class="sec">Funil · profundidade da página</p>
+    <div class="linhas" id="rolagem"></div>
+  </section>
+
+  <section id="videos">
+    <p class="sec">VSL · retenção</p>
+    <div class="linhas" id="vsl"></div>
+  </section>
+
+  <section id="campanhas">
+    <p class="sec">Campanhas · UTM (30 dias)</p>
+    <div class="linhas" id="camp"></div>
+  </section>
+
+  <section id="recentes">
+    <p class="sec">Eventos recentes</p>
+    <div id="feed"></div>
+  </section>
+
+  <p class="rodape" id="meta">carregando…</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function(){
+  // ================== CONFIG (mesmos valores do index.html) ==================
+  var SUPABASE_URL = 'https://nbhekjgbszyuuxrynzfo.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iaGVramdic3p5dXV4cnluemZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzM0MDUsImV4cCI6MjA5MjMwOTQwNX0.d8f346ONCOHjr__C8RLmSJOFW0kZfqFkCGHmotwxiXc';
+  // =========================================================================
+
+  var $ = function(id){ return document.getElementById(id); };
+  var fmt = function(n){ return (n==null?0:n).toLocaleString('pt-BR'); };
+  var pctTxt = function(n, base){ return base ? Math.round(n/base*100) + '%' : '—'; };
+
+  function api(view){
+    var h = { apikey: SUPABASE_KEY };
+    if (/^eyJ/.test(SUPABASE_KEY)) h.Authorization = 'Bearer ' + SUPABASE_KEY;
+    return fetch(SUPABASE_URL + '/rest/v1/' + view, { headers: h })
+      .then(function(r){ if(!r.ok) throw new Error(view + ' → ' + r.status); return r.json(); });
+  }
+
+  $('dia').textContent = new Date().toLocaleDateString('pt-BR', { weekday:'long' });
+
+  var chart, diaRows = [], diaDays = 30;
+
+  function renderKpis(k){
+    var items = [
+      ['Checkouts', k.initiate_checkout], ['WhatsApp', k.contatos_whatsapp],
+      ['Page views', k.pageviews], ['Video plays', k.video_plays]
+    ];
+    $('kpis').innerHTML = items.map(function(it){
+      return '<div class="kpi"><p class="l">' + it[0] + '</p><p class="n">' + fmt(it[1]) + '</p></div>';
+    }).join('');
+  }
+
+  // delta: PageView dos ultimos 7 dias cheios vs 7 anteriores
+  function heroDelta(rows){
+    var hoje = new Date(); hoje.setHours(0,0,0,0);
+    function ymd(d){ return d.toISOString().slice(0,10); }
+    var lim = {};
+    [1,7,14].forEach(function(n){ var d = new Date(hoje); d.setDate(d.getDate()-n); lim[n] = ymd(d); });
+    var a = 0, b = 0;
+    rows.forEach(function(r){
+      if (r.event !== 'PageView') return;
+      if (r.dia >= lim[7] && r.dia < lim[1]) a += r.total;      // 7d recentes
+      else if (r.dia >= lim[14] && r.dia < lim[7]) b += r.total; // 7d anteriores
+    });
+    var el = $('hero-delta');
+    if (!b){ el.textContent = ''; return; }
+    var d = Math.round((a - b) / b * 100);
+    el.textContent = (d >= 0 ? '+' : '') + d + '% vs. 7 dias anteriores';
+    el.classList.toggle('neg', d < 0);
+  }
+
+  function linha(titulo, sub, valor, pct, barW){
+    return '<div class="linha">' +
+      '<div class="t">' + titulo + (sub ? '<small>' + sub + '</small>' : '') + '</div>' +
+      '<div class="v">' + valor + (pct != null ? ' <span class="pct">' + pct + '</span>' : '') + '</div>' +
+      (barW != null ? '<div class="barra"><i style="width:' + barW + '%"></i></div>' : '') +
+    '</div>';
+  }
+
+  function renderRolagem(rows, pageviews){
+    var by = {}; rows.forEach(function(r){ by[r.percent] = r.total; });
+    var base = pageviews || 0;
+    var html = linha('Abriram a página', null, fmt(base), '100%', 100);
+    [25,50,75,90].forEach(function(p){
+      var n = by[p] || 0;
+      html += linha('Rolaram ' + p + '%', null, fmt(n), pctTxt(n, base), base ? n/base*100 : 0);
+    });
+    $('rolagem').innerHTML = html;
+  }
+
+  function somaVsl(rows){
+    var acc = { plays:0, p25:0, p50:0, p75:0, p95:0, completes:0 }, achou = false;
+    rows.forEach(function(r){
+      if ((r.posicao || '').toLowerCase() !== 'vsl') return;
+      achou = true;
+      ['plays','p25','p50','p75','p95','completes'].forEach(function(kk){ acc[kk] += (r[kk] || 0); });
+    });
+    return achou ? acc : null;
+  }
+  function somaTodos(rows){
+    var acc = { plays:0, p25:0, p50:0, p75:0, p95:0, completes:0 };
+    rows.forEach(function(r){
+      ['plays','p25','p50','p75','p95','completes'].forEach(function(kk){ acc[kk] += (r[kk] || 0); });
+    });
+    return acc;
+  }
+  function renderVsl(videoRows){
+    var v = somaVsl(videoRows), rotulo = 'VSL';
+    if (!v || !v.plays){ v = somaTodos(videoRows); rotulo = 'todos os vídeos'; }
+    if (!v.plays){ $('vsl').innerHTML = '<p class="vazio">Sem plays de vídeo ainda.</p>'; return; }
+    $('videos').querySelector('.sec').textContent = 'Retenção · ' + rotulo;
+    var etapas = [['Deram play', v.plays], ['25%', v.p25], ['50%', v.p50], ['75%', v.p75], ['95%', v.p95], ['Concluíram', v.completes]];
+    $('vsl').innerHTML = etapas.map(function(e){
+      return linha(e[0], null, fmt(e[1]), pctTxt(e[1], v.plays), v.plays ? e[1]/v.plays*100 : 0);
+    }).join('');
+  }
+
+  function renderCamp(rows){
+    if (!rows || !rows.length){
+      $('camp').innerHTML = '<p class="vazio">Sem tráfego com <code>?utm_*</code> ainda. Aparece quando as campanhas começarem.</p>';
+      return;
+    }
+    $('camp').innerHTML = rows.slice(0, 6).map(function(r){
+      var sub = [r.source, r.medium].filter(function(x){ return x && x.indexOf('(sem') !== 0; }).join(' · ');
+      return linha(r.campaign || '(sem campaign)', sub, fmt(r.sessoes) + ' sess.', r.checkouts ? r.checkouts + ' chk' : null);
+    }).join('');
+  }
+
+  function iconeEvento(ev){
+    if (ev === 'Contact') return ['whats', '💬'];
+    if (ev === 'InitiateCheckout') return ['checkout', '🛒'];
+    if (ev.indexOf('Video') === 0) return ['video', '▶'];
+    if (ev === 'PageView') return ['', '👁'];
+    if (ev === 'ScrollDepth') return ['', '↧'];
+    if (ev === 'TimeOnPage') return ['', '⏱'];
+    return ['', '•'];
+  }
+  function rotuloEvento(r){
+    var p = r.props || {};
+    if (r.event === 'ScrollDepth') return 'Rolou ' + (p.percent||'?') + '%';
+    if (r.event === 'TimeOnPage') return (p.seconds||'?') + 's na página';
+    if (r.event === 'VideoPlay') return 'Play — ' + (p.video_title || p.placement || 'vídeo');
+    if (r.event === 'VideoProgress') return (p.percent||'?') + '% — ' + (p.video_title || p.placement || 'vídeo');
+    if (r.event === 'VideoComplete') return 'Vídeo concluído — ' + (p.video_title || p.placement || '');
+    if (r.event === 'InitiateCheckout') return 'Initiate checkout' + (p.content_name ? ' — ' + p.content_name : '');
+    if (r.event === 'Contact') return 'Contato WhatsApp';
+    if (r.event === 'PageView') return 'Page view';
+    return r.event;
+  }
+  function renderFeed(rows){
+    if (!rows || !rows.length){ $('feed').innerHTML = '<p class="vazio">Sem eventos ainda.</p>'; return; }
+    $('feed').innerHTML = rows.slice(0, 25).map(function(r){
+      var ic = iconeEvento(r.event);
+      var sub = r.utm_campaign ? 'Campanha · ' + r.utm_campaign
+              : (r.origem && r.origem !== '(direto)' ? r.origem : (r.device || ''));
+      var hora = new Date(r.created_at).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+      return '<div class="evento"><div class="ic ' + ic[0] + '">' + ic[1] + '</div>' +
+        '<div class="info"><p>' + rotuloEvento(r) + '</p><span>' + sub + '</span></div>' +
+        '<div class="hora">' + hora + '</div></div>';
+    }).join('');
+  }
+
+  function renderSpark(rows, days){
+    diaRows = rows || diaRows;
+    diaDays = days || diaDays;
+    var corte = new Date(); corte.setDate(corte.getDate() - (diaDays - 1));
+    var corteStr = corte.toISOString().slice(0,10);
+    var porDia = {};
+    diaRows.forEach(function(r){
+      if (r.event !== 'PageView' || r.dia < corteStr) return;
+      porDia[r.dia] = (porDia[r.dia] || 0) + r.total;
+    });
+    var dias = Object.keys(porDia).sort();
+    var data = {
+      labels: dias.map(function(d){ return d.slice(8,10) + '/' + d.slice(5,7); }),
+      datasets: [{ data: dias.map(function(d){ return porDia[d]; }),
+        borderColor:'#ff6a00', backgroundColor:'rgba(255,106,0,.18)', fill:true,
+        tension:.35, pointRadius:0, borderWidth:2 }]
+    };
+    var opts = { responsive:true, maintainAspectRatio:true,
+      plugins:{ legend:{ display:false }, tooltip:{ enabled:true } },
+      scales:{ x:{ ticks:{ color:'#c9a9ac', maxTicksLimit:6, maxRotation:0 }, grid:{ display:false } },
+               y:{ beginAtZero:true, ticks:{ color:'#c9a9ac', precision:0, maxTicksLimit:4 }, grid:{ color:'rgba(255,255,255,.06)' } } } };
+    if (chart) chart.destroy();
+    chart = new Chart($('spark'), { type:'line', data:data, options:opts });
+  }
+
+  function load(){
+    $('reload').disabled = true;
+    $('meta').textContent = 'atualizando…';
+    Promise.all([
+      api('v_kpis_30d'), api('v_eventos_por_dia'), api('v_rolagem'),
+      api('v_videos'), api('v_recentes'),
+      api('v_campanhas').catch(function(){ return []; })
+    ]).then(function(res){
+      var k = res[0][0] || {};
+      $('hero-num').textContent = fmt(k.visitantes);
+      heroDelta(res[1]);
+      renderKpis(k);
+      renderSpark(res[1], diaDays);
+      renderRolagem(res[2], k.pageviews);
+      renderVsl(res[3]);
+      renderFeed(res[4]);
+      renderCamp(res[5]);
+      $('meta').textContent = 'atualizado ' + new Date().toLocaleTimeString('pt-BR') + ' · janela de 30 dias';
+    }).catch(function(e){
+      $('meta').innerHTML = '<span class="erro">erro: ' + e.message + ' — configurou o Supabase e rodou o SUPABASE.md?</span>';
+    }).finally(function(){ $('reload').disabled = false; });
+  }
+
+  $('reload').addEventListener('click', load);
+  $('chips').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    Array.prototype.forEach.call(this.children, function(c){ c.classList.toggle('on', c === b); });
+    renderSpark(null, parseInt(b.dataset.d, 10));
+  });
+  load();
+  setInterval(load, 60000);
+})();
+</script>
+
+</body>
+</html>

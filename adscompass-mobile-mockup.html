@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AdsCompass — mockup mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --laranja: #ff6a00;
+    --laranja-escuro: #e85d00;
+    --preto: #0a0505;
+    --fundo: #f4f2ee;
+    --card: #ffffff;
+    --texto: #16110f;
+    --texto-suave: #6b625d;
+    --texto-fraco: #a49a94;
+    --borda: #ece7e1;
+    --verde: #1f9d55;
+    --fonte-titulo: 'Baloo 2', 'Segoe UI', sans-serif;
+    --fonte-corpo: 'Roboto', 'Segoe UI', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--fundo);
+    color:var(--texto);
+    font-family:var(--fonte-corpo);
+    display:flex;
+    justify-content:center;
+    padding:40px 16px;
+  }
+  .tela{
+    width:100%;
+    max-width:360px;
+    background:var(--fundo);
+  }
+  .topo{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:20px;
+  }
+  .topo .dia{
+    font-size:11px;
+    color:var(--texto-fraco);
+    letter-spacing:0.04em;
+    margin:0 0 2px;
+  }
+  .topo h1{
+    font-family:var(--fonte-titulo);
+    font-size:21px;
+    font-weight:700;
+    margin:0;
+  }
+  .avatar{
+    width:36px;height:36px;border-radius:50%;
+    background:var(--card);
+    border:1px solid var(--borda);
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  .cartao-principal{
+    background:var(--laranja);
+    border-radius:18px;
+    padding:20px;
+    margin-bottom:16px;
+  }
+  .cartao-principal .label{
+    font-size:13px;color:rgba(255,255,255,0.85);margin:0 0 4px;
+  }
+  .cartao-principal .numero{
+    font-family:var(--fonte-titulo);
+    font-size:38px;font-weight:800;color:#fff;margin:0;line-height:1;
+  }
+  .cartao-principal .crescimento{
+    font-size:13px;color:#fff;font-weight:700;margin:8px 0 0;
+  }
+  .acoes{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+    margin-top:20px;padding-top:16px;
+    border-top:1px solid rgba(255,255,255,0.3);
+  }
+  .acao{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .acao .icone{
+    width:36px;height:36px;border-radius:50%;
+    background:rgba(255,255,255,0.18);
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;color:#fff;
+  }
+  .acao span{font-size:10.5px;color:#fff;}
+
+  .kpis{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;
+  }
+  .kpi{
+    background:var(--card);border-radius:12px;padding:14px;
+    border:1px solid var(--borda);
+  }
+  .kpi .l{font-size:12px;color:var(--texto-suave);margin:0 0 6px;}
+  .kpi .n{font-family:var(--fonte-titulo);font-size:22px;font-weight:700;margin:0;}
+
+  .chips{display:flex;gap:8px;margin-bottom:18px;}
+  .chip{
+    padding:6px 14px;border-radius:999px;font-size:12px;border:1px solid var(--borda);
+    background:var(--card);color:var(--texto-suave);
+  }
+  .chip.on{background:var(--laranja);border-color:var(--laranja);color:#fff;font-weight:700;}
+
+  .secao-titulo{font-size:13px;color:var(--texto-suave);margin:0 0 10px;}
+  .evento{
+    display:flex;align-items:center;gap:12px;padding:10px 0;
+    border-bottom:1px solid var(--borda);
+  }
+  .evento:last-child{border-bottom:none;}
+  .evento .icone{
+    width:32px;height:32px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;font-size:14px;
+  }
+  .evento .icone.whatsapp{background:rgba(31,157,85,0.14);color:var(--verde);}
+  .evento .icone.checkout{background:rgba(255,106,0,0.14);color:var(--laranja);}
+  .evento .icone.video{background:var(--borda);color:var(--texto-suave);}
+  .evento .info{flex:1;min-width:0;}
+  .evento .info p{margin:0;font-size:13px;}
+  .evento .info span{font-size:11.5px;color:var(--texto-fraco);}
+  .evento .hora{font-size:11.5px;color:var(--texto-fraco);flex-shrink:0;}
+
+  .nav{
+    display:flex;justify-content:center;gap:32px;margin-top:20px;
+    padding-top:14px;border-top:1px solid var(--borda);
+  }
+  .nav .item{font-size:20px;color:var(--texto-fraco);}
+  .nav .item.on{color:var(--laranja);}
+</style>
+</head>
+<body>
+
+<div class="tela">
+
+  <div class="topo">
+    <div>
+      <p class="dia">terça-feira</p>
+      <h1>AdsCompass</h1>
+    </div>
+    <div class="avatar">👤</div>
+  </div>
+
+  <div class="cartao-principal">
+    <p class="label">Visitantes hoje</p>
+    <p class="numero" id="visitantes">1.284</p>
+    <p class="crescimento" id="crescimento">+18% vs ontem</p>
+
+    <div class="acoes">
+      <div class="acao"><div class="icone">📊</div><span>funil</span></div>
+      <div class="acao"><div class="icone">💬</div><span>contatos</span></div>
+      <div class="acao"><div class="icone">🎯</div><span>campanhas</span></div>
+      <div class="acao"><div class="icone">▶</div><span>vídeos</span></div>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi">
+      <p class="l">Checkouts</p>
+      <p class="n" id="checkouts">67</p>
+    </div>
+    <div class="kpi">
+      <p class="l">WhatsApp</p>
+      <p class="n" id="whatsapp">31</p>
+    </div>
+  </div>
+
+  <div class="chips">
+    <button class="chip on" data-range="hoje">hoje</button>
+    <button class="chip" data-range="7d">7 dias</button>
+    <button class="chip" data-range="30d">30 dias</button>
+  </div>
+
+  <p class="secao-titulo">Eventos recentes</p>
+  <div id="eventos">
+    <div class="evento">
+      <div class="icone whatsapp">💬</div>
+      <div class="info">
+        <p>Contato WhatsApp</p>
+        <span>Campanha · aniversário-vip</span>
+      </div>
+      <div class="hora">14:32</div>
+    </div>
+    <div class="evento">
+      <div class="icone checkout">🛒</div>
+      <div class="info">
+        <p>Initiate checkout</p>
+        <span>Campanha · congresso-cancer</span>
+      </div>
+      <div class="hora">14:18</div>
+    </div>
+    <div class="evento">
+      <div class="icone video">▶</div>
+      <div class="info">
+        <p>Vídeo 95% assistido</p>
+        <span>VSL · página principal</span>
+      </div>
+      <div class="hora">14:05</div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <span class="item on">⌂</span>
+    <span class="item">📊</span>
+    <span class="item">🎯</span>
+    <span class="item">⚙</span>
+  </div>
+
+</div>
+
+<script>
+  // Placeholder de interação — troca de chip de período.
+  // Ao integrar com Supabase, ligar isso à mesma lógica de `load()`
+  // já usada no novva-ads-tracking.html (troque os data fixos acima
+  // pelos valores retornados das views v_kpis_30d, v_recentes etc.)
+  document.querySelectorAll('.chip').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('on'); });
+      btn.classList.add('on');
+    });
+  });
+</script>
+
+</body>
+</html>
