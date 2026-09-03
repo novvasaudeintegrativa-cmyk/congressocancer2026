@@ -55,7 +55,10 @@ alter table public.events
   add column if not exists utm_term     text,
   add column if not exists utm_content  text,
   add column if not exists gclid        text,
-  add column if not exists fbclid       text;
+  add column if not exists fbclid       text,
+  add column if not exists country      text,
+  add column if not exists region       text,
+  add column if not exists city         text;
 
 -- o site agora manda `device` (mobile/tablet/desktop) no lugar do user agent
 alter table public.events drop column if exists ua;
@@ -220,8 +223,71 @@ grant select on public.v_kpis_30d, public.v_eventos_por_dia, public.v_eventos_po
                 public.v_campanhas, public.v_recentes
   to anon;
 
+-- ========== RPC do painel (novva-ads-tracking-mvp.html) ==========
+-- Um unico endpoint que devolve TODOS os blocos do painel para um
+-- intervalo de datas. O painel chama POST /rest/v1/rpc/rpc_dashboard
+-- com { "d_from": "YYYY-MM-DD", "d_to": "YYYY-MM-DD" } e os botoes de
+-- periodo (Hoje / 7 / 14 / 30 / 45 / 60 / 90) so mudam essas datas.
+create or replace function public.rpc_dashboard(d_from date, d_to date)
+returns json language sql stable as $$
+  with base as (
+    select * from public.events
+    where (created_at at time zone 'America/Sao_Paulo')::date between d_from and d_to
+  )
+  select json_build_object(
+    'kpis', (select json_build_object(
+        'pageviews',       count(*) filter (where event = 'PageView'),
+        'sessoes',         count(distinct session_id),
+        'visitantes',      count(distinct visitor_id),
+        'checkouts',       count(*) filter (where event = 'InitiateCheckout'),
+        'whatsapp',        count(*) filter (where event = 'Contact'),
+        'video_plays',     count(*) filter (where event = 'VideoPlay'),
+        'video_completes', count(*) filter (where event = 'VideoComplete')
+      ) from base),
+    'pv_daily', (select coalesce(json_agg(t order by t.dia), '[]'::json) from (
+        select (created_at at time zone 'America/Sao_Paulo')::date as dia, count(*) as total
+        from base where event = 'PageView' group by 1) t),
+    'by_hour', (select coalesce(json_agg(t order by t.hora), '[]'::json) from (
+        select extract(hour from (created_at at time zone 'America/Sao_Paulo'))::int as hora,
+               count(*) as total
+        from base group by 1) t),
+    'funnel', (select coalesce(json_agg(t order by t.percent), '[]'::json) from (
+        select (props->>'percent')::int as percent, count(*) as total
+        from base where event = 'ScrollDepth' group by 1) t),
+    'vsl', (select json_build_object(
+        'plays',     count(*) filter (where event = 'VideoPlay'     and lower(coalesce(props->>'placement','')) = 'vsl'),
+        'p25',       count(*) filter (where event = 'VideoProgress' and lower(coalesce(props->>'placement','')) = 'vsl' and (props->>'percent')::int = 25),
+        'p50',       count(*) filter (where event = 'VideoProgress' and lower(coalesce(props->>'placement','')) = 'vsl' and (props->>'percent')::int = 50),
+        'p75',       count(*) filter (where event = 'VideoProgress' and lower(coalesce(props->>'placement','')) = 'vsl' and (props->>'percent')::int = 75),
+        'p95',       count(*) filter (where event = 'VideoProgress' and lower(coalesce(props->>'placement','')) = 'vsl' and (props->>'percent')::int = 95),
+        'completes', count(*) filter (where event = 'VideoComplete' and lower(coalesce(props->>'placement','')) = 'vsl')
+      ) from base),
+    'campaigns', (select coalesce(json_agg(t order by t.sessoes desc), '[]'::json) from (
+        select coalesce(utm_campaign, '(sem campaign)') as campaign,
+               coalesce(utm_source, '')                 as source,
+               coalesce(utm_medium, '')                 as medium,
+               count(distinct session_id)               as sessoes,
+               count(*) filter (where event = 'InitiateCheckout') as checkouts
+        from base
+        where utm_source is not null or utm_medium is not null or utm_campaign is not null
+        group by 1, 2, 3 limit 12) t),
+    'geo', (select coalesce(json_agg(t order by t.sessoes desc), '[]'::json) from (
+        select coalesce(nullif(trim(coalesce(region,'') || case when city is not null then ' · ' || city else '' end), ''), '(sem local)') as local,
+               count(distinct session_id) as sessoes
+        from base group by 1 limit 10) t)
+  );
+$$;
+
+grant execute on function public.rpc_dashboard(date, date) to anon;
+
 notify pgrst, 'reload schema';
 ```
+
+> **Geo (Localização):** as colunas `country / region / city` já existem mas
+> ficam vazias — o coletor atual não captura IP. Para popular, o caminho é
+> uma **Supabase Edge Function** que recebe o evento, lê o IP da requisição,
+> resolve país/estado/cidade e insere. Enquanto isso o painel mostra
+> "sem dados de localização".
 
 ## 3. Pegar as credenciais
 
