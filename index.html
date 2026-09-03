@@ -321,6 +321,10 @@
     background-position:center, center, left center;
     background-size:cover, cover, cover;
   }
+  @media (min-width:901px){
+    /* No desktop a foto de fundo fica menor (encaixada pela altura). */
+    .moderno{background-size:cover, cover, auto 70%;}
+  }
   .moderno .container{display:flex;justify-content:flex-end;}
   .moderno-card{
     width:min(42%, 480px);
