@@ -5,43 +5,116 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Painel de Eventos — Congresso Câncer 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap" rel="stylesheet">
 <style>
+  @font-face{
+    font-family: 'League Spartan';
+    src: url('Fonts/LeagueSpartan-Bold.otf') format('opentype');
+    font-weight: 400 900;
+    font-style: normal;
+    font-display: swap;
+  }
   :root{
-    --bg:#140406; --bg-2:#1c0709; --card:#22090c; --linha:rgba(217,53,72,0.30);
-    --texto:#fff; --suave:rgba(255,255,255,0.72); --fraco:rgba(255,255,255,0.45);
-    --vermelho:#b92d3d; --laranja:#ff6a00; --dourado:#f2c744; --verde:#1f9d55;
-    --fonte:'Segoe UI',system-ui,sans-serif;
+    --preto: #0a0505;
+    --bordo-escuro: #2b0b0e;
+    --vermelho: #8a222e;
+    --vermelho-vivo: #b92d3d;
+    --laranja: #ff6a00;
+    --laranja-escuro: #e85d00;
+    --dourado: #f2c744;
+    --verde: #1f9d55;
+    --branco: #ffffff;
+    --texto-suave: rgba(255,255,255,0.78);
+    --texto-fraco: rgba(255,255,255,0.55);
+    --borda-card: rgba(217,53,72,0.55);
+    --fonte-titulo: 'League Spartan', 'Baloo 2', 'Segoe UI', sans-serif;
+    --fonte-corpo: 'Roboto', 'Segoe UI', sans-serif;
+    --radius: 18px;
+    --space-sm: 13px;
+    --space-md: 21px;
+    --space-lg: 34px;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--texto);font-family:var(--fonte);line-height:1.5;}
-  header{padding:22px 24px;border-bottom:1px solid var(--linha);display:flex;flex-wrap:wrap;gap:12px 20px;align-items:baseline;justify-content:space-between;}
-  header h1{font-size:19px;margin:0;font-weight:800;letter-spacing:.01em;}
-  header .meta{font-size:13px;color:var(--fraco);}
-  header button{background:var(--laranja);color:#fff;border:0;border-radius:9px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px;}
-  header button:disabled{opacity:.5;cursor:default;}
-  main{padding:24px;max-width:1180px;margin:0 auto;}
-  .aviso{background:rgba(242,199,68,.10);border:1px dashed rgba(242,199,68,.5);color:var(--dourado);
-    padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:22px;}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:26px;}
-  .kpi{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:16px 18px;}
-  .kpi .n{font-size:26px;font-weight:800;}
-  .kpi .l{font-size:12px;color:var(--suave);text-transform:uppercase;letter-spacing:.04em;margin-top:4px;}
-  section{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:18px 20px;margin-bottom:22px;}
-  section h2{font-size:14px;margin:0 0 14px;text-transform:uppercase;letter-spacing:.05em;color:var(--suave);}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(184,45,61,0.35), transparent 60%),
+      linear-gradient(180deg,#3C0101 0%, #170608 45%, #0a0505 100%);
+    background-attachment:fixed;
+    color:var(--branco);
+    font-family:var(--fonte-corpo);
+    line-height:1.55;
+  }
+  h1,h2{font-family:var(--fonte-titulo);margin:0;line-height:1.15;}
+
+  header{
+    position:sticky; top:0; z-index:5;
+    display:flex; flex-wrap:wrap; gap:12px 22px; align-items:baseline; justify-content:space-between;
+    padding:20px 24px;
+    background:rgba(18,2,4,0.82);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--borda-card);
+  }
+  header h1{font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;}
+  header .meta{font-size:12px;color:var(--texto-fraco);margin-top:4px;letter-spacing:0.02em;}
+  header button{
+    font-family:var(--fonte-titulo);
+    background:var(--laranja); color:#fff; border:0; border-radius:12px;
+    padding:10px 22px; font-weight:700; font-size:13px; letter-spacing:0.04em; text-transform:uppercase;
+    cursor:pointer; box-shadow:0 10px 30px rgba(255,106,0,0.35);
+  }
+  header button:hover{background:var(--laranja-escuro);}
+  header button:disabled{opacity:.5;cursor:default;box-shadow:none;}
+
+  main{padding:32px 24px 64px;max-width:1180px;margin:0 auto;}
+
+  .aviso{
+    background:rgba(242,199,68,0.10);
+    border:1px dashed rgba(242,199,68,0.55);
+    color:var(--dourado);
+    padding:14px 18px; border-radius:12px; font-size:13.5px; margin-bottom:26px;
+  }
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:16px;margin-bottom:30px;}
+  .kpi{
+    background:linear-gradient(160deg, rgba(185,45,61,0.18), rgba(43,11,14,0.35));
+    border:1.5px solid var(--borda-card);
+    border-radius:var(--radius);
+    padding:18px 20px;
+  }
+  .kpi .n{font-family:var(--fonte-titulo);font-size:30px;font-weight:800;line-height:1;}
+  .kpi .l{font-size:11.5px;color:var(--texto-suave);text-transform:uppercase;letter-spacing:0.06em;margin-top:8px;}
+
+  section{
+    background:rgba(139,34,46,0.10);
+    border:1.5px solid var(--borda-card);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    margin-bottom:24px;
+  }
+  section h2{
+    font-size:14px;margin:0 0 16px;text-transform:uppercase;letter-spacing:0.08em;
+    color:var(--dourado);font-weight:800;
+  }
   canvas{max-width:100%;}
+
   table{width:100%;border-collapse:collapse;font-size:13px;}
-  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top;}
-  th{color:var(--fraco);font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:.04em;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.07);vertical-align:top;}
+  th{color:var(--texto-fraco);font-weight:600;text-transform:uppercase;font-size:10.5px;letter-spacing:0.05em;}
+  tbody tr:hover{background:rgba(255,255,255,.03);}
   td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}
-  .bar-row{display:grid;grid-template-columns:60px 1fr 70px;gap:10px;align-items:center;margin:6px 0;font-size:13px;}
-  .bar{height:16px;background:linear-gradient(90deg,var(--vermelho),var(--laranja));border-radius:4px;min-width:2px;}
+
+  .bar-row{display:grid;grid-template-columns:56px 1fr 84px;gap:12px;align-items:center;margin:8px 0;font-size:13px;}
+  .bar-row span:first-child{font-family:var(--fonte-titulo);font-weight:700;color:var(--texto-suave);}
+  .bar{height:16px;background:linear-gradient(90deg,var(--vermelho-vivo),var(--laranja));border-radius:5px;min-width:2px;}
+  .bar-row span:last-child{color:var(--texto-suave);text-align:right;}
+
   .scroll-x{overflow-x:auto;}
   .erro{color:#ff8a8a;}
-  code{background:rgba(255,255,255,.08);padding:1px 6px;border-radius:5px;font-size:12px;}
-  @media (prefers-color-scheme:light){
-    :root{--bg:#faf7f7;--card:#fff;--linha:rgba(0,0,0,.12);--texto:#1a1113;--suave:#5b4b4d;--fraco:#8a7a7c;}
-    .bar{opacity:.9;}
-  }
+  .vazio{color:var(--texto-fraco);}
+  code{background:rgba(255,255,255,.10);padding:1px 6px;border-radius:5px;font-size:12px;}
 </style>
 </head>
 <body>
@@ -56,7 +129,7 @@
 <main>
   <div class="aviso" id="config-aviso" hidden>
     Configure <code>SUPABASE_URL</code> e <code>SUPABASE_KEY</code> no topo deste arquivo
-    (a mesma anon key usada no <code>index.html</code>) e rode o <code>supabase-setup.sql</code> no projeto.
+    (a mesma anon key usada no <code>index.html</code>) e rode o <code>SUPABASE.md</code> no projeto.
   </div>
 
   <div class="kpis" id="kpis"></div>
@@ -139,9 +212,9 @@
       })
     };
     var opts = { responsive:true, interaction:{mode:'index',intersect:false},
-      scales:{ x:{ ticks:{ color:'#999', maxTicksLimit:10 }, grid:{ color:'rgba(255,255,255,.05)' } },
-               y:{ beginAtZero:true, ticks:{ color:'#999' }, grid:{ color:'rgba(255,255,255,.05)' } } },
-      plugins:{ legend:{ labels:{ color:'#bbb' } } } };
+      scales:{ x:{ ticks:{ color:'#c9a9ac', maxTicksLimit:10 }, grid:{ color:'rgba(255,255,255,.06)' } },
+               y:{ beginAtZero:true, ticks:{ color:'#c9a9ac' }, grid:{ color:'rgba(255,255,255,.06)' } } },
+      plugins:{ legend:{ labels:{ color:'#e8d5d7' } } } };
     if (chart) chart.destroy();
     chart = new Chart($('chart-dia'), { type:'line', data:data, options:opts });
   }
@@ -154,7 +227,7 @@
       return '<div class="bar-row"><span>' + r.percent + '%</span>' +
              '<span class="bar" style="width:' + w + '%"></span>' +
              '<span>' + fmt(r.total) + pct + '</span></div>';
-    }).join('') || '<p class="meta">sem dados</p>';
+    }).join('') || '<p class="vazio">sem dados</p>';
   }
 
   function table(el, cols, rows){
@@ -165,7 +238,7 @@
         return '<td class="' + (c.num?'num':'') + '">' + (v==null?'':v) + '</td>';
       }).join('') + '</tr>';
     }).join('');
-    el.innerHTML = head + body || head + '<tr><td colspan="' + cols.length + '" class="meta">sem dados</td></tr>';
+    el.innerHTML = head + (body || '<tr><td colspan="' + cols.length + '" class="vazio">sem dados</td></tr>');
   }
 
   function load(){
