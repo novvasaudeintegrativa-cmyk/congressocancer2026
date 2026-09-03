@@ -187,6 +187,11 @@
   </section>
 
   <section>
+    <h2>Campanhas — UTM (30 dias)</h2>
+    <div class="scroll-x"><table id="campanhas"></table></div>
+  </section>
+
+  <section>
     <h2>Origens de tráfego (30 dias)</h2>
     <div class="scroll-x"><table id="referrers"></table></div>
   </section>
@@ -343,7 +348,8 @@
     $('meta').textContent = 'atualizando…';
     Promise.all([
       api('v_kpis_30d'), api('v_eventos_por_dia'), api('v_rolagem'),
-      api('v_videos'), api('v_referrers'), api('v_recentes')
+      api('v_videos'), api('v_referrers'), api('v_recentes'),
+      api('v_campanhas').catch(function(){ return []; })  /* view nova: tolera ausencia */
     ]).then(function(res){
       var k = res[0][0] || {};
       renderKpis(k);
@@ -355,6 +361,11 @@
         [{t:'Vídeo',k:'video'},{t:'Posição',k:'posicao'},{t:'Plays',k:'plays',num:1},
          {t:'25%',k:'p25',num:1},{t:'50%',k:'p50',num:1},{t:'75%',k:'p75',num:1},
          {t:'95%',k:'p95',num:1},{t:'Fim',k:'completes',num:1}], res[3]);
+      table($('campanhas'),
+        [{t:'Source',k:'source'},{t:'Medium',k:'medium'},{t:'Campaign',k:'campaign'},
+         {t:'Sessões',k:'sessoes',num:1},{t:'Page views',k:'pageviews',num:1},
+         {t:'Checkouts',k:'checkouts',num:1},{t:'Contatos',k:'contatos',num:1}],
+        res[6] || []);
       table($('referrers'),
         [{t:'Origem',k:'origem'},{t:'Sessões',k:'sessoes',num:1}], res[4]);
       table($('recentes'),

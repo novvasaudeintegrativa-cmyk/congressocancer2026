@@ -20,6 +20,10 @@ Supabase → **SQL Editor** → cole e rode o bloco abaixo. Ele cria a tabela
 `events` (só aceita INSERT anônimo via RLS) e as *views* agregadas, sem PII,
 liberadas para o painel.
 
+> Se a tabela `events` **já existe**, rode só o bloco de `alter table` da seção
+> **"UTM / campanhas"** mais abaixo + as views novas — o `create table if not
+> exists` não adiciona colunas em tabela existente.
+
 ```sql
 -- ---------- Tabela bruta ----------
 create table if not exists public.events (
@@ -32,12 +36,30 @@ create table if not exists public.events (
   path         text,
   referrer     text,
   screen_w     int,
-  ua           text
+  ua           text,
+  utm_source   text,
+  utm_medium   text,
+  utm_campaign text,
+  utm_term     text,
+  utm_content  text,
+  gclid        text,
+  fbclid       text
 );
 
-create index if not exists events_created_at_idx on public.events (created_at desc);
-create index if not exists events_event_idx      on public.events (event);
-create index if not exists events_visitor_idx    on public.events (visitor_id);
+-- ---------- UTM / campanhas (rodar sozinho se a tabela ja existia) ----------
+alter table public.events
+  add column if not exists utm_source   text,
+  add column if not exists utm_medium   text,
+  add column if not exists utm_campaign text,
+  add column if not exists utm_term     text,
+  add column if not exists utm_content  text,
+  add column if not exists gclid        text,
+  add column if not exists fbclid       text;
+
+create index if not exists events_created_at_idx   on public.events (created_at desc);
+create index if not exists events_event_idx        on public.events (event);
+create index if not exists events_visitor_idx      on public.events (visitor_id);
+create index if not exists events_utm_campaign_idx on public.events (utm_campaign);
 
 -- ---------- RLS: só INSERT pelo anon ----------
 alter table public.events enable row level security;
@@ -107,16 +129,35 @@ from public.events
 where event = 'PageView' and created_at >= now() - interval '30 days'
 group by 1 order by 2 desc limit 25;
 
+-- Campanhas por UTM (source / medium / campaign) — 30 dias
+create or replace view public.v_campanhas as
+select
+  coalesce(utm_source,   '(sem source)')   as source,
+  coalesce(utm_medium,   '(sem medium)')   as medium,
+  coalesce(utm_campaign, '(sem campaign)') as campaign,
+  count(*) filter (where event = 'PageView')         as pageviews,
+  count(distinct session_id)                         as sessoes,
+  count(*) filter (where event = 'InitiateCheckout') as checkouts,
+  count(*) filter (where event = 'Contact')          as contatos
+from public.events
+where created_at >= now() - interval '30 days'
+  and (utm_source is not null or utm_medium is not null or utm_campaign is not null
+       or gclid is not null or fbclid is not null)
+group by 1, 2, 3
+order by sessoes desc
+limit 50;
+
 create or replace view public.v_recentes as
 select created_at, event, props, path,
   coalesce(nullif(split_part(split_part(referrer, '//', 2), '/', 1), ''), '(direto)') as origem,
+  utm_source, utm_campaign,
   session_id
 from public.events
 order by created_at desc limit 200;
 
 grant select on public.v_kpis_30d, public.v_eventos_por_dia, public.v_rolagem,
                 public.v_tempo_pagina, public.v_videos, public.v_referrers,
-                public.v_recentes
+                public.v_campanhas, public.v_recentes
   to anon;
 
 notify pgrst, 'reload schema';

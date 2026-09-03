@@ -2136,6 +2136,19 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     try { sessionId = sessionStorage.getItem('cc_sid') || uid(); sessionStorage.setItem('cc_sid', sessionId); }
     catch(e){ sessionId = uid(); }
 
+    /* Atribuicao de campanha: le utm_* / gclid / fbclid da URL de entrada.
+       Se a URL atual tiver algum, sobrescreve (last-touch da sessao);
+       senao reaproveita o que ficou guardado na sessao. */
+    var CAMP_KEYS = ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','gclid','fbclid'];
+    var camp = {};
+    try {
+      var qs = new URLSearchParams(location.search);
+      var stored = JSON.parse(sessionStorage.getItem('cc_camp') || '{}');
+      var temNaUrl = CAMP_KEYS.some(function(kk){ return qs.get(kk); });
+      CAMP_KEYS.forEach(function(kk){ camp[kk] = qs.get(kk) || (temNaUrl ? null : stored[kk]) || null; });
+      if (temNaUrl) sessionStorage.setItem('cc_camp', JSON.stringify(camp));
+    } catch(e){ CAMP_KEYS.forEach(function(kk){ camp[kk] = null; }); }
+
     function sendToDB(event, props){
       if (!ANALYTICS.url || !ANALYTICS.key) return;
       try {
@@ -2157,7 +2170,14 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
             path: location.pathname + location.search,
             referrer: document.referrer || null,
             screen_w: (window.screen && screen.width) || null,
-            ua: navigator.userAgent
+            ua: navigator.userAgent,
+            utm_source: camp.utm_source,
+            utm_medium: camp.utm_medium,
+            utm_campaign: camp.utm_campaign,
+            utm_term: camp.utm_term,
+            utm_content: camp.utm_content,
+            gclid: camp.gclid,
+            fbclid: camp.fbclid
           })
         }).catch(function(){});
       } catch(e){}
