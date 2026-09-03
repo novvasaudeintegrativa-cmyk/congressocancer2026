@@ -1,7 +1,7 @@
-# Coletor de eventos — Supabase + painel.html
+# Coletor de eventos — Supabase + novva-ads-tracking.html
 
 O site manda cada evento para **dois lugares**: o Meta Pixel e um banco próprio
-(Supabase). O `painel.html` lê esse banco e mostra os números.
+(Supabase). O `novva-ads-tracking.html` lê esse banco e mostra os números.
 
 Arquivos deste `.md` **não** vão para o FTP (o deploy exclui `*.md`) — é só
 referência de setup.
@@ -138,7 +138,7 @@ problema, desde que o SQL acima tenha sido rodado como está.
 Em **dois arquivos**, no bloco de config no topo do `<script>`:
 
 - `index.html` → `var ANALYTICS = { url: 'https://xxxx.supabase.co/rest/v1/events', key: 'eyJ...' }`
-- `painel.html` → `var SUPABASE_URL = 'https://xxxx.supabase.co'` e `var SUPABASE_KEY = 'eyJ...'`
+- `novva-ads-tracking.html` → `var SUPABASE_URL = 'https://xxxx.supabase.co'` e `var SUPABASE_KEY = 'eyJ...'`
 
 Commit + push → o deploy FTP publica os dois.
 
@@ -146,7 +146,7 @@ Commit + push → o deploy FTP publica os dois.
 
 - Abrir o site, aba **Network** → deve haver `POST .../rest/v1/events` com status **201**.
 - Supabase → **Table Editor → events** → linhas aparecendo.
-- Abrir `https://SEU-DOMINIO/painel.html` → números carregando.
+- Abrir `https://SEU-DOMINIO/novva-ads-tracking.html` → números carregando.
 
 ## 6. Pendências / cuidados
 
@@ -154,7 +154,7 @@ Commit + push → o deploy FTP publica os dois.
   (ex.: apagar linhas com mais de 12–18 meses via job agendado); não guardamos IP.
 - **Bots**: o endpoint aceita INSERT anônimo — se aparecer spam, criar uma Edge
   Function com segredo + rate limit, ou filtrar por `ua` nas queries.
-- **`painel.html` é público** no domínio. Só mostra agregados (sem PII), mas
+- **`novva-ads-tracking.html` é público** no domínio. Só mostra agregados (sem PII), mas
   convém renomear para algo não óbvio (ex.: `painel-7k2x.html`) e/ou proteger
   por `.htaccess` na TurboCloud.
 - **Dashboard mais robusto** depois: Metabase (free) ou Grafana Cloud (free)
