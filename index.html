@@ -2108,109 +2108,159 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     })();
   </script>
 
-  <!-- Meta Pixel: eventos de conversao -->
-  <script>
-    (function(){
-      if (typeof fbq !== 'function') return;
-      document.querySelectorAll('a[href*="chk.eduzz.com"]').forEach(function(a){
-        a.addEventListener('click', function(){
-          fbq('track', 'InitiateCheckout', { content_name: (a.textContent || '').trim() });
-        });
-      });
-      document.querySelectorAll('a[href*="wa.me"], a[href*="api.whatsapp.com"]').forEach(function(a){
-        a.addEventListener('click', function(){
-          fbq('track', 'Contact', { content_name: 'WhatsApp' });
-        });
-      });
-    })();
-  </script>
-
-  <!-- Rastreamento: rolagem, tempo na pagina e video.
-       Videos hoje no YouTube; quando migrarem pro Vturb, chamar trackVideo()
+  <!-- ==================== RASTREAMENTO ====================
+       Cada evento vai para (1) Meta Pixel e (2) coletor proprio (Supabase).
+       Preencher ANALYTICS.url / ANALYTICS.key com o endpoint REST e a anon
+       key do projeto Supabase — a anon key e publica; a tabela `events` so
+       aceita INSERT via politica RLS. Enquanto vazio, so o Meta recebe.
+       Videos hoje no YouTube; ao migrar pro Vturb, chamar window.ccTrack()
        dos callbacks do SmartPlayer com video_provider:'vturb'. -->
   <script>
+  (function(){
+    var ANALYTICS = {
+      url: '',   /* ex.: https://xxxxxxxx.supabase.co/rest/v1/events */
+      key: ''    /* anon key (publica) */
+    };
+
+    /* id anonimo por navegador (sem PII) + id de sessao */
+    function uid(){
+      try {
+        if (crypto && crypto.randomUUID) return crypto.randomUUID();
+      } catch(e){}
+      return Date.now().toString(36) + Math.random().toString(36).slice(2);
+    }
+    var visitorId, sessionId;
+    try { visitorId = localStorage.getItem('cc_vid') || uid(); localStorage.setItem('cc_vid', visitorId); }
+    catch(e){ visitorId = uid(); }
+    try { sessionId = sessionStorage.getItem('cc_sid') || uid(); sessionStorage.setItem('cc_sid', sessionId); }
+    catch(e){ sessionId = uid(); }
+
+    function sendToDB(event, props){
+      if (!ANALYTICS.url || !ANALYTICS.key) return;
+      try {
+        fetch(ANALYTICS.url, {
+          method: 'POST',
+          keepalive: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': ANALYTICS.key,
+            'Authorization': 'Bearer ' + ANALYTICS.key,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            visitor_id: visitorId,
+            session_id: sessionId,
+            event: event,
+            props: props || {},
+            path: location.pathname + location.search,
+            referrer: document.referrer || null,
+            screen_w: (window.screen && screen.width) || null,
+            ua: navigator.userAgent
+          })
+        }).catch(function(){});
+      } catch(e){}
+    }
+
+    /* track: evento custom no Meta + coletor | trackStd: evento padrao no Meta + coletor */
+    function track(event, props){
+      if (typeof fbq === 'function') fbq('trackCustom', event, props || {});
+      sendToDB(event, props);
+    }
+    function trackStd(event, props){
+      if (typeof fbq === 'function') fbq('track', event, props || {});
+      sendToDB(event, props);
+    }
+    window.ccTrack = track;  /* hook p/ Vturb e outros players no futuro */
+
+    /* PageView tambem no coletor (o Pixel ja dispara no <head>) */
+    sendToDB('PageView', {});
+
+    /* ---- Conversao: checkout Eduzz e WhatsApp ---- */
+    document.querySelectorAll('a[href*="chk.eduzz.com"]').forEach(function(a){
+      a.addEventListener('click', function(){
+        trackStd('InitiateCheckout', { content_name: (a.textContent || '').trim() });
+      });
+    });
+    document.querySelectorAll('a[href*="wa.me"], a[href*="api.whatsapp.com"]').forEach(function(a){
+      a.addEventListener('click', function(){
+        trackStd('Contact', { content_name: 'WhatsApp' });
+      });
+    });
+
+    /* ---- Rolagem: 25/50/75/90%, uma vez cada ---- */
     (function(){
-      if (typeof fbq !== 'function') return;
+      var marks = [25, 50, 75, 90], hit = {}, timer;
+      function check(){
+        var doc = document.documentElement;
+        var scrollable = doc.scrollHeight - window.innerHeight;
+        if (scrollable <= 0) return;
+        var pct = (window.scrollY || doc.scrollTop) / scrollable * 100;
+        marks.forEach(function(m){
+          if (!hit[m] && pct >= m){ hit[m] = 1; track('ScrollDepth', { percent: m }); }
+        });
+        if (hit[90]) window.removeEventListener('scroll', onScroll);
+      }
+      function onScroll(){ clearTimeout(timer); timer = setTimeout(check, 200); }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      check();
+    })();
 
-      function trackVideo(evt, data){ fbq('trackCustom', evt, data || {}); }
+    /* ---- Tempo na pagina: 30/60/120s ---- */
+    [30, 60, 120].forEach(function(s){
+      setTimeout(function(){ track('TimeOnPage', { seconds: s }); }, s * 1000);
+    });
 
-      /* 1. Profundidade de rolagem — 25/50/75/90%, uma vez cada */
-      (function(){
-        var marks = [25, 50, 75, 90], hit = {}, timer;
-        function check(){
-          var doc = document.documentElement;
-          var scrollable = doc.scrollHeight - window.innerHeight;
-          if (scrollable <= 0) return;
-          var pct = (window.scrollY || doc.scrollTop) / scrollable * 100;
-          marks.forEach(function(m){
-            if (!hit[m] && pct >= m){
-              hit[m] = 1;
-              fbq('trackCustom', 'ScrollDepth', { percent: m });
-            }
-          });
-          if (hit[90]) window.removeEventListener('scroll', onScroll);
+    /* ---- Videos YouTube: play / progresso / conclusao ---- */
+    var iframes = document.querySelectorAll('iframe[src*="youtube-nocookie.com/embed/"], iframe[src*="youtube.com/embed/"]');
+    if (iframes.length){
+      iframes.forEach(function(f, i){
+        if (f.src.indexOf('enablejsapi=') === -1){
+          f.src += (f.src.indexOf('?') === -1 ? '?' : '&') + 'enablejsapi=1';
         }
-        function onScroll(){ clearTimeout(timer); timer = setTimeout(check, 200); }
-        window.addEventListener('scroll', onScroll, { passive: true });
-        check();
-      })();
-
-      /* 2. Tempo na pagina — 30/60/120s */
-      [30, 60, 120].forEach(function(s){
-        setTimeout(function(){ fbq('trackCustom', 'TimeOnPage', { seconds: s }); }, s * 1000);
+        if (!f.id) f.id = 'ytv-auto-' + i;
       });
 
-      /* 3. Videos do YouTube — play / progresso / conclusao */
-      var iframes = document.querySelectorAll('iframe[src*="youtube-nocookie.com/embed/"], iframe[src*="youtube.com/embed/"]');
-      if (iframes.length){
-        iframes.forEach(function(f, i){
-          if (f.src.indexOf('enablejsapi=') === -1){
-            f.src += (f.src.indexOf('?') === -1 ? '?' : '&') + 'enablejsapi=1';
-          }
-          if (!f.id) f.id = 'ytv-auto-' + i;
-        });
+      window.onYouTubeIframeAPIReady = function(){
+        iframes.forEach(function(f){
+          var placement = f.getAttribute('data-placement') || 'youtube';
+          var title = f.getAttribute('title') || f.id;
+          var base = { video_provider: 'youtube', video_title: title, placement: placement };
+          var progressHit = {}, poll = null, played = false;
 
-        window.onYouTubeIframeAPIReady = function(){
-          iframes.forEach(function(f){
-            var placement = f.getAttribute('data-placement') || 'youtube';
-            var title = f.getAttribute('title') || f.id;
-            var progressHit = {}, poll = null, played = false;
-            var meta = { video_provider: 'youtube', video_title: title, placement: placement };
-
-            var player = new YT.Player(f.id, {
-              events: {
-                onStateChange: function(e){
-                  if (e.data === YT.PlayerState.PLAYING){
-                    if (!played){ played = true; trackVideo('VideoPlay', meta); }
-                    clearInterval(poll);
-                    poll = setInterval(function(){
-                      var d = player.getDuration(), c = player.getCurrentTime();
-                      if (!d) return;
-                      var pct = c / d * 100;
-                      [25, 50, 75, 95].forEach(function(m){
-                        if (!progressHit[m] && pct >= m){
-                          progressHit[m] = 1;
-                          trackVideo('VideoProgress', { video_provider: 'youtube', video_title: title, placement: placement, percent: m });
-                        }
-                      });
-                    }, 1000);
-                  } else if (e.data === YT.PlayerState.ENDED){
-                    clearInterval(poll);
-                    trackVideo('VideoComplete', meta);
-                  } else if (e.data === YT.PlayerState.PAUSED){
-                    clearInterval(poll);
-                  }
+          var player = new YT.Player(f.id, {
+            events: {
+              onStateChange: function(e){
+                if (e.data === YT.PlayerState.PLAYING){
+                  if (!played){ played = true; track('VideoPlay', base); }
+                  clearInterval(poll);
+                  poll = setInterval(function(){
+                    var d = player.getDuration(), c = player.getCurrentTime();
+                    if (!d) return;
+                    var pct = c / d * 100;
+                    [25, 50, 75, 95].forEach(function(m){
+                      if (!progressHit[m] && pct >= m){
+                        progressHit[m] = 1;
+                        track('VideoProgress', { video_provider: 'youtube', video_title: title, placement: placement, percent: m });
+                      }
+                    });
+                  }, 1000);
+                } else if (e.data === YT.PlayerState.ENDED){
+                  clearInterval(poll);
+                  track('VideoComplete', base);
+                } else if (e.data === YT.PlayerState.PAUSED){
+                  clearInterval(poll);
                 }
               }
-            });
+            }
           });
-        };
+        });
+      };
 
-        var tag = document.createElement('script');
-        tag.src = 'https://www.youtube.com/iframe_api';
-        document.head.appendChild(tag);
-      }
-    })();
+      var tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(tag);
+    }
+  })();
   </script>
 
 </body>
