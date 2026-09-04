@@ -208,29 +208,40 @@
     text-align:center;
   }
 
-  /* FAIXA CIDADE — foto original, sem tingimento de cor */
+  /* FAIXA CIDADE — foto original, sem tingimento de cor.
+     min-height/display:flex sao sobrescritos aqui pq a regra generica de
+     <section> (mais abaixo) forcava 1080px e centralizava a foto pequena
+     dentro disso, sobrando faixa preta enorme. */
   .cidade-banner{
     position:relative;
     overflow:hidden;
-    line-height:0;
+    display:block;
+    min-height:0;
+    padding:0;
+    height:clamp(260px, 42vw, 560px);
   }
   .cidade-banner img{
+    position:absolute;
+    inset:0;
     width:100%;
-    height:auto;
-    max-height:460px;
+    height:100%;
     object-fit:cover;
     display:block;
   }
   .cidade-banner::after{
     content:"";
     position:absolute; inset:0;
-    background:linear-gradient(0deg, rgba(0,0,0,0.55) 0%, transparent 40%);
+    background:radial-gradient(ellipse at center, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.4) 100%);
     pointer-events:none;
   }
   .cidade-banner-texto{
     position:absolute;
-    left:50%; bottom:22px;
-    transform:translateX(-50%);
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    z-index:1;
+    background:#3C0101;
+    padding:14px 30px;
+    border-radius:14px;
     font-family:var(--fonte-titulo);
     font-weight:800;
     font-size:var(--text-h4);
@@ -239,11 +250,11 @@
     color:#fff;
     text-shadow:0 4px 18px rgba(0,0,0,0.7);
     text-align:center;
-    padding:0 20px;
+    white-space:nowrap;
   }
   @media (max-width:600px){
-    .cidade-banner img{max-height:280px;}
-    .cidade-banner-texto{font-size:20px;}
+    .cidade-banner{height:clamp(200px, 62vw, 340px);}
+    .cidade-banner-texto{font-size:16px; padding:10px 18px; white-space:normal;}
   }
 
   /* HERO */
