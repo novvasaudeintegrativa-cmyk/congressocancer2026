@@ -71,6 +71,10 @@
   .leaflet-container a{color:var(--bordo);}
 
   .funil{display:flex;flex-direction:column;gap:13px;}
+  .funil-base{display:flex;align-items:baseline;justify-content:space-between;
+    padding-bottom:11px;margin-bottom:2px;border-bottom:1px solid var(--linha);}
+  .funil-base span{font-size:11px;color:var(--soft);text-transform:uppercase;letter-spacing:.05em;}
+  .funil-base b{font-family:var(--tit);font-weight:800;font-size:19px;color:var(--ink);}
   .step{display:flex;flex-direction:column;gap:6px;}
   .step .row{display:flex;align-items:baseline;justify-content:space-between;font-size:13px;}
   .step .row b{font-family:var(--tit);font-weight:800;}
@@ -230,7 +234,8 @@
 
   function renderFunil(rows, base){
     var by = {}; (rows||[]).forEach(function(r){ by[r.percent] = r.total; });
-    var h = step('Page view', base||0, base||0);
+    // Page view é a base (nº de entradas), não um passo de funil — sem barra/%.
+    var h = '<div class="funil-base"><span>Page view</span><b>' + fmt(base||0) + '</b></div>';
     [25,50,75,90].forEach(function(p){ h += step('Scroll ' + p + '%', by[p]||0, base||0); });
     $('funil').innerHTML = h;
   }
