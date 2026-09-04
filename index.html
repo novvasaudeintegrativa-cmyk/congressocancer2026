@@ -1086,6 +1086,16 @@
     text-shadow:0 2px 14px rgba(0,0,0,0.55);
   }
   .hotel-descricao p:last-child{margin-bottom:0;}
+  .hotel-mais{
+    display:grid;
+    grid-template-rows:0fr;
+    transition:grid-template-rows 0.5s ease;
+  }
+  .hotel-mais.aberto{grid-template-rows:1fr;}
+  .hotel-mais-inner{
+    overflow:hidden;
+    min-height:0;
+  }
   .hotel-mais p:last-child{margin-bottom:0;}
   .hotel-mais-btn{
     display:flex;
@@ -1720,12 +1730,14 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       <div class="hotel-descricao">
         <p class="hotel-descricao-lead">Uma experiência completa de hospedagem em São José dos Campos</p>
         <p>Está em uma das regiões mais acessíveis da cidade, ao lado do Shopping Center Vale e próximo a pontos importantes como o aeroporto, a Embraer, o DCTA e a Rodovia Presidente Dutra.</p>
-        <div class="hotel-mais" id="hotel-mais" hidden>
-          <p>A estrutura foi pensada para uma estadia confortável: são 157 apartamentos, além de restaurante próprio, Wi-Fi gratuito, estacionamento, academia, piscina, sauna, jacuzzi, salão de jogos, serviço de quarto e café da manhã.</p>
-          <p>Para quem chega de avião, a localização é um grande diferencial. O Aeroporto de São José dos Campos fica a cerca de 3 km, tornando o deslocamento rápido e conveniente para quem desembarca na cidade.</p>
-          <p>Para quem vem de carro, o acesso é facilitado pela posição estratégica na Avenida Deputado Benedito Matarazzo e pela proximidade com a Rodovia Presidente Dutra — uma das principais ligações entre São Paulo, Rio de Janeiro e as cidades do Vale do Paraíba.</p>
-          <p>Quem chega de ônibus também tem facilidade: são cerca de 15 minutos até a Rodoviária de São José dos Campos, com deslocamento simples até a hospedagem.</p>
-          <p>Um local confortável para se hospedar, com excelente estrutura e facilidade de acesso para quem chega de avião, carro ou ônibus.</p>
+        <div class="hotel-mais" id="hotel-mais">
+          <div class="hotel-mais-inner">
+            <p>A estrutura foi pensada para uma estadia confortável: são 157 apartamentos, além de restaurante próprio, Wi-Fi gratuito, estacionamento, academia, piscina, sauna, jacuzzi, salão de jogos, serviço de quarto e café da manhã.</p>
+            <p>Para quem chega de avião, a localização é um grande diferencial. O Aeroporto de São José dos Campos fica a cerca de 3 km, tornando o deslocamento rápido e conveniente para quem desembarca na cidade.</p>
+            <p>Para quem vem de carro, o acesso é facilitado pela posição estratégica na Avenida Deputado Benedito Matarazzo e pela proximidade com a Rodovia Presidente Dutra — uma das principais ligações entre São Paulo, Rio de Janeiro e as cidades do Vale do Paraíba.</p>
+            <p>Quem chega de ônibus também tem facilidade: são cerca de 15 minutos até a Rodoviária de São José dos Campos, com deslocamento simples até a hospedagem.</p>
+            <p>Um local confortável para se hospedar, com excelente estrutura e facilidade de acesso para quem chega de avião, carro ou ônibus.</p>
+          </div>
         </div>
         <button type="button" class="hotel-mais-btn" id="hotel-mais-btn" aria-expanded="false" aria-controls="hotel-mais">Ver mais</button>
       </div>
@@ -2226,8 +2238,8 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       var box = document.getElementById('hotel-mais');
       if (!btn || !box) return;
       btn.addEventListener('click', function(){
-        var abrindo = box.hidden;
-        box.hidden = !abrindo;
+        var abrindo = !box.classList.contains('aberto');
+        box.classList.toggle('aberto', abrindo);
         btn.textContent = abrindo ? 'Ver menos' : 'Ver mais';
         btn.setAttribute('aria-expanded', String(abrindo));
       });
