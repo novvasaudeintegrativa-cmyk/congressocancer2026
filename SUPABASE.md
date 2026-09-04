@@ -231,6 +231,48 @@ grant select on public.v_kpis_30d, public.v_eventos_por_dia, public.v_eventos_po
 -- intervalo de datas. O painel chama POST /rest/v1/rpc/rpc_dashboard
 -- com { "d_from": "YYYY-MM-DD", "d_to": "YYYY-MM-DD" } e os botoes de
 -- periodo (Hoje / 7 / 14 / 30 / 45 / 60 / 90) so mudam essas datas.
+-- nome completo do estado -> sigla (UF). ipwho.is as vezes manda "Rio de Janeiro"
+-- em vez de "RJ"; isso normaliza para nao duplicar linhas no painel.
+create or replace function public.uf_sigla(nome text)
+returns text language sql immutable as $$
+  select case lower(trim(coalesce(nome, '')))
+    when 'acre' then 'AC'
+    when 'alagoas' then 'AL'
+    when 'amapá' then 'AP' when 'amapa' then 'AP'
+    when 'amazonas' then 'AM'
+    when 'bahia' then 'BA'
+    when 'ceará' then 'CE' when 'ceara' then 'CE'
+    when 'distrito federal' then 'DF' when 'federal district' then 'DF'
+    when 'espírito santo' then 'ES' when 'espirito santo' then 'ES'
+    when 'goiás' then 'GO' when 'goias' then 'GO'
+    when 'maranhão' then 'MA' when 'maranhao' then 'MA'
+    when 'mato grosso' then 'MT'
+    when 'mato grosso do sul' then 'MS'
+    when 'minas gerais' then 'MG'
+    when 'pará' then 'PA' when 'para' then 'PA'
+    when 'paraíba' then 'PB' when 'paraiba' then 'PB'
+    when 'paraná' then 'PR' when 'parana' then 'PR'
+    when 'pernambuco' then 'PE'
+    when 'piauí' then 'PI' when 'piaui' then 'PI'
+    when 'rio de janeiro' then 'RJ'
+    when 'rio grande do norte' then 'RN'
+    when 'rio grande do sul' then 'RS'
+    when 'rondônia' then 'RO' when 'rondonia' then 'RO'
+    when 'roraima' then 'RR'
+    when 'santa catarina' then 'SC'
+    when 'são paulo' then 'SP' when 'sao paulo' then 'SP'
+    when 'sergipe' then 'SE'
+    when 'tocantins' then 'TO'
+    else null
+  end;
+$$;
+
+-- backfill: preenche region_code das linhas antigas a partir do nome do estado
+update public.events
+set region_code = public.uf_sigla(region)
+where region_code is null and region is not null
+  and public.uf_sigla(region) is not null;
+
 -- security definer: roda como dona da tabela (anon nao tem SELECT em events,
 -- so INSERT) e devolve apenas agregados, sem PII.
 create or replace function public.rpc_dashboard(d_from date, d_to date)
@@ -280,7 +322,7 @@ as $$
         group by 1, 2, 3 limit 12) t),
     'geo', (select coalesce(json_agg(t order by t.sessoes desc), '[]'::json) from (
         select case
-                 when coalesce(city,'') <> '' then city || coalesce(' - ' || coalesce(region_code, region), '')
+                 when coalesce(city,'') <> '' then city || coalesce(' - ' || coalesce(region_code, public.uf_sigla(region), region), '')
                  when coalesce(region,'') <> '' then region
                  else '(sem local)'
                end as local,
