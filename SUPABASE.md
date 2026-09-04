@@ -58,7 +58,9 @@ alter table public.events
   add column if not exists fbclid       text,
   add column if not exists country      text,
   add column if not exists region       text,
-  add column if not exists city         text;
+  add column if not exists city         text,
+  add column if not exists lat          double precision,
+  add column if not exists lon          double precision;
 
 -- o site agora manda `device` (mobile/tablet/desktop) no lugar do user agent
 alter table public.events drop column if exists ua;
@@ -278,7 +280,16 @@ as $$
     'geo', (select coalesce(json_agg(t order by t.sessoes desc), '[]'::json) from (
         select coalesce(nullif(trim(coalesce(region,'') || case when city is not null then ' · ' || city else '' end), ''), '(sem local)') as local,
                count(distinct session_id) as sessoes
-        from base group by 1 limit 10) t)
+        from base group by 1 limit 10) t),
+    'geo_points', (select coalesce(json_agg(t order by t.created_at desc), '[]'::json) from (
+        select session_id, lat, lon, city, region, created_at from (
+          select distinct on (session_id) session_id, lat, lon, city, region, created_at
+          from base
+          where lat is not null and lon is not null
+          order by session_id, created_at desc
+        ) s
+        order by created_at desc
+        limit 500) t)
   );
 $$;
 
@@ -371,12 +382,17 @@ Deno.serve(async (req) => {
 
   const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim();
   let country: string | null = null, region: string | null = null, city: string | null = null;
+  let lat: number | null = null, lon: number | null = null;
   const privado = !ip || ip === "127.0.0.1" || ip.startsWith("10.") || ip.startsWith("192.168.") || ip.startsWith("172.");
   if (!privado) {
     try {
-      const r = await fetch(`https://ipwho.is/${ip}?fields=success,country,region,city`, { signal: AbortSignal.timeout(1200) });
+      const r = await fetch(`https://ipwho.is/${ip}?fields=success,country,region,city,latitude,longitude`, { signal: AbortSignal.timeout(1200) });
       const g = await r.json();
-      if (g?.success) { country = g.country ?? null; region = g.region ?? null; city = g.city ?? null; }
+      if (g?.success) {
+        country = g.country ?? null; region = g.region ?? null; city = g.city ?? null;
+        lat = typeof g.latitude === "number" ? g.latitude : null;
+        lon = typeof g.longitude === "number" ? g.longitude : null;
+      }
     } catch { /* geo é best-effort */ }
   }
 
@@ -391,7 +407,7 @@ Deno.serve(async (req) => {
     utm_source: cut(b.utm_source), utm_medium: cut(b.utm_medium), utm_campaign: cut(b.utm_campaign),
     utm_term: cut(b.utm_term), utm_content: cut(b.utm_content),
     gclid: cut(b.gclid), fbclid: cut(b.fbclid),
-    country, region, city,
+    country, region, city, lat, lon,
   };
 
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
