@@ -230,8 +230,8 @@
 
   function renderFunil(rows, base){
     var by = {}; (rows||[]).forEach(function(r){ by[r.percent] = r.total; });
-    var h = step('Abriram a página', base||0, base||0);
-    [25,50,75,90].forEach(function(p){ h += step('Rolaram ' + p + '%', by[p]||0, base||0); });
+    var h = step('Page view', base||0, base||0);
+    [25,50,75,90].forEach(function(p){ h += step('Scroll ' + p + '%', by[p]||0, base||0); });
     $('funil').innerHTML = h;
   }
 
