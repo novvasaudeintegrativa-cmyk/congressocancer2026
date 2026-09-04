@@ -156,7 +156,7 @@
         <span class="hint">pontos maiores = acessos mais recentes</span>
       </div>
       <div id="mapa"></div>
-      <div class="funil" id="geo" style="margin-top:14px"></div>
+      <div class="scroll-x" id="geo" style="margin-top:14px"></div>
     </section>
     <section id="sec-funil">
       <span class="sec"><span class="bar"></span>Funil · profundidade da página</span>
@@ -262,13 +262,19 @@
   function renderGeo(rows){
     var real = (rows||[]).filter(function(r){ return r.local && r.local !== '(sem local)'; });
     if (!real.length){
-      $('geo').innerHTML = '<p class="vazio">Sem dados de localização ainda — requer captura de geo por IP no coletor (a implementar).</p>';
+      $('geo').innerHTML = '<p class="vazio">Sem dados de localização no período.</p>';
       return;
     }
-    var max = real[0].sessoes || 1;
-    $('geo').innerHTML = real.slice(0,8).map(function(r){
-      return step(r.local, r.sessoes, max);
+    var head = '<thead><tr><th>Local</th><th class="n">Sess.</th><th class="n">Chk</th><th class="n">Wpp</th></tr></thead>';
+    var body = real.slice(0, 12).map(function(r){
+      var conv = r.sessoes ? ((r.checkouts || 0) / r.sessoes * 100) : 0;
+      var forte = conv >= 2;  // destaca região que converte bem
+      return '<tr' + (forte ? ' style="background:#faf1f0"' : '') + '><td>' + r.local +
+             '</td><td class="n">' + fmt(r.sessoes) +
+             '</td><td class="n">' + fmt(r.checkouts || 0) +
+             '</td><td class="n">' + fmt(r.whatsapp || 0) + '</td></tr>';
     }).join('');
+    $('geo').innerHTML = '<table>' + head + '<tbody>' + body + '</tbody></table>';
   }
 
   function renderSpark(rows){
