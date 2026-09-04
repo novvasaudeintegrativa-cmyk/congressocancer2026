@@ -221,7 +221,7 @@
   }
 
   function renderKpis(k){
-    var items = [['Checkouts',k.checkouts],['WhatsApp',k.whatsapp],['Page views',k.pageviews],['Video plays',k.video_plays]];
+    var items = [['Page view',k.pageviews],['Initiate checkout',k.checkouts],['Contact',k.whatsapp],['Video view',k.video_plays]];
     $('kpis').innerHTML = items.map(function(it){
       return '<div class="kpi"><div class="l">' + it[0] + '</div><div class="n">' + fmt(it[1]) +
              '</div><div class="s">' + LABEL[state.period] + '</div></div>';
@@ -238,12 +238,12 @@
   function renderVsl(v){
     if (!v || !v.plays){ $('vsl').innerHTML = '<p class="vazio">Sem plays da VSL no período (entra quando o vídeo do Vturb rodar com <code>placement: \'vsl\'</code>).</p>'; return; }
     $('vsl').innerHTML =
-      step('Deram play', v.plays, v.plays) +
-      step('Assistiram 25%', v.p25, v.plays) +
-      step('Assistiram 50%', v.p50, v.plays) +
-      step('Assistiram 75%', v.p75, v.plays) +
-      step('Assistiram 95%', v.p95, v.plays) +
-      step('Concluíram', v.completes, v.plays);
+      step('Video view', v.plays, v.plays) +
+      step('Progress 25%', v.p25, v.plays) +
+      step('Progress 50%', v.p50, v.plays) +
+      step('Progress 75%', v.p75, v.plays) +
+      step('Progress 95%', v.p95, v.plays) +
+      step('Video complete', v.completes, v.plays);
   }
 
   function renderCamp(rows){
@@ -251,7 +251,7 @@
       $('camp').innerHTML = '<tbody><tr><td class="vazio" style="border:0;">Sem tráfego com <code>?utm_*</code> no período. Aparece quando as campanhas começarem.</td></tr></tbody>';
       return;
     }
-    var head = '<thead><tr><th>Campanha</th><th>Origem</th><th class="n">Sess.</th><th class="n">Chk</th></tr></thead>';
+    var head = '<thead><tr><th>Campanha</th><th>Origem</th><th class="n">Sessões</th><th class="n">Initiate checkout</th></tr></thead>';
     var body = rows.map(function(r){
       var org = [r.source, r.medium].filter(function(x){ return x; }).join(' · ') || '—';
       return '<tr><td>' + (r.campaign||'(sem campaign)') + '</td><td style="color:var(--soft)">' + org +
@@ -266,7 +266,7 @@
       $('geo').innerHTML = '<p class="vazio">Sem dados de localização no período.</p>';
       return;
     }
-    var head = '<thead><tr><th>Local</th><th class="n">Sessões</th><th class="n">Checkout</th><th class="n">WhatsApp</th></tr></thead>';
+    var head = '<thead><tr><th>Local</th><th class="n">Sessões</th><th class="n">Initiate checkout</th><th class="n">Contact</th></tr></thead>';
     var body = real.slice(0, 12).map(function(r){
       var conv = r.sessoes ? ((r.checkouts || 0) / r.sessoes * 100) : 0;
       var forte = conv >= 2;  // destaca região que converte bem
