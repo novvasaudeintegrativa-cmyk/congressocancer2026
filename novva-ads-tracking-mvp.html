@@ -65,6 +65,7 @@
   .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
   .sec-head .hint{font-size:11px;color:var(--faint);}
   canvas{max-width:100%;display:block;}
+  .spark-wrap{position:relative;height:118px;}
   #mapa{height:360px;border-radius:12px;overflow:hidden;border:1px solid var(--linha);}
   .leaflet-container{background:#f4f2ef;font-family:var(--corpo);}
   .leaflet-container a{color:var(--bordo);}
@@ -136,14 +137,13 @@
       <div class="big" id="hero-num">—</div>
       <div class="delta" id="hero-delta"></div>
     </div>
-    <div class="rightcol">
-      <div class="kpis" id="kpis"></div>
-      <section style="margin-bottom:0;">
-        <span class="sec"><span class="bar"></span>Page views por dia</span>
-        <canvas id="spark" height="70"></canvas>
-      </section>
-    </div>
+    <div class="kpis" id="kpis"></div>
   </div>
+
+  <section id="sec-spark">
+    <span class="sec"><span class="bar"></span>Page views por dia</span>
+    <div class="spark-wrap"><canvas id="spark"></canvas></div>
+  </section>
 
   <div class="cols">
     <section id="sec-vsl">
@@ -279,9 +279,9 @@
         borderColor:'#8a222e', backgroundColor:'rgba(138,34,46,.07)', fill:true,
         tension:.35, pointRadius:0, borderWidth:2 }]
     };
-    var opts = { responsive:true, maintainAspectRatio:true,
+    var opts = { responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{ display:false } },
-      scales:{ x:{ ticks:{ color:'#afa59d', maxTicksLimit:7, maxRotation:0 }, grid:{ display:false } },
+      scales:{ x:{ ticks:{ color:'#afa59d', maxTicksLimit:8, maxRotation:0 }, grid:{ display:false } },
                y:{ beginAtZero:true, ticks:{ color:'#afa59d', precision:0, maxTicksLimit:4 }, grid:{ color:'#f1eae3' } } } };
     if (state.chartS) state.chartS.destroy();
     state.chartS = new Chart($('spark'), { type:'line', data:data, options:opts });
