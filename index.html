@@ -245,21 +245,32 @@
     transform:translate(-50%,-50%);
     z-index:1;
     background:#3C0101;
-    padding:14px 30px;
+    padding:16px 34px;
     border-radius:14px;
     font-family:var(--fonte-titulo);
     font-weight:800;
-    font-size:var(--text-h4);
     letter-spacing:0.04em;
-    text-transform:uppercase;
     color:var(--dourado);
     text-shadow:0 4px 18px rgba(0,0,0,0.7);
     text-align:center;
     white-space:nowrap;
   }
+  .cidade-banner-texto .cidade-cidade{
+    display:block;
+    font-size:var(--text-h4);
+    text-transform:none;
+  }
+  .cidade-banner-texto .cidade-estado{
+    display:block;
+    font-size:calc(var(--text-h4) * 1.4);
+    text-transform:uppercase;
+    margin-top:4px;
+  }
   @media (max-width:600px){
     .cidade-banner{height:clamp(200px, 62vw, 340px);}
-    .cidade-banner-texto{font-size:16px; padding:10px 18px; white-space:normal;}
+    .cidade-banner-texto{padding:10px 18px; white-space:normal;}
+    .cidade-banner-texto .cidade-cidade{font-size:15px;}
+    .cidade-banner-texto .cidade-estado{font-size:21px;}
   }
 
   /* HERO */
@@ -1635,7 +1646,10 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
   <!-- FAIXA CIDADE -->
   <section class="cidade-banner">
     <img src="Imgs/SaoJose.jpg" alt="São José dos Campos">
-    <span class="cidade-banner-texto">São José dos Campos &mdash; São Paulo 2026</span>
+    <span class="cidade-banner-texto">
+      <span class="cidade-cidade">São José dos Campos</span>
+      <span class="cidade-estado">São Paulo 2026</span>
+    </span>
   </section>
 
   <!-- HERO -->
