@@ -1379,6 +1379,16 @@
   @media (max-width:760px){
     .video-row--2{grid-template-columns:1fr;}
     .foto-track img{height:170px;}
+    /* Depoimentos: carrossel horizontal vira empilhado no mobile */
+    .video-carousel{
+      flex-direction:column;
+      overflow-x:visible;
+      scroll-snap-type:none;
+    }
+    .video-carousel .video-embed{
+      flex:none;
+      width:100%;
+    }
   }
 
   /* CTA FINAL */
