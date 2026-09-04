@@ -58,6 +58,7 @@ alter table public.events
   add column if not exists fbclid       text,
   add column if not exists country      text,
   add column if not exists region       text,
+  add column if not exists region_code  text,
   add column if not exists city         text,
   add column if not exists lat          double precision,
   add column if not exists lon          double precision;
@@ -278,7 +279,11 @@ as $$
         where utm_source is not null or utm_medium is not null or utm_campaign is not null
         group by 1, 2, 3 limit 12) t),
     'geo', (select coalesce(json_agg(t order by t.sessoes desc), '[]'::json) from (
-        select coalesce(nullif(trim(coalesce(region,'') || case when city is not null and city <> '' then ' · ' || city else '' end), ''), '(sem local)') as local,
+        select case
+                 when coalesce(city,'') <> '' then city || coalesce(' - ' || coalesce(region_code, region), '')
+                 when coalesce(region,'') <> '' then region
+                 else '(sem local)'
+               end as local,
                count(distinct session_id) as sessoes,
                count(distinct session_id) filter (where event = 'InitiateCheckout') as checkouts,
                count(distinct session_id) filter (where event = 'Contact') as whatsapp
@@ -383,19 +388,20 @@ Deno.serve(async (req) => {
   try { b = await req.json(); } catch { return new Response("bad json", { status: 400, headers: cors }); }
 
   const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim();
-  let country: string | null = null, region: string | null = null, city: string | null = null;
+  let country: string | null = null, region: string | null = null, regionCode: string | null = null, city: string | null = null;
   let lat: number | null = null, lon: number | null = null;
+  const num = (v: unknown) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
   const privado = !ip || ip === "127.0.0.1" || ip.startsWith("10.") || ip.startsWith("192.168.") || ip.startsWith("172.");
   if (!privado) {
     try {
-      const r = await fetch(`https://ipwho.is/${ip}?fields=success,country,region,city,latitude,longitude`, { signal: AbortSignal.timeout(1200) });
+      const r = await fetch(`https://ipwho.is/${ip}?fields=success,country,region,region_code,city,latitude,longitude`, { signal: AbortSignal.timeout(1500) });
       const g = await r.json();
+      console.log("geo lookup", JSON.stringify({ ip, status: r.status, g }));
       if (g?.success) {
-        country = g.country ?? null; region = g.region ?? null; city = g.city ?? null;
-        lat = typeof g.latitude === "number" ? g.latitude : null;
-        lon = typeof g.longitude === "number" ? g.longitude : null;
+        country = cut(g.country); region = cut(g.region); regionCode = cut(g.region_code); city = cut(g.city);
+        lat = num(g.latitude); lon = num(g.longitude);
       }
-    } catch { /* geo é best-effort */ }
+    } catch (e) { console.log("geo erro", String(e)); }
   }
 
   const row = {
@@ -409,7 +415,7 @@ Deno.serve(async (req) => {
     utm_source: cut(b.utm_source), utm_medium: cut(b.utm_medium), utm_campaign: cut(b.utm_campaign),
     utm_term: cut(b.utm_term), utm_content: cut(b.utm_content),
     gclid: cut(b.gclid), fbclid: cut(b.fbclid),
-    country, region, city, lat, lon,
+    country, region, region_code: regionCode, city, lat, lon,
   };
 
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
