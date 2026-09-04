@@ -290,8 +290,8 @@
     if (!state.map){
       state.map = L.map('mapa', { attributionControl:false, scrollWheelZoom:false })
         .setView([-14.5, -52], 4);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
-        { maxZoom:12, subdomains:'abcd' }).addTo(state.map);
+      L.tileLayer('https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+        { maxZoom:16 }).addTo(state.map);
       state.mapLayer = L.layerGroup().addTo(state.map);
     }
     state.mapLayer.clearLayers();
