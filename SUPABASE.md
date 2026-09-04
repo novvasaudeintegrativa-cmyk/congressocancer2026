@@ -278,9 +278,11 @@ as $$
         where utm_source is not null or utm_medium is not null or utm_campaign is not null
         group by 1, 2, 3 limit 12) t),
     'geo', (select coalesce(json_agg(t order by t.sessoes desc), '[]'::json) from (
-        select coalesce(nullif(trim(coalesce(region,'') || case when city is not null then ' · ' || city else '' end), ''), '(sem local)') as local,
-               count(distinct session_id) as sessoes
-        from base group by 1 limit 10) t),
+        select coalesce(nullif(trim(coalesce(region,'') || case when city is not null and city <> '' then ' · ' || city else '' end), ''), '(sem local)') as local,
+               count(distinct session_id) as sessoes,
+               count(distinct session_id) filter (where event = 'InitiateCheckout') as checkouts,
+               count(distinct session_id) filter (where event = 'Contact') as whatsapp
+        from base group by 1 order by sessoes desc limit 15) t),
     'geo_points', (select coalesce(json_agg(t order by t.created_at desc), '[]'::json) from (
         select session_id, lat, lon, city, region, created_at from (
           select distinct on (session_id) session_id, lat, lon, city, region, created_at
