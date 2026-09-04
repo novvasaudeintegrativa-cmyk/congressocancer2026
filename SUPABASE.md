@@ -228,8 +228,12 @@ grant select on public.v_kpis_30d, public.v_eventos_por_dia, public.v_eventos_po
 -- intervalo de datas. O painel chama POST /rest/v1/rpc/rpc_dashboard
 -- com { "d_from": "YYYY-MM-DD", "d_to": "YYYY-MM-DD" } e os botoes de
 -- periodo (Hoje / 7 / 14 / 30 / 45 / 60 / 90) so mudam essas datas.
+-- security definer: roda como dona da tabela (anon nao tem SELECT em events,
+-- so INSERT) e devolve apenas agregados, sem PII.
 create or replace function public.rpc_dashboard(d_from date, d_to date)
-returns json language sql stable as $$
+returns json language sql stable
+security definer set search_path = public
+as $$
   with base as (
     select * from public.events
     where (created_at at time zone 'America/Sao_Paulo')::date between d_from and d_to
