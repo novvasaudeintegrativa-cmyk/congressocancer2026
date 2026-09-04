@@ -221,10 +221,10 @@
     font-weight:800;
     font-size:var(--text-h4);
     letter-spacing:0.04em;
+    text-transform:uppercase;
     color:#fff;
     text-shadow:0 2px 10px rgba(0,0,0,0.25);
   }
-  .topo-faixa .cidade-estado{text-transform:uppercase;}
   @media (max-width:600px){
     .topo-faixa .cidade-cidade,
     .topo-faixa .cidade-estado{font-size:16px;}
@@ -249,6 +249,13 @@
     height:100%;
     object-fit:cover;
     display:block;
+  }
+  .cidade-banner::after{
+    content:"";
+    position:absolute; inset:0;
+    /* sombra so na parte de baixo, pra transicao suave com a hero */
+    background-image:linear-gradient(to top, #3C0101 0%, rgba(60,1,1,0) 22%);
+    pointer-events:none;
   }
   @media (max-width:600px){
     .cidade-banner{height:clamp(200px, 62vw, 340px);}
