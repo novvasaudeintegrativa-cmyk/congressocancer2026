@@ -208,6 +208,38 @@
     text-align:center;
   }
 
+  /* TESTE: faixa laranja no topo (mesma cor do btn-laranja) com o nome da
+     cidade, acima da foto — em vez do texto em cima da imagem. */
+  .topo-faixa{
+    background:var(--laranja);
+    text-align:center;
+    padding:14px 20px;
+  }
+  .topo-faixa .cidade-cidade{
+    display:block;
+    font-family:var(--fonte-titulo);
+    font-weight:800;
+    font-size:var(--text-h4);
+    letter-spacing:0.04em;
+    color:#fff;
+    text-shadow:0 2px 10px rgba(0,0,0,0.25);
+  }
+  .topo-faixa .cidade-estado{
+    display:block;
+    font-family:var(--fonte-titulo);
+    font-weight:800;
+    font-size:calc(var(--text-h4) * 1.4);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color:#fff;
+    margin-top:2px;
+    text-shadow:0 2px 10px rgba(0,0,0,0.25);
+  }
+  @media (max-width:600px){
+    .topo-faixa .cidade-cidade{font-size:15px;}
+    .topo-faixa .cidade-estado{font-size:21px;}
+  }
+
   /* FAIXA CIDADE — foto original, sem tingimento de cor.
      min-height/display:flex sao sobrescritos aqui pq a regra generica de
      <section> (mais abaixo) forcava 1080px e centralizava a foto pequena
@@ -231,46 +263,14 @@
   .cidade-banner::after{
     content:"";
     position:absolute; inset:0;
-    /* TESTE: faixas #3C0101 em cima/embaixo pra suavizar a transição com as
-       seções vizinhas (mesmo recurso da hero/local), + vinheta escura no
-       meio só pra dar contraste ao texto. */
+    /* faixas #3C0101 em cima/embaixo pra suavizar a transição com as
+       seções vizinhas (mesmo recurso da hero/local) */
     background-image:
-      linear-gradient(180deg, #3C0101 0%, rgba(60,1,1,0) 14%, rgba(60,1,1,0) 86%, #3C0101 100%),
-      radial-gradient(ellipse at center, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.4) 100%);
+      linear-gradient(180deg, #3C0101 0%, rgba(60,1,1,0) 14%, rgba(60,1,1,0) 86%, #3C0101 100%);
     pointer-events:none;
-  }
-  .cidade-banner-texto{
-    position:absolute;
-    top:50%; left:50%;
-    transform:translate(-50%,-50%);
-    z-index:1;
-    background:#3C0101;
-    padding:16px 34px;
-    border-radius:14px;
-    font-family:var(--fonte-titulo);
-    font-weight:800;
-    letter-spacing:0.04em;
-    color:var(--dourado);
-    text-shadow:0 4px 18px rgba(0,0,0,0.7);
-    text-align:center;
-    white-space:nowrap;
-  }
-  .cidade-banner-texto .cidade-cidade{
-    display:block;
-    font-size:var(--text-h4);
-    text-transform:none;
-  }
-  .cidade-banner-texto .cidade-estado{
-    display:block;
-    font-size:calc(var(--text-h4) * 1.4);
-    text-transform:uppercase;
-    margin-top:4px;
   }
   @media (max-width:600px){
     .cidade-banner{height:clamp(200px, 62vw, 340px);}
-    .cidade-banner-texto{padding:10px 18px; white-space:normal;}
-    .cidade-banner-texto .cidade-cidade{font-size:15px;}
-    .cidade-banner-texto .cidade-estado{font-size:21px;}
   }
 
   /* HERO */
@@ -1643,19 +1643,21 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
 </head>
 <body>
 
+  <!-- FAIXA TOPO -->
+  <div class="topo-faixa">
+    <span class="cidade-cidade">São José dos Campos</span>
+    <span class="cidade-estado">São Paulo 2026</span>
+  </div>
+
   <!-- FAIXA CIDADE -->
   <section class="cidade-banner">
     <img src="Imgs/SaoJose.jpg" alt="São José dos Campos">
-    <span class="cidade-banner-texto">
-      <span class="cidade-cidade">São José dos Campos</span>
-      <span class="cidade-estado">São Paulo 2026</span>
-    </span>
   </section>
 
   <!-- HERO -->
   <header class="hero">
     <div class="container hero-inner">
-      <h1>4ª Edição do Maior Congresso Presencial da América Latina, reunindo as principais autoridades em <mark>Práticas Integrativas no Tratamento e Prevenção do Câncer</mark></h1>
+      <h1>4ª Edição do Maior Congresso<br>Presencial da América Latina,<br> reunindo as principais autoridades em <mark>Práticas Integrativas no Tratamento e Prevenção do Câncer</mark></h1>
       <p class="lead">Todo profissional da área da saúde tem a necessidade de estar presente nesse congresso para aprender as novidades e técnicas para evoluir no tratamento e na prevenção do câncer.</p>
 
       <div class="vsl-wrap">
