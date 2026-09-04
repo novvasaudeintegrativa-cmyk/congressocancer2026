@@ -352,7 +352,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // Edge Function: collect — recebe evento do site, resolve geo por IP, grava em public.events
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, prefer, x-client-info",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 

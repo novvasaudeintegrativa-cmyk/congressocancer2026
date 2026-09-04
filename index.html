@@ -2168,11 +2168,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     function sendToDB(event, props){
       if (!ANALYTICS.url || !ANALYTICS.key) return;
       try {
-        var headers = {
-          'Content-Type': 'application/json',
-          'apikey': ANALYTICS.key,
-          'Prefer': 'return=minimal'
-        };
+        var headers = { 'Content-Type': 'application/json', 'apikey': ANALYTICS.key };
         if (/^eyJ/.test(ANALYTICS.key)) headers['Authorization'] = 'Bearer ' + ANALYTICS.key;
         fetch(ANALYTICS.url, {
           method: 'POST',
