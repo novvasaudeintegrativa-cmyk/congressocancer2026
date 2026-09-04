@@ -168,6 +168,33 @@
   @media (prefers-reduced-motion: reduce){
     .btn-pulse, .btn-pulse-branco, .btn-pulse-laranja{animation:none;}
   }
+  .whatsapp-flutuante{
+    position:fixed;
+    right:20px; bottom:20px;
+    z-index:60;
+    width:60px; height:60px;
+    border-radius:50%;
+    background:var(--verde);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 10px 30px rgba(31,157,85,0.45), 0 0 0 0 rgba(31,157,85,0.55);
+    animation: pulse-whats 2.2s ease-in-out infinite;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .whatsapp-flutuante:hover{background:var(--verde-escuro); transform:scale(1.06);}
+  .whatsapp-flutuante img{width:36px; height:36px; display:block;}
+  @keyframes pulse-whats{
+    0%, 100%{ box-shadow:0 10px 30px rgba(31,157,85,0.45), 0 0 0 0 rgba(31,157,85,0.55); }
+    50%{ box-shadow:0 10px 30px rgba(31,157,85,0.45), 0 0 0 12px rgba(31,157,85,0); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .whatsapp-flutuante{animation:none;}
+  }
+  @media (max-width:600px){
+    .whatsapp-flutuante{right:14px; bottom:14px; width:54px; height:54px;}
+    .whatsapp-flutuante img{width:30px; height:30px;}
+  }
   .aviso-exemplo{
     background:rgba(242,199,68,0.10);
     border:1px dashed rgba(242,199,68,0.55);
@@ -2113,6 +2140,10 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     <p class="footer-copy"><span class="nomes">Novva Saúde Integrativa &amp; NutriGenes</span> · Todos os direitos reservados © 2026</p>
     <a class="footer-priv" id="abrir-privacidade" href="#">Política de Privacidade</a>
   </footer>
+
+  <a href="https://wa.me/5511934873737" class="whatsapp-flutuante" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
+    <img src="Imgs/3dWhatsApp.png" alt="">
+  </a>
 
   <dialog class="cv-modal" id="privacidade">
     <div class="cv-modal-inner">
