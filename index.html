@@ -2271,16 +2271,25 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     /* PageView tambem no coletor (o Pixel ja dispara no <head>) */
     sendToDB('PageView', {});
 
-    /* ---- Conversao: checkout Eduzz e WhatsApp ---- */
-    document.querySelectorAll('a[href*="chk.eduzz.com"]').forEach(function(a){
-      a.addEventListener('click', function(){
-        trackStd('InitiateCheckout', { content_name: (a.textContent || '').trim() });
+    /* ---- Conversao: checkout Eduzz e WhatsApp ----
+       Segura a navegacao ~200ms em clique simples (mesma aba) pra o
+       evento sair antes da pagina trocar. Clique com Ctrl/Cmd/meio
+       (nova aba) nao interfere: a pagina fica, a requisicao vai. */
+    function trackLink(a, event, props){
+      a.addEventListener('click', function(e){
+        trackStd(event, props);
+        var novaAba = e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1 || a.target === '_blank';
+        if (!novaAba && a.href){
+          e.preventDefault();
+          setTimeout(function(){ window.location.href = a.href; }, 200);
+        }
       });
+    }
+    document.querySelectorAll('a[href*="chk.eduzz.com"]').forEach(function(a){
+      trackLink(a, 'InitiateCheckout', { content_name: (a.textContent || '').trim() });
     });
     document.querySelectorAll('a[href*="wa.me"], a[href*="api.whatsapp.com"]').forEach(function(a){
-      a.addEventListener('click', function(){
-        trackStd('Contact', { content_name: 'WhatsApp' });
-      });
+      trackLink(a, 'Contact', { content_name: 'WhatsApp' });
     });
 
     /* ---- Rolagem: 25/50/75/90%, uma vez cada ---- */
