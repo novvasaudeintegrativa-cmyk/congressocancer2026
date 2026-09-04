@@ -1333,6 +1333,21 @@
   }
   .footer-copy{margin:0;}
   .footer-copy .nomes{text-transform:uppercase;font-weight:700;letter-spacing:0.04em;}
+  .footer-priv{
+    display:inline-block;
+    margin-top:10px;
+    color:rgba(255,255,255,0.72);
+    font-size:12px;
+    text-decoration:underline;
+    cursor:pointer;
+  }
+  .footer-priv:hover{color:#fff;}
+  #privacidade .cv-modal-inner{max-width:660px;}
+  #privacidade .cv-modal-body{max-height:68vh;overflow:auto;font-size:14px;}
+  #privacidade .cv-modal-body h4{
+    font-family:var(--fonte-titulo);font-size:15px;margin:18px 0 6px;color:#fff;
+  }
+  #privacidade .cv-modal-body h4:first-child{margin-top:0;}
 
   @media (max-width: 900px){
     .publico-grid, .cert-grid, .podcast-grid{grid-template-columns:1fr;}
@@ -1955,7 +1970,46 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       </div>
     </div>
     <p class="footer-copy"><span class="nomes">Novva Saúde Integrativa &amp; NutriGenes</span> · Todos os direitos reservados © 2026</p>
+    <a class="footer-priv" id="abrir-privacidade" href="#">Política de Privacidade</a>
   </footer>
+
+  <dialog class="cv-modal" id="privacidade">
+    <div class="cv-modal-inner">
+      <button type="button" class="cv-close" aria-label="Fechar">&times;</button>
+      <div class="cv-modal-head">
+        <h3>Política de Privacidade</h3>
+      </div>
+      <div class="cv-modal-body">
+        <p>Esta página é mantida pela <strong>Novva Saúde Integrativa</strong>, em conjunto com a NutriGenes, para divulgação do congresso. Contato para assuntos de privacidade: <strong>novvasaudeintegrativa@gmail.com</strong>.</p>
+
+        <h4>O que coletamos nesta página</h4>
+        <p>Ao navegar, registramos de forma <strong>anônima</strong>: um identificador aleatório gerado no seu navegador (sem nome ou e-mail), as páginas visitadas, a origem do acesso (site de referência e parâmetros de campanha — UTM, gclid, fbclid), o tipo de dispositivo (celular, tablet ou computador) e a <strong>localização aproximada</strong> (país, estado e cidade) derivada do seu endereço IP. O endereço IP em si <strong>não é armazenado</strong> — é usado apenas no momento do acesso para estimar a localização.</p>
+        <p>Também registramos interações com a página: rolagem, tempo de permanência, cliques nos botões de compra e de WhatsApp e ações nos vídeos. <strong>Não coletamos dados de saúde nem outros dados sensíveis</strong> nesta página.</p>
+
+        <h4>Ferramentas e terceiros</h4>
+        <p><strong>Meta Pixel (Facebook/Instagram):</strong> usa cookies e envia eventos à Meta Platforms para medição e otimização dos anúncios, inclusive eventos de conversão. O uso desses dados é regido também pela política da Meta.</p>
+        <p><strong>Coletor próprio:</strong> os eventos acima são guardados em banco de dados sob nosso controle (infraestrutura Supabase).</p>
+        <p><strong>Checkout (Eduzz):</strong> a compra do ingresso é processada pela Eduzz, com política de privacidade própria. Ao finalizar a compra você fornece a ela nome, e-mail, telefone e dados de pagamento, e a Eduzz pode compartilhar dados de conversão com a Meta.</p>
+
+        <h4>Finalidade e base legal</h4>
+        <p>Usamos os dados para medir audiência, melhorar a página e divulgar o congresso (<em>legítimo interesse</em>) e para executar o contrato quando você adquire o ingresso.</p>
+
+        <h4>Compartilhamento</h4>
+        <p>Meta Platforms (pixel e conversões), Eduzz (checkout) e provedores de infraestrutura e hospedagem. <strong>Não vendemos seus dados.</strong></p>
+
+        <h4>Retenção</h4>
+        <p>Dados de navegação por até 18 meses; dados de compra pelos prazos exigidos por lei.</p>
+
+        <h4>Seus direitos (LGPD)</h4>
+        <p>Você pode solicitar confirmação de tratamento, acesso, correção, eliminação, portabilidade, informação sobre compartilhamentos e revogação de consentimento pelo e-mail informado acima.</p>
+
+        <h4>Cookies</h4>
+        <p>Você pode bloquear cookies nas configurações do navegador. Isso pode reduzir a precisão da medição, mas não impede o uso da página.</p>
+
+        <p style="color:var(--texto-fraco);font-size:12px;margin-top:18px;">Última atualização: setembro de 2026.</p>
+      </div>
+    </div>
+  </dialog>
 
   <!-- POP-UPS DE CURRÍCULO -->
   <dialog class="cv-modal" id="cv-sara-lambert">
@@ -2100,6 +2154,14 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         if (e.target === dlg) dlg.close();
       });
     });
+    (function(){
+      var lp = document.getElementById('abrir-privacidade');
+      var dp = document.getElementById('privacidade');
+      if (lp && dp) lp.addEventListener('click', function(e){
+        e.preventDefault();
+        if (typeof dp.showModal === 'function') dp.showModal();
+      });
+    })();
 
     (function(){
       var dlg = document.getElementById('img-modal');
