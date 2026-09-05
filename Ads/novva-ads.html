@@ -192,6 +192,41 @@
   .passos-progresso i{display:block;height:100%;background:var(--bordo-vivo);}
   .passos-progresso-lbl{font-size:11.5px;color:var(--soft);margin-top:7px;}
 
+  /* ---- lead clicável + preview de conversa ---- */
+  .lead-card .nome{cursor:pointer;}
+  .lead-card .nome:hover{color:var(--bordo-vivo);text-decoration:underline;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(42,35,32,.5);display:flex;align-items:center;justify-content:center;padding:18px;z-index:60;}
+  .modal-conversa{background:var(--card);border-radius:18px;max-width:420px;width:100%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(42,35,32,.25);}
+  .modal-topo{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 18px;border-bottom:1px solid var(--linha);flex:none;}
+  .modal-nome{font-family:var(--tit);font-weight:800;font-size:15px;color:var(--ink);}
+  .modal-sub{font-size:11px;color:var(--faint);margin-top:2px;}
+  .modal-fechar{background:none;border:0;font-size:24px;line-height:1;color:var(--soft);cursor:pointer;padding:0 2px;flex:none;}
+  .modal-fechar:hover{color:var(--bordo);}
+  .modal-aviso{background:#faf1f0;color:var(--bordo);font-size:11px;padding:8px 18px;border-bottom:1px solid var(--linha);flex:none;}
+  .chat{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:8px;background:var(--bg);}
+  .bolha{max-width:80%;padding:9px 12px;border-radius:14px;font-size:13px;line-height:1.42;}
+  .bolha .remetente{font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px;opacity:.75;}
+  .bolha.entra{align-self:flex-start;background:#fff;border:1px solid var(--linha);color:var(--ink);border-bottom-left-radius:4px;}
+  .bolha.sai{align-self:flex-end;background:var(--bordo);color:#fff;border-bottom-right-radius:4px;}
+  .bolha.sai.ia{background:var(--dourado);color:#2a1a00;}
+  .chat-input{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--linha);flex:none;}
+  .chat-input input{flex:1;padding:9px 13px;border-radius:20px;border:1px solid var(--linha);font-size:13px;background:var(--bg);color:var(--faint);}
+  .chat-input button{background:var(--bordo);color:#fff;border:0;border-radius:20px;padding:9px 18px;font-family:var(--tit);font-weight:700;font-size:12px;opacity:.5;}
+
+  /* ---- tour guiado ---- */
+  .btn-tour{display:block;margin-top:10px;font-family:var(--tit);font-weight:800;font-size:11.5px;letter-spacing:.02em;text-transform:uppercase;background:#fff;border:1.5px solid var(--bordo-vivo);color:var(--bordo);padding:8px 14px;border-radius:999px;cursor:pointer;}
+  .btn-tour:hover{background:var(--bordo-vivo);color:#fff;}
+  .tour-alvo{position:relative;z-index:55;outline:3px solid var(--dourado);outline-offset:4px;border-radius:14px;box-shadow:0 0 0 6000px rgba(42,35,32,.55);}
+  .tour-caixa{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:14px;padding:16px 18px;max-width:380px;width:calc(100% - 32px);z-index:70;box-shadow:0 14px 40px rgba(0,0,0,.35);}
+  .tour-titulo{font-family:var(--tit);font-weight:800;font-size:14px;margin-bottom:6px;color:var(--dourado);}
+  .tour-texto{font-size:12.5px;line-height:1.5;color:rgba(255,255,255,.88);}
+  .tour-nav{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap;}
+  .tour-passo{font-size:11px;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums;}
+  .tour-nav button{font-family:var(--tit);font-weight:700;font-size:11px;border:0;border-radius:999px;padding:8px 14px;cursor:pointer;}
+  #tour-pular{background:none;color:rgba(255,255,255,.65);padding:8px 6px;}
+  #tour-pular:hover{color:#fff;}
+  .btn-tour-prox{background:var(--dourado);color:#2a1a00;}
+
   @media (min-width:900px){
     .wrap{padding:28px 28px 56px;}
     .toprow{grid-template-columns:236px minmax(0,1fr);gap:18px;margin-bottom:18px;align-items:start;}
@@ -431,6 +466,7 @@
       <b>Preview do pipeline.</b> Login da equipe e conexão real de WhatsApp ainda não existem (Fases 1 e 2 do plano) —
       os cartões de lead abaixo são <b>exemplo</b>, pra mostrar o formato final. Nome/WhatsApp/status de conexão da
       equipe ficam salvos só neste navegador por enquanto.
+      <button type="button" class="btn-tour" id="btn-tour">Fazer tour guiado</button>
     </div>
 
     <section>
@@ -458,6 +494,36 @@
 
   </div>
 
+</div>
+
+<div class="modal-overlay" id="modal-conversa" hidden>
+  <div class="modal-conversa">
+    <div class="modal-topo">
+      <div>
+        <div class="modal-nome" id="mc-nome"></div>
+        <div class="modal-sub" id="mc-sub"></div>
+      </div>
+      <button type="button" class="modal-fechar" id="mc-fechar" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-aviso">Preview — estas mensagens são de exemplo. A conversa de verdade chega na Fase 2 (WhatsApp oficial conectado).</div>
+    <div class="chat" id="mc-chat"></div>
+    <div class="chat-input">
+      <input type="text" placeholder="Responder (ligado na Fase 2)" disabled>
+      <button type="button" disabled>Enviar</button>
+    </div>
+  </div>
+</div>
+
+<div class="tour-caixa" id="tour-caixa" hidden>
+  <div class="tour-titulo" id="tour-titulo"></div>
+  <div class="tour-texto" id="tour-texto"></div>
+  <div class="tour-nav">
+    <span class="tour-passo" id="tour-passo"></span>
+    <div>
+      <button type="button" id="tour-pular">Pular e não mostrar mais</button>
+      <button type="button" id="tour-prox" class="btn-tour-prox">Próximo</button>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -897,7 +963,7 @@
           return '<option value="' + c2[0] + '"' + (c2[0]===l.coluna?' selected':'') + '>' + c2[1] + '</option>';
         }).join('');
         return '<div class="lead-card">' +
-          '<div class="nome">' + l.nome + '</div>' +
+          '<div class="nome" data-id="' + l.id + '">' + l.nome + '</div>' +
           '<div class="badges"><span class="badge ' + l.temp + '">' + l.temp + '</span></div>' +
           '<div class="meta">' + l.nivel + ' · atribuído a ' + l.atrib + '</div>' +
           '<select data-id="' + l.id + '">' + opts + '</select>' +
@@ -914,7 +980,91 @@
         renderPipeline();
       });
     });
+    $('kanban').querySelectorAll('.lead-card .nome').forEach(function(nomeEl){
+      nomeEl.addEventListener('click', function(){
+        var id = Number(this.dataset.id);
+        var lead = pipelineState().filter(function(l){ return l.id === id; })[0];
+        if (lead) abrirConversa(lead);
+      });
+    });
   }
+
+  // ---- preview de conversa (clicável, dado de exemplo) ----
+  // Simula a Fase 3 do plano: IA responde pergunta logística, escala pro
+  // vendedor atribuído fechar o que ela não deve responder sozinha.
+  function conversaExemplo(lead){
+    var primeiro = lead.nome.replace(/\(exemplo\)/i,'').replace(/^(Dra?\.|Fisio|Enf\.|Nutri)\s*/i,'').trim().split(' ')[0];
+    var msgs = [
+      { de:'lead', rem:'Lead',    txt:'Oi! Vi por aqui e fiquei com interesse no Congresso, pode me passar mais detalhes?' },
+      { de:'ia',   rem:'IA',      txt:'Oi ' + primeiro + '! Posso te ajudar com data, valor e certificado na hora — qual desses quer saber primeiro?' },
+      { de:'lead', rem:'Lead',    txt:'Quero saber o valor e até quando esse lote fica' },
+      { de:'ia',   rem:'IA',      txt:'O Lote 1 sai por 12x de R$49,70 ou R$497 à vista, com certificado de 16h. Vagas limitadas pela capacidade do auditório, sem data fixa de virada de lote.' },
+      { de:'lead', rem:'Lead',    txt:'Tem desconto pra grupo de mais de 3 pessoas?' },
+      { de:'ia',   rem:'IA',      txt:'Essa condição eu não decido sozinha — já te passo pro ' + lead.atrib + ' da nossa equipe, um instante 🙂' },
+      { de:'equipe', rem:lead.atrib, txt:'Oi ' + primeiro + ', tudo bem? Vi que você já viu os valores com nossa assistente — sobre grupo, consigo sim uma condição especial a partir de 3 inscrições. Quer que eu já separe as vagas?' }
+    ];
+    if (lead.temp === 'quente'){
+      msgs.push({ de:'lead', rem:'Lead', txt:'Perfeito, pode confirmar minha vaga!' });
+    } else if (lead.temp === 'frio'){
+      msgs.push({ de:'lead', rem:'Lead', txt:'Deixa eu ver com calma e te aviso, pode ser?' });
+    }
+    return msgs;
+  }
+
+  function abrirConversa(lead){
+    $('mc-nome').textContent = lead.nome;
+    $('mc-sub').textContent = lead.nivel + ' · ' + lead.temp + ' · atribuído a ' + lead.atrib;
+    $('mc-chat').innerHTML = conversaExemplo(lead).map(function(m){
+      var cls = m.de === 'lead' ? 'entra' : (m.de === 'ia' ? 'sai ia' : 'sai');
+      return '<div class="bolha ' + cls + '"><div class="remetente">' + m.rem + '</div>' + m.txt + '</div>';
+    }).join('');
+    $('modal-conversa').hidden = false;
+  }
+  function fecharConversa(){ $('modal-conversa').hidden = true; }
+
+  $('mc-fechar').addEventListener('click', fecharConversa);
+  $('modal-conversa').addEventListener('click', function(e){ if (e.target === this) fecharConversa(); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') fecharConversa(); });
+
+  // ---- tour guiado (primeiro contato com o CRM) ----
+  var TOUR_PASSOS = [
+    { sel:'#equipe-grid', titulo:'1. Equipe', texto:'Aqui fica quem faz parte do time: nome, WhatsApp e se está conectado. Cada pessoa edita o próprio card.' },
+    { sel:'#kanban', titulo:'2. Pipeline', texto:'Cada lead passa por 4 etapas: Novo → Respondeu no WhatsApp → Comprou → Perdido. Troque pelo seletor de cada cartão conforme for avançando.' },
+    { sel:'.lead-card .nome', titulo:'3. Conversa', texto:'Clique no nome do lead pra abrir a conversa. A IA responde o básico (preço, data, certificado) e te passa quando alguém pede algo que só você pode decidir.' },
+    { sel:'#passos-meta', titulo:'4. Configuração', texto:'Esse checklist acompanha o que falta pra ligar o WhatsApp de verdade — se você for vendedor(a), pode ignorar essa parte.' }
+  ];
+  var tourIdx = 0;
+
+  function tourLimpar(){
+    document.querySelectorAll('.tour-alvo').forEach(function(el){ el.classList.remove('tour-alvo'); });
+  }
+
+  function tourFechar(naoMostrarMais){
+    tourLimpar();
+    $('tour-caixa').hidden = true;
+    if (naoMostrarMais){ try { localStorage.setItem('crm-tour-visto', '1'); } catch(e){} }
+  }
+
+  function tourMostrar(i){
+    tourLimpar();
+    if (i >= TOUR_PASSOS.length){ tourFechar(true); return; }
+    var passo = TOUR_PASSOS[i];
+    var alvo = document.querySelector(passo.sel);
+    if (!alvo){ tourIdx = i + 1; tourMostrar(tourIdx); return; }
+    alvo.classList.add('tour-alvo');
+    alvo.scrollIntoView({ behavior:'smooth', block:'center' });
+    $('tour-titulo').textContent = passo.titulo;
+    $('tour-texto').textContent = passo.texto;
+    $('tour-passo').textContent = (i + 1) + ' de ' + TOUR_PASSOS.length;
+    $('tour-prox').textContent = (i === TOUR_PASSOS.length - 1) ? 'Concluir' : 'Próximo';
+    $('tour-caixa').hidden = false;
+  }
+
+  function tourIniciar(){ tourIdx = 0; tourMostrar(tourIdx); }
+
+  $('btn-tour').addEventListener('click', tourIniciar);
+  $('tour-prox').addEventListener('click', function(){ tourIdx++; tourMostrar(tourIdx); });
+  $('tour-pular').addEventListener('click', function(){ tourFechar(true); });
 
   // ---- checklist genérico (reusado nas 3 abas) ----
   var PASSOS_TRAFEGO = [
@@ -1001,7 +1151,13 @@
     $('subbar-trafego').hidden = state.tab !== 'trafego';
     $('sub-titulo').textContent = TITULOS[state.tab];
     if (state.tab === 'quiz' && !state.quizCarregado){ state.quizCarregado = true; loadQuiz(); }
-    if (state.tab === 'crm' && !state.crmCarregado){ state.crmCarregado = true; renderEquipe(); renderPipeline(); renderPassos(); }
+    if (state.tab === 'crm' && !state.crmCarregado){
+      state.crmCarregado = true;
+      renderEquipe(); renderPipeline(); renderPassos();
+      var jaViu = false;
+      try { jaViu = !!localStorage.getItem('crm-tour-visto'); } catch(e){}
+      if (!jaViu) setTimeout(tourIniciar, 400);
+    }
   });
 
   $('reload').addEventListener('click', function(){
