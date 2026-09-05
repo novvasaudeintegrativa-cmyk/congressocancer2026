@@ -73,11 +73,10 @@
   .kpi .s{font-size:11px;color:var(--faint);margin-top:6px;}
 
   section{background:var(--card);border:1px solid var(--linha);border-radius:16px;padding:18px 20px;margin-bottom:16px;}
-  .sec{display:inline-flex;align-items:center;gap:8px;font-family:var(--tit);font-weight:800;font-size:12px;
-    letter-spacing:.09em;text-transform:uppercase;color:var(--bordo);margin-bottom:16px;}
-  .sec .bar{width:14px;height:2px;background:var(--bordo);border-radius:2px;}
-  .sec.sec-grande{font-size:26px;letter-spacing:.02em;}
-  .sec.sec-grande .bar{width:22px;height:4px;}
+  .sec{display:inline-flex;align-items:baseline;flex-wrap:wrap;gap:9px;margin-bottom:16px;}
+  .sec .bar{width:18px;height:3px;background:var(--bordo);border-radius:2px;align-self:center;flex:none;}
+  .sec b{font-family:var(--tit);font-weight:800;font-size:22px;letter-spacing:.01em;color:var(--bordo);}
+  .sec small{font-family:var(--corpo);font-weight:500;font-size:12.5px;color:var(--soft);}
   .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
   .sec-head .hint{font-size:11px;color:var(--faint);}
   canvas{max-width:100%;display:block;}
@@ -251,34 +250,34 @@
     </div>
 
     <section id="sec-spark">
-      <span class="sec"><span class="bar"></span>Page views por dia</span>
+      <span class="sec"><span class="bar"></span><b>Page views</b> <small>por dia</small></span>
       <div class="spark-wrap"><canvas id="spark"></canvas></div>
     </section>
 
     <div class="cols">
       <section id="sec-vsl">
-        <span class="sec"><span class="bar"></span>VSL · retenção</span>
+        <span class="sec"><span class="bar"></span><b>VSL</b> <small>· retenção</small></span>
         <div class="funil" id="vsl"></div>
       </section>
       <section id="sec-mapa">
         <div class="sec-head">
-          <span class="sec"><span class="bar"></span>Localização · mapa</span>
+          <span class="sec"><span class="bar"></span><b>Localização</b> <small>· mapa</small></span>
           <span class="hint">pontos maiores = acessos mais recentes</span>
         </div>
         <div id="mapa"></div>
         <div class="scroll-x" id="geo" style="margin-top:14px"></div>
       </section>
       <section id="sec-funil">
-        <span class="sec"><span class="bar"></span>Funil · profundidade da página</span>
+        <span class="sec"><span class="bar"></span><b>Funil</b> <small>· profundidade da página</small></span>
         <div class="funil" id="funil"></div>
       </section>
       <section id="sec-camp">
-        <span class="sec"><span class="bar"></span>Campanhas · UTM</span>
+        <span class="sec"><span class="bar"></span><b>Campanhas</b> <small>· UTM</small></span>
         <div class="scroll-x"><table id="camp"></table></div>
       </section>
       <section id="sec-hora">
         <div class="sec-head">
-          <span class="sec"><span class="bar"></span>Eventos por hora do dia</span>
+          <span class="sec"><span class="bar"></span><b>Eventos</b> <small>por hora do dia</small></span>
           <span class="hint">eventos somados por faixa de hora</span>
         </div>
         <canvas id="hora" height="80"></canvas>
@@ -287,7 +286,7 @@
 
     <section id="sec-roi">
       <div class="sec-head" style="margin-bottom:16px;">
-        <span class="sec sec-grande"><span class="bar"></span>ROI</span>
+        <span class="sec"><span class="bar"></span><b>ROI</b></span>
         <span class="hint">lançamento manual até a conta de anúncios ser conectada</span>
       </div>
       <div class="duas-col">
@@ -334,7 +333,7 @@
 
     <section>
       <div class="sec-head" style="margin-bottom:16px;">
-        <span class="sec"><span class="bar"></span>Temperatura do lead</span>
+        <span class="sec"><span class="bar"></span><b>Temperatura</b> <small>do lead</small></span>
         <span class="hint">quem abordar primeiro</span>
       </div>
       <div class="temp-grid">
@@ -358,11 +357,11 @@
 
     <div class="duas-col">
       <section>
-        <span class="sec"><span class="bar"></span>Nível de repertório</span>
+        <span class="sec"><span class="bar"></span><b>Nível</b> <small>de repertório</small></span>
         <div id="bloco-nivel"></div>
       </section>
       <section>
-        <span class="sec"><span class="bar"></span>Canais que mais captam</span>
+        <span class="sec"><span class="bar"></span><b>Canais</b> <small>que mais captam</small></span>
         <div class="scroll-x">
           <table>
             <thead><tr><th>utm_source</th><th class="n">Leads</th></tr></thead>
@@ -374,14 +373,14 @@
 
     <section>
       <div class="sec-head" style="margin-bottom:16px;">
-        <span class="sec"><span class="bar"></span>Qualitativo · resposta por pergunta</span>
+        <span class="sec"><span class="bar"></span><b>Qualitativo</b> <small>· resposta por pergunta</small></span>
         <span class="hint">só entre quem completou o quiz</span>
       </div>
       <div id="bloco-perguntas"></div>
     </section>
 
     <section>
-      <span class="sec"><span class="bar"></span>Profissões</span>
+      <span class="sec"><span class="bar"></span><b>Profissões</b></span>
       <div class="scroll-x">
         <table>
           <thead><tr><th>Profissão</th><th class="n">Leads</th></tr></thead>
@@ -403,13 +402,13 @@
     </div>
 
     <section>
-      <span class="sec"><span class="bar"></span>Equipe</span>
+      <span class="sec"><span class="bar"></span><b>Equipe</b></span>
       <div class="equipe-grid" id="equipe-grid"></div>
     </section>
 
     <section>
       <div class="sec-head" style="margin-bottom:16px;">
-        <span class="sec"><span class="bar"></span>Pipeline de leads</span>
+        <span class="sec"><span class="bar"></span><b>Pipeline</b> <small>de leads</small></span>
         <span class="hint">cartões de exemplo — troque a etapa pelo seletor de cada um</span>
       </div>
       <div class="kanban" id="kanban"></div>
