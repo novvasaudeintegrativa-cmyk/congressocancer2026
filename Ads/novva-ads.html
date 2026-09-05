@@ -179,6 +179,11 @@
   .lead-card .badge.quente{background:var(--quente);}
   .lead-card .meta{font-size:10.5px;color:var(--faint);font-style:italic;margin-bottom:7px;}
   .lead-card select{width:100%;font-size:11px;padding:5px 7px;border-radius:7px;border:1px solid var(--linha);color:var(--soft);background:#fff;font-family:var(--corpo);}
+  .lead-card.urgente{border-color:#e0672e;box-shadow:0 0 0 2px rgba(224,103,46,.18);}
+  .tag-urgente{font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#c1501c;background:#fdece3;padding:3px 7px;border-radius:6px;margin-bottom:7px;display:inline-block;}
+  .btn-urgente{width:100%;margin-top:7px;font-family:var(--tit);font-weight:700;font-size:10px;letter-spacing:.02em;text-transform:uppercase;background:#fff;border:1.5px solid var(--linha);color:var(--soft);padding:6px 8px;border-radius:7px;cursor:pointer;}
+  .btn-urgente:hover{border-color:#e0672e;color:#c1501c;}
+  .btn-urgente.on{background:#fdece3;border-color:#e0672e;color:#c1501c;}
 
   .passo{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--linha);cursor:pointer;}
   .passo:first-child{border-top:none;padding-top:0;}
@@ -197,21 +202,38 @@
   .lead-card .nome:hover{color:var(--bordo-vivo);text-decoration:underline;}
   .modal-overlay{position:fixed;inset:0;background:rgba(42,35,32,.5);display:flex;align-items:center;justify-content:center;padding:18px;z-index:60;}
   .modal-conversa{background:var(--card);border-radius:18px;max-width:420px;width:100%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(42,35,32,.25);}
-  .modal-topo{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 18px;border-bottom:1px solid var(--linha);flex:none;}
-  .modal-nome{font-family:var(--tit);font-weight:800;font-size:15px;color:var(--ink);}
-  .modal-sub{font-size:11px;color:var(--faint);margin-top:2px;}
-  .modal-fechar{background:none;border:0;font-size:24px;line-height:1;color:var(--soft);cursor:pointer;padding:0 2px;flex:none;}
-  .modal-fechar:hover{color:var(--bordo);}
-  .modal-aviso{background:#faf1f0;color:var(--bordo);font-size:11px;padding:8px 18px;border-bottom:1px solid var(--linha);flex:none;}
-  .chat{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:8px;background:var(--bg);}
-  .bolha{max-width:80%;padding:9px 12px;border-radius:14px;font-size:13px;line-height:1.42;}
-  .bolha .remetente{font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px;opacity:.75;}
-  .bolha.entra{align-self:flex-start;background:#fff;border:1px solid var(--linha);color:var(--ink);border-bottom-left-radius:4px;}
-  .bolha.sai{align-self:flex-end;background:var(--bordo);color:#fff;border-bottom-right-radius:4px;}
-  .bolha.sai.ia{background:var(--dourado);color:#2a1a00;}
-  .chat-input{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--linha);flex:none;}
-  .chat-input input{flex:1;padding:9px 13px;border-radius:20px;border:1px solid var(--linha);font-size:13px;background:var(--bg);color:var(--faint);}
-  .chat-input button{background:var(--bordo);color:#fff;border:0;border-radius:20px;padding:9px 18px;font-family:var(--tit);font-weight:700;font-size:12px;opacity:.5;}
+  .modal-aviso{background:#faf1f0;color:var(--bordo);font-size:11px;padding:7px 18px;text-align:center;flex:none;}
+
+  /* cabeçalho estilo WhatsApp */
+  .modal-topo{display:flex;align-items:center;gap:11px;padding:11px 14px;background:#008069;flex:none;}
+  .wa-avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.22);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--tit);font-weight:800;font-size:13px;flex:none;}
+  .modal-nome{font-family:var(--corpo);font-weight:600;font-size:14.5px;color:#fff;}
+  .modal-sub{font-size:11.5px;color:rgba(255,255,255,.8);margin-top:1px;}
+  .modal-fechar{background:none;border:0;font-size:22px;line-height:1;color:#fff;cursor:pointer;padding:0 2px;flex:none;margin-left:auto;opacity:.85;}
+  .modal-fechar:hover{opacity:1;}
+
+  .ia-status{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;background:#fff8e1;border-bottom:1px solid var(--linha);flex:none;}
+  .ia-badge{font-size:11.5px;font-weight:700;color:#8a6d00;display:flex;align-items:center;gap:6px;}
+  .ia-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--dourado);flex:none;}
+  .ia-badge.off{color:var(--faint);}
+  .ia-badge.off .dot{background:var(--faint);}
+  #ia-toggle{font-family:var(--tit);font-weight:700;font-size:10.5px;letter-spacing:.02em;text-transform:uppercase;background:#fff;border:1.5px solid var(--dourado);color:#8a6d00;padding:5px 11px;border-radius:999px;cursor:pointer;flex:none;}
+  #ia-toggle.ativar{border-color:var(--verde);color:var(--verde);}
+
+  /* corpo da conversa estilo WhatsApp */
+  .chat{flex:1;overflow-y:auto;padding:14px 12px;display:flex;flex-direction:column;gap:6px;background:#efeae2;}
+  .bolha{max-width:80%;padding:7px 9px 6px;border-radius:8px;font-size:13.5px;line-height:1.4;box-shadow:0 1px 1px rgba(0,0,0,.08);position:relative;}
+  .bolha .remetente{font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px;opacity:.6;}
+  .bolha .hora{display:block;text-align:right;font-size:10px;color:rgba(0,0,0,.4);margin-top:2px;}
+  .bolha .hora .check{color:#53bdeb;margin-left:2px;}
+  .bolha.entra{align-self:flex-start;background:#fff;color:#111b21;border-radius:8px 8px 8px 2px;}
+  .bolha.sai{align-self:flex-end;background:#d9fdd3;color:#111b21;border-radius:8px 8px 2px 8px;}
+  .bolha.sai.ia{background:#fff3c4;}
+
+  /* barra de resposta estilo WhatsApp */
+  .chat-input{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#f0f0f0;flex:none;}
+  .chat-input input{flex:1;padding:10px 15px;border-radius:22px;border:0;font-size:13.5px;background:#fff;color:var(--faint);}
+  .chat-input button{background:#008069;color:#fff;border:0;border-radius:50%;width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center;opacity:.5;font-size:15px;}
 
   /* ---- tour guiado ---- */
   .btn-tour{display:block;margin-top:10px;font-family:var(--tit);font-weight:800;font-size:11.5px;letter-spacing:.02em;text-transform:uppercase;background:#fff;border:1.5px solid var(--bordo-vivo);color:var(--bordo);padding:8px 14px;border-radius:999px;cursor:pointer;}
@@ -499,6 +521,7 @@
 <div class="modal-overlay" id="modal-conversa" hidden>
   <div class="modal-conversa">
     <div class="modal-topo">
+      <div class="wa-avatar" id="mc-avatar"></div>
       <div>
         <div class="modal-nome" id="mc-nome"></div>
         <div class="modal-sub" id="mc-sub"></div>
@@ -506,10 +529,14 @@
       <button type="button" class="modal-fechar" id="mc-fechar" aria-label="Fechar">×</button>
     </div>
     <div class="modal-aviso">Preview — estas mensagens são de exemplo. A conversa de verdade chega na Fase 2 (WhatsApp oficial conectado).</div>
+    <div class="ia-status">
+      <span class="ia-badge" id="ia-badge"><span class="dot"></span><span id="ia-badge-txt">IA Responde</span></span>
+      <button type="button" id="ia-toggle">Desativar IA</button>
+    </div>
     <div class="chat" id="mc-chat"></div>
     <div class="chat-input">
       <input type="text" placeholder="Responder (ligado na Fase 2)" disabled>
-      <button type="button" disabled>Enviar</button>
+      <button type="button" disabled>➤</button>
     </div>
   </div>
 </div>
@@ -904,13 +931,13 @@
   // (Fase 1) isso vira atribuição real por usuário logado, com RLS: cada
   // vendedor só vê os próprios leads, o gestor vê todos.
   var LEADS_EXEMPLO = [
-    { id:1, nome:'Dra. Camila R. (exemplo)',  nivel:'Avançado',      temp:'quente', atrib:'Vendedor 1', coluna:'novo' },
-    { id:2, nome:'Dr. Rafael M. (exemplo)',   nivel:'Intermediário', temp:'morno',  atrib:'Vendedor 2', coluna:'novo' },
-    { id:3, nome:'Fisio Beatriz T. (exemplo)',nivel:'Iniciante',     temp:'frio',   atrib:'Vendedor 3', coluna:'novo' },
-    { id:4, nome:'Dr. André S. (exemplo)',    nivel:'Avançado',      temp:'quente', atrib:'Vendedor 1', coluna:'respondeu' },
-    { id:5, nome:'Enf. Paula K. (exemplo)',   nivel:'Intermediário', temp:'morno',  atrib:'Vendedor 2', coluna:'respondeu' },
-    { id:6, nome:'Dra. Larissa F. (exemplo)', nivel:'Avançado',      temp:'quente', atrib:'Vendedor 1', coluna:'comprou' },
-    { id:7, nome:'Nutri Bianca O. (exemplo)', nivel:'Iniciante',     temp:'frio',   atrib:'Vendedor 3', coluna:'perdido' }
+    { id:1, nome:'Dra. Camila R. (exemplo)',  nivel:'Avançado',      temp:'quente', atrib:'Vendedor 1', coluna:'novo', ia:true, urgente:false },
+    { id:2, nome:'Dr. Rafael M. (exemplo)',   nivel:'Intermediário', temp:'morno',  atrib:'Vendedor 2', coluna:'novo', ia:true, urgente:false },
+    { id:3, nome:'Fisio Beatriz T. (exemplo)',nivel:'Iniciante',     temp:'frio',   atrib:'Vendedor 3', coluna:'novo', ia:true, urgente:false },
+    { id:4, nome:'Dr. André S. (exemplo)',    nivel:'Avançado',      temp:'quente', atrib:'Vendedor 1', coluna:'respondeu', ia:true, urgente:true },
+    { id:5, nome:'Enf. Paula K. (exemplo)',   nivel:'Intermediário', temp:'morno',  atrib:'Vendedor 2', coluna:'respondeu', ia:true, urgente:false },
+    { id:6, nome:'Dra. Larissa F. (exemplo)', nivel:'Avançado',      temp:'quente', atrib:'Vendedor 1', coluna:'comprou', ia:false, urgente:false },
+    { id:7, nome:'Nutri Bianca O. (exemplo)', nivel:'Iniciante',     temp:'frio',   atrib:'Vendedor 3', coluna:'perdido', ia:true, urgente:false }
   ];
   var COLUNAS = [['novo','Novo'], ['respondeu','Respondeu no WhatsApp'], ['comprou','Comprou'], ['perdido','Perdido']];
 
@@ -962,11 +989,16 @@
         var opts = COLUNAS.map(function(c2){
           return '<option value="' + c2[0] + '"' + (c2[0]===l.coluna?' selected':'') + '>' + c2[1] + '</option>';
         }).join('');
-        return '<div class="lead-card">' +
+        return '<div class="lead-card' + (l.urgente ? ' urgente' : '') + '">' +
+          (l.urgente ? '<div class="tag-urgente">🚩 Urgente — outros podem ajudar</div>' : '') +
           '<div class="nome" data-id="' + l.id + '">' + l.nome + '</div>' +
           '<div class="badges"><span class="badge ' + l.temp + '">' + l.temp + '</span></div>' +
           '<div class="meta">' + l.nivel + ' · atribuído a ' + l.atrib + '</div>' +
           '<select data-id="' + l.id + '">' + opts + '</select>' +
+          '<button type="button" class="btn-urgente' + (l.urgente ? ' on' : '') + '" data-id="' + l.id + '" ' +
+            'title="Sinaliza pra equipe que ' + l.atrib + ' não consegue responder agora. Outra pessoa pode ajudar a conversar, mas a venda continua sendo de ' + l.atrib + '.">' +
+            (l.urgente ? 'Cancelar urgente' : 'Marcar urgente') +
+          '</button>' +
         '</div>';
       }).join('') || '<div class="vazio" style="text-align:left;padding:6px 0;">sem leads nesta etapa</div>';
       return '<div class="kanban-col"><h3>' + c[1] + '<span class="qtd">' + itens.length + '</span></h3>' + cards + '</div>';
@@ -976,6 +1008,15 @@
         var st = pipelineState();
         var id = Number(this.dataset.id);
         st.forEach(function(l){ if (l.id === id) l.coluna = sel.value; });
+        salvarPipeline(st);
+        renderPipeline();
+      });
+    });
+    $('kanban').querySelectorAll('.btn-urgente').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var st = pipelineState();
+        var id = Number(this.dataset.id);
+        st.forEach(function(l){ if (l.id === id) l.urgente = !l.urgente; });
         salvarPipeline(st);
         renderPipeline();
       });
@@ -1011,20 +1052,50 @@
     return msgs;
   }
 
+  var conversaAtualId = null;
+
+  function renderIaStatus(lead){
+    var badge = $('ia-badge'), txt = $('ia-badge-txt'), btn = $('ia-toggle');
+    badge.classList.toggle('off', !lead.ia);
+    txt.textContent = lead.ia ? 'IA Responde' : 'IA Desativada';
+    btn.textContent = lead.ia ? 'Desativar IA' : 'Ativar IA';
+    btn.classList.toggle('ativar', !lead.ia);
+  }
+
   function abrirConversa(lead){
+    conversaAtualId = lead.id;
+    var iniciais = lead.nome.replace(/\(exemplo\)/i,'').trim().split(' ').filter(Boolean).slice(0,2)
+      .map(function(p){ return p[0]; }).join('').toUpperCase();
+    $('mc-avatar').textContent = iniciais;
     $('mc-nome').textContent = lead.nome;
     $('mc-sub').textContent = lead.nivel + ' · ' + lead.temp + ' · atribuído a ' + lead.atrib;
+    renderIaStatus(lead);
+    var minuto = 2;
     $('mc-chat').innerHTML = conversaExemplo(lead).map(function(m){
       var cls = m.de === 'lead' ? 'entra' : (m.de === 'ia' ? 'sai ia' : 'sai');
-      return '<div class="bolha ' + cls + '"><div class="remetente">' + m.rem + '</div>' + m.txt + '</div>';
+      minuto += 1 + Math.floor(Math.random() * 2);
+      var hora = '14:' + String(minuto % 60).padStart(2, '0');
+      var check = m.de === 'lead' ? '' : ' <span class="check">✓✓</span>';
+      return '<div class="bolha ' + cls + '"><div class="remetente">' + m.rem + '</div>' + m.txt +
+        '<span class="hora">' + hora + check + '</span></div>';
     }).join('');
     $('modal-conversa').hidden = false;
   }
-  function fecharConversa(){ $('modal-conversa').hidden = true; }
+  function fecharConversa(){ $('modal-conversa').hidden = true; conversaAtualId = null; }
 
   $('mc-fechar').addEventListener('click', fecharConversa);
   $('modal-conversa').addEventListener('click', function(e){ if (e.target === this) fecharConversa(); });
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape') fecharConversa(); });
+
+  $('ia-toggle').addEventListener('click', function(){
+    if (conversaAtualId == null) return;
+    var st = pipelineState();
+    var lead = st.filter(function(l){ return l.id === conversaAtualId; })[0];
+    if (!lead) return;
+    lead.ia = !lead.ia;
+    salvarPipeline(st);
+    renderIaStatus(lead);
+  });
 
   // ---- tour guiado (primeiro contato com o CRM) ----
   var TOUR_PASSOS = [
