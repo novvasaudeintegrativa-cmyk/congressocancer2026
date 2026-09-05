@@ -1038,17 +1038,30 @@
     { nome:'Dr. Otávio N. (exemplo)',    nivel:'Avançado',      temp:'quente' }
   ];
 
+  function criarLeadFilaExemplo(st){
+    var novo = FILA_NOMES_POOL[Math.floor(Math.random() * FILA_NOMES_POOL.length)];
+    var maxId = st.reduce(function(m, l){ return Math.max(m, l.id); }, 0);
+    return {
+      id: maxId + 1, nome: novo.nome, nivel: novo.nivel, temp: novo.temp,
+      atrib: null, coluna: 'novo', ia: true, urgente: false,
+      esperaMin: 8 // começa perto do alerta, sobe em tempo real dali pra frente
+    };
+  }
+
+  // Reinicia a fila (zera o tempo de espera) toda vez que a página é carregada
+  // — não deixa acumular de uma visita pra outra. Mantém os leads já
+  // atribuídos (pipeline/Kanban) intactos, só a fila de espera é zerada.
+  function reiniciarFilaSimulacao(){
+    var claimados = pipelineState().filter(function(l){ return l.atrib; });
+    claimados.push(criarLeadFilaExemplo(claimados));
+    salvarPipeline(claimados);
+  }
+
   function garantirFilaViva(){
     var st = pipelineState();
     var pendentes = st.filter(function(l){ return !l.atrib; });
     if (!pendentes.length){
-      var novo = FILA_NOMES_POOL[Math.floor(Math.random() * FILA_NOMES_POOL.length)];
-      var maxId = st.reduce(function(m, l){ return Math.max(m, l.id); }, 0);
-      st.push({
-        id: maxId + 1, nome: novo.nome, nivel: novo.nivel, temp: novo.temp,
-        atrib: null, coluna: 'novo', ia: true, urgente: false,
-        esperaMin: 6 + Math.floor(Math.random() * 3) // já nasce quase chegando no alerta
-      });
+      st.push(criarLeadFilaExemplo(st));
     } else {
       pendentes.forEach(function(l){ l.esperaMin = (l.esperaMin || 0) + 1; });
     }
@@ -1389,7 +1402,7 @@
     if (state.tab === 'quiz' && !state.quizCarregado){ state.quizCarregado = true; loadQuiz(); }
     if (state.tab === 'crm' && !state.crmCarregado){
       state.crmCarregado = true;
-      garantirFilaViva(); renderEquipe(); renderPipeline(); renderPassos();
+      renderFila(); renderEquipe(); renderPipeline(); renderPassos();
       var jaViu = false;
       try { jaViu = !!localStorage.getItem('crm-tour-visto'); } catch(e){}
       if (!jaViu) setTimeout(tourIniciar, 400);
@@ -1405,7 +1418,8 @@
 
   loadTrafego();
   renderPassosTrafego();
-  setInterval(garantirFilaViva, 60000); // a fila da IA fica "viva": 1 tick = 1 min, ritmo real
+  reiniciarFilaSimulacao(); // zera a fila a cada carregamento da página
+  setInterval(garantirFilaViva, 60000); // dali em diante, 1 tick = 1 min, ritmo real
 })();
 </script>
 </body>
