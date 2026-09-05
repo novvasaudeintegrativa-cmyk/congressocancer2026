@@ -140,6 +140,16 @@
   .opcao-linha .trilho i{display:block;height:100%;border-radius:4px;background:var(--dourado);width:0%;transition:width .5s ease;}
   .opcao-linha .pct{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600;}
 
+  /* ---- form de investimento (ROI) ---- */
+  #form-investimento label{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);margin:10px 0 5px;font-weight:600;}
+  #form-investimento label:first-child{margin-top:0;}
+  #form-investimento input{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--linha);background:#fff;color:var(--ink);font-family:var(--corpo);font-size:13px;}
+  .btn-roi{margin-top:14px;font-family:var(--tit);font-weight:800;font-size:12.5px;letter-spacing:.02em;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:10px;padding:11px 16px;cursor:pointer;width:100%;}
+  .btn-roi:hover{background:var(--bordo-vivo);}
+  .btn-roi:disabled{opacity:.6;cursor:default;}
+  .kpi.bom .n{color:var(--verde);}
+  .kpi.ruim .n{color:var(--bordo-vivo);}
+
   @media (min-width:900px){
     .wrap{padding:28px 28px 56px;}
     .toprow{grid-template-columns:236px minmax(0,1fr);gap:18px;margin-bottom:18px;align-items:start;}
@@ -207,6 +217,36 @@
       </div>
       <div class="kpis" id="kpis"></div>
     </div>
+
+    <section id="sec-roi">
+      <div class="sec-head" style="margin-bottom:16px;">
+        <span class="sec"><span class="bar"></span>Investimento &amp; Retorno</span>
+        <span class="hint">lançamento manual até a conta de anúncios ser conectada</span>
+      </div>
+      <div class="duas-col">
+        <div>
+          <div class="kpis" id="roi-kpis" style="grid-template-columns:1fr 1fr;margin-bottom:16px;"></div>
+          <div class="scroll-x">
+            <table>
+              <thead><tr><th>Produto (Lote)</th><th class="n">Qtd</th><th class="n">Total</th></tr></thead>
+              <tbody id="tabela-vendas"></tbody>
+            </table>
+          </div>
+        </div>
+        <form id="form-investimento">
+          <label for="inv-data">Data</label>
+          <input type="date" id="inv-data" required>
+          <label for="inv-canal">Canal (opcional)</label>
+          <input type="text" id="inv-canal" placeholder="ex: meta_ads, google_ads">
+          <label for="inv-desc">Descrição (opcional)</label>
+          <input type="text" id="inv-desc" placeholder="ex: campanha lote 1">
+          <label for="inv-valor">Valor investido (R$)</label>
+          <input type="number" id="inv-valor" step="0.01" min="0" required>
+          <button type="submit" class="btn-roi" id="btn-lancar">Lançar investimento</button>
+          <div class="vazio" id="inv-msg" style="margin-top:8px;text-align:left;padding:0;"></div>
+        </form>
+      </div>
+    </section>
 
     <section id="sec-spark">
       <span class="sec"><span class="bar"></span>Page views por dia</span>
@@ -482,9 +522,74 @@
     state.chartH = new Chart($('hora'), { type:'bar', data:data, options:opts });
   }
 
+  var fmtMoeda = function(n){ return (n==null?0:n).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); };
+
+  function renderROI(d){
+    var investido = d.total_investido || 0;
+    var vendas = d.total_vendas || 0;
+    var roi = investido > 0 ? ((vendas - investido) / investido * 100) : null;
+    var roiTxt = roi == null ? '—' : (roi >= 0 ? '+' : '') + Math.round(roi) + '%';
+    var itens = [
+      ['Investido', fmtMoeda(investido), ''],
+      ['Vendas', fmtMoeda(vendas), fmt(d.qtd_vendas||0) + ' venda(s)'],
+      ['Retorno (ROI)', roiTxt, roi == null ? 'sem investimento lançado' : (roi >= 0 ? 'positivo' : 'negativo')]
+    ];
+    $('roi-kpis').innerHTML = itens.map(function(it, i){
+      var cls = i === 2 ? (roi == null ? '' : (roi >= 0 ? ' bom' : ' ruim')) : '';
+      return '<div class="kpi' + cls + '"><div class="l">' + it[0] + '</div><div class="n">' + it[1] + '</div><div class="s">' + it[2] + '</div></div>';
+    }).join('');
+
+    var produtos = d.por_produto || [];
+    if (!produtos.length){
+      $('tabela-vendas').innerHTML = '<tr><td colspan="3" class="vazio">Sem venda registrada ainda (configure o webhook da Eduzz — SUPABASE.md, seção 11).</td></tr>';
+    } else {
+      $('tabela-vendas').innerHTML = produtos.map(function(p){
+        return '<tr><td>' + p.produto + '</td><td class="n">' + fmt(p.qtd) + '</td><td class="n">' + fmtMoeda(p.total) + '</td></tr>';
+      }).join('');
+    }
+  }
+
+  function carregarROI(){
+    return rpc('rpc_roi', {}).then(renderROI).catch(function(e){
+      $('roi-kpis').innerHTML = '<div class="kpi"><div class="l">Investimento &amp; Retorno</div><div class="n" style="font-size:13px;color:var(--soft)">erro: ' + e.message + '</div><div class="s">rodou a seção 11 do SUPABASE.md?</div></div>';
+      $('tabela-vendas').innerHTML = '';
+    });
+  }
+
+  $('inv-data').value = ymd(new Date());
+  $('form-investimento').addEventListener('submit', function(e){
+    e.preventDefault();
+    var valor = parseFloat($('inv-valor').value);
+    if (!valor || valor <= 0) return;
+    var row = {
+      data: $('inv-data').value,
+      canal: $('inv-canal').value.trim() || null,
+      descricao: $('inv-desc').value.trim() || null,
+      valor: valor
+    };
+    var btn = $('btn-lancar');
+    btn.disabled = true; btn.textContent = 'Lançando…';
+    $('inv-msg').textContent = '';
+    fetch(SUPABASE_URL + '/rest/v1/investimentos', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', apikey:SUPABASE_KEY, Authorization:'Bearer '+SUPABASE_KEY, Prefer:'return=minimal' },
+      body: JSON.stringify(row)
+    }).then(function(r){
+      if (!r.ok) throw new Error('status ' + r.status);
+      $('inv-msg').textContent = 'Lançado!';
+      $('inv-canal').value = ''; $('inv-desc').value = ''; $('inv-valor').value = '';
+      carregarROI();
+    }).catch(function(err){
+      $('inv-msg').textContent = 'Não deu pra lançar (' + err.message + ').';
+    }).finally(function(){
+      btn.disabled = false; btn.textContent = 'Lançar investimento';
+    });
+  });
+
   function loadTrafego(){
     $('foot').textContent = 'atualizando…';
     $('hero-lbl').textContent = 'Visitantes · ' + LABEL[state.period];
+    carregarROI();
     return rpc('rpc_dashboard', range()).then(function(res){
       var d = Array.isArray(res) ? res[0] : res;
       var k = d.kpis || {};

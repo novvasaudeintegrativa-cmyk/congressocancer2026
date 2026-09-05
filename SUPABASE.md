@@ -672,3 +672,173 @@ pela chave `anon`.
 - **Rodar o SQL acima antes de divulgar o link** — sem a tabela `quiz_leads`
   criada, o envio do formulário falha (o quiz mostra erro e deixa a pessoa
   tentar de novo, mas não perde as respostas já dadas).
+
+## 11. ROI (investimento vs. vendas) — aba "Tráfego & Conversão"
+
+Duas tabelas novas, sem relação com `events`/`quiz_leads`, pra responder
+"quanto investi" e "quanto voltou em venda":
+
+- **`investimentos`** — lançamento manual de gasto (não tem integração com
+  Meta Ads ainda; quando a conta de anúncios for autorizada, dá pra puxar
+  automático depois, mas por enquanto é um formulário simples no painel).
+- **`vendas`** — alimentada por um **webhook da Eduzz**: toda vez que uma
+  venda é confirmada, a Eduzz chama uma Edge Function nossa, que grava a
+  linha (produto/Lote, valor, status).
+
+> ⚠️ **Aviso de honestidade:** não tenho certeza absoluta de como a Eduzz
+> nomeia os campos no payload do webhook dela hoje (isso varia por conta/API
+> e muda com o tempo). A função abaixo tenta alguns nomes comuns, mas
+> **sempre grava o payload bruto** na coluna `raw` — então nada se perde
+> mesmo que o mapeamento inicial erre. Depois de configurar o postback na
+> Eduzz e fazer uma venda de teste, olhe a coluna `raw` na tabela `vendas` e
+> me mande o que caiu lá pra eu ajustar os nomes de campo certos.
+
+Rode no SQL Editor:
+
+```sql
+-- ---------- investimentos (lançamento manual de gasto) ----------
+create table if not exists public.investimentos (
+  id          bigint generated always as identity primary key,
+  created_at  timestamptz not null default now(),
+  data        date not null default current_date,
+  canal       text,        -- ex: 'meta_ads', 'google_ads', 'organico' (opcional)
+  descricao   text,
+  valor       numeric(10,2) not null
+);
+
+alter table public.investimentos enable row level security;
+
+drop policy if exists "anon insere investimento" on public.investimentos;
+create policy "anon insere investimento"
+  on public.investimentos for insert
+  to anon
+  with check (true);
+
+revoke select on public.investimentos from anon;
+
+-- ---------- vendas (alimentada pelo webhook da Eduzz, não pelo anon) ----------
+create table if not exists public.vendas (
+  id            bigint generated always as identity primary key,
+  created_at    timestamptz not null default now(),
+  eduzz_id      text,
+  produto       text,
+  produto_cod   text,
+  valor         numeric(10,2),
+  status        text,
+  cliente_nome  text,
+  cliente_email text,
+  raw           jsonb not null default '{}'::jsonb
+);
+
+create index if not exists vendas_produto_idx    on public.vendas (produto);
+create index if not exists vendas_created_at_idx on public.vendas (created_at desc);
+
+alter table public.vendas enable row level security;
+-- sem policy de insert pro anon: só a Edge Function (service role) escreve aqui.
+revoke all on public.vendas from anon;
+
+-- ---------- RPC agregado (sem PII, exposto pro painel) ----------
+create or replace function public.rpc_roi()
+returns json language sql stable
+security definer set search_path = public
+as $$
+  select json_build_object(
+    'total_investido', (select coalesce(sum(valor),0) from public.investimentos),
+    'total_vendas',    (select coalesce(sum(valor),0) from public.vendas where status is null or status ilike 'pag%'),
+    'qtd_vendas',      (select count(*) from public.vendas where status is null or status ilike 'pag%'),
+    'por_produto', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
+        select coalesce(produto,'(sem produto)') as produto,
+               count(*) as qtd,
+               sum(valor) as total
+        from public.vendas
+        where status is null or status ilike 'pag%'
+        group by 1) t)
+  );
+$$;
+
+grant execute on function public.rpc_roi() to anon;
+notify pgrst, 'reload schema';
+```
+
+### Edge Function `eduzz-webhook`
+
+Supabase → **Edge Functions** → **Deploy a new function** → nome **`eduzz-webhook`**
+→ editor no navegador → apague tudo e cole:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+// Edge Function: eduzz-webhook — recebe notificação de venda da Eduzz e grava em public.vendas
+// Os nomes de campo abaixo são um palpite dos mais comuns na Eduzz; o payload
+// inteiro sempre vai pra coluna `raw`, então dá pra corrigir o mapeamento
+// depois sem perder nenhuma venda já recebida.
+
+const SECRET = Deno.env.get("EDUZZ_WEBHOOK_SECRET"); // opcional — defina como secret do projeto
+
+function pick(body: any, paths: string[]) {
+  for (const p of paths) {
+    const v = p.split(".").reduce((o, k) => (o == null ? undefined : o[k]), body);
+    if (v != null && v !== "") return v;
+  }
+  return null;
+}
+
+Deno.serve(async (req) => {
+  if (req.method !== "POST") return new Response("method", { status: 405 });
+
+  if (SECRET) {
+    const token = new URL(req.url).searchParams.get("token");
+    if (token !== SECRET) return new Response("unauthorized", { status: 401 });
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    try { body = Object.fromEntries((await req.formData()).entries()); }
+    catch { return new Response("bad body", { status: 400 }); }
+  }
+
+  const row = {
+    eduzz_id:      String(pick(body, ["cod_transacao", "trans_cod", "id", "data.id"]) ?? ""),
+    produto:       pick(body, ["nome_produto", "product_name", "titulo_conteudo", "data.items.0.content_name"]),
+    produto_cod:   String(pick(body, ["cod_produto", "product_id", "data.items.0.product_id"]) ?? ""),
+    valor:         Number(pick(body, ["valor_total", "total_value", "valor", "data.total_value"]) ?? 0),
+    status:        String(pick(body, ["situacao", "status", "data.status"]) ?? ""),
+    cliente_nome:  pick(body, ["nome_cliente", "customer_name", "data.customer.name"]),
+    cliente_email: pick(body, ["email_cliente", "customer_email", "data.customer.email"]),
+    raw: body
+  };
+
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const resp = await fetch(`${SUPABASE_URL}/rest/v1/vendas`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: KEY, authorization: `Bearer ${KEY}`, prefer: "return=minimal" },
+    body: JSON.stringify(row)
+  });
+  if (!resp.ok) return new Response(await resp.text(), { status: 500 });
+  return new Response("ok", { status: 200 });
+});
+```
+
+**Deploy.** `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` já vêm preenchidos
+automaticamente. Se quiser travar contra chamadas falsas, adicione um secret
+`EDUZZ_WEBHOOK_SECRET` (Edge Functions → Secrets) com um valor aleatório, e
+configure na Eduzz a URL do postback já com `?token=SEUVALOR` no final.
+
+### Configurar na Eduzz
+
+No painel da Eduzz, procure por **Notificação/Postback/Webhook** (o nome
+exato do menu varia — geralmente fica em configurações do produto ou da
+conta) e cadastre a URL:
+
+```
+https://nbhekjgbszyuuxrynzfo.supabase.co/functions/v1/eduzz-webhook
+```
+
+(+ `?token=...` no final, se tiver configurado o secret). Faça uma venda de
+teste (ou peça pra Eduzz reenviar a notificação de uma venda antiga) e
+confira **Table Editor → vendas** — se a linha aparecer com `produto`/`valor`
+vazios mas `raw` preenchido, me manda o conteúdo de `raw` pra eu corrigir o
+mapeamento de campos.
