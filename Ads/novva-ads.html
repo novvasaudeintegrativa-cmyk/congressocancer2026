@@ -326,6 +326,16 @@
       </div>
     </section>
 
+    <section>
+      <div class="sec-head" style="margin-bottom:16px;">
+        <span class="sec"><span class="bar"></span><b>Configuração</b> <small>pendente nesta aba</small></span>
+        <span class="hint">marque conforme for fazendo — fica salvo neste navegador</span>
+      </div>
+      <div id="passos-trafego"></div>
+      <div class="passos-progresso"><i id="passos-trafego-barra" style="width:0%"></i></div>
+      <div class="passos-progresso-lbl" id="passos-trafego-lbl"></div>
+    </section>
+
     <p class="foot" id="foot">carregando…</p>
   </div>
 
@@ -399,6 +409,16 @@
           <tbody id="tabela-profissao"></tbody>
         </table>
       </div>
+    </section>
+
+    <section>
+      <div class="sec-head" style="margin-bottom:16px;">
+        <span class="sec"><span class="bar"></span><b>Configuração</b> <small>pendente nesta aba</small></span>
+        <span class="hint">marque conforme for fazendo — fica salvo neste navegador</span>
+      </div>
+      <div id="passos-quiz"></div>
+      <div class="passos-progresso"><i id="passos-quiz-barra" style="width:0%"></i></div>
+      <div class="passos-progresso-lbl" id="passos-quiz-lbl"></div>
     </section>
 
     <p class="foot">Sem PII aqui — nome/WhatsApp continuam só no Table Editor do Supabase (<code>quiz_leads</code>).</p>
@@ -774,6 +794,7 @@
   }
 
   function loadQuiz(){
+    renderPassosQuiz();
     $('q-aviso').classList.remove('ok');
     $('q-aviso').textContent = 'Carregando dados do quiz…';
     return rpc('rpc_quiz_dashboard', {}).then(function(d){
@@ -895,27 +916,47 @@
     });
   }
 
+  // ---- checklist genérico (reusado nas 3 abas) ----
+  var PASSOS_TRAFEGO = [
+    { t:'Rodar SQL da tabela events + views agregadas', d:'SUPABASE.md, seção 2 — coletor de analytics do site.', padrao:true },
+    { t:'Deploy da Edge Function collect (geo por IP)', d:'SUPABASE.md, seção 7 — resolve país/estado/cidade de cada acesso.', padrao:true },
+    { t:'Rodar SQL de investimentos / vendas / rpc_roi', d:'SUPABASE.md, seção 11 — habilita o card de ROI acima.', padrao:true },
+    { t:'Deploy da Edge Function eduzz-webhook', d:'SUPABASE.md, seção 11 — recebe a notificação de venda da Eduzz e grava na tabela vendas.', padrao:false },
+    { t:'Configurar o postback na Eduzz', d:'Aponta pra URL da eduzz-webhook, pra vendas caírem automaticamente (Lote 1, VIP etc.) sem lançar manual.', padrao:false },
+    { t:'(Opcional) Anexar UTM/visitor_id ao link de checkout', d:'Hoje o clique é rastreado, mas o link em si sai limpo pra Eduzz — sem isso não dá pra saber de qual canal veio cada venda.', padrao:false },
+    { t:'Autorizar a conta de Meta Ads', d:'Desbloqueia trazer o "investido" automaticamente em vez de lançar manual no formulário do ROI.', padrao:false }
+  ];
+
+  var PASSOS_QUIZ = [
+    { t:'Rodar SQL da tabela quiz_leads', d:'SUPABASE.md, seção 8 — onde o quiz grava cada lead.', padrao:true },
+    { t:'Rodar SQL da função rpc_quiz_dashboard', d:'SUPABASE.md, seção 9 — alimenta os números desta aba.', padrao:true },
+    { t:'Trocar DEMO_MODE para false no quiz.html', d:'Enquanto estiver true, nenhuma resposta é salva de verdade — o quiz só mostra o resultado na hora, sem gravar lead.', padrao:false },
+    { t:'Divulgar o link do quiz nos canais planejados', d:'Bio do Instagram, stories, palestrantes, grupos, lista de WhatsApp — docs/plano-divulgacao-manual-2026.md.', padrao:false }
+  ];
+
   var PASSOS_META = [
     { t:'Decidir número único da equipe', d:'Recomendado: 1 número compartilhado, com atribuição por vendedor dentro do próprio CRM (já é assim no pipeline acima) — mais barato e rápido de aprovar do que um número por pessoa.' },
     { t:'Criar Portfólio Empresarial na Meta', d:'business.facebook.com → menu superior esquerdo → Criar portfólio empresarial.' },
     { t:'Verificar o negócio', d:'Configurações do Negócio → Informações da Empresa → Verificação. Precisa de CNPJ + comprovante de endereço da empresa. Leva de 1 a 5 dias úteis — comece por aqui, é o passo mais demorado.' },
     { t:'Criar app + ativar produto WhatsApp', d:'developers.facebook.com → Meus Apps → Criar App (tipo Negócios) → adicionar produto WhatsApp → vincular ao Portfólio Empresarial criado acima.' },
-    { t:'Cadastrar o número de telefone', d:'Configuração da API → Adicionar número de telefone. Se o número já está no WhatsApp comum/Business normal, precisa sair de lá antes de migrar. Gera o Phone Number ID e o WABA ID.' },
+    { t:'Cadastrar o número de telefone', d:'Configuração da API → Adicionar número de telefone. Se o número já está no WhatsApp comum/Business normal (ou noutra plataforma como Zendesk), precisa confirmar de quem é o Business Manager dono do WABA antes de migrar. Gera o Phone Number ID e o WABA ID.' },
     { t:'Gerar token de acesso permanente', d:'Configurações do Negócio → Usuários do Sistema → criar usuário → gerar token com permissão whatsapp_business_messaging e whatsapp_business_management (não o token de teste de 24h).' },
     { t:'Criar templates de mensagem', d:'WhatsApp Manager → Modelos de Mensagem → Criar modelo. Só necessário pra mensagem que a equipe manda primeiro (reativar um lead frio, por exemplo) — resposta dentro de conversa iniciada pelo lead não precisa.' },
     { t:'Passar as credenciais', d:'Phone Number ID, WABA ID e o token permanente — manda fora do chat público, se possível, pra eu construir a Edge Function que liga tudo isso no CRM.' }
   ];
 
-  function passosState(){
-    try { return JSON.parse(localStorage.getItem('crm-passos-meta') || '{}'); }
-    catch(e){ return {}; }
+  function checklistState(key, items){
+    var st;
+    try { st = JSON.parse(localStorage.getItem(key) || 'null'); } catch(e){ st = null; }
+    if (!st){ st = {}; items.forEach(function(p, i){ st[i] = !!p.padrao; }); }
+    return st;
   }
-  function salvarPassos(s){ try { localStorage.setItem('crm-passos-meta', JSON.stringify(s)); } catch(e){} }
+  function salvarChecklist(key, s){ try { localStorage.setItem(key, JSON.stringify(s)); } catch(e){} }
 
-  function renderPassos(){
-    var st = passosState();
+  function renderChecklist(items, key, elId, barraId, lblId){
+    var st = checklistState(key, items);
     var feitos = 0;
-    $('passos-meta').innerHTML = PASSOS_META.map(function(p, i){
+    $(elId).innerHTML = items.map(function(p, i){
       var done = !!st[i];
       if (done) feitos++;
       return '<label class="passo' + (done?' feito':'') + '">' +
@@ -924,18 +965,22 @@
         '<div class="detalhe">' + p.d + '</div></span>' +
       '</label>';
     }).join('');
-    var pct = Math.round(feitos / PASSOS_META.length * 100);
-    $('passos-progresso-barra').style.width = pct + '%';
-    $('passos-progresso-lbl').textContent = feitos + ' de ' + PASSOS_META.length + ' concluídos';
-    $('passos-meta').querySelectorAll('input[type=checkbox]').forEach(function(cb){
+    var pct = Math.round(feitos / items.length * 100);
+    $(barraId).style.width = pct + '%';
+    $(lblId).textContent = feitos + ' de ' + items.length + ' concluídos';
+    $(elId).querySelectorAll('input[type=checkbox]').forEach(function(cb){
       cb.addEventListener('change', function(){
-        var s = passosState();
+        var s = checklistState(key, items);
         s[this.dataset.i] = this.checked;
-        salvarPassos(s);
-        renderPassos();
+        salvarChecklist(key, s);
+        renderChecklist(items, key, elId, barraId, lblId);
       });
     });
   }
+
+  function renderPassos(){ renderChecklist(PASSOS_META, 'crm-passos-meta', 'passos-meta', 'passos-progresso-barra', 'passos-progresso-lbl'); }
+  function renderPassosTrafego(){ renderChecklist(PASSOS_TRAFEGO, 'trafego-passos', 'passos-trafego', 'passos-trafego-barra', 'passos-trafego-lbl'); }
+  function renderPassosQuiz(){ renderChecklist(PASSOS_QUIZ, 'quiz-passos', 'passos-quiz', 'passos-quiz-barra', 'passos-quiz-lbl'); }
 
   // ============================================================
   // Nav principal (troca de painel) + reload
@@ -967,6 +1012,7 @@
   });
 
   loadTrafego();
+  renderPassosTrafego();
 })();
 </script>
 </body>
