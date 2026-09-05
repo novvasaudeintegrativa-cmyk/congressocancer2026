@@ -576,7 +576,88 @@ vazar WhatsApp/e-mail. Pra ver os leads:
   senha/login (Supabase Auth) — hoje não existe autenticação no site, então
   esse painel ainda não foi criado.
 
-### Antes de publicar o `quiz.html`
+## 9. Painel do quiz (`quiz-dashboard.html`)
+
+Painel agregado (sem PII) que lê `quiz_leads` cruzado com `events` só pra
+classificar a **temperatura** de cada lead — nome/WhatsApp nunca saem daqui,
+só contagens. Rode no mesmo projeto (SQL Editor):
+
+```sql
+-- ========== Painel do quiz (agregado, sem PII) ==========
+-- security definer pq o anon nao tem SELECT em quiz_leads nem em events,
+-- so nesta funcao que devolve agregados.
+create or replace function public.rpc_quiz_dashboard()
+returns json language sql stable
+security definer set search_path = public
+as $$
+  with leads as (
+    -- 1 linha por pessoa (visitor_id, com fallback pro whatsapp): pega a
+    -- linha completa (nivel preenchido) se existir, senao a parcial.
+    select distinct on (coalesce(visitor_id, whatsapp))
+      id, visitor_id, whatsapp, profissao, nivel, pontuacao, respostas,
+      utm_source, utm_medium, utm_campaign, created_at
+    from public.quiz_leads
+    order by coalesce(visitor_id, whatsapp), (nivel is not null) desc, created_at desc
+  ),
+  cta as (
+    select distinct visitor_id
+    from public.events
+    where event in ('InitiateCheckout', 'Contact')
+      and props->>'content_name' in ('Quiz CTA Lote', 'WhatsApp via quiz')
+  ),
+  classificado as (
+    select l.*,
+      case
+        when l.nivel is null then 'frio'
+        when c.visitor_id is not null then 'quente'
+        else 'morno'
+      end as temperatura
+    from leads l
+    left join cta c on c.visitor_id = l.visitor_id
+  )
+  select json_build_object(
+    'total_contatos',  (select count(*) from classificado),
+    'total_completos', (select count(*) from classificado where nivel is not null),
+    'temperatura', (select json_build_object(
+        'frio',   count(*) filter (where temperatura = 'frio'),
+        'morno',  count(*) filter (where temperatura = 'morno'),
+        'quente', count(*) filter (where temperatura = 'quente')
+      ) from classificado),
+    'por_nivel', (select json_build_object(
+        'iniciante',     count(*) filter (where nivel = 'iniciante'),
+        'intermediario', count(*) filter (where nivel = 'intermediario'),
+        'avancado',      count(*) filter (where nivel = 'avancado')
+      ) from classificado),
+    'por_profissao', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
+        select coalesce(profissao,'(não informado)') as profissao, count(*) as total
+        from classificado group by 1) t),
+    'por_canal', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
+        select coalesce(utm_source,'(direto)') as canal, count(*) as total
+        from classificado group by 1 limit 10) t),
+    'por_dia', (select coalesce(json_agg(t order by t.dia), '[]'::json) from (
+        select (created_at at time zone 'America/Sao_Paulo')::date as dia, count(*) as total
+        from classificado group by 1 order by 1 desc limit 30) t),
+    'por_pergunta', (select coalesce(json_agg(t order by t.pergunta), '[]'::json) from (
+        select elem.ordinality::int as pergunta,
+               count(*) filter (where elem.valor = '1') as opcao_a,
+               count(*) filter (where elem.valor = '2') as opcao_b,
+               count(*) filter (where elem.valor = '3') as opcao_c
+        from classificado c
+        cross join lateral jsonb_array_elements_text(c.respostas->'respostas') with ordinality as elem(valor, ordinality)
+        where c.nivel is not null
+        group by 1) t)
+  );
+$$;
+
+grant execute on function public.rpc_quiz_dashboard() to anon;
+notify pgrst, 'reload schema';
+```
+
+O painel chama `POST /rest/v1/rpc/rpc_quiz_dashboard` (sem parâmetros) e
+recebe só esse JSON agregado — nenhuma linha individual de `quiz_leads` sai
+pela chave `anon`.
+
+## 10. Antes de publicar o `quiz.html`
 
 - Trocar `SITE_URL` no `<script>` do `quiz.html` pelo domínio real (hoje é um
   placeholder), e conferir se o link `index.html#lotes?utm_...` cai na seção
