@@ -185,6 +185,26 @@
   .btn-urgente:hover{border-color:#e0672e;color:#c1501c;}
   .btn-urgente.on{background:#fdece3;border-color:#e0672e;color:#c1501c;}
 
+  /* ---- fila da IA (conversas sem vendedor ainda) ---- */
+  .fila-secao{background:#fffcf2;border:1.5px solid var(--dourado);}
+  .fila-item{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #f0e6c8;}
+  .fila-item:first-child{border-top:none;padding-top:0;}
+  .fila-ia-dot{width:8px;height:8px;border-radius:50%;background:var(--dourado);flex:none;animation:pulse 1.6s ease-in-out infinite;}
+  .fila-info{flex:1;min-width:180px;}
+  .fila-info .nome{font-weight:700;font-size:13.5px;color:var(--ink);}
+  .fila-info .sub{font-size:11.5px;color:var(--soft);margin-top:2px;}
+  .fila-acao{display:flex;align-items:center;gap:8px;flex:none;}
+  .fila-acao select{font-size:12px;padding:7px 9px;border-radius:8px;border:1px solid var(--linha);color:var(--soft);background:#fff;font-family:var(--corpo);}
+  .btn-assumir{font-family:var(--tit);font-weight:800;font-size:11.5px;letter-spacing:.02em;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;}
+  .btn-assumir:hover{background:var(--bordo-vivo);}
+  .fila-urgencia{width:130px;flex:none;}
+  .fila-urgencia-trilho{height:6px;border-radius:4px;background:var(--track);overflow:hidden;}
+  .fila-urgencia-trilho i{display:block;height:100%;border-radius:4px;}
+  .fila-urgencia-txt{display:block;font-size:10px;color:var(--soft);margin-top:4px;font-variant-numeric:tabular-nums;}
+  .fila-urgencia-txt.critico{color:#b92d3d;font-weight:700;}
+  .fila-dot-alerta{width:7px;height:7px;border-radius:50%;background:#b92d3d;display:inline-block;margin-right:4px;animation:pulseAlerta .9s ease-in-out infinite;}
+  @keyframes pulseAlerta{0%,100%{opacity:1;}50%{opacity:.2;}}
+
   .passo{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--linha);cursor:pointer;}
   .passo:first-child{border-top:none;padding-top:0;}
   .passo input[type=checkbox]{margin-top:3px;width:17px;height:17px;accent-color:var(--bordo-vivo);flex:none;cursor:pointer;}
@@ -198,8 +218,8 @@
   .passos-progresso-lbl{font-size:11.5px;color:var(--soft);margin-top:7px;}
 
   /* ---- lead clicável + preview de conversa ---- */
-  .lead-card .nome{cursor:pointer;}
-  .lead-card .nome:hover{color:var(--bordo-vivo);text-decoration:underline;}
+  .lead-card .nome, .fila-info .nome{cursor:pointer;}
+  .lead-card .nome:hover, .fila-info .nome:hover{color:var(--bordo-vivo);text-decoration:underline;}
   .modal-overlay{position:fixed;inset:0;background:rgba(42,35,32,.5);display:flex;align-items:center;justify-content:center;padding:18px;z-index:60;}
   .modal-conversa{background:var(--card);border-radius:18px;max-width:420px;width:100%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(42,35,32,.25);}
   .modal-aviso{background:#faf1f0;color:var(--bordo);font-size:11px;padding:7px 18px;text-align:center;flex:none;}
@@ -490,6 +510,14 @@
       equipe ficam salvos só neste navegador por enquanto.
       <button type="button" class="btn-tour" id="btn-tour">Fazer tour guiado</button>
     </div>
+
+    <section id="sec-fila" class="fila-secao">
+      <div class="sec-head" style="margin-bottom:14px;">
+        <span class="sec"><span class="bar"></span><b>Fila da IA</b> <small>conversas sem vendedor ainda</small></span>
+        <span class="hint">venda conjunta por enquanto — quem assumir primeiro atende</span>
+      </div>
+      <div id="fila-ia"></div>
+    </section>
 
     <section>
       <span class="sec"><span class="bar"></span><b>Equipe</b></span>
@@ -937,8 +965,14 @@
     { id:4, nome:'Dr. André S. (exemplo)',    nivel:'Avançado',      temp:'quente', atrib:'Vendedor 1', coluna:'respondeu', ia:true, urgente:true },
     { id:5, nome:'Enf. Paula K. (exemplo)',   nivel:'Intermediário', temp:'morno',  atrib:'Vendedor 2', coluna:'respondeu', ia:true, urgente:false },
     { id:6, nome:'Dra. Larissa F. (exemplo)', nivel:'Avançado',      temp:'quente', atrib:'Vendedor 1', coluna:'comprou', ia:false, urgente:false },
-    { id:7, nome:'Nutri Bianca O. (exemplo)', nivel:'Iniciante',     temp:'frio',   atrib:'Vendedor 3', coluna:'perdido', ia:true, urgente:false }
+    { id:7, nome:'Nutri Bianca O. (exemplo)', nivel:'Iniciante',     temp:'frio',   atrib:'Vendedor 3', coluna:'perdido', ia:true, urgente:false },
+    { id:8,  nome:'Dr. Marcelo T. (exemplo)',   nivel:'Intermediário', temp:'morno',  atrib:null, coluna:'novo', ia:true, urgente:false, esperaMin:2 },
+    { id:9,  nome:'Dra. Renata V. (exemplo)',   nivel:'Avançado',      temp:'quente', atrib:null, coluna:'novo', ia:true, urgente:false, esperaMin:6 },
+    { id:10, nome:'Odonto Felipe C. (exemplo)', nivel:'Iniciante',     temp:'frio',   atrib:null, coluna:'novo', ia:true, urgente:false, esperaMin:9 },
+    { id:11, nome:'Dra. Sabrina L. (exemplo)',  nivel:'Intermediário', temp:'morno',  atrib:null, coluna:'novo', ia:true, urgente:false, esperaMin:14 },
+    { id:12, nome:'Dr. Igor P. (exemplo)',      nivel:'Avançado',      temp:'quente', atrib:null, coluna:'novo', ia:true, urgente:false, esperaMin:19 }
   ];
+  var PAPEIS_EQUIPE = ['Gestor', 'Vendedor 1', 'Vendedor 2', 'Vendedor 3'];
   var COLUNAS = [['novo','Novo'], ['respondeu','Respondeu no WhatsApp'], ['comprou','Comprou'], ['perdido','Perdido']];
 
   function equipeState(){
@@ -981,10 +1015,63 @@
   }
   function salvarPipeline(s){ try { localStorage.setItem('crm-pipeline', JSON.stringify(s)); } catch(e){} }
 
+  var FILA_LIMITE_MIN = 10; // a partir daqui vira crítico (vermelho piscando)
+
+  function renderFila(){
+    var pendentes = pipelineState().filter(function(l){ return !l.atrib; })
+      .sort(function(a,b){ return (b.esperaMin||0) - (a.esperaMin||0); });
+    if (!pendentes.length){
+      $('fila-ia').innerHTML = '<div class="vazio" style="text-align:left;padding:4px 0;">Nenhuma conversa esperando vendedor no momento — a IA está cuidando de tudo.</div>';
+      return;
+    }
+    $('fila-ia').innerHTML = pendentes.map(function(l){
+      var opts = PAPEIS_EQUIPE.map(function(p){ return '<option value="' + p + '">' + p + '</option>'; }).join('');
+      var espera = l.esperaMin || 0;
+      var pct = Math.min(100, Math.round(espera / FILA_LIMITE_MIN * 100));
+      var critico = pct >= 100;
+      var cor = pct < 50 ? 'var(--verde)' : (pct < 100 ? 'var(--dourado)' : '#b92d3d');
+      return '<div class="fila-item">' +
+        '<span class="fila-ia-dot"></span>' +
+        '<div class="fila-info">' +
+          '<div class="nome" data-id="' + l.id + '">' + l.nome + '</div>' +
+          '<div class="sub">' + l.nivel + ' · ' + l.temp + ' · IA respondendo, ninguém assumiu ainda</div>' +
+        '</div>' +
+        '<div class="fila-urgencia">' +
+          '<div class="fila-urgencia-trilho"><i style="width:' + pct + '%;background:' + cor + '"></i></div>' +
+          '<span class="fila-urgencia-txt' + (critico ? ' critico' : '') + '">' +
+            (critico ? '<span class="fila-dot-alerta"></span>' : '') + espera + ' min esperando' +
+          '</span>' +
+        '</div>' +
+        '<div class="fila-acao">' +
+          '<select id="fila-quem-' + l.id + '">' + opts + '</select>' +
+          '<button type="button" class="btn-assumir" data-id="' + l.id + '">Assumir conversa</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    $('fila-ia').querySelectorAll('.fila-info .nome').forEach(function(nomeEl){
+      nomeEl.addEventListener('click', function(){
+        var id = Number(this.dataset.id);
+        var lead = pipelineState().filter(function(l){ return l.id === id; })[0];
+        if (lead) abrirConversa(lead);
+      });
+    });
+    $('fila-ia').querySelectorAll('.btn-assumir').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = Number(this.dataset.id);
+        var quem = $('fila-quem-' + id).value;
+        var st = pipelineState();
+        st.forEach(function(l){ if (l.id === id){ l.atrib = quem; l.ia = false; } });
+        salvarPipeline(st);
+        renderFila();
+        renderPipeline();
+      });
+    });
+  }
+
   function renderPipeline(){
     var leads = pipelineState();
     $('kanban').innerHTML = COLUNAS.map(function(c){
-      var itens = leads.filter(function(l){ return l.coluna === c[0]; });
+      var itens = leads.filter(function(l){ return l.coluna === c[0] && l.atrib; });
       var cards = itens.map(function(l){
         var opts = COLUNAS.map(function(c2){
           return '<option value="' + c2[0] + '"' + (c2[0]===l.coluna?' selected':'') + '>' + c2[1] + '</option>';
@@ -1040,14 +1127,18 @@
       { de:'ia',   rem:'IA',      txt:'Oi ' + primeiro + '! Posso te ajudar com data, valor e certificado na hora — qual desses quer saber primeiro?' },
       { de:'lead', rem:'Lead',    txt:'Quero saber o valor e até quando esse lote fica' },
       { de:'ia',   rem:'IA',      txt:'O Lote 1 sai por 12x de R$49,70 ou R$497 à vista, com certificado de 16h. Vagas limitadas pela capacidade do auditório, sem data fixa de virada de lote.' },
-      { de:'lead', rem:'Lead',    txt:'Tem desconto pra grupo de mais de 3 pessoas?' },
-      { de:'ia',   rem:'IA',      txt:'Essa condição eu não decido sozinha — já te passo pro ' + lead.atrib + ' da nossa equipe, um instante 🙂' },
-      { de:'equipe', rem:lead.atrib, txt:'Oi ' + primeiro + ', tudo bem? Vi que você já viu os valores com nossa assistente — sobre grupo, consigo sim uma condição especial a partir de 3 inscrições. Quer que eu já separe as vagas?' }
+      { de:'lead', rem:'Lead',    txt:'Tem desconto pra grupo de mais de 3 pessoas?' }
     ];
-    if (lead.temp === 'quente'){
-      msgs.push({ de:'lead', rem:'Lead', txt:'Perfeito, pode confirmar minha vaga!' });
-    } else if (lead.temp === 'frio'){
-      msgs.push({ de:'lead', rem:'Lead', txt:'Deixa eu ver com calma e te aviso, pode ser?' });
+    if (lead.atrib){
+      msgs.push({ de:'ia', rem:'IA', txt:'Essa condição eu não decido sozinha — já te passo pro ' + lead.atrib + ' da nossa equipe, um instante 🙂' });
+      msgs.push({ de:'equipe', rem:lead.atrib, txt:'Oi ' + primeiro + ', tudo bem? Vi que você já viu os valores com nossa assistente — sobre grupo, consigo sim uma condição especial a partir de 3 inscrições. Quer que eu já separe as vagas?' });
+      if (lead.temp === 'quente'){
+        msgs.push({ de:'lead', rem:'Lead', txt:'Perfeito, pode confirmar minha vaga!' });
+      } else if (lead.temp === 'frio'){
+        msgs.push({ de:'lead', rem:'Lead', txt:'Deixa eu ver com calma e te aviso, pode ser?' });
+      }
+    } else {
+      msgs.push({ de:'ia', rem:'IA', txt:'Essa condição eu não decido sozinha — vou verificar com a equipe e já te retorno, só um instante 🙂' });
     }
     return msgs;
   }
@@ -1068,7 +1159,7 @@
       .map(function(p){ return p[0]; }).join('').toUpperCase();
     $('mc-avatar').textContent = iniciais;
     $('mc-nome').textContent = lead.nome;
-    $('mc-sub').textContent = lead.nivel + ' · ' + lead.temp + ' · atribuído a ' + lead.atrib;
+    $('mc-sub').textContent = lead.nivel + ' · ' + lead.temp + ' · ' + (lead.atrib ? 'atribuído a ' + lead.atrib : 'ainda sem vendedor');
     renderIaStatus(lead);
     var minuto = 2;
     $('mc-chat').innerHTML = conversaExemplo(lead).map(function(m){
@@ -1099,10 +1190,11 @@
 
   // ---- tour guiado (primeiro contato com o CRM) ----
   var TOUR_PASSOS = [
-    { sel:'#equipe-grid', titulo:'1. Equipe', texto:'Aqui fica quem faz parte do time: nome, WhatsApp e se está conectado. Cada pessoa edita o próprio card.' },
-    { sel:'#kanban', titulo:'2. Pipeline', texto:'Cada lead passa por 4 etapas: Novo → Respondeu no WhatsApp → Comprou → Perdido. Troque pelo seletor de cada cartão conforme for avançando.' },
-    { sel:'.lead-card .nome', titulo:'3. Conversa', texto:'Clique no nome do lead pra abrir a conversa. A IA responde o básico (preço, data, certificado) e te passa quando alguém pede algo que só você pode decidir.' },
-    { sel:'#passos-meta', titulo:'4. Configuração', texto:'Esse checklist acompanha o que falta pra ligar o WhatsApp de verdade — se você for vendedor(a), pode ignorar essa parte.' }
+    { sel:'#sec-fila', titulo:'1. Fila da IA', texto:'Todo lead novo começa aqui, sendo respondido só pela IA, sem vendedor ainda. Qualquer pessoa da equipe pode clicar em "Assumir conversa" — é venda conjunta, quem assumir primeiro atende.' },
+    { sel:'#equipe-grid', titulo:'2. Equipe', texto:'Aqui fica quem faz parte do time: nome, WhatsApp e se está conectado. Cada pessoa edita o próprio card.' },
+    { sel:'#kanban', titulo:'3. Pipeline', texto:'Depois de assumido, o lead entra aqui e passa por 4 etapas: Novo → Respondeu no WhatsApp → Comprou → Perdido.' },
+    { sel:'.lead-card .nome', titulo:'4. Conversa', texto:'Clique no nome do lead pra abrir a conversa. Dá pra desativar a IA e responder você mesmo a qualquer momento.' },
+    { sel:'#passos-meta', titulo:'5. Configuração', texto:'Esse checklist acompanha o que falta pra ligar o WhatsApp de verdade — se você for vendedor(a), pode ignorar essa parte.' }
   ];
   var tourIdx = 0;
 
@@ -1224,7 +1316,7 @@
     if (state.tab === 'quiz' && !state.quizCarregado){ state.quizCarregado = true; loadQuiz(); }
     if (state.tab === 'crm' && !state.crmCarregado){
       state.crmCarregado = true;
-      renderEquipe(); renderPipeline(); renderPassos();
+      renderFila(); renderEquipe(); renderPipeline(); renderPassos();
       var jaViu = false;
       try { jaViu = !!localStorage.getItem('crm-tour-visto'); } catch(e){}
       if (!jaViu) setTimeout(tourIniciar, 400);
@@ -1234,7 +1326,7 @@
   $('reload').addEventListener('click', function(){
     $(this).disabled = true;
     var p = state.tab === 'trafego' ? loadTrafego() : state.tab === 'quiz' ? loadQuiz() : null;
-    if (!p){ renderEquipe(); renderPipeline(); renderPassos(); }
+    if (!p){ renderFila(); renderEquipe(); renderPipeline(); renderPassos(); }
     Promise.resolve(p).finally(function(){ $('reload').disabled = false; });
   });
 
