@@ -1,7 +1,11 @@
-# Coletor de eventos — Supabase + novva-ads-tracking.html
+# Coletor de eventos — Supabase + Ads/novva-ads.html
 
 O site manda cada evento para **dois lugares**: o Meta Pixel e um banco próprio
-(Supabase). O `novva-ads-tracking.html` lê esse banco e mostra os números.
+(Supabase). O `Ads/novva-ads.html` lê esse banco e mostra os
+números — é um painel único com duas abas: **Tráfego & Conversão** (site) e
+**Quiz · Raio-X Profissional** (leads do `quiz.html`). Ferramentas internas
+(`.md`, dashboards, mockups) ficam todas na pasta `Ads/`; `index.html` e
+`quiz.html` continuam na raiz porque têm URL pública já divulgada.
 
 Arquivos deste `.md` **não** vão para o FTP (o deploy exclui `*.md`) — é só
 referência de setup.
@@ -226,7 +230,7 @@ grant select on public.v_kpis_30d, public.v_eventos_por_dia, public.v_eventos_po
                 public.v_campanhas, public.v_recentes
   to anon;
 
--- ========== RPC do painel (novva-ads-tracking-mvp.html) ==========
+-- ========== RPC do painel (novva-ads.html) ==========
 -- Um unico endpoint que devolve TODOS os blocos do painel para um
 -- intervalo de datas. O painel chama POST /rest/v1/rpc/rpc_dashboard
 -- com { "d_from": "YYYY-MM-DD", "d_to": "YYYY-MM-DD" } e os botoes de
@@ -369,7 +373,7 @@ problema, desde que o SQL acima tenha sido rodado como está.
 Em **dois arquivos**, no bloco de config no topo do `<script>`:
 
 - `index.html` → `var ANALYTICS = { url: 'https://xxxx.supabase.co/rest/v1/events', key: 'eyJ...' }`
-- `novva-ads-tracking.html` → `var SUPABASE_URL = 'https://xxxx.supabase.co'` e `var SUPABASE_KEY = 'eyJ...'`
+- `Ads/novva-ads.html` → `var SUPABASE_URL = 'https://xxxx.supabase.co'` e `var SUPABASE_KEY = 'eyJ...'`
 
 Commit + push → o deploy FTP publica os dois.
 
@@ -377,7 +381,7 @@ Commit + push → o deploy FTP publica os dois.
 
 - Abrir o site, aba **Network** → deve haver `POST .../rest/v1/events` com status **201**.
 - Supabase → **Table Editor → events** → linhas aparecendo.
-- Abrir `https://SEU-DOMINIO/novva-ads-tracking.html` → números carregando.
+- Abrir `https://SEU-DOMINIO/Ads/novva-ads.html` → números carregando.
 
 ## 6. Pendências / cuidados
 
@@ -385,9 +389,10 @@ Commit + push → o deploy FTP publica os dois.
   (ex.: apagar linhas com mais de 12–18 meses via job agendado); não guardamos IP.
 - **Bots**: o endpoint aceita INSERT anônimo — se aparecer spam, criar uma Edge
   Function com segredo + rate limit, ou filtrar por `ua` nas queries.
-- **`novva-ads-tracking.html` é público** no domínio. Só mostra agregados (sem PII), mas
-  convém renomear para algo não óbvio (ex.: `painel-7k2x.html`) e/ou proteger
-  por `.htaccess` na TurboCloud.
+- **`Ads/novva-ads.html` é público** no domínio (a pasta `Ads/` não
+  bloqueia acesso por si só). Só mostra agregados (sem PII), mas convém
+  renomear pra algo não óbvio (ex.: `Ads/painel-7k2x.html`) e/ou proteger por
+  `.htaccess` na TurboCloud.
 - **Dashboard mais robusto** depois: Metabase (free) ou Grafana Cloud (free)
   conectados na connection string Postgres do Supabase.
 
@@ -576,7 +581,7 @@ vazar WhatsApp/e-mail. Pra ver os leads:
   senha/login (Supabase Auth) — hoje não existe autenticação no site, então
   esse painel ainda não foi criado.
 
-## 9. Painel do quiz (`quiz-dashboard.html`)
+## 9. Painel do quiz (aba "Quiz · Raio-X Profissional" do `Ads/novva-ads.html`)
 
 Painel agregado (sem PII) que lê `quiz_leads` cruzado com `events` só pra
 classificar a **temperatura** de cada lead — nome/WhatsApp nunca saem daqui,
