@@ -255,6 +255,11 @@
   .bolha.entra{align-self:flex-start;background:#fff;color:#111b21;border-radius:8px 8px 8px 2px;}
   .bolha.sai{align-self:flex-end;background:#d9fdd3;color:#111b21;border-radius:8px 8px 2px 8px;}
   .bolha.sai.ia{background:#fff3c4;}
+  .typing-bolha{display:flex;gap:4px;align-items:center;padding:11px 14px;}
+  .typing-dot{width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,.4);animation:typingBounce 1s infinite;}
+  .typing-dot:nth-child(2){animation-delay:.15s;}
+  .typing-dot:nth-child(3){animation-delay:.3s;}
+  @keyframes typingBounce{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-4px);opacity:1;}}
 
   /* barra de resposta estilo WhatsApp */
   .chat-input{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#f0f0f0;flex:none;}
@@ -519,7 +524,7 @@
 
     <section id="sec-fila" class="fila-secao">
       <div class="sec-head" style="margin-bottom:14px;">
-        <span class="sec"><span class="bar"></span><b>Fila da IA</b> <small>conversas sem vendedor ainda</small> <span class="tag-simulacao">Modo Simulação</span></span>
+        <span class="sec"><span class="bar"></span><b>Fila da Cristina</b> <small>conversas sem vendedor ainda</small> <span class="tag-simulacao">Modo Simulação</span></span>
         <span class="hint">venda conjunta por enquanto — quem assumir primeiro atende</span>
       </div>
       <div id="fila-ia"></div>
@@ -1068,7 +1073,7 @@
         '<span class="fila-ia-dot"></span>' +
         '<div class="fila-info">' +
           '<div class="nome" data-id="' + l.id + '">' + l.nome + '</div>' +
-          '<div class="sub">' + l.nivel + ' · ' + l.temp + ' · IA respondendo, ninguém assumiu ainda</div>' +
+          '<div class="sub">' + l.nivel + ' · ' + l.temp + ' · ' + NOME_IA + ' respondendo, ninguém assumiu ainda</div>' +
         '</div>' +
         '<div class="fila-urgencia">' +
           '<div class="fila-urgencia-trilho"><i style="width:' + pct + '%;background:' + cor + '"></i></div>' +
@@ -1154,25 +1159,26 @@
   // ---- preview de conversa (clicável, dado de exemplo) ----
   // Simula a Fase 3 do plano: IA responde pergunta logística, escala pro
   // vendedor atribuído fechar o que ela não deve responder sozinha.
+  var NOME_IA = 'Cristina';
+
   function conversaExemplo(lead){
     var primeiro = lead.nome.replace(/\(exemplo\)/i,'').replace(/^(Dra?\.|Fisio|Enf\.|Nutri)\s*/i,'').trim().split(' ')[0];
     var msgs = [
-      { de:'lead', rem:'Lead',    txt:'Oi! Vi por aqui e fiquei com interesse no Congresso, pode me passar mais detalhes?' },
-      { de:'ia',   rem:'IA',      txt:'Oi ' + primeiro + '! Posso te ajudar com data, valor e certificado na hora — qual desses quer saber primeiro?' },
-      { de:'lead', rem:'Lead',    txt:'Quero saber o valor e até quando esse lote fica' },
-      { de:'ia',   rem:'IA',      txt:'O Lote 1 sai por 12x de R$49,70 ou R$497 à vista, com certificado de 16h. Vagas limitadas pela capacidade do auditório, sem data fixa de virada de lote.' },
-      { de:'lead', rem:'Lead',    txt:'Tem desconto pra grupo de mais de 3 pessoas?' }
+      { de:'ia',   rem:NOME_IA, txt:'Oi ' + primeiro + '! Aqui é a ' + NOME_IA + ' 👋 Vi que você se interessou pelo Congresso — posso te ajudar com data, valor ou certificado na hora, é só perguntar.' },
+      { de:'lead', rem:'Lead',  txt:'Oi! Quero saber o valor e até quando esse lote fica' },
+      { de:'ia',   rem:NOME_IA, txt:'O Lote 1 sai por 12x de R$49,70 ou R$497 à vista, com certificado de 16h. Vagas limitadas pela capacidade do auditório, sem data fixa de virada de lote.' },
+      { de:'lead', rem:'Lead',  txt:'Tem desconto pra grupo de mais de 3 pessoas?' }
     ];
     if (lead.atrib){
-      msgs.push({ de:'ia', rem:'IA', txt:'Essa condição eu não decido sozinha — já te passo pro ' + lead.atrib + ' da nossa equipe, um instante 🙂' });
-      msgs.push({ de:'equipe', rem:lead.atrib, txt:'Oi ' + primeiro + ', tudo bem? Vi que você já viu os valores com nossa assistente — sobre grupo, consigo sim uma condição especial a partir de 3 inscrições. Quer que eu já separe as vagas?' });
+      msgs.push({ de:'ia', rem:NOME_IA, txt:'Essa condição eu não decido sozinha — já te passo pro ' + lead.atrib + ' da nossa equipe, um instante 🙂' });
+      msgs.push({ de:'equipe', rem:lead.atrib, txt:'Oi ' + primeiro + ', tudo bem? Vi que você já conversou com a ' + NOME_IA + ' — sobre grupo, consigo sim uma condição especial a partir de 3 inscrições. Quer que eu já separe as vagas?' });
       if (lead.temp === 'quente'){
         msgs.push({ de:'lead', rem:'Lead', txt:'Perfeito, pode confirmar minha vaga!' });
       } else if (lead.temp === 'frio'){
         msgs.push({ de:'lead', rem:'Lead', txt:'Deixa eu ver com calma e te aviso, pode ser?' });
       }
     } else {
-      msgs.push({ de:'ia', rem:'IA', txt:'Essa condição eu não decido sozinha — vou verificar com a equipe e já te retorno, só um instante 🙂' });
+      msgs.push({ de:'ia', rem:NOME_IA, txt:'Essa condição eu não decido sozinha — vou verificar com a equipe e já te retorno, só um instante 🙂' });
     }
     return msgs;
   }
@@ -1182,31 +1188,64 @@
   function renderIaStatus(lead){
     var badge = $('ia-badge'), txt = $('ia-badge-txt'), btn = $('ia-toggle');
     badge.classList.toggle('off', !lead.ia);
-    txt.textContent = lead.ia ? 'IA Responde' : 'IA Desativada';
-    btn.textContent = lead.ia ? 'Desativar IA' : 'Ativar IA';
+    txt.textContent = lead.ia ? (NOME_IA + ' Responde') : (NOME_IA + ' Desativada');
+    btn.textContent = lead.ia ? ('Desativar ' + NOME_IA) : ('Ativar ' + NOME_IA);
     btn.classList.toggle('ativar', !lead.ia);
   }
 
+  var sequenciaConversa = 0; // token pra cancelar animação anterior se abrir outra conversa
+
   function abrirConversa(lead){
     conversaAtualId = lead.id;
+    sequenciaConversa++;
+    var minhaSequencia = sequenciaConversa;
     var iniciais = lead.nome.replace(/\(exemplo\)/i,'').trim().split(' ').filter(Boolean).slice(0,2)
       .map(function(p){ return p[0]; }).join('').toUpperCase();
     $('mc-avatar').textContent = iniciais;
     $('mc-nome').textContent = lead.nome;
     $('mc-sub').textContent = lead.nivel + ' · ' + lead.temp + ' · ' + (lead.atrib ? 'atribuído a ' + lead.atrib : 'ainda sem vendedor');
     renderIaStatus(lead);
-    var minuto = 2;
-    $('mc-chat').innerHTML = conversaExemplo(lead).map(function(m){
-      var cls = m.de === 'lead' ? 'entra' : (m.de === 'ia' ? 'sai ia' : 'sai');
-      minuto += 1 + Math.floor(Math.random() * 2);
-      var hora = '14:' + String(minuto % 60).padStart(2, '0');
-      var check = m.de === 'lead' ? '' : ' <span class="check">✓✓</span>';
-      return '<div class="bolha ' + cls + '"><div class="remetente">' + m.rem + '</div>' + m.txt +
-        '<span class="hora">' + hora + check + '</span></div>';
-    }).join('');
+    $('mc-chat').innerHTML = '';
     $('modal-conversa').hidden = false;
+
+    var mensagens = conversaExemplo(lead);
+    var minuto = 2;
+    var idx = 0;
+
+    function proxima(){
+      if (minhaSequencia !== sequenciaConversa || idx >= mensagens.length) return;
+      var m = mensagens[idx];
+      var respondendo = m.de !== 'lead'; // Cristina/vendedor "digitando" antes de responder
+      var atraso = respondendo ? (900 + Math.random() * 900) : 350;
+
+      var digitando = null;
+      if (respondendo){
+        digitando = document.createElement('div');
+        digitando.className = 'bolha sai typing-bolha' + (m.de === 'ia' ? ' ia' : '');
+        digitando.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+        $('mc-chat').appendChild(digitando);
+        $('mc-chat').scrollTop = $('mc-chat').scrollHeight;
+      }
+
+      setTimeout(function(){
+        if (minhaSequencia !== sequenciaConversa) return;
+        if (digitando) digitando.remove();
+        var cls = m.de === 'lead' ? 'entra' : (m.de === 'ia' ? 'sai ia' : 'sai');
+        minuto += 1 + Math.floor(Math.random() * 2);
+        var hora = '14:' + String(minuto % 60).padStart(2, '0');
+        var check = m.de === 'lead' ? '' : ' <span class="check">✓✓</span>';
+        var bolha = document.createElement('div');
+        bolha.className = 'bolha ' + cls;
+        bolha.innerHTML = '<div class="remetente">' + m.rem + '</div>' + m.txt + '<span class="hora">' + hora + check + '</span>';
+        $('mc-chat').appendChild(bolha);
+        $('mc-chat').scrollTop = $('mc-chat').scrollHeight;
+        idx++;
+        proxima();
+      }, atraso);
+    }
+    proxima();
   }
-  function fecharConversa(){ $('modal-conversa').hidden = true; conversaAtualId = null; }
+  function fecharConversa(){ $('modal-conversa').hidden = true; conversaAtualId = null; sequenciaConversa++; }
 
   $('mc-fechar').addEventListener('click', fecharConversa);
   $('modal-conversa').addEventListener('click', function(e){ if (e.target === this) fecharConversa(); });
@@ -1224,7 +1263,7 @@
 
   // ---- tour guiado (primeiro contato com o CRM) ----
   var TOUR_PASSOS = [
-    { sel:'#sec-fila', titulo:'1. Fila da IA', texto:'Todo lead novo começa aqui, sendo respondido só pela IA, sem vendedor ainda. Qualquer pessoa da equipe pode clicar em "Assumir conversa" — é venda conjunta, quem assumir primeiro atende.' },
+    { sel:'#sec-fila', titulo:'1. Fila da Cristina', texto:'Todo lead novo começa aqui, sendo respondido só pela Cristina (IA), sem vendedor ainda. Qualquer pessoa da equipe pode clicar em "Assumir conversa" — é venda conjunta, quem assumir primeiro atende.' },
     { sel:'#equipe-grid', titulo:'2. Equipe', texto:'Aqui fica quem faz parte do time: nome, WhatsApp e se está conectado. Cada pessoa edita o próprio card.' },
     { sel:'#kanban', titulo:'3. Pipeline', texto:'Depois de assumido, o lead entra aqui e passa por 4 etapas: Novo → Respondeu no WhatsApp → Comprou → Perdido.' },
     { sel:'.lead-card .nome', titulo:'4. Conversa', texto:'Clique no nome do lead pra abrir a conversa. Dá pra desativar a IA e responder você mesmo a qualquer momento.' },
