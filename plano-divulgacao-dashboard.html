@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Plano de Divulgação — Congresso Câncer 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f2ef; --card:#ffffff; --linha:#e8e3dd; --track:#efe8e4;
+    --ink:#2a2320; --soft:#857b74; --faint:#afa59d;
+    --bordo:#8a222e; --bordo-vivo:#b92d3d; --dourado:#c98b1f; --verde:#1f8a4c;
+    --tit:'League Spartan','Segoe UI',sans-serif;
+    --corpo:'Roboto','Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--corpo);line-height:1.5;}
+  h1,h2,h3{font-family:var(--tit);margin:0;}
+  .wrap{max-width:1100px;margin:0 auto;padding:22px 20px 56px;}
+
+  /* topbar */
+  .topbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin-bottom:22px;}
+  .brand{display:flex;align-items:center;gap:11px;margin-right:auto;}
+  .brand .mark{width:32px;height:32px;border-radius:9px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--tit);font-weight:800;font-size:14px;}
+  .brand h1{font-size:16px;font-weight:800;letter-spacing:.04em;}
+  .brand .sub{font-size:11.5px;color:var(--soft);margin-top:2px;}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;}
+  .tabs button{
+    font-family:var(--tit);font-weight:700;font-size:12px;letter-spacing:.02em;
+    padding:7px 15px;border-radius:999px;cursor:pointer;
+    background:#fff;border:1px solid var(--linha);color:var(--soft);
+  }
+  .tabs button.on{background:var(--bordo);border-color:var(--bordo);color:#fff;}
+
+  /* hero + kpis */
+  .toprow{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:16px;}
+  .hero{background:var(--bordo);color:#fff;border-radius:18px;padding:20px 22px;}
+  .hero .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.78);}
+  .hero .big{font-family:var(--tit);font-weight:800;font-size:40px;line-height:1;margin-top:6px;}
+  .hero .delta{margin-top:8px;font-size:12.5px;color:rgba(255,255,255,.78);}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .kpi{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:14px 16px;}
+  .kpi .l{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);}
+  .kpi .n{font-family:var(--tit);font-weight:800;font-size:24px;color:var(--ink);margin-top:5px;line-height:1;}
+  .kpi .s{font-size:11px;color:var(--faint);margin-top:6px;}
+
+  @media (min-width:860px){
+    .toprow{grid-template-columns:230px minmax(0,1fr);align-items:start;}
+    .kpis{grid-template-columns:repeat(4,1fr);}
+  }
+
+  section{background:var(--card);border:1px solid var(--linha);border-radius:16px;padding:20px 22px;margin-bottom:16px;}
+  .sec{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+  .sec .t{display:inline-flex;align-items:center;gap:8px;font-family:var(--tit);font-weight:800;font-size:12.5px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--bordo);}
+  .sec .t .bar{width:14px;height:2px;background:var(--bordo);border-radius:2px;}
+  .sec .hint{font-size:11.5px;color:var(--faint);}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;padding:0 8px 9px 0;color:var(--faint);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:.05em;}
+  td{padding:9px 8px 9px 0;border-top:1px solid #f1eae3;color:var(--ink);vertical-align:top;}
+  .scroll-x{overflow-x:auto;}
+  code{background:#f1ece6;padding:1px 6px;border-radius:5px;font-size:12px;}
+
+  /* callout data-alvo */
+  .callout{display:flex;flex-wrap:wrap;align-items:center;gap:14px;background:#faf1f0;border:1px dashed var(--bordo-vivo);border-radius:14px;padding:16px 18px;}
+  .callout p{margin:0;font-size:13px;color:var(--ink);flex:1;min-width:220px;}
+  .callout input[type=date]{font-family:var(--corpo);font-size:13px;padding:8px 10px;border-radius:9px;border:1px solid var(--linha);background:#fff;color:var(--ink);}
+  .callout .contagem{font-family:var(--tit);font-weight:800;font-size:15px;color:var(--bordo-vivo);white-space:nowrap;}
+
+  /* checklist */
+  .semana{border:1px solid var(--linha);border-radius:12px;padding:13px 15px;margin-bottom:10px;}
+  .semana.atual{border-color:var(--bordo-vivo);background:#faf1f0;}
+  .semana .cab{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px;}
+  .semana .cab b{font-family:var(--tit);font-weight:800;font-size:13px;}
+  .semana .cab .tag{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:var(--bordo-vivo);padding:2px 8px;border-radius:999px;}
+  .item{display:flex;align-items:flex-start;gap:9px;font-size:13px;padding:5px 0;cursor:pointer;}
+  .item input{margin-top:3px;accent-color:var(--bordo-vivo);width:15px;height:15px;flex:none;}
+  .item.done span{color:var(--faint);text-decoration:line-through;}
+  .progresso{height:7px;border-radius:4px;background:var(--track);overflow:hidden;margin-top:14px;}
+  .progresso i{display:block;height:100%;background:var(--bordo-vivo);}
+  .progresso-lbl{font-size:11.5px;color:var(--soft);margin-top:6px;}
+
+  /* scripts */
+  .script-box{border:1px solid var(--linha);border-radius:12px;padding:14px 16px;margin-bottom:12px;background:#fbfaf8;}
+  .script-box .cab{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+  .script-box .cab b{font-family:var(--tit);font-weight:800;font-size:13px;}
+  .script-box blockquote{margin:0;font-size:13px;color:var(--ink);white-space:pre-wrap;border-left:3px solid var(--bordo-vivo);padding-left:12px;}
+  .copiar{font-family:var(--tit);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;
+    background:#fff;border:1px solid var(--linha);color:var(--bordo);padding:6px 12px;border-radius:999px;cursor:pointer;}
+  .copiar.ok{background:var(--verde);border-color:var(--verde);color:#fff;}
+
+  /* frente B cards */
+  .grid-b{display:grid;grid-template-columns:1fr;gap:12px;}
+  @media (min-width:700px){.grid-b{grid-template-columns:1fr 1fr;}}
+  .card-b{border:1px solid var(--linha);border-radius:14px;padding:15px 17px;}
+  .card-b .cab{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;}
+  .card-b .cab b{font-family:var(--tit);font-weight:800;font-size:13.5px;}
+  .card-b p{margin:0;font-size:12.5px;color:var(--soft);}
+  .selo{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap;}
+  .selo.gratis{background:rgba(31,138,76,.12);color:var(--verde);}
+  .selo.pago{background:rgba(201,139,31,.14);color:var(--dourado);}
+
+  .foot{text-align:center;color:var(--faint);font-size:11.5px;margin-top:22px;}
+  .foot a{color:var(--bordo);}
+  .vazio{color:var(--faint);font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="mark">CC</span>
+      <div>
+        <h1>Plano de Divulgação 2026</h1>
+        <div class="sub">Congresso de Prevenção e Tratamento de Câncer · 20-21/nov, São José dos Campos</div>
+      </div>
+    </div>
+    <div class="tabs" id="tabs">
+      <button type="button" data-tab="a" class="on">Frente A · Manual</button>
+      <button type="button" data-tab="b">Frente B · Pago/Avançado</button>
+    </div>
+  </div>
+
+  <div class="toprow">
+    <div class="hero">
+      <div class="lbl">Dias até o evento</div>
+      <div class="big" id="dias-evento">—</div>
+      <div class="delta" id="semana-atual"></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="l">Posts programados</div><div class="n">12</div><div class="s">Instagram/Feed F01–F12</div></div>
+      <div class="kpi"><div class="l">Canais mapeados</div><div class="n">5</div><div class="s">Instagram, palestrantes, grupos, lista, comentário/DM</div></div>
+      <div class="kpi"><div class="l">Checklist concluído</div><div class="n" id="kpi-check">0%</div><div class="s">Passo 9 do plano</div></div>
+      <div class="kpi"><div class="l">Frente B</div><div class="n">5 camadas</div><div class="s">quiz, ads, SEO, retarget, chatbot</div></div>
+    </div>
+  </div>
+
+  <div id="painel-a">
+
+    <section>
+      <div class="sec"><span class="t"><span class="bar"></span>Passo 0 · Data-alvo do Lote 1</span></div>
+      <div class="callout">
+        <p>Defina (mesmo que só internamente) a data-alvo pra virar Lote 1 → Lote 2. É o gatilho de urgência mais forte disponível hoje.</p>
+        <input type="date" id="data-lote">
+        <span class="contagem" id="contagem-lote"></span>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec">
+        <span class="t"><span class="bar"></span>Calendário de publicação</span>
+        <span class="hint">a semana atual do plano fica destacada</span>
+      </div>
+      <div class="scroll-x">
+        <table id="tabela-calendario">
+          <thead><tr><th>Semana</th><th>Posts</th><th>Objetivo</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec"><span class="t"><span class="bar"></span>Checklist semana a semana</span></div>
+      <div id="checklist"></div>
+      <div class="progresso"><i id="progresso-barra" style="width:0%"></i></div>
+      <div class="progresso-lbl" id="progresso-lbl">0 de 0 concluídos</div>
+    </section>
+
+    <section>
+      <div class="sec"><span class="t"><span class="bar"></span>Convenção de UTM</span></div>
+      <div class="scroll-x">
+        <table>
+          <thead><tr><th>Canal</th><th>utm_source</th><th>utm_medium</th><th>utm_campaign</th></tr></thead>
+          <tbody>
+            <tr><td>Seu Instagram (feed/stories)</td><td><code>instagram</code></td><td><code>organico</code></td><td><code>lote1</code></td></tr>
+            <tr><td>Post específico (F01, F02...)</td><td><code>instagram</code></td><td><code>organico</code></td><td><code>f01</code>, <code>f02</code>...</td></tr>
+            <tr><td>Compartilhamento de palestrante</td><td><code>palestrante-nome</code></td><td><code>social</code></td><td><code>lote1</code></td></tr>
+            <tr><td>Grupo/associação de classe</td><td><code>grupo-nome</code></td><td><code>whatsapp</code></td><td><code>lote1</code></td></tr>
+            <tr><td>Sua lista própria de WhatsApp</td><td><code>whatsapp_lista</code></td><td><code>whatsapp</code></td><td><code>lote1</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec"><span class="t"><span class="bar"></span>Scripts prontos</span></div>
+      <div id="scripts"></div>
+    </section>
+
+  </div>
+
+  <div id="painel-b" style="display:none">
+    <section>
+      <div class="sec">
+        <span class="t"><span class="bar"></span>Frente B · Roadmap</span>
+        <span class="hint">ordem sugerida: B1 → B4 → B2/B3 → B5</span>
+      </div>
+      <div class="grid-b" id="grid-b"></div>
+    </section>
+  </div>
+
+  <p class="foot">Baseado em <a href="../docs/plano-divulgacao-manual-2026.md">docs/plano-divulgacao-manual-2026.md</a> · checklist e data do lote salvos só neste navegador</p>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var EVENTO = new Date('2026-11-20T00:00:00');
+  var INICIO_PLANO = new Date('2026-09-05T00:00:00');
+
+  // ---- dados do plano ----
+  var CALENDARIO = [
+    { semana:'1-2', posts:'F01, F02', obj:'Educar — sinais de falta de repertório e isolamento profissional (gera comentário)' },
+    { semana:'3',   posts:'F03, F12', obj:'Educar — anos de experiência não bastam + dado real sem venda' },
+    { semana:'4',   posts:'F05 (AIDA)', obj:'Vender — primeira convocação direta pro Lote 1' },
+    { semana:'5',   posts:'F04, F08', obj:'Educar — ciência da terapia integrativa + limites éticos' },
+    { semana:'6',   posts:'F06 (PAS)', obj:'Vender — reforço, ângulo de dor/urgência' },
+    { semana:'7',   posts:'F09, F10', obj:'Educar — avanços em oncologia + cuidado integrativo' },
+    { semana:'8-9', posts:'F07, F11 (BAB)', obj:'Vender — intensificar, mirando a virada de lote' },
+    { semana:'10-11', posts:'Reciclar post de venda com melhor desempenho', obj:'Vender — urgência final, contagem regressiva' }
+  ];
+
+  var CHECKLIST = [
+    { semana:'Semana 0', itens:[
+      'Definir data-alvo interna de virada Lote 1→2',
+      'Montar tabela de UTMs',
+      'Levantar contatos dos palestrantes'
+    ]},
+    { semana:'Semanas 1-2', itens:[
+      'Publicar F01, F02',
+      'Responder manualmente todos os comentários/DMs',
+      'Enviar mensagem aos 2-3 palestrantes mais engajados primeiro'
+    ]},
+    { semana:'Semana 3', itens:[
+      'Publicar F03, F12',
+      'Abordar 1-2 grupos/associações de classe'
+    ]},
+    { semana:'Semana 4', itens:[
+      'Publicar F05 (venda)',
+      'Começar reativação da lista própria (segmento "já participou")'
+    ]},
+    { semana:'Semana 5', itens:[
+      'Publicar F04, F08',
+      'Continuar reativação da lista (segmento "só demonstrou interesse")'
+    ]},
+    { semana:'Semana 6', itens:[
+      'Publicar F06 (venda)',
+      'Revisar dashboard e repetir o que funcionou'
+    ]},
+    { semana:'Semana 7', itens:[
+      'Publicar F09, F10',
+      'Follow-up com palestrantes que ainda não compartilharam'
+    ]},
+    { semana:'Semanas 8-9', itens:[
+      'Publicar F07, F11 (venda)',
+      'Intensificar urgência conforme data-alvo se aproxima'
+    ]},
+    { semana:'Semanas 10-11', itens:[
+      'Reciclar o post de venda com melhor desempenho',
+      'Última rodada na lista própria e nos grupos, com contagem regressiva'
+    ]}
+  ];
+
+  var SCRIPTS = [
+    { titulo:'Abordagem a palestrantes', texto:
+'Oi [Nome], tudo bem? Já estamos na reta final de divulgação do Congresso de Prevenção e Tratamento de Câncer (20-21/nov, São José dos Campos) e adoraríamos contar com você pra ajudar a espalhar pra sua audiência — sei que tem muita gente que te acompanha e confia no seu trabalho.\n\nPreparei um link exclusivo com seu nome pra você postar no story/feed quando puder: [link com utm_source=palestrante-NOME]\nAssim a gente consegue ver quantas pessoas você trouxe e, no futuro, pensar em alguma forma de reconhecer isso.\nQualquer coisa que precisar (imagem, texto pronto, informação do evento) é só falar que eu mando!' },
+    { titulo:'Abordagem a grupos/associações de classe', texto:
+'Pessoal, passando aqui porque vi que vai rolar o Congresso de Prevenção e Tratamento de Câncer em novembro (SJC-SP), com [citar 1-2 palestrantes de peso] — achei que várias de vocês que atendem paciente oncológico iam curtir. Tem certificado de 16h e o lote de entrada mais em conta ainda tá aberto. Link aqui: [link com utm_source=grupo-NOME]' },
+    { titulo:'Lista própria — quem já participou antes', texto:
+'Oi [Nome]! Tudo bem? Passando pra avisar que a edição 2026 do Congresso já tá confirmada — 20 e 21 de novembro, SJC. Lembrei de você porque participou antes. Achei que ia querer saber em primeira mão antes do lote fechar: [link utm_source=whatsapp_lista]' },
+    { titulo:'Lista própria — só demonstrou interesse', texto:
+'Oi [Nome]! Tudo bem? Faz um tempo que conversamos sobre o Congresso de Práticas Integrativas em Oncologia. A edição 2026 já tem data fechada (20-21/nov) e o lote de entrada mais em conta ainda tá aberto. Se ainda faz sentido pra você, separei o link: [link utm_source=whatsapp_lista]' }
+  ];
+
+  var FRENTE_B = [
+    { id:'B1', titulo:'Quiz de captação', selo:'gratis', texto:'Isca com melhor CPL hoje (até 40% mais barato que PDF estático). Pode começar de graça com Google Forms.' },
+    { id:'B4', titulo:'Conteúdo de busca (SEO)', selo:'gratis', texto:'Artigo otimizado captando quem já pesquisa no Google. Ciclo mais longo, custo zero por clique.' },
+    { id:'B2', titulo:'Tráfego pago (Meta + Google Ads)', selo:'pago', texto:'Segmentação por perfil profissional + lookalike de compradores. Precisa autorizar a conta de anúncios.' },
+    { id:'B3', titulo:'Retargeting em camadas', selo:'pago', texto:'3 públicos por estágio (visitou / interagiu com quiz / clicou no WhatsApp), cada um com mensagem própria.' },
+    { id:'B5', titulo:'Chatbot de qualificação', selo:'gratis', texto:'2-3 perguntas automáticas pra quem já demonstrou interesse, antes de cair pro atendimento humano.' }
+  ];
+
+  // ---- utils ----
+  function diffDias(a, b){ return Math.round((b - a) / 86400000); }
+  function fmtData(d){ return d.toLocaleDateString('pt-BR'); }
+
+  // ---- hero ----
+  function renderHero(){
+    var hoje = new Date(); hoje.setHours(0,0,0,0);
+    var dias = diffDias(hoje, EVENTO);
+    $('dias-evento').textContent = dias >= 0 ? dias : 0;
+    var semana = Math.max(1, Math.floor(diffDias(INICIO_PLANO, hoje) / 7) + 1);
+    $('semana-atual').textContent = dias >= 0 ? ('estamos na semana ' + semana + ' do plano') : 'evento já ocorreu';
+    return semana;
+  }
+
+  // ---- calendário ----
+  function renderCalendario(semanaAtual){
+    var body = CALENDARIO.map(function(c){
+      var faixa = c.semana.split('-').map(Number);
+      var atual = faixa.length === 2 ? (semanaAtual >= faixa[0] && semanaAtual <= faixa[1]) : (semanaAtual === faixa[0]);
+      return '<tr' + (atual ? ' style="background:#faf1f0"' : '') + '><td><b>' + c.semana + '</b></td><td>' + c.posts + '</td><td>' + c.obj + '</td></tr>';
+    }).join('');
+    document.querySelector('#tabela-calendario tbody').innerHTML = body;
+  }
+
+  // ---- checklist (persistido no localStorage) ----
+  function checklistState(){
+    try { return JSON.parse(localStorage.getItem('divulgacao-checklist') || '{}'); } catch(e){ return {}; }
+  }
+  function salvarChecklist(state){
+    try { localStorage.setItem('divulgacao-checklist', JSON.stringify(state)); } catch(e){}
+  }
+  function renderChecklist(semanaAtual){
+    var state = checklistState();
+    var total = 0, feitos = 0;
+    var html = CHECKLIST.map(function(bloco, bi){
+      var atual = bloco.semana.toLowerCase().indexOf('semana ' + semanaAtual) === 0 ||
+                  (bloco.semana.match(/\d+/g) || []).map(Number).indexOf(semanaAtual) !== -1;
+      var itens = bloco.itens.map(function(texto, ii){
+        var key = bi + '-' + ii;
+        var done = !!state[key];
+        total++; if (done) feitos++;
+        return '<label class="item' + (done?' done':'') + '"><input type="checkbox" data-key="' + key + '"' + (done?' checked':'') + '><span>' + texto + '</span></label>';
+      }).join('');
+      return '<div class="semana' + (atual?' atual':'') + '"><div class="cab"><b>' + bloco.semana + '</b>' + (atual?'<span class="tag">agora</span>':'') + '</div>' + itens + '</div>';
+    }).join('');
+    $('checklist').innerHTML = html;
+    var pct = total ? Math.round(feitos/total*100) : 0;
+    $('progresso-barra').style.width = pct + '%';
+    $('progresso-lbl').textContent = feitos + ' de ' + total + ' concluídos';
+    $('kpi-check').textContent = pct + '%';
+
+    $('checklist').querySelectorAll('input[type=checkbox]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var s = checklistState();
+        s[this.dataset.key] = this.checked;
+        salvarChecklist(s);
+        renderChecklist(semanaAtual);
+      });
+    });
+  }
+
+  // ---- data do lote ----
+  function renderLote(){
+    var input = $('data-lote');
+    var salva = localStorage.getItem('divulgacao-data-lote');
+    if (salva) input.value = salva;
+    function atualizarContagem(){
+      if (!input.value){ $('contagem-lote').textContent = ''; return; }
+      var alvo = new Date(input.value + 'T00:00:00');
+      var hoje = new Date(); hoje.setHours(0,0,0,0);
+      var dias = diffDias(hoje, alvo);
+      $('contagem-lote').textContent = dias >= 0 ? (dias + ' dias até virar o lote') : 'data já passou';
+    }
+    input.addEventListener('change', function(){
+      try { localStorage.setItem('divulgacao-data-lote', this.value); } catch(e){}
+      atualizarContagem();
+    });
+    atualizarContagem();
+  }
+
+  // ---- scripts com botão copiar ----
+  function renderScripts(){
+    $('scripts').innerHTML = SCRIPTS.map(function(s, i){
+      return '<div class="script-box"><div class="cab"><b>' + s.titulo + '</b><button type="button" class="copiar" data-i="' + i + '">Copiar</button></div><blockquote>' + s.texto + '</blockquote></div>';
+    }).join('');
+    $('scripts').querySelectorAll('.copiar').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var texto = SCRIPTS[this.dataset.i].texto;
+        navigator.clipboard.writeText(texto).then(function(){
+          btn.textContent = 'Copiado!'; btn.classList.add('ok');
+          setTimeout(function(){ btn.textContent = 'Copiar'; btn.classList.remove('ok'); }, 1600);
+        });
+      });
+    });
+  }
+
+  // ---- Frente B ----
+  function renderFrenteB(){
+    $('grid-b').innerHTML = FRENTE_B.map(function(c){
+      var selo = c.selo === 'gratis' ? '<span class="selo gratis">grátis</span>' : '<span class="selo pago">precisa investimento</span>';
+      return '<div class="card-b"><div class="cab"><b>' + c.id + ' · ' + c.titulo + '</b>' + selo + '</div><p>' + c.texto + '</p></div>';
+    }).join('');
+  }
+
+  // ---- tabs ----
+  $('tabs').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if (!b) return;
+    Array.prototype.forEach.call(this.children, function(c){ c.classList.toggle('on', c === b); });
+    var tab = b.dataset.tab;
+    $('painel-a').style.display = tab === 'a' ? '' : 'none';
+    $('painel-b').style.display = tab === 'b' ? '' : 'none';
+  });
+
+  // ---- init ----
+  var semanaAtual = renderHero();
+  renderCalendario(semanaAtual);
+  renderChecklist(semanaAtual);
+  renderLote();
+  renderScripts();
+  renderFrenteB();
+})();
+</script>
+</body>
+</html>

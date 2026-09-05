@@ -500,3 +500,74 @@ deploy voltam a fluir, já com `country/region/city`.
 > A policy `anon insere eventos` continua válida como fallback. `ipwho.is` grátis
 > aguenta o volume previsto (~1500/dia); se um dia estourar, troca a URL do geo
 > por outro provedor ou um plano pago.
+
+## 8. Tabela de leads do quiz (`quiz.html`)
+
+O quiz de captação (`quiz.html`, Frente B / B1 do `docs/plano-divulgacao-manual-2026.md`)
+grava cada lead em uma tabela **separada** de `events` — diferente do coletor de
+analytics, aqui **tem PII** (nome, WhatsApp, e-mail), então a tabela não é lida
+por nenhum painel público e nunca recebe `SELECT` do `anon`.
+
+Rode este bloco no mesmo projeto Supabase (SQL Editor):
+
+```sql
+create table if not exists public.quiz_leads (
+  id           bigint generated always as identity primary key,
+  created_at   timestamptz not null default now(),
+  visitor_id   text,
+  session_id   text,
+  nome         text not null,
+  whatsapp     text not null,
+  email        text,
+  profissao    text,
+  respostas    jsonb not null default '{}'::jsonb,
+  pontuacao    int,
+  nivel        text,
+  path         text,
+  utm_source   text,
+  utm_medium   text,
+  utm_campaign text,
+  utm_term     text,
+  utm_content  text,
+  gclid        text,
+  fbclid       text
+);
+
+create index if not exists quiz_leads_created_at_idx on public.quiz_leads (created_at desc);
+create index if not exists quiz_leads_nivel_idx      on public.quiz_leads (nivel);
+create index if not exists quiz_leads_campaign_idx   on public.quiz_leads (utm_campaign);
+
+-- RLS: só INSERT pelo anon, igual `events` — ninguém lê PII pela chave pública
+alter table public.quiz_leads enable row level security;
+
+drop policy if exists "anon insere quiz leads" on public.quiz_leads;
+create policy "anon insere quiz leads"
+  on public.quiz_leads for insert
+  to anon
+  with check (true);
+
+revoke select on public.quiz_leads from anon;
+
+notify pgrst, 'reload schema';
+```
+
+### Como conferir os leads
+
+A tabela **não** aparece em nenhum dashboard público — de propósito, pra não
+vazar WhatsApp/e-mail. Pra ver os leads:
+
+- Supabase → **Table Editor → quiz_leads** (acesso só de quem loga no projeto).
+- Ou, se quiser, peça pra eu montar depois um painel interno protegido por
+  senha/login (Supabase Auth) — hoje não existe autenticação no site, então
+  esse painel ainda não foi criado.
+
+### Antes de publicar o `quiz.html`
+
+- Trocar `SITE_URL` no `<script>` do `quiz.html` pelo domínio real (hoje é um
+  placeholder), e conferir se o link `index.html#lotes?utm_...` cai na seção
+  certa da página.
+- O número de WhatsApp usado é o mesmo do botão flutuante do site
+  (`5511934873737`) — trocar se for outro.
+- **Rodar o SQL acima antes de divulgar o link** — sem a tabela `quiz_leads`
+  criada, o envio do formulário falha (o quiz mostra erro e deixa a pessoa
+  tentar de novo, mas não perde as respostas já dadas).

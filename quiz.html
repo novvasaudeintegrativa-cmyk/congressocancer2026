@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raio-X do Repertório Clínico da Saúde Integrativa na Oncologia</title>
+<meta name="description" content="Responda 5 perguntas rápidas e descubra seu nível de repertório em práticas integrativas para pacientes oncológicos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap" rel="stylesheet">
+
+<!-- Meta Pixel Code (mesmo pixel do index.html, mesmo domínio) -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1519435041949261');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></noscript>
+<!-- End Meta Pixel Code -->
+
+<style>
+  @font-face{
+    font-family: 'League Spartan';
+    src: url('Fonts/LeagueSpartan-Bold.otf') format('opentype');
+    font-weight: 400 900;
+    font-style: normal;
+    font-display: swap;
+  }
+  :root{
+    --bg:#f4f2ef; --card:#ffffff; --linha:#e8e3dd; --track:#efe8e4;
+    --ink:#2a2320; --soft:#857b74; --faint:#afa59d;
+    --bordo:#8a222e; --bordo-vivo:#b92d3d; --dourado:#c98b1f;
+    --verde:#1f8a4c; --verde-escuro:#167a42;
+    --laranja:#e2650b; --laranja-escuro:#c85809;
+    --fonte-titulo: 'League Spartan', 'Baloo 2', 'Segoe UI', sans-serif;
+    --fonte-corpo: 'Roboto', 'Segoe UI', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none!important;animation:none!important;}
+  }
+  body{
+    margin:0;min-height:100vh;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--fonte-corpo);
+    line-height:1.55;
+    display:flex;align-items:flex-start;justify-content:center;
+    padding:28px 16px 60px;
+  }
+  h1,h2,h3{font-family:var(--fonte-titulo);margin:0;line-height:1.18;}
+  .wrap{width:100%;max-width:560px;}
+  .faixa-demo{
+    background:#faf1f0;border:1px dashed var(--bordo-vivo);color:var(--bordo);
+    font-family:var(--fonte-titulo);font-weight:800;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    text-align:center;padding:8px 12px;border-radius:10px;margin-bottom:16px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:22px;}
+  .brand .mark{width:34px;height:34px;border-radius:10px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fonte-titulo);font-weight:800;font-size:14px;}
+  .brand span{font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);}
+
+  .card{
+    position:relative;
+    background:var(--card);
+    border:1px solid var(--linha);
+    border-radius:18px;
+    padding:29px 24px 26px;
+    overflow:hidden;
+    box-shadow:0 1px 3px rgba(42,35,32,.06);
+  }
+  .card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:4px;
+    background:var(--bordo-vivo);
+  }
+  .progress{height:6px;border-radius:4px;background:var(--track);overflow:hidden;margin-bottom:22px;}
+  .progress i{display:block;height:100%;background:var(--bordo-vivo);width:0%;transition:width .35s ease;}
+
+  .kicker{
+    display:flex;align-items:center;gap:8px;
+    font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--bordo);font-weight:700;margin-bottom:10px;
+  }
+  .kicker::before{content:'';width:14px;height:2px;border-radius:2px;background:var(--bordo);flex:none;}
+  .pergunta{font-size:20px;font-weight:700;margin-bottom:18px;text-wrap:balance;color:var(--ink);}
+  .opcoes{counter-reset:opt;display:flex;flex-direction:column;gap:10px;}
+  .opcao{
+    counter-increment:opt;
+    display:flex;align-items:center;gap:12px;
+    text-align:left;width:100%;
+    background:#fbfaf8;border:1.5px solid var(--linha);
+    color:var(--ink);border-radius:13px;padding:12px 16px;font-size:14.5px;font-family:var(--fonte-corpo);line-height:1.35;
+    cursor:pointer;transition:border-color .15s, background .15s, transform .1s;
+  }
+  .opcao::before{
+    content:counter(opt, upper-alpha);flex:none;
+    width:22px;height:22px;border-radius:7px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--linha);color:var(--bordo);
+    font-family:var(--fonte-titulo);font-weight:800;font-size:11.5px;
+    transition:background .15s, color .15s;
+  }
+  .opcao:hover{border-color:var(--bordo-vivo);background:rgba(184,45,61,.05);}
+  .opcao:active{transform:scale(.99);}
+  .opcao.marcada{border-color:var(--verde);background:rgba(31,138,76,.1);}
+  .opcao.marcada::before{background:var(--verde);color:#fff;}
+
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-top:18px;}
+  .voltar{background:none;border:0;color:var(--soft);font-size:12.5px;cursor:pointer;font-family:var(--fonte-corpo);padding:4px 2px;}
+  .voltar:disabled{opacity:0;pointer-events:none;}
+  .contagem{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums;}
+
+  label{display:block;font-size:12px;color:var(--soft);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
+  input[type=text], input[type=tel], input[type=email], select{
+    width:100%;padding:12px 14px;border-radius:11px;border:1.5px solid var(--linha);
+    background:#fff;color:var(--ink);font-family:var(--fonte-corpo);font-size:14.5px;
+    transition:border-color .15s;
+  }
+  input:hover, select:hover{border-color:var(--faint);}
+  input::placeholder{color:var(--faint);}
+  .opcao:focus-visible, .btn:focus-visible, .voltar:focus-visible,
+  input:focus-visible, select:focus-visible{
+    outline:2px solid var(--bordo-vivo);outline-offset:2px;border-color:var(--bordo-vivo);
+  }
+  select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a222e' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:16px;}
+  .lgpd{font-size:11px;color:var(--faint);margin-top:14px;}
+
+  .btn{
+    display:block;width:100%;margin-top:20px;font-family:var(--fonte-titulo);
+    background:var(--verde);color:#fff;border:0;border-radius:13px;padding:15px;
+    font-weight:800;font-size:14.5px;letter-spacing:.03em;text-transform:uppercase;cursor:pointer;
+    text-align:center;text-decoration:none;
+  }
+  .btn:hover{background:var(--verde-escuro);}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .btn.secundario{background:var(--laranja);margin-top:10px;}
+  .btn.secundario:hover{background:var(--laranja-escuro);}
+  .erro{color:var(--bordo-vivo);font-size:12.5px;margin-top:10px;}
+
+  .resultado .selo{display:inline-block;font-family:var(--fonte-titulo);font-weight:800;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:var(--bordo-vivo);padding:5px 14px;border-radius:999px;margin-bottom:14px;}
+  .resultado h2{font-size:24px;margin-bottom:10px;text-wrap:balance;color:var(--ink);}
+  .resultado p{font-size:14.5px;color:var(--soft);}
+
+  .score{margin-top:22px;}
+  .score-trilho{height:8px;border-radius:5px;background:var(--track);overflow:hidden;}
+  .score-trilho i{display:block;height:100%;width:0%;border-radius:5px;background:var(--bordo-vivo);transition:width .6s ease;}
+  .score-legenda{display:flex;justify-content:space-between;margin-top:8px;}
+  .score-legenda span{font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--faint);font-weight:600;transition:color .2s;}
+  .score-legenda span.on{color:var(--bordo);}
+
+  [hidden]{display:none!important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="faixa-demo" id="faixa-demo" hidden>Modo demonstração · nenhuma resposta é enviada ou salva</div>
+  <div class="brand"><span class="mark">Rx</span><span>Raio-X do Repertório Clínico da Saúde Integrativa na Oncologia</span></div>
+
+  <div class="card">
+    <div class="progress"><i id="barra"></i></div>
+
+    <div id="tela-perguntas">
+      <div class="kicker">Diagnóstico rápido</div>
+      <div class="pergunta" id="texto-pergunta"></div>
+      <div class="opcoes" id="opcoes"></div>
+      <div class="nav">
+        <button type="button" class="voltar" id="btn-voltar">← Voltar</button>
+        <span class="contagem" id="contagem"></span>
+      </div>
+    </div>
+
+    <form id="tela-form" hidden>
+      <div class="kicker">Quase lá</div>
+      <h2 style="font-size:19px;">Pra onde a gente manda seu resultado?</h2>
+      <p style="font-size:13px;color:var(--soft);margin-top:6px;">Seu nível de repertório + como o Congresso pode fechar essa lacuna.</p>
+
+      <label for="f-nome">Nome</label>
+      <input type="text" id="f-nome" placeholder="Seu nome" required autocomplete="name">
+
+      <label for="f-whatsapp">WhatsApp</label>
+      <input type="tel" id="f-whatsapp" placeholder="(11) 91234-5678" required autocomplete="tel" inputmode="tel">
+
+      <label for="f-profissao">Profissão</label>
+      <select id="f-profissao" required>
+        <option value="" disabled selected>Selecione</option>
+        <option>Medicina</option>
+        <option>Odontologia</option>
+        <option>Farmácia</option>
+        <option>Enfermagem</option>
+        <option>Fisioterapia</option>
+        <option>Nutrição</option>
+        <option>Terapias integrativas</option>
+        <option>Outra</option>
+      </select>
+
+      <label for="f-email">E-mail <span style="text-transform:none;color:var(--faint);">(opcional)</span></label>
+      <input type="email" id="f-email" placeholder="seu@email.com" autocomplete="email">
+
+      <p class="lgpd">Usamos esses dados só para te contar sobre o Congresso — sem compartilhar com terceiros.</p>
+      <div class="erro" id="form-erro" hidden></div>
+      <button type="submit" class="btn" id="btn-enviar">Ver meu resultado</button>
+    </form>
+
+    <div class="resultado" id="tela-resultado" hidden>
+      <div class="selo" id="r-selo"></div>
+      <h2 id="r-titulo"></h2>
+      <p id="r-texto"></p>
+      <div class="score">
+        <div class="score-trilho"><i id="r-score-fill"></i></div>
+        <div class="score-legenda">
+          <span id="r-leg-ini">Iniciante</span>
+          <span id="r-leg-int">Intermediário</span>
+          <span id="r-leg-avc">Avançado</span>
+        </div>
+      </div>
+      <a class="btn" id="r-cta-lote" href="#">Garantir vaga no Lote 1</a>
+      <a class="btn secundario" id="r-cta-whats" href="#" target="_blank" rel="noopener">Falar no WhatsApp</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* MVP ainda não ligado ao banco: true = não grava no Supabase nem manda
+     evento nenhum, só mostra o resultado na hora — serve pra revisar layout
+     e perguntas/respostas. Trocar para false quando a tabela quiz_leads
+     (SUPABASE.md, seção 8) já tiver sido criada e for hora de captar de verdade. */
+  var DEMO_MODE = true;
+
+  var SUPABASE_URL = 'https://nbhekjgbszyuuxrynzfo.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iaGVramdic3p5dXV4cnluemZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzM0MDUsImV4cCI6MjA5MjMwOTQwNX0.d8f346ONCOHjr__C8RLmSJOFW0kZfqFkCGHmotwxiXc';
+  var SITE_URL = 'https://congressocancer.novvasaudeintegrativa.com.br';
+  var WHATSAPP_NUM = '5511934873737';
+
+  var $ = function(id){ return document.getElementById(id); };
+  if (DEMO_MODE) $('faixa-demo').hidden = false;
+
+  /* ---- mesmo esquema de atribuição do index.html (visitor/session/UTM) ---- */
+  function uid(){
+    try { if (crypto && crypto.randomUUID) return crypto.randomUUID(); } catch(e){}
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+  var visitorId, sessionId;
+  try { visitorId = localStorage.getItem('cc_vid') || uid(); localStorage.setItem('cc_vid', visitorId); }
+  catch(e){ visitorId = uid(); }
+  try { sessionId = sessionStorage.getItem('cc_sid') || uid(); sessionStorage.setItem('cc_sid', sessionId); }
+  catch(e){ sessionId = uid(); }
+
+  var CAMP_KEYS = ['utm_source','utm_medium','utm_campaign','utm_term','utm_content','gclid','fbclid'];
+  var camp = {};
+  try {
+    var qs = new URLSearchParams(location.search);
+    var stored = JSON.parse(sessionStorage.getItem('cc_camp') || '{}');
+    var temNaUrl = CAMP_KEYS.some(function(k){ return qs.get(k); });
+    CAMP_KEYS.forEach(function(k){ camp[k] = qs.get(k) || (temNaUrl ? null : stored[k]) || null; });
+    if (temNaUrl) sessionStorage.setItem('cc_camp', JSON.stringify(camp));
+  } catch(e){ CAMP_KEYS.forEach(function(k){ camp[k] = null; }); }
+
+  function sendEvent(event, props){
+    if (DEMO_MODE) return;
+    try {
+      fetch(SUPABASE_URL + '/functions/v1/collect', {
+        method:'POST', keepalive:true,
+        headers:{ 'Content-Type':'application/json', apikey:SUPABASE_KEY, Authorization:'Bearer '+SUPABASE_KEY },
+        body: JSON.stringify({
+          visitor_id:visitorId, session_id:sessionId, event:event, props:props||{},
+          path:location.pathname+location.search, referrer:document.referrer||null,
+          screen_w:(window.screen&&screen.width)||null,
+          utm_source:camp.utm_source, utm_medium:camp.utm_medium, utm_campaign:camp.utm_campaign,
+          utm_term:camp.utm_term, utm_content:camp.utm_content, gclid:camp.gclid, fbclid:camp.fbclid
+        })
+      }).catch(function(){});
+    } catch(e){}
+  }
+  sendEvent('PageView', { page:'quiz' });
+  if (!DEMO_MODE && typeof fbq === 'function') fbq('track', 'PageView');
+
+  /* ---- perguntas ---- */
+  var PERGUNTAS = [
+    { texto:'Quando um paciente oncológico pergunta sobre terapia complementar, você geralmente…', opcoes:[
+      { t:'Fico inseguro(a) e prefiro não opinar', v:1 },
+      { t:'Dou uma resposta genérica, sem muita base técnica', v:2 },
+      { t:'Respondo com segurança, citando evidências e limites éticos', v:3 }
+    ]},
+    { texto:'Nos últimos 12 meses, você fez alguma atualização específica em práticas integrativas ou oncologia integrativa?', opcoes:[
+      { t:'Não, faz tempo que não estudo esse tema', v:1 },
+      { t:'Só conteúdo esporádico (Instagram, YouTube)', v:2 },
+      { t:'Sim, curso, congresso ou pós-graduação específica', v:3 }
+    ]},
+    { texto:'Você se sente confortável explicando os limites entre orientação segura e recomendação fora do seu escopo?', opcoes:[
+      { t:'Não muito, tenho receio de errar', v:1 },
+      { t:'Mais ou menos, depende do caso', v:2 },
+      { t:'Sim, tenho isso bem claro', v:3 }
+    ]},
+    { texto:'Como você descreveria sua rede de contatos na área de oncologia integrativa?', opcoes:[
+      { t:'Não tenho nenhuma', v:1 },
+      { t:'Alguns contatos soltos', v:2 },
+      { t:'Tenho uma rede ativa de colegas e referências', v:3 }
+    ]},
+    { texto:'Se um(a) colega perguntasse hoje "você indica algum congresso ou especialista de referência nessa área?", você…', opcoes:[
+      { t:'Não saberia responder', v:1 },
+      { t:'Citaria algo genérico', v:2 },
+      { t:'Indicaria nomes e eventos específicos', v:3 }
+    ]}
+  ];
+
+  var NIVEIS = {
+    iniciante: {
+      selo:'Nível: Iniciante', utm:'iniciante',
+      titulo:'Você está no começo dessa jornada — e tem muito espaço pra crescer rápido.',
+      texto:'Sua base hoje ainda é limitada, o que é normal: a formação tradicional quase não cobre práticas integrativas em oncologia. O Congresso foi desenhado justamente pra dar essa base sólida em 2 dias, com quem já vive isso na prática clínica.'
+    },
+    intermediario: {
+      selo:'Nível: Intermediário', utm:'intermediario',
+      titulo:'Você já tem alguma bagagem — falta fechar a lacuna pra responder com segurança total.',
+      texto:'Você não parte do zero, mas ainda sente que falta algo na hora H com o paciente. É exatamente esse tipo de lacuna técnica e ética que o Congresso resolve, com quem já enfrentou esses casos na prática.'
+    },
+    avancado: {
+      selo:'Nível: Avançado', utm:'avancado',
+      titulo:'Você já tem um bom repertório — hora de refinar detalhes e ampliar sua rede.',
+      texto:'Sua base já é sólida. O que mais vai valer a pena pra você no Congresso é o networking com nomes de referência e os detalhes finos que só quem já é avançado percebe.'
+    }
+  };
+
+  var idx = 0;
+  var respostas = new Array(PERGUNTAS.length).fill(null);
+
+  function renderPergunta(){
+    var p = PERGUNTAS[idx];
+    $('barra').style.width = Math.round((idx / PERGUNTAS.length) * 100) + '%';
+    $('contagem').textContent = (idx+1) + ' de ' + PERGUNTAS.length;
+    $('texto-pergunta').textContent = p.texto;
+    $('btn-voltar').disabled = idx === 0;
+    $('opcoes').innerHTML = p.opcoes.map(function(o, i){
+      var marcada = respostas[idx] === o.v;
+      return '<button type="button" class="opcao' + (marcada?' marcada':'') + '" data-v="' + o.v + '">' + o.t + '</button>';
+    }).join('');
+  }
+
+  function avancar(){
+    if (idx < PERGUNTAS.length - 1){ idx++; renderPergunta(); }
+    else mostrarForm();
+  }
+
+  $('opcoes').addEventListener('click', function(e){
+    var b = e.target.closest('.opcao'); if (!b) return;
+    respostas[idx] = Number(b.dataset.v);
+    sendEvent('QuizAnswer', { pergunta: idx + 1, valor: respostas[idx] });
+    setTimeout(avancar, 180);
+  });
+  $('btn-voltar').addEventListener('click', function(){ if (idx > 0){ idx--; renderPergunta(); } });
+
+  function mostrarForm(){
+    $('barra').style.width = '100%';
+    $('tela-perguntas').hidden = true;
+    $('tela-form').hidden = false;
+    sendEvent('QuizFormView', {});
+    if (!DEMO_MODE && typeof fbq === 'function') fbq('trackCustom', 'QuizFormView');
+  }
+
+  function calcularNivel(){
+    var soma = respostas.reduce(function(a,b){ return a + (b||0); }, 0);
+    if (soma <= 8) return 'iniciante';
+    if (soma <= 12) return 'intermediario';
+    return 'avancado';
+  }
+
+  $('tela-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var nome = $('f-nome').value.trim();
+    var whatsapp = $('f-whatsapp').value.trim();
+    var profissao = $('f-profissao').value;
+    var email = $('f-email').value.trim();
+    $('form-erro').hidden = true;
+    if (!nome || !whatsapp || !profissao){
+      $('form-erro').textContent = 'Preencha nome, WhatsApp e profissão pra ver seu resultado.';
+      $('form-erro').hidden = false;
+      return;
+    }
+    var nivel = calcularNivel();
+    var pontuacao = respostas.reduce(function(a,b){ return a + (b||0); }, 0);
+    var btn = $('btn-enviar');
+
+    if (DEMO_MODE){
+      mostrarResultado(nivel, whatsapp, nome, pontuacao);
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Enviando…';
+
+    var row = {
+      visitor_id: visitorId, session_id: sessionId,
+      nome: nome, whatsapp: whatsapp, email: email || null, profissao: profissao,
+      respostas: { respostas: respostas, perguntas: PERGUNTAS.map(function(p){ return p.texto; }) },
+      pontuacao: pontuacao, nivel: nivel,
+      path: location.pathname + location.search,
+      utm_source: camp.utm_source, utm_medium: camp.utm_medium, utm_campaign: camp.utm_campaign,
+      utm_term: camp.utm_term, utm_content: camp.utm_content, gclid: camp.gclid, fbclid: camp.fbclid
+    };
+
+    fetch(SUPABASE_URL + '/rest/v1/quiz_leads', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', apikey:SUPABASE_KEY, Authorization:'Bearer '+SUPABASE_KEY, Prefer:'return=minimal' },
+      body: JSON.stringify(row)
+    }).then(function(r){
+      if (!r.ok) throw new Error('insert falhou: ' + r.status);
+      if (typeof fbq === 'function') fbq('track', 'Lead', { content_name:'Quiz', nivel: nivel });
+      sendEvent('QuizLead', { nivel: nivel, pontuacao: pontuacao });
+      mostrarResultado(nivel, whatsapp, nome, pontuacao);
+    }).catch(function(err){
+      $('form-erro').textContent = 'Não deu pra enviar agora (' + err.message + '). Tente de novo em instantes.';
+      $('form-erro').hidden = false;
+      btn.disabled = false; btn.textContent = 'Ver meu resultado';
+    });
+  });
+
+  function mostrarResultado(nivel, whatsapp, nome, pontuacao){
+    var n = NIVEIS[nivel];
+    $('tela-form').hidden = true;
+    $('tela-resultado').hidden = false;
+    $('r-selo').textContent = n.selo;
+    $('r-titulo').textContent = n.titulo;
+    $('r-texto').textContent = n.texto;
+
+    var min = PERGUNTAS.length, max = PERGUNTAS.length * 3;
+    var pct = Math.round((pontuacao - min) / (max - min) * 100);
+    setTimeout(function(){ $('r-score-fill').style.width = pct + '%'; }, 50);
+    ['r-leg-ini','r-leg-int','r-leg-avc'].forEach(function(id){ $(id).classList.remove('on'); });
+    $(nivel === 'iniciante' ? 'r-leg-ini' : nivel === 'intermediario' ? 'r-leg-int' : 'r-leg-avc').classList.add('on');
+
+    var utmLote = 'utm_source=quiz&utm_medium=organico&utm_campaign=lote1&utm_content=' + n.utm;
+    $('r-cta-lote').href = 'index.html#lotes?' + utmLote;
+    $('r-cta-lote').addEventListener('click', function(){ sendEvent('InitiateCheckout', { content_name:'Quiz CTA Lote' }); });
+
+    var msg = encodeURIComponent('Oi! Fiz o quiz do Congresso e meu nível foi "' + n.selo.replace('Nível: ','') + '". Meu nome é ' + nome + ', quero saber mais sobre o Lote 1!');
+    $('r-cta-whats').href = 'https://wa.me/' + WHATSAPP_NUM + '?text=' + msg;
+    $('r-cta-whats').addEventListener('click', function(){ sendEvent('Contact', { content_name:'WhatsApp via quiz' }); });
+  }
+
+  renderPergunta();
+})();
+</script>
+</body>
+</html>
