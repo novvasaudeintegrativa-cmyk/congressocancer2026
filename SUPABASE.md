@@ -551,6 +551,21 @@ revoke select on public.quiz_leads from anon;
 notify pgrst, 'reload schema';
 ```
 
+### Fluxo: contato primeiro, quiz depois
+
+O `quiz.html` pede nome/WhatsApp/profissão **antes** das 5 perguntas (não
+depois). Isso gera **duas gravações** por pessoa que termina o quiz:
+
+1. Ao enviar o contato: 1 linha com `pontuacao`/`nivel` nulos e
+   `respostas = {}` — garante o lead mesmo se a pessoa fechar a página no
+   meio das perguntas.
+2. Ao terminar a 5ª pergunta: outra linha, agora completa, com
+   `pontuacao`/`nivel`/`respostas` preenchidos.
+
+Pra analisar: filtre por `whatsapp` — quem só tem a linha "vazia" abandonou o
+quiz; quem tem as duas terminou. Não há `UPDATE` na tabela (só `INSERT`), de
+propósito, pra não precisar abrir uma policy de update pro `anon`.
+
 ### Como conferir os leads
 
 A tabela **não** aparece em nenhum dashboard público — de propósito, pra não

@@ -162,22 +162,12 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
   <div class="brand"><span class="mark">Rx</span><span>Raio-X do Repertório Clínico da Saúde Integrativa na Oncologia</span></div>
 
   <div class="card">
-    <div class="progress"><i id="barra"></i></div>
+    <div class="progress" id="progress-wrap" hidden><i id="barra"></i></div>
 
-    <div id="tela-perguntas">
-      <div class="kicker">Diagnóstico rápido</div>
-      <div class="pergunta" id="texto-pergunta"></div>
-      <div class="opcoes" id="opcoes"></div>
-      <div class="nav">
-        <button type="button" class="voltar" id="btn-voltar">← Voltar</button>
-        <span class="contagem" id="contagem"></span>
-      </div>
-    </div>
-
-    <form id="tela-form" hidden>
-      <div class="kicker">Quase lá</div>
-      <h2 style="font-size:19px;">Pra onde a gente manda seu resultado?</h2>
-      <p style="font-size:13px;color:var(--soft);margin-top:6px;">Seu nível de repertório + como o Congresso pode fechar essa lacuna.</p>
+    <form id="tela-form">
+      <div class="kicker">Antes de começar</div>
+      <h2 style="font-size:19px;">Pra onde a gente manda seu Raio-X?</h2>
+      <p style="font-size:13px;color:var(--soft);margin-top:6px;">5 perguntas rápidas — seu nível de repertório sai na hora.</p>
 
       <label for="f-nome">Nome</label>
       <input type="text" id="f-nome" placeholder="Seu nome" required autocomplete="name">
@@ -203,8 +193,18 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
 
       <p class="lgpd">Usamos esses dados só para te contar sobre o Congresso — sem compartilhar com terceiros.</p>
       <div class="erro" id="form-erro" hidden></div>
-      <button type="submit" class="btn" id="btn-enviar">Ver meu resultado</button>
+      <button type="submit" class="btn" id="btn-comecar">Começar o Raio-X</button>
     </form>
+
+    <div id="tela-perguntas" hidden>
+      <div class="kicker">Diagnóstico rápido</div>
+      <div class="pergunta" id="texto-pergunta"></div>
+      <div class="opcoes" id="opcoes"></div>
+      <div class="nav">
+        <button type="button" class="voltar" id="btn-voltar">← Voltar</button>
+        <span class="contagem" id="contagem"></span>
+      </div>
+    </div>
 
     <div class="resultado" id="tela-resultado" hidden>
       <div class="selo" id="r-selo"></div>
@@ -344,7 +344,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
 
   function avancar(){
     if (idx < PERGUNTAS.length - 1){ idx++; renderPergunta(); }
-    else mostrarForm();
+    else finalizar();
   }
 
   $('opcoes').addEventListener('click', function(e){
@@ -355,20 +355,15 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
   });
   $('btn-voltar').addEventListener('click', function(){ if (idx > 0){ idx--; renderPergunta(); } });
 
-  function mostrarForm(){
-    $('barra').style.width = '100%';
-    $('tela-perguntas').hidden = true;
-    $('tela-form').hidden = false;
-    sendEvent('QuizFormView', {});
-    if (!DEMO_MODE && typeof fbq === 'function') fbq('trackCustom', 'QuizFormView');
-  }
-
   function calcularNivel(){
     var soma = respostas.reduce(function(a,b){ return a + (b||0); }, 0);
     if (soma <= 8) return 'iniciante';
     if (soma <= 12) return 'intermediario';
     return 'avancado';
   }
+
+  /* ---- passo 1: captura o contato antes de começar o quiz ---- */
+  var contato = null;
 
   $('tela-form').addEventListener('submit', function(e){
     e.preventDefault();
@@ -378,24 +373,52 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     var email = $('f-email').value.trim();
     $('form-erro').hidden = true;
     if (!nome || !whatsapp || !profissao){
-      $('form-erro').textContent = 'Preencha nome, WhatsApp e profissão pra ver seu resultado.';
+      $('form-erro').textContent = 'Preencha nome, WhatsApp e profissão pra começar.';
       $('form-erro').hidden = false;
       return;
     }
+    contato = { nome: nome, whatsapp: whatsapp, email: email || null, profissao: profissao };
+
+    sendEvent('QuizContato', {});
+    if (!DEMO_MODE && typeof fbq === 'function') fbq('track', 'Lead', { content_name:'Quiz - Contato' });
+
+    /* grava o contato já aqui (best-effort) — garante o lead mesmo se a
+       pessoa fechar antes de terminar as 5 perguntas. pontuacao/nivel ficam
+       nulos e são completados por um segundo insert em finalizar(). */
+    if (!DEMO_MODE){
+      fetch(SUPABASE_URL + '/rest/v1/quiz_leads', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', apikey:SUPABASE_KEY, Authorization:'Bearer '+SUPABASE_KEY, Prefer:'return=minimal' },
+        body: JSON.stringify({
+          visitor_id: visitorId, session_id: sessionId,
+          nome: contato.nome, whatsapp: contato.whatsapp, email: contato.email, profissao: contato.profissao,
+          respostas: {}, pontuacao: null, nivel: null,
+          path: location.pathname + location.search,
+          utm_source: camp.utm_source, utm_medium: camp.utm_medium, utm_campaign: camp.utm_campaign,
+          utm_term: camp.utm_term, utm_content: camp.utm_content, gclid: camp.gclid, fbclid: camp.fbclid
+        })
+      }).catch(function(err){ console.warn('quiz_leads insert (contato) falhou', err); });
+    }
+
+    $('tela-form').hidden = true;
+    $('progress-wrap').hidden = false;
+    $('tela-perguntas').hidden = false;
+    renderPergunta();
+  });
+
+  /* ---- passo 2: ao terminar as perguntas, completa o mesmo lead e mostra o resultado ---- */
+  function finalizar(){
     var nivel = calcularNivel();
     var pontuacao = respostas.reduce(function(a,b){ return a + (b||0); }, 0);
-    var btn = $('btn-enviar');
 
     if (DEMO_MODE){
-      mostrarResultado(nivel, whatsapp, nome, pontuacao);
+      mostrarResultado(nivel, contato.whatsapp, contato.nome, pontuacao);
       return;
     }
 
-    btn.disabled = true; btn.textContent = 'Enviando…';
-
     var row = {
       visitor_id: visitorId, session_id: sessionId,
-      nome: nome, whatsapp: whatsapp, email: email || null, profissao: profissao,
+      nome: contato.nome, whatsapp: contato.whatsapp, email: contato.email, profissao: contato.profissao,
       respostas: { respostas: respostas, perguntas: PERGUNTAS.map(function(p){ return p.texto; }) },
       pontuacao: pontuacao, nivel: nivel,
       path: location.pathname + location.search,
@@ -407,21 +430,17 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       method:'POST',
       headers:{ 'Content-Type':'application/json', apikey:SUPABASE_KEY, Authorization:'Bearer '+SUPABASE_KEY, Prefer:'return=minimal' },
       body: JSON.stringify(row)
-    }).then(function(r){
-      if (!r.ok) throw new Error('insert falhou: ' + r.status);
-      if (typeof fbq === 'function') fbq('track', 'Lead', { content_name:'Quiz', nivel: nivel });
-      sendEvent('QuizLead', { nivel: nivel, pontuacao: pontuacao });
-      mostrarResultado(nivel, whatsapp, nome, pontuacao);
-    }).catch(function(err){
-      $('form-erro').textContent = 'Não deu pra enviar agora (' + err.message + '). Tente de novo em instantes.';
-      $('form-erro').hidden = false;
-      btn.disabled = false; btn.textContent = 'Ver meu resultado';
-    });
-  });
+    }).catch(function(err){ console.warn('quiz_leads insert (completo) falhou', err); });
+
+    if (typeof fbq === 'function') fbq('trackCustom', 'QuizCompleto', { nivel: nivel });
+    sendEvent('QuizLead', { nivel: nivel, pontuacao: pontuacao });
+    mostrarResultado(nivel, contato.whatsapp, contato.nome, pontuacao);
+  }
 
   function mostrarResultado(nivel, whatsapp, nome, pontuacao){
     var n = NIVEIS[nivel];
-    $('tela-form').hidden = true;
+    $('tela-perguntas').hidden = true;
+    $('progress-wrap').hidden = true;
     $('tela-resultado').hidden = false;
     $('r-selo').textContent = n.selo;
     $('r-titulo').textContent = n.titulo;
@@ -441,8 +460,6 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     $('r-cta-whats').href = 'https://wa.me/' + WHATSAPP_NUM + '?text=' + msg;
     $('r-cta-whats').addEventListener('click', function(){ sendEvent('Contact', { content_name:'WhatsApp via quiz' }); });
   }
-
-  renderPergunta();
 })();
 </script>
 </body>
