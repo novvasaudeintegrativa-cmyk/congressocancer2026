@@ -76,6 +76,8 @@
   .sec{display:inline-flex;align-items:center;gap:8px;font-family:var(--tit);font-weight:800;font-size:12px;
     letter-spacing:.09em;text-transform:uppercase;color:var(--bordo);margin-bottom:16px;}
   .sec .bar{width:14px;height:2px;background:var(--bordo);border-radius:2px;}
+  .sec.sec-grande{font-size:26px;letter-spacing:.02em;}
+  .sec.sec-grande .bar{width:22px;height:4px;}
   .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
   .sec-head .hint{font-size:11px;color:var(--faint);}
   canvas{max-width:100%;display:block;}
@@ -218,36 +220,6 @@
       <div class="kpis" id="kpis"></div>
     </div>
 
-    <section id="sec-roi">
-      <div class="sec-head" style="margin-bottom:16px;">
-        <span class="sec"><span class="bar"></span>Investimento &amp; Retorno</span>
-        <span class="hint">lançamento manual até a conta de anúncios ser conectada</span>
-      </div>
-      <div class="duas-col">
-        <div>
-          <div class="kpis" id="roi-kpis" style="grid-template-columns:1fr 1fr;margin-bottom:16px;"></div>
-          <div class="scroll-x">
-            <table>
-              <thead><tr><th>Produto (Lote)</th><th class="n">Qtd</th><th class="n">Total</th></tr></thead>
-              <tbody id="tabela-vendas"></tbody>
-            </table>
-          </div>
-        </div>
-        <form id="form-investimento">
-          <label for="inv-data">Data</label>
-          <input type="date" id="inv-data" required>
-          <label for="inv-canal">Canal (opcional)</label>
-          <input type="text" id="inv-canal" placeholder="ex: meta_ads, google_ads">
-          <label for="inv-desc">Descrição (opcional)</label>
-          <input type="text" id="inv-desc" placeholder="ex: campanha lote 1">
-          <label for="inv-valor">Valor investido (R$)</label>
-          <input type="number" id="inv-valor" step="0.01" min="0" required>
-          <button type="submit" class="btn-roi" id="btn-lancar">Lançar investimento</button>
-          <div class="vazio" id="inv-msg" style="margin-top:8px;text-align:left;padding:0;"></div>
-        </form>
-      </div>
-    </section>
-
     <section id="sec-spark">
       <span class="sec"><span class="bar"></span>Page views por dia</span>
       <div class="spark-wrap"><canvas id="spark"></canvas></div>
@@ -282,6 +254,36 @@
         <canvas id="hora" height="80"></canvas>
       </section>
     </div>
+
+    <section id="sec-roi">
+      <div class="sec-head" style="margin-bottom:16px;">
+        <span class="sec sec-grande"><span class="bar"></span>ROI</span>
+        <span class="hint">lançamento manual até a conta de anúncios ser conectada</span>
+      </div>
+      <div class="duas-col">
+        <div>
+          <div class="kpis" id="roi-kpis" style="grid-template-columns:1fr 1fr;margin-bottom:16px;"></div>
+          <div class="scroll-x">
+            <table>
+              <thead><tr><th>Produto (Lote)</th><th class="n">Qtd</th><th class="n">Total</th></tr></thead>
+              <tbody id="tabela-vendas"></tbody>
+            </table>
+          </div>
+        </div>
+        <form id="form-investimento">
+          <label for="inv-data">Data</label>
+          <input type="date" id="inv-data" required>
+          <label for="inv-canal">Canal (opcional)</label>
+          <input type="text" id="inv-canal" placeholder="ex: meta_ads, google_ads">
+          <label for="inv-desc">Descrição (opcional)</label>
+          <input type="text" id="inv-desc" placeholder="ex: campanha lote 1">
+          <label for="inv-valor">Valor investido (R$)</label>
+          <input type="number" id="inv-valor" step="0.01" min="0" required>
+          <button type="submit" class="btn-roi" id="btn-lancar">Lançar investimento</button>
+          <div class="vazio" id="inv-msg" style="margin-top:8px;text-align:left;padding:0;"></div>
+        </form>
+      </div>
+    </section>
 
     <p class="foot" id="foot">carregando…</p>
   </div>
@@ -551,7 +553,7 @@
 
   function carregarROI(){
     return rpc('rpc_roi', {}).then(renderROI).catch(function(e){
-      $('roi-kpis').innerHTML = '<div class="kpi"><div class="l">Investimento &amp; Retorno</div><div class="n" style="font-size:13px;color:var(--soft)">erro: ' + e.message + '</div><div class="s">rodou a seção 11 do SUPABASE.md?</div></div>';
+      $('roi-kpis').innerHTML = '<div class="kpi"><div class="l">ROI</div><div class="n" style="font-size:13px;color:var(--soft)">erro: ' + e.message + '</div><div class="s">rodou a seção 11 do SUPABASE.md?</div></div>';
       $('tabela-vendas').innerHTML = '';
     });
   }
