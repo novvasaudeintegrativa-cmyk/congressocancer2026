@@ -197,6 +197,12 @@
   .fila-acao select{font-size:12px;padding:7px 9px;border-radius:8px;border:1px solid var(--linha);color:var(--soft);background:#fff;font-family:var(--corpo);}
   .btn-assumir{font-family:var(--tit);font-weight:800;font-size:11.5px;letter-spacing:.02em;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;}
   .btn-assumir:hover{background:var(--bordo-vivo);}
+  .btn-assumir.critico{background:#b92d3d;animation:pulseBtnCritico 1.1s ease-in-out infinite;}
+  @keyframes pulseBtnCritico{
+    0%,100%{box-shadow:0 0 0 0 rgba(185,45,61,.55);}
+    50%{box-shadow:0 0 0 9px rgba(185,45,61,0);}
+  }
+  .tag-simulacao{font-family:var(--corpo);font-weight:700;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:#8a6d00;background:#fff3c4;padding:2px 8px;border-radius:999px;}
   .fila-urgencia{width:130px;flex:none;}
   .fila-urgencia-trilho{height:6px;border-radius:4px;background:var(--track);overflow:hidden;}
   .fila-urgencia-trilho i{display:block;height:100%;border-radius:4px;}
@@ -513,7 +519,7 @@
 
     <section id="sec-fila" class="fila-secao">
       <div class="sec-head" style="margin-bottom:14px;">
-        <span class="sec"><span class="bar"></span><b>Fila da IA</b> <small>conversas sem vendedor ainda</small></span>
+        <span class="sec"><span class="bar"></span><b>Fila da IA</b> <small>conversas sem vendedor ainda</small> <span class="tag-simulacao">Modo Simulação</span></span>
         <span class="hint">venda conjunta por enquanto — quem assumir primeiro atende</span>
       </div>
       <div id="fila-ia"></div>
@@ -1044,7 +1050,7 @@
         '</div>' +
         '<div class="fila-acao">' +
           '<select id="fila-quem-' + l.id + '">' + opts + '</select>' +
-          '<button type="button" class="btn-assumir" data-id="' + l.id + '">Assumir conversa</button>' +
+          '<button type="button" class="btn-assumir' + (critico ? ' critico' : '') + '" data-id="' + l.id + '">Assumir conversa</button>' +
         '</div>' +
       '</div>';
     }).join('');
