@@ -262,8 +262,8 @@
   .chat-input button{background:#008069;color:#fff;border:0;border-radius:50%;width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center;opacity:.5;font-size:15px;}
 
   /* ---- tour guiado ---- */
-  .btn-tour{display:block;margin-top:10px;font-family:var(--tit);font-weight:800;font-size:11.5px;letter-spacing:.02em;text-transform:uppercase;background:#fff;border:1.5px solid var(--bordo-vivo);color:var(--bordo);padding:8px 14px;border-radius:999px;cursor:pointer;}
-  .btn-tour:hover{background:var(--bordo-vivo);color:#fff;}
+  .btn-tour{display:inline-block;margin-top:10px;font-family:var(--tit);font-weight:800;font-size:11.5px;letter-spacing:.02em;text-transform:uppercase;background:#b92d3d;border:0;color:#fff;padding:9px 16px;border-radius:999px;cursor:pointer;animation:pulseBtnCritico 1.3s ease-in-out infinite;}
+  .btn-tour:hover{background:var(--bordo);}
   .tour-alvo{position:relative;z-index:55;outline:3px solid var(--dourado);outline-offset:4px;border-radius:14px;box-shadow:0 0 0 6000px rgba(42,35,32,.55);}
   .tour-caixa{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:14px;padding:16px 18px;max-width:380px;width:calc(100% - 32px);z-index:70;box-shadow:0 14px 40px rgba(0,0,0,.35);}
   .tour-titulo{font-family:var(--tit);font-weight:800;font-size:14px;margin-bottom:6px;color:var(--dourado);}
@@ -1023,6 +1023,34 @@
 
   var FILA_LIMITE_MIN = 10; // a partir daqui vira crítico (vermelho piscando)
 
+  // ---- fila "viva": nunca fica vazia, e o tempo de espera corre de verdade
+  // enquanto a tela estiver aberta (simulação dinâmica, não uma foto parada) ----
+  var FILA_NOMES_POOL = [
+    { nome:'Dr. Henrique B. (exemplo)',  nivel:'Avançado',      temp:'quente' },
+    { nome:'Dra. Vitória M. (exemplo)',  nivel:'Intermediário', temp:'morno' },
+    { nome:'Fisio Caio R. (exemplo)',    nivel:'Iniciante',     temp:'frio' },
+    { nome:'Enf. Luiza F. (exemplo)',    nivel:'Intermediário', temp:'morno' },
+    { nome:'Dr. Otávio N. (exemplo)',    nivel:'Avançado',      temp:'quente' }
+  ];
+
+  function garantirFilaViva(){
+    var st = pipelineState();
+    var pendentes = st.filter(function(l){ return !l.atrib; });
+    if (!pendentes.length){
+      var novo = FILA_NOMES_POOL[Math.floor(Math.random() * FILA_NOMES_POOL.length)];
+      var maxId = st.reduce(function(m, l){ return Math.max(m, l.id); }, 0);
+      st.push({
+        id: maxId + 1, nome: novo.nome, nivel: novo.nivel, temp: novo.temp,
+        atrib: null, coluna: 'novo', ia: true, urgente: false,
+        esperaMin: 6 + Math.floor(Math.random() * 3) // já nasce quase chegando no alerta
+      });
+    } else {
+      pendentes.forEach(function(l){ l.esperaMin = (l.esperaMin || 0) + 1; });
+    }
+    salvarPipeline(st);
+    if (state.tab === 'crm') renderFila();
+  }
+
   function renderFila(){
     var pendentes = pipelineState().filter(function(l){ return !l.atrib; })
       .sort(function(a,b){ return (b.esperaMin||0) - (a.esperaMin||0); });
@@ -1322,7 +1350,7 @@
     if (state.tab === 'quiz' && !state.quizCarregado){ state.quizCarregado = true; loadQuiz(); }
     if (state.tab === 'crm' && !state.crmCarregado){
       state.crmCarregado = true;
-      renderFila(); renderEquipe(); renderPipeline(); renderPassos();
+      garantirFilaViva(); renderEquipe(); renderPipeline(); renderPassos();
       var jaViu = false;
       try { jaViu = !!localStorage.getItem('crm-tour-visto'); } catch(e){}
       if (!jaViu) setTimeout(tourIniciar, 400);
@@ -1332,12 +1360,13 @@
   $('reload').addEventListener('click', function(){
     $(this).disabled = true;
     var p = state.tab === 'trafego' ? loadTrafego() : state.tab === 'quiz' ? loadQuiz() : null;
-    if (!p){ renderFila(); renderEquipe(); renderPipeline(); renderPassos(); }
+    if (!p){ garantirFilaViva(); renderEquipe(); renderPipeline(); renderPassos(); }
     Promise.resolve(p).finally(function(){ $('reload').disabled = false; });
   });
 
   loadTrafego();
   renderPassosTrafego();
+  setInterval(garantirFilaViva, 4000); // a fila da IA fica "viva": tempo de espera corre de verdade
 })();
 </script>
 </body>
