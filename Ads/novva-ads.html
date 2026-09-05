@@ -180,6 +180,18 @@
   .lead-card .meta{font-size:10.5px;color:var(--faint);font-style:italic;margin-bottom:7px;}
   .lead-card select{width:100%;font-size:11px;padding:5px 7px;border-radius:7px;border:1px solid var(--linha);color:var(--soft);background:#fff;font-family:var(--corpo);}
 
+  .passo{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--linha);cursor:pointer;}
+  .passo:first-child{border-top:none;padding-top:0;}
+  .passo input[type=checkbox]{margin-top:3px;width:17px;height:17px;accent-color:var(--bordo-vivo);flex:none;cursor:pointer;}
+  .passo .txt{flex:1;}
+  .passo .titulo{font-weight:700;font-size:13px;color:var(--ink);}
+  .passo.feito .titulo{color:var(--faint);text-decoration:line-through;}
+  .passo .detalhe{font-size:12px;color:var(--soft);margin-top:3px;line-height:1.45;}
+  .passo.feito .detalhe{color:var(--faint);}
+  .passos-progresso{height:7px;border-radius:4px;background:var(--track);overflow:hidden;margin-top:16px;}
+  .passos-progresso i{display:block;height:100%;background:var(--bordo-vivo);}
+  .passos-progresso-lbl{font-size:11.5px;color:var(--soft);margin-top:7px;}
+
   @media (min-width:900px){
     .wrap{padding:28px 28px 56px;}
     .toprow{grid-template-columns:236px minmax(0,1fr);gap:18px;margin-bottom:18px;align-items:start;}
@@ -412,6 +424,16 @@
         <span class="hint">cartões de exemplo — troque a etapa pelo seletor de cada um</span>
       </div>
       <div class="kanban" id="kanban"></div>
+    </section>
+
+    <section>
+      <div class="sec-head" style="margin-bottom:16px;">
+        <span class="sec"><span class="bar"></span><b>Próximos passos</b> <small>API oficial da Meta</small></span>
+        <span class="hint">marque conforme for fazendo — fica salvo neste navegador</span>
+      </div>
+      <div id="passos-meta"></div>
+      <div class="passos-progresso"><i id="passos-progresso-barra" style="width:0%"></i></div>
+      <div class="passos-progresso-lbl" id="passos-progresso-lbl"></div>
     </section>
 
   </div>
@@ -873,6 +895,48 @@
     });
   }
 
+  var PASSOS_META = [
+    { t:'Decidir número único da equipe', d:'Recomendado: 1 número compartilhado, com atribuição por vendedor dentro do próprio CRM (já é assim no pipeline acima) — mais barato e rápido de aprovar do que um número por pessoa.' },
+    { t:'Criar Portfólio Empresarial na Meta', d:'business.facebook.com → menu superior esquerdo → Criar portfólio empresarial.' },
+    { t:'Verificar o negócio', d:'Configurações do Negócio → Informações da Empresa → Verificação. Precisa de CNPJ + comprovante de endereço da empresa. Leva de 1 a 5 dias úteis — comece por aqui, é o passo mais demorado.' },
+    { t:'Criar app + ativar produto WhatsApp', d:'developers.facebook.com → Meus Apps → Criar App (tipo Negócios) → adicionar produto WhatsApp → vincular ao Portfólio Empresarial criado acima.' },
+    { t:'Cadastrar o número de telefone', d:'Configuração da API → Adicionar número de telefone. Se o número já está no WhatsApp comum/Business normal, precisa sair de lá antes de migrar. Gera o Phone Number ID e o WABA ID.' },
+    { t:'Gerar token de acesso permanente', d:'Configurações do Negócio → Usuários do Sistema → criar usuário → gerar token com permissão whatsapp_business_messaging e whatsapp_business_management (não o token de teste de 24h).' },
+    { t:'Criar templates de mensagem', d:'WhatsApp Manager → Modelos de Mensagem → Criar modelo. Só necessário pra mensagem que a equipe manda primeiro (reativar um lead frio, por exemplo) — resposta dentro de conversa iniciada pelo lead não precisa.' },
+    { t:'Passar as credenciais', d:'Phone Number ID, WABA ID e o token permanente — manda fora do chat público, se possível, pra eu construir a Edge Function que liga tudo isso no CRM.' }
+  ];
+
+  function passosState(){
+    try { return JSON.parse(localStorage.getItem('crm-passos-meta') || '{}'); }
+    catch(e){ return {}; }
+  }
+  function salvarPassos(s){ try { localStorage.setItem('crm-passos-meta', JSON.stringify(s)); } catch(e){} }
+
+  function renderPassos(){
+    var st = passosState();
+    var feitos = 0;
+    $('passos-meta').innerHTML = PASSOS_META.map(function(p, i){
+      var done = !!st[i];
+      if (done) feitos++;
+      return '<label class="passo' + (done?' feito':'') + '">' +
+        '<input type="checkbox" data-i="' + i + '"' + (done?' checked':'') + '>' +
+        '<span class="txt"><span class="titulo">' + (i+1) + '. ' + p.t + '</span>' +
+        '<div class="detalhe">' + p.d + '</div></span>' +
+      '</label>';
+    }).join('');
+    var pct = Math.round(feitos / PASSOS_META.length * 100);
+    $('passos-progresso-barra').style.width = pct + '%';
+    $('passos-progresso-lbl').textContent = feitos + ' de ' + PASSOS_META.length + ' concluídos';
+    $('passos-meta').querySelectorAll('input[type=checkbox]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var s = passosState();
+        s[this.dataset.i] = this.checked;
+        salvarPassos(s);
+        renderPassos();
+      });
+    });
+  }
+
   // ============================================================
   // Nav principal (troca de painel) + reload
   // ============================================================
@@ -892,13 +956,13 @@
     $('subbar-trafego').hidden = state.tab !== 'trafego';
     $('sub-titulo').textContent = TITULOS[state.tab];
     if (state.tab === 'quiz' && !state.quizCarregado){ state.quizCarregado = true; loadQuiz(); }
-    if (state.tab === 'crm' && !state.crmCarregado){ state.crmCarregado = true; renderEquipe(); renderPipeline(); }
+    if (state.tab === 'crm' && !state.crmCarregado){ state.crmCarregado = true; renderEquipe(); renderPipeline(); renderPassos(); }
   });
 
   $('reload').addEventListener('click', function(){
     $(this).disabled = true;
     var p = state.tab === 'trafego' ? loadTrafego() : state.tab === 'quiz' ? loadQuiz() : null;
-    if (!p){ renderEquipe(); renderPipeline(); }
+    if (!p){ renderEquipe(); renderPipeline(); renderPassos(); }
     Promise.resolve(p).finally(function(){ $('reload').disabled = false; });
   });
 
