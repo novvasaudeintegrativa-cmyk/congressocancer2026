@@ -152,6 +152,35 @@
   .kpi.bom .n{color:var(--verde);}
   .kpi.ruim .n{color:var(--bordo-vivo);}
 
+  /* ---- CRM (preview) ---- */
+  .tabs-principal button[data-tab="crm"]{display:inline-flex;align-items:baseline;gap:4px;}
+  .equipe-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+  @media (min-width:760px){ .equipe-grid{grid-template-columns:repeat(4,1fr);} }
+  .pessoa-card{border:1px solid var(--linha);border-radius:14px;padding:14px 15px;background:#fbfaf8;}
+  .pessoa-card .papel{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:8px;}
+  .pessoa-card input[type=text]{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--linha);background:#fff;color:var(--ink);font-family:var(--corpo);font-size:12.5px;margin-bottom:7px;}
+  .pessoa-card input::placeholder{color:var(--faint);}
+  .status-toggle{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--soft);cursor:pointer;user-select:none;font-weight:600;}
+  .status-toggle .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none;}
+  .status-toggle.online{color:var(--verde);}
+  .status-toggle.online .dot{background:var(--verde);}
+
+  .kanban{display:grid;grid-template-columns:1fr;gap:12px;}
+  @media (min-width:900px){ .kanban{grid-template-columns:repeat(4,1fr);} }
+  .kanban-col{background:#fbfaf8;border:1px solid var(--linha);border-radius:14px;padding:12px;}
+  .kanban-col h3{font-family:var(--tit);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--bordo);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;}
+  .kanban-col h3 .qtd{font-family:var(--corpo);background:var(--linha);color:var(--soft);border-radius:999px;padding:1px 8px;font-size:10px;font-weight:700;}
+  .lead-card{background:#fff;border:1px solid var(--linha);border-radius:11px;padding:10px 11px;margin-bottom:9px;font-size:12.5px;}
+  .lead-card:last-child{margin-bottom:0;}
+  .lead-card .nome{font-weight:700;color:var(--ink);margin-bottom:5px;}
+  .lead-card .badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;}
+  .lead-card .badge{font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 7px;border-radius:999px;color:#fff;}
+  .lead-card .badge.frio{background:var(--frio);}
+  .lead-card .badge.morno{background:var(--morno);}
+  .lead-card .badge.quente{background:var(--quente);}
+  .lead-card .meta{font-size:10.5px;color:var(--faint);font-style:italic;margin-bottom:7px;}
+  .lead-card select{width:100%;font-size:11px;padding:5px 7px;border-radius:7px;border:1px solid var(--linha);color:var(--soft);background:#fff;font-family:var(--corpo);}
+
   @media (min-width:900px){
     .wrap{padding:28px 28px 56px;}
     .toprow{grid-template-columns:236px minmax(0,1fr);gap:18px;margin-bottom:18px;align-items:start;}
@@ -191,6 +220,7 @@
     <div class="tabs-principal" id="tabs-principal">
       <button type="button" data-tab="trafego" class="on">Tráfego &amp; Conversão</button>
       <button type="button" data-tab="quiz">Quiz · Raio-X Profissional</button>
+      <button type="button" data-tab="crm">CRM <span style="opacity:.7;font-weight:600;">(em breve)</span></button>
     </div>
     <button type="button" class="reload" id="reload" aria-label="Atualizar"><svg class="ico" style="width:15px;height:15px"><use href="#i-refresh"/></svg></button>
   </div>
@@ -361,6 +391,30 @@
     </section>
 
     <p class="foot">Sem PII aqui — nome/WhatsApp continuam só no Table Editor do Supabase (<code>quiz_leads</code>).</p>
+  </div>
+
+  <!-- ================= PAINEL 3: CRM (preview) ================= -->
+  <div id="painel-crm" hidden>
+
+    <div class="aviso">
+      <b>Preview do pipeline.</b> Login da equipe e conexão real de WhatsApp ainda não existem (Fases 1 e 2 do plano) —
+      os cartões de lead abaixo são <b>exemplo</b>, pra mostrar o formato final. Nome/WhatsApp/status de conexão da
+      equipe ficam salvos só neste navegador por enquanto.
+    </div>
+
+    <section>
+      <span class="sec"><span class="bar"></span>Equipe</span>
+      <div class="equipe-grid" id="equipe-grid"></div>
+    </section>
+
+    <section>
+      <div class="sec-head" style="margin-bottom:16px;">
+        <span class="sec"><span class="bar"></span>Pipeline de leads</span>
+        <span class="hint">cartões de exemplo — troque a etapa pelo seletor de cada um</span>
+      </div>
+      <div class="kanban" id="kanban"></div>
+    </section>
+
   </div>
 
 </div>
@@ -729,23 +783,123 @@
   }
 
   // ============================================================
+  // PAINEL 3 — CRM (preview, sem login/backend ainda)
+  // ============================================================
+  var EQUIPE_PADRAO = [
+    { papel:'Gestor',     nome:'', whats:'', online:false },
+    { papel:'Vendedor 1', nome:'', whats:'', online:false },
+    { papel:'Vendedor 2', nome:'', whats:'', online:false },
+    { papel:'Vendedor 3', nome:'', whats:'', online:false }
+  ];
+
+  // cada card mostra "atribuído a" um papel da equipe — no CRM de verdade
+  // (Fase 1) isso vira atribuição real por usuário logado, com RLS: cada
+  // vendedor só vê os próprios leads, o gestor vê todos.
+  var LEADS_EXEMPLO = [
+    { id:1, nome:'Dra. Camila R. (exemplo)',  nivel:'Avançado',      temp:'quente', atrib:'Vendedor 1', coluna:'novo' },
+    { id:2, nome:'Dr. Rafael M. (exemplo)',   nivel:'Intermediário', temp:'morno',  atrib:'Vendedor 2', coluna:'novo' },
+    { id:3, nome:'Fisio Beatriz T. (exemplo)',nivel:'Iniciante',     temp:'frio',   atrib:'Vendedor 3', coluna:'novo' },
+    { id:4, nome:'Dr. André S. (exemplo)',    nivel:'Avançado',      temp:'quente', atrib:'Vendedor 1', coluna:'respondeu' },
+    { id:5, nome:'Enf. Paula K. (exemplo)',   nivel:'Intermediário', temp:'morno',  atrib:'Vendedor 2', coluna:'respondeu' },
+    { id:6, nome:'Dra. Larissa F. (exemplo)', nivel:'Avançado',      temp:'quente', atrib:'Vendedor 1', coluna:'comprou' },
+    { id:7, nome:'Nutri Bianca O. (exemplo)', nivel:'Iniciante',     temp:'frio',   atrib:'Vendedor 3', coluna:'perdido' }
+  ];
+  var COLUNAS = [['novo','Novo'], ['respondeu','Respondeu no WhatsApp'], ['comprou','Comprou'], ['perdido','Perdido']];
+
+  function equipeState(){
+    try { return JSON.parse(localStorage.getItem('crm-equipe') || 'null') || EQUIPE_PADRAO.slice(); }
+    catch(e){ return EQUIPE_PADRAO.slice(); }
+  }
+  function salvarEquipe(s){ try { localStorage.setItem('crm-equipe', JSON.stringify(s)); } catch(e){} }
+
+  function renderEquipe(){
+    var s = equipeState();
+    $('equipe-grid').innerHTML = s.map(function(p, i){
+      return '<div class="pessoa-card">' +
+        '<div class="papel">' + p.papel + '</div>' +
+        '<input type="text" data-i="' + i + '" data-f="nome" placeholder="Nome da pessoa" value="' + (p.nome||'').replace(/"/g,'&quot;') + '">' +
+        '<input type="text" data-i="' + i + '" data-f="whats" placeholder="WhatsApp (ainda não conectado)" value="' + (p.whats||'').replace(/"/g,'&quot;') + '">' +
+        '<label class="status-toggle' + (p.online?' online':'') + '" data-i="' + i + '"><span class="dot"></span>' + (p.online?'Conectado':'Desconectado') + '</label>' +
+      '</div>';
+    }).join('');
+    $('equipe-grid').querySelectorAll('input[type=text]').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var st = equipeState();
+        st[this.dataset.i][this.dataset.f] = this.value;
+        salvarEquipe(st);
+      });
+    });
+    $('equipe-grid').querySelectorAll('.status-toggle').forEach(function(lbl){
+      lbl.addEventListener('click', function(){
+        var st = equipeState();
+        var i = this.dataset.i;
+        st[i].online = !st[i].online;
+        salvarEquipe(st);
+        renderEquipe();
+      });
+    });
+  }
+
+  function pipelineState(){
+    try { return JSON.parse(localStorage.getItem('crm-pipeline') || 'null') || LEADS_EXEMPLO.slice(); }
+    catch(e){ return LEADS_EXEMPLO.slice(); }
+  }
+  function salvarPipeline(s){ try { localStorage.setItem('crm-pipeline', JSON.stringify(s)); } catch(e){} }
+
+  function renderPipeline(){
+    var leads = pipelineState();
+    $('kanban').innerHTML = COLUNAS.map(function(c){
+      var itens = leads.filter(function(l){ return l.coluna === c[0]; });
+      var cards = itens.map(function(l){
+        var opts = COLUNAS.map(function(c2){
+          return '<option value="' + c2[0] + '"' + (c2[0]===l.coluna?' selected':'') + '>' + c2[1] + '</option>';
+        }).join('');
+        return '<div class="lead-card">' +
+          '<div class="nome">' + l.nome + '</div>' +
+          '<div class="badges"><span class="badge ' + l.temp + '">' + l.temp + '</span></div>' +
+          '<div class="meta">' + l.nivel + ' · atribuído a ' + l.atrib + '</div>' +
+          '<select data-id="' + l.id + '">' + opts + '</select>' +
+        '</div>';
+      }).join('') || '<div class="vazio" style="text-align:left;padding:6px 0;">sem leads nesta etapa</div>';
+      return '<div class="kanban-col"><h3>' + c[1] + '<span class="qtd">' + itens.length + '</span></h3>' + cards + '</div>';
+    }).join('');
+    $('kanban').querySelectorAll('select').forEach(function(sel){
+      sel.addEventListener('change', function(){
+        var st = pipelineState();
+        var id = Number(this.dataset.id);
+        st.forEach(function(l){ if (l.id === id) l.coluna = sel.value; });
+        salvarPipeline(st);
+        renderPipeline();
+      });
+    });
+  }
+
+  // ============================================================
   // Nav principal (troca de painel) + reload
   // ============================================================
+  var TITULOS = {
+    trafego: 'Tráfego & Conversão · site do Congresso',
+    quiz: 'Quiz · Raio-X Profissional em Oncologia Integrativa',
+    crm: 'CRM · pipeline de vendas (preview)'
+  };
+
   $('tabs-principal').addEventListener('click', function(e){
     var b = e.target.closest('button'); if (!b) return;
     Array.prototype.forEach.call(this.children, function(c){ c.classList.toggle('on', c === b); });
     state.tab = b.dataset.tab;
-    var ehTrafego = state.tab === 'trafego';
-    $('painel-trafego').hidden = !ehTrafego;
-    $('painel-quiz').hidden = ehTrafego;
-    $('subbar-trafego').hidden = !ehTrafego;
-    $('sub-titulo').textContent = ehTrafego ? 'Tráfego & Conversão · site do Congresso' : 'Quiz · Raio-X Profissional em Oncologia Integrativa';
-    if (!ehTrafego && !state.quizCarregado){ state.quizCarregado = true; loadQuiz(); }
+    $('painel-trafego').hidden = state.tab !== 'trafego';
+    $('painel-quiz').hidden = state.tab !== 'quiz';
+    $('painel-crm').hidden = state.tab !== 'crm';
+    $('subbar-trafego').hidden = state.tab !== 'trafego';
+    $('sub-titulo').textContent = TITULOS[state.tab];
+    if (state.tab === 'quiz' && !state.quizCarregado){ state.quizCarregado = true; loadQuiz(); }
+    if (state.tab === 'crm' && !state.crmCarregado){ state.crmCarregado = true; renderEquipe(); renderPipeline(); }
   });
 
   $('reload').addEventListener('click', function(){
     $(this).disabled = true;
-    var p = state.tab === 'trafego' ? loadTrafego() : loadQuiz();
+    var p = state.tab === 'trafego' ? loadTrafego() : state.tab === 'quiz' ? loadQuiz() : null;
+    if (!p){ renderEquipe(); renderPipeline(); }
     Promise.resolve(p).finally(function(){ $('reload').disabled = false; });
   });
 
