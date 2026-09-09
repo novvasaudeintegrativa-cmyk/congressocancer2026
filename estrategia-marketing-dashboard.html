@@ -139,7 +139,7 @@
       <div class="delta" id="semana-atual"></div>
     </div>
     <div class="kpis">
-      <div class="kpi"><div class="l">Posts programados</div><div class="n">12</div><div class="s">Instagram/Feed F01–F12</div></div>
+      <div class="kpi"><div class="l">Peças de mídia prontas</div><div class="n">3</div><div class="s">Midia/Organica + Midia/Paga</div></div>
       <div class="kpi"><div class="l">Canais mapeados</div><div class="n">5</div><div class="s">Instagram, palestrantes, grupos, lista, comentário/DM</div></div>
       <div class="kpi"><div class="l">Checklist concluído</div><div class="n" id="kpi-check">0%</div><div class="s">Passo 9 do plano</div></div>
       <div class="kpi"><div class="l">Frente B</div><div class="n">5 camadas</div><div class="s">quiz, ads, SEO, retarget, chatbot</div></div>
@@ -168,7 +168,6 @@
           <tbody></tbody>
         </table>
       </div>
-      <p class="fase-nota">Roda em paralelo ao cronograma orgânico de 12 posts já produzido (<code>Instagram/Feed/F01..F12</code>), que segue seu próprio ritmo e não faz parte deste plano.</p>
     </section>
 
     <section>
@@ -185,7 +184,7 @@
           <thead><tr><th>Canal</th><th>utm_source</th><th>utm_medium</th><th>utm_campaign</th></tr></thead>
           <tbody>
             <tr><td>Seu Instagram (feed/stories)</td><td><code>instagram</code></td><td><code>organico</code></td><td><code>lote1</code></td></tr>
-            <tr><td>Post específico (F01, F02...)</td><td><code>instagram</code></td><td><code>organico</code></td><td><code>f01</code>, <code>f02</code>...</td></tr>
+            <tr><td>Peça de Midia/Organica</td><td><code>instagram</code></td><td><code>organico</code></td><td>nome do arquivo</td></tr>
             <tr><td>Compartilhamento de palestrante</td><td><code>palestrante-nome</code></td><td><code>social</code></td><td><code>lote1</code></td></tr>
             <tr><td>Grupo/associação de classe</td><td><code>grupo-nome</code></td><td><code>whatsapp</code></td><td><code>lote1</code></td></tr>
             <tr><td>Sua lista própria de WhatsApp</td><td><code>whatsapp_lista</code></td><td><code>whatsapp</code></td><td><code>lote1</code></td></tr>
@@ -230,12 +229,12 @@
 
   // ---- dados do plano (datas reais, seções 2 e 12 da estratégia) ----
   var CALENDARIO = [
-    { fase:'Aquecimento',            inicio:'2026-09-09', fim:'2026-09-30', posts:'F01, F02, F03, F12', obj:'Conteúdo educativo, apresentação de palestrantes, captura de lista/quiz' },
-    { fase:'Lançamento Lote 1',      inicio:'2026-10-01', fim:'2026-10-15', posts:'F05 (AIDA)', obj:'Push de conversão, ativação de palestrantes' },
-    { fase:'Meio de funil',          inicio:'2026-10-16', fim:'2026-11-05', posts:'F04, F08, F06 (PAS)', obj:'Ciência/limites éticos, reforço de dor/urgência, retargeting' },
-    { fase:'Lote 3 + reta final',    inicio:'2026-11-06', fim:'2026-11-18', posts:'F09, F10, F07, F11 (BAB)', obj:'Urgência máxima, contagem regressiva, prova social' },
-    { fase:'Evento ao vivo',         inicio:'2026-11-20', fim:'2026-11-21', posts:'—', obj:'Cobertura em stories/Reels, bastidores' },
-    { fase:'Pós-evento',             inicio:'2026-11-22', fim:'2026-12-31', posts:'Reciclagem do post de melhor desempenho', obj:'Depoimentos, nutrição da lista para 2027' }
+    { fase:'Aquecimento',            inicio:'2026-09-09', fim:'2026-09-30', obj:'Conteúdo educativo, apresentação de palestrantes, captura de lista/quiz' },
+    { fase:'Lançamento Lote 1',      inicio:'2026-10-01', fim:'2026-10-15', obj:'Push de conversão, ativação de palestrantes' },
+    { fase:'Meio de funil',          inicio:'2026-10-16', fim:'2026-11-05', obj:'Ciência/limites éticos, reforço de dor/urgência, retargeting' },
+    { fase:'Lote 3 + reta final',    inicio:'2026-11-06', fim:'2026-11-18', obj:'Urgência máxima, contagem regressiva, prova social' },
+    { fase:'Evento ao vivo',         inicio:'2026-11-20', fim:'2026-11-21', obj:'Cobertura em stories/Reels, bastidores' },
+    { fase:'Pós-evento',             inicio:'2026-11-22', fim:'2026-12-31', obj:'Depoimentos, nutrição da lista para 2027' }
   ];
 
   var CHECKLIST = [
@@ -244,12 +243,11 @@
       'Levantar contatos dos palestrantes'
     ]},
     { periodo:'9–15/set',        inicio:'2026-09-09', fim:'2026-09-15', itens:[
-      'Publicar F01, F02',
+      'Enviar roteiro de apresentação (Midia/Organica) pros primeiros palestrantes',
       'Responder manualmente todos os comentários/DMs',
       'Contatar 2-3 palestrantes mais engajados primeiro'
     ]},
     { periodo:'16–22/set',       inicio:'2026-09-16', fim:'2026-09-22', itens:[
-      'Publicar F03, F12',
       'Abordar 1-2 grupos/associações de classe'
     ]},
     { periodo:'23–30/set',       inicio:'2026-09-23', fim:'2026-09-30', itens:[
@@ -257,16 +255,16 @@
       'Teaser "inscrições abertas"'
     ]},
     { periodo:'1–15/out',        inicio:'2026-10-01', fim:'2026-10-15', itens:[
-      'Publicar F05 (venda)',
+      'Publicar criativos pagos (Midia/Paga) — institucional + educativo',
       'Começar reativação da base (~5.000 contatos, segmento "já participou")'
     ]},
     { periodo:'16/out–5/nov',    inicio:'2026-10-16', fim:'2026-11-05', itens:[
-      'Publicar F04, F08, F06',
+      'Revisar performance dos criativos pagos e ajustar',
       'Continuar reativação (segmento "só demonstrou interesse")',
       'Revisar dashboard semanalmente'
     ]},
     { periodo:'6–18/nov',        inicio:'2026-11-06', fim:'2026-11-18', itens:[
-      'Publicar F09, F10, F07, F11',
+      'Reciclar o criativo pago (Midia/Paga) de melhor desempenho',
       'Urgência máxima, contagem regressiva'
     ]},
     { periodo:'20–21/nov',       inicio:'2026-11-20', fim:'2026-11-21', itens:[
@@ -341,7 +339,7 @@
     var body = CALENDARIO.map(function(c){
       var atual = hoje >= new Date(c.inicio + 'T00:00:00') && hoje <= new Date(c.fim + 'T23:59:59');
       var faixa = fmtData(new Date(c.inicio + 'T00:00:00')) + '–' + fmtData(new Date(c.fim + 'T00:00:00'));
-      return '<tr' + (atual ? ' style="background:#faf1f0"' : '') + '><td><b>' + c.fase + '</b><br><span style="font-weight:400;font-size:12px;color:var(--soft)">' + faixa + '</span></td><td>' + c.posts + '</td><td>' + c.obj + '</td></tr>';
+      return '<tr' + (atual ? ' style="background:#faf1f0"' : '') + '><td><b>' + c.fase + '</b><br><span style="font-weight:400;font-size:12px;color:var(--soft)">' + faixa + '</span></td><td>' + c.obj + '</td></tr>';
     }).join('');
     document.querySelector('#tabela-calendario tbody').innerHTML = body;
   }
