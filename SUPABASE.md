@@ -738,20 +738,23 @@ alter table public.vendas enable row level security;
 revoke all on public.vendas from anon;
 
 -- ---------- RPC agregado (sem PII, exposto pro painel) ----------
+-- status "pago"/"paga"/"pagamento" (chute inicial em pt) OU "paid" (valor real
+-- confirmado na doc oficial da Eduzz pro evento myeduzz.invoice_paid) contam
+-- como venda paga; status vazio/NULL entra como "sem status informado" (não soma).
 create or replace function public.rpc_roi()
 returns json language sql stable
 security definer set search_path = public
 as $$
   select json_build_object(
     'total_investido', (select coalesce(sum(valor),0) from public.investimentos),
-    'total_vendas',    (select coalesce(sum(valor),0) from public.vendas where status is null or status ilike 'pag%'),
-    'qtd_vendas',      (select count(*) from public.vendas where status is null or status ilike 'pag%'),
+    'total_vendas',    (select coalesce(sum(valor),0) from public.vendas where status ilike 'pag%' or status ilike 'paid'),
+    'qtd_vendas',      (select count(*) from public.vendas where status ilike 'pag%' or status ilike 'paid'),
     'por_produto', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
         select coalesce(produto,'(sem produto)') as produto,
                count(*) as qtd,
                sum(valor) as total
         from public.vendas
-        where status is null or status ilike 'pag%'
+        where status ilike 'pag%' or status ilike 'paid'
         group by 1) t)
   );
 $$;
@@ -863,3 +866,89 @@ notificação de uma venda antiga, ou use "Testar eventos selecionados" no
 painel da Eduzz) e confira **Table Editor → vendas** — se a linha aparecer
 com `produto`/`valor` vazios mas `raw` preenchido, me manda o conteúdo de
 `raw` pra eu corrigir o mapeamento de campos.
+
+## 12. Editar/apagar lançamento de investimento — Edge Function `investimentos-admin`
+
+A tabela `investimentos` só aceita **insert** do `anon` (a mesma chave
+pública que já está no código-fonte do site) — de propósito, sem select,
+update ou delete. Se abríssemos update/delete pro `anon` diretamente,
+qualquer pessoa que copiasse essa chave do código-fonte (é pública, dá pra
+ver no DevTools de qualquer navegador) poderia editar ou apagar os
+lançamentos de todo mundo, sem controle nenhum.
+
+Pra editar/apagar com alguma proteção, sem esperar login de equipe de
+verdade (Fase 1 do CRM), usamos o mesmo padrão do `eduzz-webhook`: uma
+Edge Function que só age se receber um token secreto (`?token=` /
+`body.token`) que só o painel + quem tem a senha conhece. **Isso não é
+autenticação de usuário de verdade** — é uma trava simples, suficiente
+pra impedir acesso casual pela chave pública, mas qualquer um com o token
+consegue editar/apagar qualquer lançamento (não é por vendedor). Trocar
+por Supabase Auth quando a Fase 1 do CRM for construída.
+
+Supabase → **Edge Functions** → **Deploy a new function** → nome
+**`investimentos-admin`** → editor no navegador → apague tudo e cole:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const SECRET = Deno.env.get("INVESTIMENTOS_ADMIN_TOKEN")?.trim();
+
+Deno.serve(async (req) => {
+  if (req.method !== "POST") return new Response("method", { status: 405 });
+
+  let body: any;
+  try { body = await req.json(); } catch { return new Response("bad body", { status: 400 }); }
+
+  const token = String(body.token ?? "").trim();
+  if (!SECRET || token !== SECRET) return new Response("unauthorized", { status: 401 });
+
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const headers = { "content-type": "application/json", apikey: KEY, authorization: `Bearer ${KEY}` };
+
+  if (body.action === "list") {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/investimentos?select=*&order=data.desc,id.desc`, { headers });
+    return new Response(await resp.text(), { status: resp.status, headers: { "content-type": "application/json" } });
+  }
+
+  if (body.action === "update") {
+    const id = Number(body.id);
+    if (!id) return new Response("missing id", { status: 400 });
+    const patch: Record<string, unknown> = {};
+    if (body.data !== undefined) patch.data = body.data;
+    if (body.canal !== undefined) patch.canal = body.canal;
+    if (body.descricao !== undefined) patch.descricao = body.descricao;
+    if (body.valor !== undefined) patch.valor = Number(body.valor);
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/investimentos?id=eq.${id}`, {
+      method: "PATCH", headers: { ...headers, prefer: "return=minimal" }, body: JSON.stringify(patch)
+    });
+    if (!resp.ok) return new Response(await resp.text(), { status: 500 });
+    return new Response("ok", { status: 200 });
+  }
+
+  if (body.action === "delete") {
+    const id = Number(body.id);
+    if (!id) return new Response("missing id", { status: 400 });
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/investimentos?id=eq.${id}`, {
+      method: "DELETE", headers: { ...headers, prefer: "return=minimal" }
+    });
+    if (!resp.ok) return new Response(await resp.text(), { status: 500 });
+    return new Response("ok", { status: 200 });
+  }
+
+  return new Response("unknown action", { status: 400 });
+});
+```
+
+**Deploy.** Deixe **"Verify JWT with legacy secret" LIGADO** nesta função
+(diferente do `eduzz-webhook`) — o painel já manda a chave anon como
+`Authorization: Bearer` em toda chamada, então não custa manter essa
+camada extra; quem chama de fora sem essa chave nem chega no nosso código.
+
+Adicione o secret **`INVESTIMENTOS_ADMIN_TOKEN`** (Edge Functions →
+Secrets) com um valor aleatório — é a senha que o painel vai pedir pra
+liberar editar/apagar.
+
+O painel (`Ads/novva-ads.html`, seção ROI) tem um link "Gerenciar
+lançamentos" que pede esse token uma vez (fica salvo só nesse
+navegador) e mostra a lista com editar/apagar inline.
