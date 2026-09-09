@@ -7,55 +7,82 @@
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  @font-face{
-    font-family: 'League Spartan';
-    src: url('Fonts/LeagueSpartan-Bold.otf') format('opentype');
-    font-weight: 400 900;
-    font-style: normal;
-    font-display: swap;
-  }
   :root{
-    --preto:#0a0505; --bordo-escuro:#2b0b0e; --vermelho:#8a222e; --vermelho-vivo:#b92d3d;
-    --dourado:#f2c744; --branco:#ffffff;
-    --texto-suave:rgba(255,255,255,0.82); --texto-fraco:rgba(255,255,255,0.55);
-    --fonte-titulo:'League Spartan','Segoe UI',sans-serif;
-    --fonte-corpo:'Roboto','Segoe UI',sans-serif;
+    --bg:#f4f2ef; --card:#ffffff; --linha:#e8e3dd;
+    --ink:#2a2320; --soft:#857b74; --faint:#afa59d;
+    --bordo:#8a222e; --bordo-vivo:#b92d3d; --dourado:#c98b1f; --verde:#1f8a4c;
+    --tit:'League Spartan','Segoe UI',sans-serif;
+    --corpo:'Roboto','Segoe UI',system-ui,sans-serif;
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0;min-height:100vh;
-    background:linear-gradient(180deg,#3C0101 0%, #170608 45%, #0a0505 100%);
-    color:var(--branco);font-family:var(--fonte-corpo);line-height:1.65;
-    padding:40px 20px 80px;
-  }
-  .wrap{max-width:740px;margin:0 auto;}
-  a.voltar{display:inline-block;color:var(--texto-fraco);font-size:13px;text-decoration:none;margin-bottom:24px;}
-  a.voltar:hover{color:var(--dourado);}
-  h1{font-family:var(--fonte-titulo);font-weight:800;font-size:clamp(26px,4vw,36px);margin:0 0 6px;text-wrap:balance;}
-  .atualizado{color:var(--texto-fraco);font-size:12.5px;margin-bottom:14px;}
-  .resumo{background:rgba(242,199,68,0.08);border:1px solid rgba(242,199,68,0.3);border-radius:14px;padding:16px 20px;margin:22px 0 36px;font-size:13.5px;color:var(--texto-suave);}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--corpo);line-height:1.65;}
+  h1,h2,h3{font-family:var(--tit);margin:0;}
+  .wrap{max-width:760px;margin:0 auto;padding:22px 20px 64px;}
+
+  a.voltar{display:inline-block;color:var(--soft);font-size:13px;text-decoration:none;margin-bottom:18px;}
+  a.voltar:hover{color:var(--bordo);}
+
+  .topbar{display:flex;align-items:center;gap:11px;margin-bottom:6px;}
+  .topbar .mark{width:32px;height:32px;border-radius:9px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--tit);font-weight:800;font-size:14px;flex:none;}
+  .topbar .sub{font-size:11.5px;color:var(--soft);margin-top:2px;}
+
+  h1{font-weight:800;font-size:clamp(26px,4.5vw,34px);margin:16px 0 4px;text-wrap:balance;}
+  .atualizado{color:var(--soft);font-size:12.5px;margin-bottom:20px;}
+
+  .resumo{background:#fbf5e8;border:1px solid rgba(201,139,31,.35);border-radius:14px;padding:16px 20px;margin:0 0 20px;font-size:13.5px;color:var(--ink);}
   .resumo b{color:var(--dourado);}
-  h2{font-family:var(--fonte-titulo);font-weight:700;font-size:19px;color:var(--dourado);margin:38px 0 4px;}
-  .num{color:var(--texto-fraco);font-weight:400;}
-  h3{font-family:var(--fonte-titulo);font-weight:700;font-size:15px;color:#fff;margin:20px 0 8px;}
-  p{color:var(--texto-suave);font-size:15px;margin:0 0 14px;}
-  strong{color:var(--branco);}
-  ul,ol{color:var(--texto-suave);font-size:15px;padding-left:22px;margin:0 0 14px;}
-  li{margin-bottom:7px;}
-  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:12px 0 18px;}
-  th{text-align:left;color:var(--dourado);font-family:var(--fonte-titulo);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;padding:0 10px 8px 0;border-bottom:1px solid rgba(255,255,255,.18);}
-  td{color:var(--texto-suave);padding:9px 10px 9px 0;border-bottom:1px solid rgba(255,255,255,.08);vertical-align:top;}
-  .base-legal{display:inline-block;background:rgba(139,34,46,.35);color:#fff;font-size:11px;padding:2px 8px;border-radius:6px;white-space:nowrap;}
-  code{background:rgba(255,255,255,.08);padding:1px 6px;border-radius:5px;font-size:13px;}
-  .contato{background:rgba(139,34,46,0.18);border:1px solid rgba(217,53,72,0.4);border-radius:14px;padding:18px 20px;margin-top:40px;font-size:14px;}
-  .fonte{color:var(--texto-fraco);font-size:11.5px;margin-top:-6px;}
+
+  /* índice */
+  .toc{background:var(--card);border:1px solid var(--linha);border-radius:16px;padding:18px 20px;margin-bottom:20px;}
+  .toc .t{font-family:var(--tit);font-weight:800;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--bordo);display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .toc .t .bar{width:14px;height:2px;background:var(--bordo);border-radius:2px;}
+  .toc ol{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:1fr;gap:2px;counter-reset:toc;}
+  @media (min-width:560px){.toc ol{grid-template-columns:1fr 1fr;}}
+  .toc a{counter-increment:toc;display:flex;gap:8px;align-items:baseline;color:var(--ink);text-decoration:none;font-size:13px;padding:6px 8px;border-radius:8px;}
+  .toc a::before{content:counter(toc);font-family:var(--tit);font-weight:800;font-size:11px;color:var(--faint);min-width:14px;}
+  .toc a:hover{background:#faf1f0;color:var(--bordo);}
+  .toc a:hover::before{color:var(--bordo-vivo);}
+
+  section{background:var(--card);border:1px solid var(--linha);border-radius:16px;padding:20px 22px;margin-bottom:14px;scroll-margin-top:16px;}
+  .sec-t{display:flex;align-items:baseline;gap:9px;margin-bottom:12px;}
+  .sec-t .n{font-family:var(--tit);font-weight:800;font-size:12px;color:#fff;background:var(--bordo);width:22px;height:22px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;flex:none;}
+  .sec-t h2{font-weight:800;font-size:17px;color:var(--ink);}
+
+  h3{font-weight:700;font-size:14.5px;color:var(--ink);margin:16px 0 7px;}
+  p{color:var(--ink);opacity:.88;font-size:14.5px;margin:0 0 12px;}
+  p:last-child{margin-bottom:0;}
+  strong{color:var(--ink);opacity:1;}
+  ul,ol.corpo{color:var(--ink);opacity:.88;font-size:14.5px;padding-left:20px;margin:0 0 12px;}
+  li{margin-bottom:6px;}
+
+  .scroll-x{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:4px 0 6px;}
+  th{text-align:left;color:var(--faint);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:.05em;padding:0 10px 9px 0;}
+  td{color:var(--ink);padding:9px 10px 9px 0;border-top:1px solid #f1eae3;vertical-align:top;}
+  .base-legal{display:inline-block;background:#faf1f0;color:var(--bordo);font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap;}
+  code{background:#f1ece6;padding:1px 6px;border-radius:5px;font-size:12.5px;}
+
+  .contato{background:#faf1f0;border:1px solid rgba(185,45,61,.3);border-radius:14px;padding:16px 20px;margin-top:6px;font-size:14px;color:var(--ink);}
+  .contato strong{display:block;margin-bottom:3px;}
+  .contato a{color:var(--bordo);font-weight:600;text-decoration:none;}
+
+  .foot{text-align:center;color:var(--faint);font-size:11.5px;margin-top:24px;}
+  .foot a{color:var(--bordo);}
 </style>
 </head>
 <body>
 <div class="wrap">
   <a class="voltar" href="index.html">← Voltar para o site</a>
+
+  <div class="topbar">
+    <span class="mark">CC</span>
+    <div>
+      <div class="sub">Congresso de Prevenção e Tratamento de Câncer · 20-21/nov, São José dos Campos</div>
+    </div>
+  </div>
+
   <h1>Política de Privacidade</h1>
   <p class="atualizado">Última atualização: setembro de 2026 · Elaborada com base na Lei nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais — LGPD)</p>
 
@@ -63,89 +90,135 @@
     <b>Resumo em linguagem simples:</b> coletamos dados de navegação de forma anônima; se você faz o quiz, dá WhatsApp ou compra ingresso, coletamos o que você mesmo informa; não vendemos seus dados; você pode pedir a exclusão deles a qualquer momento pelo e-mail no final desta página. Os detalhes completos, exigidos pela LGPD, estão abaixo.
   </div>
 
-  <h2>1. Quem somos (controlador dos dados)</h2>
-  <p>Esta página, o site do Congresso e o quiz "Raio-X Profissional" são operados pela <strong>Novva Saúde Integrativa</strong>, em conjunto com a <strong>NutriGenes</strong>, que atuam como <strong>controladoras</strong> dos dados pessoais tratados aqui, nos termos do art. 5º, VI, da LGPD. Contato para qualquer assunto relacionado a dados pessoais: <strong>novvasaudeintegrativa@gmail.com</strong>.</p>
-  <p>Enquanto organização de pequeno porte, ainda não temos um Encarregado de Proteção de Dados (DPO) formalmente designado em página pública separada; o canal de contato acima cumpre essa função até a formalização.</p>
+  <div class="toc">
+    <div class="t"><span class="bar"></span>Índice</div>
+    <ol>
+      <li><a href="#s1">Quem somos (controlador dos dados)</a></li>
+      <li><a href="#s2">Quais dados coletamos, e por quê</a></li>
+      <li><a href="#s3">Base legal para cada tratamento</a></li>
+      <li><a href="#s4">Com quem compartilhamos</a></li>
+      <li><a href="#s5">Transferência internacional de dados</a></li>
+      <li><a href="#s6">Por quanto tempo guardamos os dados</a></li>
+      <li><a href="#s7">Segurança da informação</a></li>
+      <li><a href="#s8">Seus direitos como titular</a></li>
+      <li><a href="#s9">Crianças e adolescentes</a></li>
+      <li><a href="#s10">Cookies</a></li>
+      <li><a href="#s11">Alterações desta política</a></li>
+      <li><a href="#s12">Legislação aplicável</a></li>
+    </ol>
+  </div>
 
-  <h2>2. Quais dados coletamos, e por quê</h2>
+  <section id="s1">
+    <div class="sec-t"><span class="n">1</span><h2>Quem somos (controlador dos dados)</h2></div>
+    <p>Esta página, o site do Congresso e o quiz "Raio-X Profissional" são operados pela <strong>Novva Saúde Integrativa</strong>, em conjunto com a <strong>NutriGenes</strong>, que atuam como <strong>controladoras</strong> dos dados pessoais tratados aqui, nos termos do art. 5º, VI, da LGPD. Contato para qualquer assunto relacionado a dados pessoais: <strong>novvasaudeintegrativa@gmail.com</strong>.</p>
+    <p>Enquanto organização de pequeno porte, ainda não temos um Encarregado de Proteção de Dados (DPO) formalmente designado em página pública separada; o canal de contato acima cumpre essa função até a formalização.</p>
+  </section>
 
-  <h3>2.1 Navegação no site — dado anônimo</h3>
-  <p>Ao visitar o site, registramos: um identificador aleatório gerado no seu navegador (sem nome ou e-mail associado), páginas visitadas, origem do acesso (site de referência e parâmetros de campanha — UTM, gclid, fbclid), tipo de dispositivo, e localização aproximada (país/estado/cidade) derivada do IP no momento do acesso. <strong>O endereço IP não é armazenado</strong> — é usado só para estimar a localização e descartado em seguida. Também registramos rolagem, tempo de permanência e cliques em botões (compra, WhatsApp) e vídeos.</p>
+  <section id="s2">
+    <div class="sec-t"><span class="n">2</span><h2>Quais dados coletamos, e por quê</h2></div>
 
-  <h3>2.2 Quiz "Raio-X Profissional" — dado identificado</h3>
-  <p>Se você participa do quiz, coletamos <strong>nome, WhatsApp, profissão e, opcionalmente, e-mail</strong>, além das respostas dadas. Esses dados <strong>não são anônimos</strong>.</p>
-  <p><strong>Esclarecimento sobre dado sensível de saúde (art. 5º, II, LGPD):</strong> o quiz avalia o seu <em>nível de repertório profissional</em> em práticas integrativas — ele não pergunta e não coleta dados sobre a sua própria condição de saúde nem de pacientes. Pedimos que você <strong>não inclua, em nenhum campo do quiz ou em conversa de WhatsApp conosco, informações que identifiquem pacientes</strong> (nome, prontuário, diagnóstico). Se isso ocorrer de forma não intencional, tratamos essa informação apenas dentro do atendimento em curso, sem uso para qualquer outra finalidade, e você pode solicitar sua remoção a qualquer momento.</p>
+    <h3>2.1 Navegação no site — dado anônimo</h3>
+    <p>Ao visitar o site, registramos: um identificador aleatório gerado no seu navegador (sem nome ou e-mail associado), páginas visitadas, origem do acesso (site de referência e parâmetros de campanha — UTM, gclid, fbclid), tipo de dispositivo, e localização aproximada (país/estado/cidade) derivada do IP no momento do acesso. <strong>O endereço IP não é armazenado</strong> — é usado só para estimar a localização e descartado em seguida. Também registramos rolagem, tempo de permanência e cliques em botões (compra, WhatsApp) e vídeos.</p>
 
-  <h3>2.3 Atendimento via WhatsApp — dado identificado</h3>
-  <p>Ao entrar em contato pelo nosso WhatsApp (botão flutuante do site ou após o quiz), seu número e o conteúdo da conversa são recebidos e processados através da plataforma oficial de mensagens da Meta (WhatsApp Business Platform). O primeiro atendimento pode ser feito por uma <strong>assistente virtual (inteligência artificial)</strong>, que se identifica como tal e é substituída por um profissional humano sempre que necessário ou a seu pedido.</p>
+    <h3>2.2 Quiz "Raio-X Profissional" — dado identificado</h3>
+    <p>Se você participa do quiz, coletamos <strong>nome, WhatsApp, profissão e, opcionalmente, e-mail</strong>, além das respostas dadas. Esses dados <strong>não são anônimos</strong>.</p>
+    <p><strong>Esclarecimento sobre dado sensível de saúde (art. 5º, II, LGPD):</strong> o quiz avalia o seu <em>nível de repertório profissional</em> em práticas integrativas — ele não pergunta e não coleta dados sobre a sua própria condição de saúde nem de pacientes. Pedimos que você <strong>não inclua, em nenhum campo do quiz ou em conversa de WhatsApp conosco, informações que identifiquem pacientes</strong> (nome, prontuário, diagnóstico). Se isso ocorrer de forma não intencional, tratamos essa informação apenas dentro do atendimento em curso, sem uso para qualquer outra finalidade, e você pode solicitar sua remoção a qualquer momento.</p>
 
-  <h3>2.4 Compra de ingresso — processado por terceiro</h3>
-  <p>A compra é processada pela <strong>Eduzz</strong>, que coleta diretamente nome, e-mail, telefone e dados de pagamento, sob sua própria política de privacidade. Recebemos dela apenas a confirmação da compra e dados de conversão (sem dados completos de pagamento).</p>
+    <h3>2.3 Atendimento via WhatsApp — dado identificado</h3>
+    <p>Ao entrar em contato pelo nosso WhatsApp (botão flutuante do site ou após o quiz), seu número e o conteúdo da conversa são recebidos e processados através da plataforma oficial de mensagens da Meta (WhatsApp Business Platform). O primeiro atendimento pode ser feito por uma <strong>assistente virtual (inteligência artificial)</strong>, que se identifica como tal e é substituída por um profissional humano sempre que necessário ou a seu pedido.</p>
 
-  <h2>3. Base legal para cada tratamento (art. 7º, LGPD)</h2>
-  <table>
-    <thead><tr><th>Dado</th><th>Finalidade</th><th>Base legal</th></tr></thead>
-    <tbody>
-      <tr><td>Navegação anônima</td><td>Medir audiência, melhorar o site, otimizar anúncios</td><td><span class="base-legal">Legítimo interesse — art. 7º, IX</span></td></tr>
-      <tr><td>Quiz (nome, WhatsApp, e-mail, profissão)</td><td>Entrar em contato sobre o Congresso</td><td><span class="base-legal">Consentimento — art. 7º, I</span></td></tr>
-      <tr><td>WhatsApp</td><td>Atendimento e esclarecimento de dúvidas</td><td><span class="base-legal">Consentimento — art. 7º, I</span></td></tr>
-      <tr><td>Dados de compra</td><td>Emitir o ingresso e cumprir a compra</td><td><span class="base-legal">Execução de contrato — art. 7º, V</span></td></tr>
-    </tbody>
-  </table>
+    <h3>2.4 Compra de ingresso — processado por terceiro</h3>
+    <p>A compra é processada pela <strong>Eduzz</strong>, que coleta diretamente nome, e-mail, telefone e dados de pagamento, sob sua própria política de privacidade. Recebemos dela apenas a confirmação da compra e dados de conversão (sem dados completos de pagamento).</p>
+  </section>
 
-  <h2>4. Com quem compartilhamos</h2>
-  <ul>
-    <li><strong>Meta Platforms</strong> (Meta Pixel, anúncios e WhatsApp Business Platform) — regida também pela política de privacidade da Meta.</li>
-    <li><strong>Supabase</strong> (infraestrutura de banco de dados que armazena os eventos de navegação e os leads do quiz).</li>
-    <li><strong>Eduzz</strong> (processamento do checkout).</li>
-    <li>Provedores de hospedagem do site.</li>
-  </ul>
-  <p><strong>Não vendemos, alugamos ou cedemos seus dados a terceiros para fins de marketing de outras empresas.</strong></p>
+  <section id="s3">
+    <div class="sec-t"><span class="n">3</span><h2>Base legal para cada tratamento (art. 7º, LGPD)</h2></div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>Dado</th><th>Finalidade</th><th>Base legal</th></tr></thead>
+        <tbody>
+          <tr><td>Navegação anônima</td><td>Medir audiência, melhorar o site, otimizar anúncios</td><td><span class="base-legal">Legítimo interesse — art. 7º, IX</span></td></tr>
+          <tr><td>Quiz (nome, WhatsApp, e-mail, profissão)</td><td>Entrar em contato sobre o Congresso</td><td><span class="base-legal">Consentimento — art. 7º, I</span></td></tr>
+          <tr><td>WhatsApp</td><td>Atendimento e esclarecimento de dúvidas</td><td><span class="base-legal">Consentimento — art. 7º, I</span></td></tr>
+          <tr><td>Dados de compra</td><td>Emitir o ingresso e cumprir a compra</td><td><span class="base-legal">Execução de contrato — art. 7º, V</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 
-  <h2>5. Transferência internacional de dados</h2>
-  <p>Alguns dos provedores acima (Meta, infraestrutura de nuvem) podem processar dados em servidores fora do Brasil. Nesses casos, o tratamento segue as hipóteses do art. 33 da LGPD, buscando garantias de proteção equivalentes às exigidas pela lei brasileira.</p>
+  <section id="s4">
+    <div class="sec-t"><span class="n">4</span><h2>Com quem compartilhamos</h2></div>
+    <ul>
+      <li><strong>Meta Platforms</strong> (Meta Pixel, anúncios e WhatsApp Business Platform) — regida também pela política de privacidade da Meta.</li>
+      <li><strong>Supabase</strong> (infraestrutura de banco de dados que armazena os eventos de navegação e os leads do quiz).</li>
+      <li><strong>Eduzz</strong> (processamento do checkout).</li>
+      <li>Provedores de hospedagem do site.</li>
+    </ul>
+    <p><strong>Não vendemos, alugamos ou cedemos seus dados a terceiros para fins de marketing de outras empresas.</strong></p>
+  </section>
 
-  <h2>6. Por quanto tempo guardamos os dados</h2>
-  <ul>
-    <li>Dados de navegação anônima: até 18 meses.</li>
-    <li>Dados do quiz e de contato (nome, WhatsApp, e-mail): até você solicitar exclusão, ou automaticamente após 24 meses de inatividade.</li>
-    <li>Dados de compra: pelo prazo exigido pela legislação fiscal e cível aplicável.</li>
-  </ul>
+  <section id="s5">
+    <div class="sec-t"><span class="n">5</span><h2>Transferência internacional de dados</h2></div>
+    <p>Alguns dos provedores acima (Meta, infraestrutura de nuvem) podem processar dados em servidores fora do Brasil. Nesses casos, o tratamento segue as hipóteses do art. 33 da LGPD, buscando garantias de proteção equivalentes às exigidas pela lei brasileira.</p>
+  </section>
 
-  <h2>7. Segurança da informação</h2>
-  <p>Adotamos medidas técnicas e administrativas razoáveis para proteger os dados contra acesso não autorizado, perda ou vazamento — incluindo controle de acesso por políticas de segurança em nível de banco de dados (Row Level Security), de forma que dados de contato não ficam publicamente acessíveis via chave de API pública do site.</p>
+  <section id="s6">
+    <div class="sec-t"><span class="n">6</span><h2>Por quanto tempo guardamos os dados</h2></div>
+    <ul>
+      <li>Dados de navegação anônima: até 18 meses.</li>
+      <li>Dados do quiz e de contato (nome, WhatsApp, e-mail): até você solicitar exclusão, ou automaticamente após 24 meses de inatividade.</li>
+      <li>Dados de compra: pelo prazo exigido pela legislação fiscal e cível aplicável.</li>
+    </ul>
+  </section>
 
-  <h2>8. Seus direitos como titular (art. 18, LGPD)</h2>
-  <p>Você pode solicitar, a qualquer momento, pelo e-mail informado nesta página:</p>
-  <ol>
-    <li>Confirmação da existência de tratamento dos seus dados;</li>
-    <li>Acesso aos dados;</li>
-    <li>Correção de dados incompletos, inexatos ou desatualizados;</li>
-    <li>Anonimização, bloqueio ou eliminação de dados desnecessários ou tratados em desconformidade com a lei;</li>
-    <li>Portabilidade dos dados a outro fornecedor de serviço;</li>
-    <li>Eliminação dos dados tratados com base no seu consentimento;</li>
-    <li>Informação sobre as entidades com as quais compartilhamos seus dados;</li>
-    <li>Informação sobre a possibilidade de não fornecer consentimento e as consequências disso;</li>
-    <li>Revogação do consentimento, a qualquer momento.</li>
-  </ol>
-  <p>Respondemos às solicitações em prazo razoável, buscando atender em até 15 dias úteis.</p>
+  <section id="s7">
+    <div class="sec-t"><span class="n">7</span><h2>Segurança da informação</h2></div>
+    <p>Adotamos medidas técnicas e administrativas razoáveis para proteger os dados contra acesso não autorizado, perda ou vazamento — incluindo controle de acesso por políticas de segurança em nível de banco de dados (Row Level Security), de forma que dados de contato não ficam publicamente acessíveis via chave de API pública do site.</p>
+  </section>
 
-  <h2>9. Crianças e adolescentes</h2>
-  <p>Este site e o quiz são direcionados a profissionais de saúde adultos. Não coletamos intencionalmente dados de menores de 18 anos. Caso identifiquemos esse caso, os dados serão excluídos.</p>
+  <section id="s8">
+    <div class="sec-t"><span class="n">8</span><h2>Seus direitos como titular (art. 18, LGPD)</h2></div>
+    <p>Você pode solicitar, a qualquer momento, pelo e-mail informado nesta página:</p>
+    <ol class="corpo">
+      <li>Confirmação da existência de tratamento dos seus dados;</li>
+      <li>Acesso aos dados;</li>
+      <li>Correção de dados incompletos, inexatos ou desatualizados;</li>
+      <li>Anonimização, bloqueio ou eliminação de dados desnecessários ou tratados em desconformidade com a lei;</li>
+      <li>Portabilidade dos dados a outro fornecedor de serviço;</li>
+      <li>Eliminação dos dados tratados com base no seu consentimento;</li>
+      <li>Informação sobre as entidades com as quais compartilhamos seus dados;</li>
+      <li>Informação sobre a possibilidade de não fornecer consentimento e as consequências disso;</li>
+      <li>Revogação do consentimento, a qualquer momento.</li>
+    </ol>
+    <p>Respondemos às solicitações em prazo razoável, buscando atender em até 15 dias úteis.</p>
+  </section>
 
-  <h2>10. Cookies</h2>
-  <p>Você pode bloquear cookies nas configurações do navegador. Isso pode reduzir a precisão da medição, mas não impede o uso do site.</p>
+  <section id="s9">
+    <div class="sec-t"><span class="n">9</span><h2>Crianças e adolescentes</h2></div>
+    <p>Este site e o quiz são direcionados a profissionais de saúde adultos. Não coletamos intencionalmente dados de menores de 18 anos. Caso identifiquemos esse caso, os dados serão excluídos.</p>
+  </section>
 
-  <h2>11. Alterações desta política</h2>
-  <p>Podemos atualizar este documento a qualquer momento, refletindo mudanças legais ou operacionais. A data no topo indica a última revisão.</p>
+  <section id="s10">
+    <div class="sec-t"><span class="n">10</span><h2>Cookies</h2></div>
+    <p>Você pode bloquear cookies nas configurações do navegador. Isso pode reduzir a precisão da medição, mas não impede o uso do site.</p>
+  </section>
 
-  <h2>12. Legislação aplicável</h2>
-  <p>Este documento é regido pela Lei nº 13.709/2018 (LGPD) e demais normas brasileiras aplicáveis à proteção de dados pessoais.</p>
+  <section id="s11">
+    <div class="sec-t"><span class="n">11</span><h2>Alterações desta política</h2></div>
+    <p>Podemos atualizar este documento a qualquer momento, refletindo mudanças legais ou operacionais. A data no topo indica a última revisão.</p>
+  </section>
+
+  <section id="s12">
+    <div class="sec-t"><span class="n">12</span><h2>Legislação aplicável</h2></div>
+    <p>Este documento é regido pela Lei nº 13.709/2018 (LGPD) e demais normas brasileiras aplicáveis à proteção de dados pessoais.</p>
+  </section>
 
   <div class="contato">
-    <strong>Exercer seus direitos ou tirar dúvidas sobre privacidade:</strong><br>
-    novvasaudeintegrativa@gmail.com
+    <strong>Exercer seus direitos ou tirar dúvidas sobre privacidade</strong>
+    <a href="mailto:novvasaudeintegrativa@gmail.com">novvasaudeintegrativa@gmail.com</a>
   </div>
+
+  <p class="foot">Ver também os <a href="termos-de-uso.html">Termos de Uso</a></p>
 </div>
 </body>
 </html>
