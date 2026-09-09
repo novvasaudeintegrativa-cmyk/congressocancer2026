@@ -1320,7 +1320,7 @@
     { t:'Rodar SQL da tabela events + views agregadas', d:'SUPABASE.md, seção 2 — coletor de analytics do site.', padrao:true },
     { t:'Deploy da Edge Function collect (geo por IP)', d:'SUPABASE.md, seção 7 — resolve país/estado/cidade de cada acesso.', padrao:true },
     { t:'Rodar SQL de investimentos / vendas / rpc_roi', d:'SUPABASE.md, seção 11 — habilita o card de ROI acima.', padrao:true },
-    { t:'Deploy da Edge Function eduzz-webhook', d:'SUPABASE.md, seção 11 — recebe a notificação de venda da Eduzz e grava na tabela vendas.', padrao:false },
+    { t:'Deploy da Edge Function eduzz-webhook', d:'SUPABASE.md, seção 11 — recebe a notificação de venda da Eduzz e grava na tabela vendas.', padrao:true },
     { t:'Configurar o postback na Eduzz', d:'Aponta pra URL da eduzz-webhook, pra vendas caírem automaticamente (Lote 1, VIP etc.) sem lançar manual.', padrao:false },
     { t:'(Opcional) Anexar UTM/visitor_id ao link de checkout', d:'Hoje o clique é rastreado, mas o link em si sai limpo pra Eduzz — sem isso não dá pra saber de qual canal veio cada venda.', padrao:false },
     { t:'Autorizar a conta de Meta Ads', d:'Desbloqueia trazer o "investido" automaticamente em vez de lançar manual no formulário do ROI.', padrao:false }
@@ -1337,6 +1337,7 @@
     { t:'Decidir número único da equipe', d:'Recomendado: 1 número compartilhado, com atribuição por vendedor dentro do próprio CRM (já é assim no pipeline acima) — mais barato e rápido de aprovar do que um número por pessoa.' },
     { t:'Criar Portfólio Empresarial na Meta', d:'business.facebook.com → menu superior esquerdo → Criar portfólio empresarial.' },
     { t:'Verificar o negócio', d:'Configurações do Negócio → Informações da Empresa → Verificação. Precisa de CNPJ + comprovante de endereço da empresa. Leva de 1 a 5 dias úteis — comece por aqui, é o passo mais demorado.' },
+    { t:'Publicar Política de Privacidade e Termos de Uso', d:'politica-de-privacidade.html e termos-de-uso.html — a Meta pede a URL da política de privacidade pra criar o app. Já publicadas no site.', padrao:true },
     { t:'Criar app + ativar produto WhatsApp', d:'developers.facebook.com → Meus Apps → Criar App (tipo Negócios) → adicionar produto WhatsApp → vincular ao Portfólio Empresarial criado acima.' },
     { t:'Cadastrar o número de telefone', d:'Configuração da API → Adicionar número de telefone. Se o número já está no WhatsApp comum/Business normal (ou noutra plataforma como Zendesk), precisa confirmar de quem é o Business Manager dono do WABA antes de migrar. Gera o Phone Number ID e o WABA ID.' },
     { t:'Gerar token de acesso permanente', d:'Configurações do Negócio → Usuários do Sistema → criar usuário → gerar token com permissão whatsapp_business_messaging e whatsapp_business_management (não o token de teste de 24h).' },
