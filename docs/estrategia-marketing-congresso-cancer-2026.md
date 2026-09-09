@@ -140,15 +140,17 @@ Além delas, o cronograma orgânico anterior — 12 posts já com legenda e slid
 
 > ⚠️ **Antes de publicar o Criativo 2:** confirmar a citação (Nicolussi et al., Escola de Enfermagem de Ribeirão Preto/USP) com a fonte original antes de veicular — cláusula "sem promessa de cura" (Termos de Uso, seção 7) exige que toda afirmação factual citada seja verificável.
 
-### Orgânico — Legenda de apresentação de palestrantes
-> 🩺 Conheça parte do time de especialistas do Congresso do Câncer 2026
->
-> Dr. Sérgio Felipe de Oliveira (CRM-SP 62051) e Dra. Lucy Kerr (CRM-SP 20963) já confirmaram presença na 4ª edição do maior congresso de práticas integrativas em oncologia da América Latina.
->
-> Dois dias de conteúdo técnico, aplicável e conectado com o que há de mais atual em práticas integrativas na prevenção e no cuidado ao paciente oncológico.
->
-> 📅 20 e 21 de novembro | São José dos Campos, SP
-> 🎓 Certificado digital de 16h incluso
+### Orgânico — Roteiro de apresentação de palestrante (genérico, 1ª pessoa)
+
+Script pronto pra **qualquer palestrante** usar no post/story dele apresentando a própria palestra — em primeira pessoa, como se ele mesmo estivesse falando. Preenche os campos entre colchetes; o parágrafo de abordagem é escrito pelo próprio palestrante, com a voz dele. Enviar junto com o script de abordagem a palestrantes (seção 8).
+
+**Estrutura:**
+1. **Abertura (1ª pessoa):** Sou [Nome do palestrante], [especialidade/CRM ou conselho de classe], e vou palestrar no Congresso de Prevenção e Tratamento de Câncer 2026.
+2. **Tema da palestra:** Vou falar sobre "[Tema da palestra]".
+3. **Abordagem pessoal** (o palestrante escreve, 2-4 frases, em 1ª pessoa — por que esse tema importa na prática dele, um gancho, uma pergunta que ouve com frequência dos colegas, um caso/dado da própria experiência).
+4. **CTA fixo:** 📅 20 e 21 de novembro | 📍 São José dos Campos, SP · 🎓 Certificado digital de 16h · 👉 Te espero lá — inscrições abertas, link na bio / `utm_source=palestrante-NOME`
+
+> Texto completo, com exemplo preenchido, em `Midia/Organica/legenda-apresentacao-palestrantes.md`.
 >
 > Mais nomes sendo revelados nos próximos posts. Fica ligado. 👀
 

@@ -17,4 +17,4 @@ Cada peça é um arquivo `.md` com o texto pronto. Legenda/slide visual de cada 
 |---|---|---|
 | `Paga/criativo-institucional-awareness.md` | Paga | Meta Ads — institucional/awareness, foco em apresentar o congresso |
 | `Paga/criativo-educativo-topo-funil.md` | Paga | Meta Ads — educativo, cita estudo (Nicolussi et al. — checar fonte antes de veicular) |
-| `Organica/legenda-apresentacao-palestrantes.md` | Orgânica | Legenda de feed/carrossel apresentando palestrantes confirmados |
+| `Organica/legenda-apresentacao-palestrantes.md` | Orgânica | Roteiro genérico em 1ª pessoa — qualquer palestrante preenche pra se apresentar e falar da própria palestra |
