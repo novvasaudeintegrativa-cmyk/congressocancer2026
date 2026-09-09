@@ -770,7 +770,7 @@
 
     var produtos = d.por_produto || [];
     if (!produtos.length){
-      $('tabela-vendas').innerHTML = '<tr><td colspan="3" class="vazio">Sem venda registrada ainda (configure o webhook da Eduzz — SUPABASE.md, seção 11).</td></tr>';
+      $('tabela-vendas').innerHTML = '<tr><td colspan="3" class="vazio">Sem venda registrada ainda — assim que a primeira "Fatura paga" chegar da Eduzz, aparece aqui automaticamente.</td></tr>';
     } else {
       $('tabela-vendas').innerHTML = produtos.map(function(p){
         return '<tr><td>' + p.produto + '</td><td class="n">' + fmt(p.qtd) + '</td><td class="n">' + fmtMoeda(p.total) + '</td></tr>';
