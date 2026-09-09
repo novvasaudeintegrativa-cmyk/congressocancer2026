@@ -58,6 +58,13 @@
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth; overflow-x:hidden; max-width:100%;}
+
+  /* revela ao rolar a página (aplicado por JS, ver .reveal no final do <script>) */
+  .reveal{opacity:0; transform:translateY(26px); transition:opacity .7s ease, transform .7s ease;}
+  .reveal.reveal-visivel{opacity:1; transform:translateY(0);}
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1; transform:none; transition:none;}
+  }
   body{
     margin:0;
     max-width:100%;
@@ -2398,6 +2405,39 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       dlg.querySelector('.img-modal-close').addEventListener('click', function(){ dlg.close(); });
       dlg.addEventListener('click', function(e){ if (e.target === dlg) dlg.close(); });
     })();
+  </script>
+
+  <!-- ==================== REVELA AO ROLAR ====================
+       Aplica a classe .reveal (fade + sobe 26px, ver <style>) nos blocos
+       principais da página e usa IntersectionObserver pra ir marcando
+       .reveal-visivel conforme a pessoa rola até eles. Sem JS ou com
+       IntersectionObserver indisponível, tudo continua visível normalmente
+       (nada fica escondido esperando o script). -->
+  <script>
+  (function(){
+    var alvos = document.querySelectorAll(
+      '.section-title, .card-palestrante, .card-lote, .hotel-descricao, .hotel-carousel, .local-destaque'
+    );
+    if (!alvos.length) return;
+
+    if (!('IntersectionObserver' in window)){
+      alvos.forEach(function(el){ el.classList.add('reveal-visivel'); });
+      return;
+    }
+
+    alvos.forEach(function(el){ el.classList.add('reveal'); });
+
+    var obs = new IntersectionObserver(function(entradas){
+      entradas.forEach(function(entrada){
+        if (entrada.isIntersecting){
+          entrada.target.classList.add('reveal-visivel');
+          obs.unobserve(entrada.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+    alvos.forEach(function(el){ obs.observe(el); });
+  })();
   </script>
 
   <!-- ==================== RASTREAMENTO ====================
