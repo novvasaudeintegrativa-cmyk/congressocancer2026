@@ -508,7 +508,7 @@ deploy voltam a fluir, já com `country/region/city`.
 
 ## 8. Tabela de leads do quiz (`quiz.html`)
 
-O quiz de captação (`quiz.html`, Frente B / B1 do `docs/plano-divulgacao-manual-2026.md`)
+O quiz de captação (`quiz.html`, Frente B / B1 do `docs/estrategia-marketing-congresso-cancer-2026.md`)
 grava cada lead em uma tabela **separada** de `events` — diferente do coletor de
 analytics, aqui **tem PII** (nome, WhatsApp, e-mail), então a tabela não é lida
 por nenhum painel público e nunca recebe `SELECT` do `anon`.

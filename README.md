@@ -21,7 +21,7 @@ Sem link na navegação pública — acesso só por quem tem a URL.
 
 ## Outros arquivos
 
-- `plano-divulgacao-dashboard.html` — visualização do plano de divulgação (calendário, checklist, scripts prontos).
+- `estrategia-marketing-dashboard.html` — visualização da estratégia de marketing (cronograma, checklist, banco de criativos, scripts prontos). Baseado em `docs/estrategia-marketing-congresso-cancer-2026.md`.
 - `SUPABASE.md` — **documentação completa do backend**: schema das tabelas, RLS, Edge Functions (`collect`, `eduzz-webhook`), e o SQL de cada uma. Comece por aqui pra entender qualquer coisa ligada a dado/Supabase.
 - `Imgs/`, `Fonts/` — assets do site (fotos, logos, tipografia).
 
