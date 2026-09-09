@@ -144,11 +144,10 @@ Além delas, o cronograma orgânico anterior — 12 posts já com legenda e slid
 
 Script pronto pra **qualquer palestrante** usar no post/story dele apresentando a própria palestra — em primeira pessoa, como se ele mesmo estivesse falando. Preenche os campos entre colchetes; o parágrafo de abordagem é escrito pelo próprio palestrante, com a voz dele. Enviar junto com o script de abordagem a palestrantes (seção 8).
 
-**Estrutura:**
-1. **Abertura (1ª pessoa):** Sou [Nome do palestrante], [especialidade/CRM ou conselho de classe], e vou palestrar no Congresso de Prevenção e Tratamento de Câncer 2026.
-2. **Tema da palestra:** Vou falar sobre "[Tema da palestra]".
-3. **Abordagem pessoal** (o palestrante escreve, 2-4 frases, em 1ª pessoa — por que esse tema importa na prática dele, um gancho, uma pergunta que ouve com frequência dos colegas, um caso/dado da própria experiência).
-4. **CTA fixo:** 📅 20 e 21 de novembro | 📍 São José dos Campos, SP · 🎓 Certificado digital de 16h · 👉 Te espero lá — inscrições abertas, link na bio / `utm_source=palestrante-NOME`
+**Estrutura (Apresentação → Desenvolvimento → Conclusão com CTA):**
+1. **Apresentação:** Sou [Nome do palestrante], [especialidade/CRM ou conselho de classe], e vou palestrar no Congresso de Prevenção e Tratamento de Câncer 2026, com o tema "[Tema da palestra]".
+2. **Desenvolvimento** (o palestrante escreve, 2-4 frases, em 1ª pessoa — por que esse tema importa na prática dele, um gancho, uma pergunta que ouve com frequência dos colegas, um caso/dado da própria experiência).
+3. **Conclusão com chamada para ação** (fixo): 📅 20 e 21 de novembro | 📍 São José dos Campos, SP · 🎓 Certificado digital de 16h · 👉 Te espero lá — inscrições abertas, link na bio / `utm_source=palestrante-NOME`
 
 > Texto completo, com exemplo preenchido, em `Midia/Organica/legenda-apresentacao-palestrantes.md`.
 >
