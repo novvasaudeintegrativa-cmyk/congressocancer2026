@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Plano de Divulgação</title>
+<title>Estratégia de Marketing</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -116,7 +116,7 @@
     <div class="brand">
       <span class="mark">CC</span>
       <div>
-        <h1>Plano de Divulgação</h1>
+        <h1>Estratégia de Marketing</h1>
         <div class="sub">Congresso de Prevenção e Tratamento de Câncer · 20-21/nov, São José dos Campos</div>
       </div>
     </div>
@@ -153,12 +153,12 @@
 
     <section>
       <div class="sec">
-        <span class="t"><span class="bar"></span>Calendário de publicação</span>
-        <span class="hint">a semana atual do plano fica destacada</span>
+        <span class="t"><span class="bar"></span>Cronograma consolidado</span>
+        <span class="hint">a fase atual fica destacada</span>
       </div>
       <div class="scroll-x">
         <table id="tabela-calendario">
-          <thead><tr><th>Semana</th><th>Posts</th><th>Objetivo</th></tr></thead>
+          <thead><tr><th>Fase</th><th>Posts</th><th>Objetivo</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -188,6 +188,14 @@
     </section>
 
     <section>
+      <div class="sec">
+        <span class="t"><span class="bar"></span>Banco de criativos</span>
+        <span class="hint">2 Meta Ads + 1 orgânico, prontos pra usar</span>
+      </div>
+      <div id="criativos"></div>
+    </section>
+
+    <section>
       <div class="sec"><span class="t"><span class="bar"></span>Scripts prontos</span></div>
       <div id="scripts"></div>
     </section>
@@ -204,7 +212,7 @@
     </section>
   </div>
 
-  <p class="foot">Baseado em <a href="../docs/plano-divulgacao-manual-2026.md">docs/plano-divulgacao-manual-2026.md</a> · checklist e data do lote salvos só neste navegador</p>
+  <p class="foot">Baseado em <a href="../docs/estrategia-marketing-congresso-cancer-2026.md">docs/estrategia-marketing-congresso-cancer-2026.md</a> · checklist e data do lote salvos só neste navegador</p>
 </div>
 
 <script>
@@ -213,57 +221,64 @@
   var EVENTO = new Date('2026-11-20T00:00:00');
   var INICIO_PLANO = new Date('2026-09-05T00:00:00');
 
-  // ---- dados do plano ----
+  // ---- dados do plano (datas reais, seções 2 e 12 da estratégia) ----
   var CALENDARIO = [
-    { semana:'1-2', posts:'F01, F02', obj:'Educar — sinais de falta de repertório e isolamento profissional (gera comentário)' },
-    { semana:'3',   posts:'F03, F12', obj:'Educar — anos de experiência não bastam + dado real sem venda' },
-    { semana:'4',   posts:'F05 (AIDA)', obj:'Vender — primeira convocação direta pro Lote 1' },
-    { semana:'5',   posts:'F04, F08', obj:'Educar — ciência da terapia integrativa + limites éticos' },
-    { semana:'6',   posts:'F06 (PAS)', obj:'Vender — reforço, ângulo de dor/urgência' },
-    { semana:'7',   posts:'F09, F10', obj:'Educar — avanços em oncologia + cuidado integrativo' },
-    { semana:'8-9', posts:'F07, F11 (BAB)', obj:'Vender — intensificar, mirando a virada de lote' },
-    { semana:'10-11', posts:'Reciclar post de venda com melhor desempenho', obj:'Vender — urgência final, contagem regressiva' }
+    { fase:'Aquecimento',            inicio:'2026-09-09', fim:'2026-09-30', posts:'F01, F02, F03, F12', obj:'Conteúdo educativo, apresentação de palestrantes, captura de lista/quiz' },
+    { fase:'Lançamento Lote 1',      inicio:'2026-10-01', fim:'2026-10-15', posts:'F05 (AIDA)', obj:'Push de conversão, ativação de palestrantes' },
+    { fase:'Meio de funil',          inicio:'2026-10-16', fim:'2026-11-05', posts:'F04, F08, F06 (PAS)', obj:'Ciência/limites éticos, reforço de dor/urgência, retargeting' },
+    { fase:'Lote 3 + reta final',    inicio:'2026-11-06', fim:'2026-11-18', posts:'F09, F10, F07, F11 (BAB)', obj:'Urgência máxima, contagem regressiva, prova social' },
+    { fase:'Evento ao vivo',         inicio:'2026-11-20', fim:'2026-11-21', posts:'—', obj:'Cobertura em stories/Reels, bastidores' },
+    { fase:'Pós-evento',             inicio:'2026-11-22', fim:'2026-12-31', posts:'Reciclagem do post de melhor desempenho', obj:'Depoimentos, nutrição da lista para 2027' }
   ];
 
   var CHECKLIST = [
-    { semana:'Semana 0', itens:[
+    { periodo:'Semana 0',        inicio:'2026-09-05', fim:'2026-09-08', itens:[
       'Definir data-alvo interna de virada Lote 1→2',
-      'Montar tabela de UTMs',
       'Levantar contatos dos palestrantes'
     ]},
-    { semana:'Semanas 1-2', itens:[
+    { periodo:'9–15/set',        inicio:'2026-09-09', fim:'2026-09-15', itens:[
       'Publicar F01, F02',
       'Responder manualmente todos os comentários/DMs',
-      'Enviar mensagem aos 2-3 palestrantes mais engajados primeiro'
+      'Contatar 2-3 palestrantes mais engajados primeiro'
     ]},
-    { semana:'Semana 3', itens:[
+    { periodo:'16–22/set',       inicio:'2026-09-16', fim:'2026-09-22', itens:[
       'Publicar F03, F12',
       'Abordar 1-2 grupos/associações de classe'
     ]},
-    { semana:'Semana 4', itens:[
+    { periodo:'23–30/set',       inicio:'2026-09-23', fim:'2026-09-30', itens:[
+      'Fechar apresentação de palestrantes',
+      'Teaser "inscrições abertas"'
+    ]},
+    { periodo:'1–15/out',        inicio:'2026-10-01', fim:'2026-10-15', itens:[
       'Publicar F05 (venda)',
-      'Começar reativação da lista própria (segmento "já participou")'
+      'Começar reativação da base (~5.000 contatos, segmento "já participou")'
     ]},
-    { semana:'Semana 5', itens:[
-      'Publicar F04, F08',
-      'Continuar reativação da lista (segmento "só demonstrou interesse")'
+    { periodo:'16/out–5/nov',    inicio:'2026-10-16', fim:'2026-11-05', itens:[
+      'Publicar F04, F08, F06',
+      'Continuar reativação (segmento "só demonstrou interesse")',
+      'Revisar dashboard semanalmente'
     ]},
-    { semana:'Semana 6', itens:[
-      'Publicar F06 (venda)',
-      'Revisar dashboard e repetir o que funcionou'
+    { periodo:'6–18/nov',        inicio:'2026-11-06', fim:'2026-11-18', itens:[
+      'Publicar F09, F10, F07, F11',
+      'Urgência máxima, contagem regressiva'
     ]},
-    { semana:'Semana 7', itens:[
-      'Publicar F09, F10',
-      'Follow-up com palestrantes que ainda não compartilharam'
+    { periodo:'20–21/nov',       inicio:'2026-11-20', fim:'2026-11-21', itens:[
+      'Cobertura ao vivo (stories/Reels/bastidores)'
     ]},
-    { semana:'Semanas 8-9', itens:[
-      'Publicar F07, F11 (venda)',
-      'Intensificar urgência conforme data-alvo se aproxima'
-    ]},
-    { semana:'Semanas 10-11', itens:[
-      'Reciclar o post de venda com melhor desempenho',
-      'Última rodada na lista própria e nos grupos, com contagem regressiva'
+    { periodo:'A partir de 22/nov', inicio:'2026-11-22', fim:'2026-12-31', itens:[
+      'Depoimentos',
+      'Reciclagem do post de melhor desempenho',
+      'Nutrir lista pra 2027'
     ]}
+  ];
+
+  var CRIATIVOS = [
+    { titulo:'Meta Ads · Institucional/Awareness', texto:
+'TÍTULO: 🩺 O maior congresso de práticas integrativas em oncologia da América Latina chega à 4ª edição\nDESCRIÇÃO: 📅 20 e 21 de novembro, em São José dos Campos (SP)\n\n🩺 Profissional de saúde que atende (ou cruza com) pacientes oncológicos? Este congresso foi pensado pra você.\n\nNos dias 20 e 21 de novembro, São José dos Campos recebe a 4ª edição do Congresso de Práticas Integrativas para Prevenção e Tratamento do Câncer — uma realização conjunta da Novva Saúde Integrativa e da NutriGenes.\n\nSão dois dias de imersão com médicos, nutricionistas, terapeutas e pesquisadores discutindo como ampliar o repertório clínico em práticas integrativas sem abrir mão do rigor científico.\n\n🎓 O que te espera:\n✅ Palestras exclusivas com especialistas de diversas áreas\n✅ Feira com mais de 30 stands\n✅ Networking direto com quem já aplica essas práticas na rotina clínica\n✅ Certificado digital de 16h\n\n📍 Hotel Nacional Inn São José dos Campos — perto do Shopping Vale, aeroporto e Rodovia Dutra.\n\nAs inscrições do 1º lote já estão abertas, com valores facilitados em até 12x.\n\n👉 Garanta sua vaga na descrição.' },
+    { titulo:'Meta Ads · Educativo (topo de funil)', texto:
+'TÍTULO: 📊 O que a ciência já mostra sobre terapias complementares em oncologia\nDESCRIÇÃO: 🔍 Evidência, não promessa — assim se constrói prática clínica séria\n\n📊 Terapias complementares não substituem o tratamento oncológico convencional — mas a literatura vem mostrando ganhos relevantes quando são usadas como suporte.\n\nUm estudo da Escola de Enfermagem de Ribeirão Preto (USP), conduzido na unidade de quimioterapia do Hospital Beneficência Portuguesa, mostrou que técnicas como relaxamento com imagem guiada e acupuntura reduziram sintomas e melhoraram a qualidade de vida de pacientes em tratamento (Nicolussi et al.).\n\nRevisões sistemáticas mais recentes, cruzando bases como PubMed, Cochrane e The Lancet, reforçam esse padrão: práticas integrativas e complementares (PICs) têm papel consistente no manejo de efeitos adversos da quimio e radioterapia, quando bem indicadas.\n\n🎯 É exatamente esse tipo de discussão — com base em evidência, não em promessa — que vai pautar o Congresso, dias 20 e 21 de novembro em São José dos Campos.\n\nSe você é médico, nutricionista, fisioterapeuta, farmacêutico ou terapeuta e quer entender onde a ciência realmente sustenta essas práticas, esse é o seu congresso.\n\n👉 Inscrições do 1º lote abertas, com parcelamento em até 12x.\n\n⚠️ Confirmar a citação (Nicolussi et al.) com a fonte original antes de veicular.' },
+    { titulo:'Orgânico · Apresentação de palestrantes', texto:
+'🩺 Conheça parte do time de especialistas do Congresso do Câncer 2026\n\nDr. Sérgio Felipe de Oliveira (CRM-SP 62051) e Dra. Lucy Kerr (CRM-SP 20963) já confirmaram presença na 4ª edição do maior congresso de práticas integrativas em oncologia da América Latina.\n\nDois dias de conteúdo técnico, aplicável e conectado com o que há de mais atual em práticas integrativas na prevenção e no cuidado ao paciente oncológico.\n\n📅 20 e 21 de novembro | São José dos Campos, SP\n🎓 Certificado digital de 16h incluso\n\nMais nomes sendo revelados nos próximos posts. Fica ligado. 👀' }
   ];
 
   var SCRIPTS = [
@@ -280,7 +295,7 @@
   var FRENTE_B = [
     { id:'B1', titulo:'Quiz de captação', selo:'gratis', texto:'Isca com melhor CPL hoje (até 40% mais barato que PDF estático). Pode começar de graça com Google Forms.' },
     { id:'B4', titulo:'Conteúdo de busca (SEO)', selo:'gratis', texto:'Artigo otimizado captando quem já pesquisa no Google. Ciclo mais longo, custo zero por clique.' },
-    { id:'B2', titulo:'Tráfego pago (Meta + Google Ads)', selo:'pago', texto:'Segmentação por perfil profissional + lookalike de compradores. Precisa autorizar a conta de anúncios.' },
+    { id:'B2', titulo:'Tráfego pago (Meta + Google Ads)', selo:'pago', texto:'Reativação da base própria (~5.000 contatos) como Custom Audience + Lookalike de compradores, usando os criativos do banco acima. Precisa autorizar a conta de anúncios.' },
     { id:'B3', titulo:'Retargeting em camadas', selo:'pago', texto:'3 públicos por estágio (visitou / interagiu com quiz / clicou no WhatsApp), cada um com mensagem própria.' },
     { id:'B5', titulo:'Chatbot de qualificação', selo:'gratis', texto:'2-3 perguntas automáticas pra quem já demonstrou interesse, antes de cair pro atendimento humano.' }
   ];
@@ -290,21 +305,36 @@
   function fmtData(d){ return d.toLocaleDateString('pt-BR'); }
 
   // ---- hero ----
+  function fasePorData(hoje){
+    for (var i = 0; i < CALENDARIO.length; i++){
+      var c = CALENDARIO[i];
+      if (hoje >= new Date(c.inicio + 'T00:00:00') && hoje <= new Date(c.fim + 'T23:59:59')) return c;
+    }
+    return null;
+  }
   function renderHero(){
     var hoje = new Date(); hoje.setHours(0,0,0,0);
     var dias = diffDias(hoje, EVENTO);
     $('dias-evento').textContent = dias >= 0 ? dias : 0;
-    var semana = Math.max(1, Math.floor(diffDias(INICIO_PLANO, hoje) / 7) + 1);
-    $('semana-atual').textContent = dias >= 0 ? ('estamos na semana ' + semana + ' do plano') : 'evento já ocorreu';
-    return semana;
+    var fase = fasePorData(hoje);
+    if (dias < 0){
+      $('semana-atual').textContent = 'evento já ocorreu';
+    } else if (fase){
+      $('semana-atual').textContent = 'fase atual: ' + fase.fase;
+    } else if (hoje < INICIO_PLANO){
+      $('semana-atual').textContent = 'plano ainda não começou';
+    } else {
+      $('semana-atual').textContent = 'fora do período mapeado';
+    }
+    return hoje;
   }
 
   // ---- calendário ----
-  function renderCalendario(semanaAtual){
+  function renderCalendario(hoje){
     var body = CALENDARIO.map(function(c){
-      var faixa = c.semana.split('-').map(Number);
-      var atual = faixa.length === 2 ? (semanaAtual >= faixa[0] && semanaAtual <= faixa[1]) : (semanaAtual === faixa[0]);
-      return '<tr' + (atual ? ' style="background:#faf1f0"' : '') + '><td><b>' + c.semana + '</b></td><td>' + c.posts + '</td><td>' + c.obj + '</td></tr>';
+      var atual = hoje >= new Date(c.inicio + 'T00:00:00') && hoje <= new Date(c.fim + 'T23:59:59');
+      var faixa = fmtData(new Date(c.inicio + 'T00:00:00')) + '–' + fmtData(new Date(c.fim + 'T00:00:00'));
+      return '<tr' + (atual ? ' style="background:#faf1f0"' : '') + '><td><b>' + c.fase + '</b><br><span style="font-weight:400;font-size:12px;color:var(--soft)">' + faixa + '</span></td><td>' + c.posts + '</td><td>' + c.obj + '</td></tr>';
     }).join('');
     document.querySelector('#tabela-calendario tbody').innerHTML = body;
   }
@@ -316,19 +346,18 @@
   function salvarChecklist(state){
     try { localStorage.setItem('divulgacao-checklist', JSON.stringify(state)); } catch(e){}
   }
-  function renderChecklist(semanaAtual){
+  function renderChecklist(hoje){
     var state = checklistState();
     var total = 0, feitos = 0;
     var html = CHECKLIST.map(function(bloco, bi){
-      var atual = bloco.semana.toLowerCase().indexOf('semana ' + semanaAtual) === 0 ||
-                  (bloco.semana.match(/\d+/g) || []).map(Number).indexOf(semanaAtual) !== -1;
+      var atual = hoje >= new Date(bloco.inicio + 'T00:00:00') && hoje <= new Date(bloco.fim + 'T23:59:59');
       var itens = bloco.itens.map(function(texto, ii){
         var key = bi + '-' + ii;
         var done = !!state[key];
         total++; if (done) feitos++;
         return '<label class="item' + (done?' done':'') + '"><input type="checkbox" data-key="' + key + '"' + (done?' checked':'') + '><span>' + texto + '</span></label>';
       }).join('');
-      return '<div class="semana' + (atual?' atual':'') + '"><div class="cab"><b>' + bloco.semana + '</b>' + (atual?'<span class="tag">agora</span>':'') + '</div>' + itens + '</div>';
+      return '<div class="semana' + (atual?' atual':'') + '"><div class="cab"><b>' + bloco.periodo + '</b>' + (atual?'<span class="tag">agora</span>':'') + '</div>' + itens + '</div>';
     }).join('');
     $('checklist').innerHTML = html;
     var pct = total ? Math.round(feitos/total*100) : 0;
@@ -341,7 +370,7 @@
         var s = checklistState();
         s[this.dataset.key] = this.checked;
         salvarChecklist(s);
-        renderChecklist(semanaAtual);
+        renderChecklist(hoje);
       });
     });
   }
@@ -381,6 +410,22 @@
     });
   }
 
+  // ---- banco de criativos com botão copiar ----
+  function renderCriativos(){
+    $('criativos').innerHTML = CRIATIVOS.map(function(c, i){
+      return '<div class="script-box"><div class="cab"><b>' + c.titulo + '</b><button type="button" class="copiar" data-i="' + i + '">Copiar</button></div><blockquote>' + c.texto.replace(/\n/g,'<br>') + '</blockquote></div>';
+    }).join('');
+    $('criativos').querySelectorAll('.copiar').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var texto = CRIATIVOS[this.dataset.i].texto;
+        navigator.clipboard.writeText(texto).then(function(){
+          btn.textContent = 'Copiado!'; btn.classList.add('ok');
+          setTimeout(function(){ btn.textContent = 'Copiar'; btn.classList.remove('ok'); }, 1600);
+        });
+      });
+    });
+  }
+
   // ---- Frente B ----
   function renderFrenteB(){
     $('grid-b').innerHTML = FRENTE_B.map(function(c){
@@ -399,10 +444,11 @@
   });
 
   // ---- init ----
-  var semanaAtual = renderHero();
-  renderCalendario(semanaAtual);
-  renderChecklist(semanaAtual);
+  var hoje = renderHero();
+  renderCalendario(hoje);
+  renderChecklist(hoje);
   renderLote();
+  renderCriativos();
   renderScripts();
   renderFrenteB();
 })();
