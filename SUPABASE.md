@@ -773,7 +773,10 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // inteiro sempre vai pra coluna `raw`, então dá pra corrigir o mapeamento
 // depois sem perder nenhuma venda já recebida.
 
-const SECRET = Deno.env.get("EDUZZ_WEBHOOK_SECRET"); // opcional — defina como secret do projeto
+// .trim() nos dois lados: cola-e-cola em campo de texto às vezes deixa uma
+// quebra de linha sobrando no final do secret — sem o trim, isso quebra a
+// comparação de um jeito invisível (as strings "parecem" iguais mas não são).
+const SECRET = Deno.env.get("EDUZZ_WEBHOOK_SECRET")?.trim(); // opcional — defina como secret do projeto
 
 function pick(body: any, paths: string[]) {
   for (const p of paths) {
@@ -787,7 +790,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("method", { status: 405 });
 
   if (SECRET) {
-    const token = new URL(req.url).searchParams.get("token");
+    const token = new URL(req.url).searchParams.get("token")?.trim();
     if (token !== SECRET) return new Response("unauthorized", { status: 401 });
   }
 
@@ -800,13 +803,13 @@ Deno.serve(async (req) => {
   }
 
   const row = {
-    eduzz_id:      String(pick(body, ["cod_transacao", "trans_cod", "id", "data.id"]) ?? ""),
-    produto:       pick(body, ["nome_produto", "product_name", "titulo_conteudo", "data.items.0.content_name"]),
-    produto_cod:   String(pick(body, ["cod_produto", "product_id", "data.items.0.product_id"]) ?? ""),
-    valor:         Number(pick(body, ["valor_total", "total_value", "valor", "data.total_value"]) ?? 0),
-    status:        String(pick(body, ["situacao", "status", "data.status"]) ?? ""),
-    cliente_nome:  pick(body, ["nome_cliente", "customer_name", "data.customer.name"]),
-    cliente_email: pick(body, ["email_cliente", "customer_email", "data.customer.email"]),
+    eduzz_id:      String(pick(body, ["data.id", "cod_transacao", "trans_cod", "id"]) ?? ""),
+    produto:       pick(body, ["data.items.0.name", "nome_produto", "product_name", "titulo_conteudo"]),
+    produto_cod:   String(pick(body, ["data.items.0.productId", "cod_produto", "product_id"]) ?? ""),
+    valor:         Number(pick(body, ["data.price.value", "valor_total", "total_value", "valor"]) ?? 0),
+    status:        String(pick(body, ["data.status", "situacao", "status"]) ?? ""),
+    cliente_nome:  pick(body, ["data.buyer.name", "nome_cliente", "customer_name"]),
+    cliente_email: pick(body, ["data.buyer.email", "email_cliente", "customer_email"]),
     raw: body
   };
 
@@ -829,16 +832,34 @@ configure na Eduzz a URL do postback já com `?token=SEUVALOR` no final.
 
 ### Configurar na Eduzz
 
-No painel da Eduzz, procure por **Notificação/Postback/Webhook** (o nome
-exato do menu varia — geralmente fica em configurações do produto ou da
-conta) e cadastre a URL:
+**Status: configurado e testado (09/09/2026).** Postback ativo, evento
+"Fatura paga" caindo em `vendas` com os campos certos.
+
+No painel da Eduzz (Developer Hub → Webhook → Configurações → Criar
+configuração), o evento certo é **`myeduzz.invoice_paid`** ("Fatura paga",
+dentro do app **MyEduzz** na lista de eventos) — cobre boleto, cartão e pix
+num evento só. Payload documentado em
+https://developers.eduzz.com/reference/webhook/myeduzz-invoice-paid (é de
+onde vêm os caminhos `data.id`, `data.items.0.name` etc. usados acima).
+
+Cadastre a URL: com o token do secret (`?token=...`), e **desligue "Verify
+JWT with legacy secret"** nas configurações da função (Edge Functions →
+eduzz-webhook → Settings) — sem isso o Supabase bloqueia a chamada da Eduzz
+antes mesmo dela chegar na função, com 401 mesmo com o token certo.
 
 ```
-https://nbhekjgbszyuuxrynzfo.supabase.co/functions/v1/eduzz-webhook
+https://nbhekjgbszyuuxrynzfo.supabase.co/functions/v1/eduzz-webhook?token=SEUVALOR
 ```
 
-(+ `?token=...` no final, se tiver configurado o secret). Faça uma venda de
-teste (ou peça pra Eduzz reenviar a notificação de uma venda antiga) e
-confira **Table Editor → vendas** — se a linha aparecer com `produto`/`valor`
-vazios mas `raw` preenchido, me manda o conteúdo de `raw` pra eu corrigir o
-mapeamento de campos.
+**Pegadinha do campo de secret:** o campo "Value" em Edge Functions →
+Secrets aceita múltiplas linhas — ao colar, é fácil sobrar uma quebra de
+linha no final, o que quebra a comparação de um jeito invisível (o valor
+"parece" igual mas não é). Por isso o código já faz `.trim()` nos dois
+lados antes de comparar; não precisa recriar o secret com cuidado
+cirúrgico.
+
+Pra validar: faça uma venda de teste (ou peça pra Eduzz reenviar a
+notificação de uma venda antiga, ou use "Testar eventos selecionados" no
+painel da Eduzz) e confira **Table Editor → vendas** — se a linha aparecer
+com `produto`/`valor` vazios mas `raw` preenchido, me manda o conteúdo de
+`raw` pra eu corrigir o mapeamento de campos.

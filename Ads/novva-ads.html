@@ -1321,7 +1321,7 @@
     { t:'Deploy da Edge Function collect (geo por IP)', d:'SUPABASE.md, seção 7 — resolve país/estado/cidade de cada acesso.', padrao:true },
     { t:'Rodar SQL de investimentos / vendas / rpc_roi', d:'SUPABASE.md, seção 11 — habilita o card de ROI acima.', padrao:true },
     { t:'Deploy da Edge Function eduzz-webhook', d:'SUPABASE.md, seção 11 — recebe a notificação de venda da Eduzz e grava na tabela vendas.', padrao:true },
-    { t:'Configurar o postback na Eduzz', d:'Aponta pra URL da eduzz-webhook, pra vendas caírem automaticamente (Lote 1, VIP etc.) sem lançar manual.', padrao:false },
+    { t:'Configurar o postback na Eduzz', d:'Evento "Fatura paga" (myeduzz.invoice_paid) apontando pra eduzz-webhook — testado e confirmado, vendas caem automaticamente na tabela vendas.', padrao:true },
     { t:'(Opcional) Anexar UTM/visitor_id ao link de checkout', d:'Hoje o clique é rastreado, mas o link em si sai limpo pra Eduzz — sem isso não dá pra saber de qual canal veio cada venda.', padrao:false },
     { t:'Autorizar a conta de Meta Ads', d:'Desbloqueia trazer o "investido" automaticamente em vez de lançar manual no formulário do ROI.', padrao:false }
   ];
