@@ -104,6 +104,12 @@
   .selo.gratis{background:rgba(31,138,76,.12);color:var(--verde);}
   .selo.pago{background:rgba(201,139,31,.14);color:var(--dourado);}
 
+  .fase-nota{font-size:11.5px;color:var(--faint);margin:12px 0 0;}
+  .fase-nota code{background:#f1ece6;padding:1px 6px;border-radius:5px;}
+  .tipo-midia{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap;}
+  .tipo-midia.paga{background:rgba(201,139,31,.14);color:var(--dourado);}
+  .tipo-midia.organica{background:rgba(31,138,76,.12);color:var(--verde);}
+
   .foot{text-align:center;color:var(--faint);font-size:11.5px;margin-top:22px;}
   .foot a{color:var(--bordo);}
   .vazio{color:var(--faint);font-size:12px;}
@@ -158,10 +164,11 @@
       </div>
       <div class="scroll-x">
         <table id="tabela-calendario">
-          <thead><tr><th>Fase</th><th>Posts</th><th>Objetivo</th></tr></thead>
+          <thead><tr><th>Fase</th><th>Objetivo</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
+      <p class="fase-nota">Roda em paralelo ao cronograma orgânico de 12 posts já produzido (<code>Instagram/Feed/F01..F12</code>), que segue seu próprio ritmo e não faz parte deste plano.</p>
     </section>
 
     <section>
@@ -190,7 +197,7 @@
     <section>
       <div class="sec">
         <span class="t"><span class="bar"></span>Banco de criativos</span>
-        <span class="hint">2 Meta Ads + 1 orgânico, prontos pra usar</span>
+        <span class="hint">mídia orgânica + paga, pasta <code>Midia/</code></span>
       </div>
       <div id="criativos"></div>
     </section>
@@ -212,7 +219,7 @@
     </section>
   </div>
 
-  <p class="foot">Baseado em <a href="../docs/estrategia-marketing-congresso-cancer-2026.md">docs/estrategia-marketing-congresso-cancer-2026.md</a> · checklist e data do lote salvos só neste navegador</p>
+  <p class="foot">Baseado em <a href="docs/estrategia-marketing-congresso-cancer-2026.md">docs/estrategia-marketing-congresso-cancer-2026.md</a> · checklist e data do lote salvos só neste navegador</p>
 </div>
 
 <script>
@@ -273,11 +280,11 @@
   ];
 
   var CRIATIVOS = [
-    { titulo:'Meta Ads · Institucional/Awareness', texto:
+    { titulo:'Meta Ads · Institucional/Awareness', tipo:'paga', texto:
 'TÍTULO: 🩺 O maior congresso de práticas integrativas em oncologia da América Latina chega à 4ª edição\nDESCRIÇÃO: 📅 20 e 21 de novembro, em São José dos Campos (SP)\n\n🩺 Profissional de saúde que atende (ou cruza com) pacientes oncológicos? Este congresso foi pensado pra você.\n\nNos dias 20 e 21 de novembro, São José dos Campos recebe a 4ª edição do Congresso de Práticas Integrativas para Prevenção e Tratamento do Câncer — uma realização conjunta da Novva Saúde Integrativa e da NutriGenes.\n\nSão dois dias de imersão com médicos, nutricionistas, terapeutas e pesquisadores discutindo como ampliar o repertório clínico em práticas integrativas sem abrir mão do rigor científico.\n\n🎓 O que te espera:\n✅ Palestras exclusivas com especialistas de diversas áreas\n✅ Feira com mais de 30 stands\n✅ Networking direto com quem já aplica essas práticas na rotina clínica\n✅ Certificado digital de 16h\n\n📍 Hotel Nacional Inn São José dos Campos — perto do Shopping Vale, aeroporto e Rodovia Dutra.\n\nAs inscrições do 1º lote já estão abertas, com valores facilitados em até 12x.\n\n👉 Garanta sua vaga na descrição.' },
-    { titulo:'Meta Ads · Educativo (topo de funil)', texto:
+    { titulo:'Meta Ads · Educativo (topo de funil)', tipo:'paga', texto:
 'TÍTULO: 📊 O que a ciência já mostra sobre terapias complementares em oncologia\nDESCRIÇÃO: 🔍 Evidência, não promessa — assim se constrói prática clínica séria\n\n📊 Terapias complementares não substituem o tratamento oncológico convencional — mas a literatura vem mostrando ganhos relevantes quando são usadas como suporte.\n\nUm estudo da Escola de Enfermagem de Ribeirão Preto (USP), conduzido na unidade de quimioterapia do Hospital Beneficência Portuguesa, mostrou que técnicas como relaxamento com imagem guiada e acupuntura reduziram sintomas e melhoraram a qualidade de vida de pacientes em tratamento (Nicolussi et al.).\n\nRevisões sistemáticas mais recentes, cruzando bases como PubMed, Cochrane e The Lancet, reforçam esse padrão: práticas integrativas e complementares (PICs) têm papel consistente no manejo de efeitos adversos da quimio e radioterapia, quando bem indicadas.\n\n🎯 É exatamente esse tipo de discussão — com base em evidência, não em promessa — que vai pautar o Congresso, dias 20 e 21 de novembro em São José dos Campos.\n\nSe você é médico, nutricionista, fisioterapeuta, farmacêutico ou terapeuta e quer entender onde a ciência realmente sustenta essas práticas, esse é o seu congresso.\n\n👉 Inscrições do 1º lote abertas, com parcelamento em até 12x.\n\n⚠️ Confirmar a citação (Nicolussi et al.) com a fonte original antes de veicular.' },
-    { titulo:'Orgânico · Apresentação de palestrantes', texto:
+    { titulo:'Orgânico · Apresentação de palestrantes', tipo:'organica', texto:
 '🩺 Conheça parte do time de especialistas do Congresso do Câncer 2026\n\nDr. Sérgio Felipe de Oliveira (CRM-SP 62051) e Dra. Lucy Kerr (CRM-SP 20963) já confirmaram presença na 4ª edição do maior congresso de práticas integrativas em oncologia da América Latina.\n\nDois dias de conteúdo técnico, aplicável e conectado com o que há de mais atual em práticas integrativas na prevenção e no cuidado ao paciente oncológico.\n\n📅 20 e 21 de novembro | São José dos Campos, SP\n🎓 Certificado digital de 16h incluso\n\nMais nomes sendo revelados nos próximos posts. Fica ligado. 👀' }
   ];
 
@@ -413,7 +420,8 @@
   // ---- banco de criativos com botão copiar ----
   function renderCriativos(){
     $('criativos').innerHTML = CRIATIVOS.map(function(c, i){
-      return '<div class="script-box"><div class="cab"><b>' + c.titulo + '</b><button type="button" class="copiar" data-i="' + i + '">Copiar</button></div><blockquote>' + c.texto.replace(/\n/g,'<br>') + '</blockquote></div>';
+      var selo = c.tipo === 'paga' ? '<span class="tipo-midia paga">paga</span>' : '<span class="tipo-midia organica">orgânica</span>';
+      return '<div class="script-box"><div class="cab"><b>' + c.titulo + '</b><div style="display:flex;align-items:center;gap:8px;">' + selo + '<button type="button" class="copiar" data-i="' + i + '">Copiar</button></div></div><blockquote>' + c.texto.replace(/\n/g,'<br>') + '</blockquote></div>';
     }).join('');
     $('criativos').querySelectorAll('.copiar').forEach(function(btn){
       btn.addEventListener('click', function(){
