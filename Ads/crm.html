@@ -169,17 +169,23 @@
   var estado = { eu:null, ehGestor:false, vendedores:[], leads:[] };
 
   // ---------- auth ----------
+  function diag(msg){ $('li-erro').style.color = 'var(--soft)'; $('li-erro').textContent = msg; }
+  function erroLogin(msg){ $('li-erro').style.color = 'var(--bordo-vivo)'; $('li-erro').textContent = msg; }
+
   $('login-form').addEventListener('submit', function(e){
     e.preventDefault();
     var btn = $('li-btn'); btn.disabled = true; btn.textContent = 'Entrando…';
-    $('li-erro').textContent = '';
+    diag('autenticando…');
     sb.auth.signInWithPassword({ email: $('li-email').value.trim(), password: $('li-senha').value })
       .then(function(res){
         if (res.error) throw res.error;
-        return iniciar();
+        if (!res.data || !res.data.user) throw new Error('login sem usuário na resposta');
+        diag('senha ok, carregando perfil…');
+        return iniciar(res.data.user);
       })
       .catch(function(err){
-        $('li-erro').textContent = err.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : ('Erro: ' + err.message);
+        var m = err && err.message ? err.message : String(err);
+        erroLogin(m === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : ('Erro: ' + m));
       })
       .finally(function(){ btn.disabled = false; btn.textContent = 'Entrar'; });
   });
@@ -254,18 +260,19 @@
     });
   });
 
-  function iniciar(){
-    return sb.auth.getUser().then(function(res){
-      var user = res.data && res.data.user;
+  function iniciar(userConhecido){
+    var pUser = userConhecido
+      ? Promise.resolve(userConhecido)
+      : sb.auth.getUser().then(function(res){ return res.data && res.data.user; });
+
+    return pUser.then(function(user){
       if (!user) { mostrarLogin(); return; }
       return sb.from('perfis').select('id,nome,papel,ativo').then(function(r){
-        if (r.error) throw r.error;
+        if (r.error) throw new Error('perfis: ' + r.error.message);
         var perfis = r.data || [];
         var meu = perfis.find(function(p){ return p.id === user.id; });
-        if (!meu || !meu.ativo) {
-          $('li-erro').textContent = 'Sua conta não está liberada no CRM. Fale com o gestor.';
-          return sb.auth.signOut().then(mostrarLogin);
-        }
+        if (!meu) throw new Error('seu usuário (' + user.id.slice(0,8) + '…) não está na tabela perfis');
+        if (!meu.ativo) throw new Error('sua conta está marcada como inativa');
         estado.eu = meu;
         estado.ehGestor = meu.papel === 'gestor';
         estado.vendedores = perfis.filter(function(p){ return p.ativo; });
@@ -416,7 +423,13 @@
   $('f-busca').addEventListener('input', render);
 
   // ---------- boot ----------
-  if (!emRecuperacao) iniciar();
+  if (!emRecuperacao) {
+    iniciar().catch(function(err){
+      // sessão persistida inválida / erro de perfil: volta pro login mostrando o motivo
+      erroLogin(err && err.message ? err.message : String(err));
+      mostrarLogin();
+    });
+  }
 })();
 </script>
 </body>
