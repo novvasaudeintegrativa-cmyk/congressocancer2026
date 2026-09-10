@@ -976,23 +976,26 @@ create table if not exists public.perfis (
 );
 alter table public.perfis enable row level security;
 
-drop policy if exists "equipe lê perfis" on public.perfis;
-create policy "equipe lê perfis" on public.perfis
-  for select to authenticated using (true);
-
-drop policy if exists "gestor edita perfis" on public.perfis;
-create policy "gestor edita perfis" on public.perfis
-  for all to authenticated
-  using  (exists (select 1 from public.perfis p where p.id = auth.uid() and p.papel = 'gestor'))
-  with check (exists (select 1 from public.perfis p where p.id = auth.uid() and p.papel = 'gestor'));
-
--- helper: o usuário atual é gestor?
+-- helper: o usuário atual é gestor? (security definer = lê perfis SEM acionar
+-- RLS; precisa vir ANTES das policies que o usam, senão a criação falha)
 create or replace function public.eh_gestor()
 returns boolean language sql stable security definer set search_path = public as $$
   select coalesce((select papel = 'gestor' from public.perfis where id = auth.uid()), false);
 $$;
 revoke execute on function public.eh_gestor() from public, anon;
 grant execute on function public.eh_gestor() to authenticated;
+
+drop policy if exists "equipe lê perfis" on public.perfis;
+create policy "equipe lê perfis" on public.perfis
+  for select to authenticated using (true);
+
+-- NÃO fazer subquery direta em perfis aqui dentro (recursão infinita de RLS) —
+-- usar eh_gestor(), que é security definer.
+drop policy if exists "gestor edita perfis" on public.perfis;
+create policy "gestor edita perfis" on public.perfis
+  for all to authenticated
+  using  (public.eh_gestor())
+  with check (public.eh_gestor());
 
 -- ---------- view: 1 linha por pessoa (dedupe da quiz_leads pelo whatsapp) ----------
 -- security_invoker = true: a view respeita o RLS de quem consulta, então o
