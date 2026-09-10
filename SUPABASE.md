@@ -1331,3 +1331,114 @@ No app **Novva CRM** → Etapa 2 → **Configurar webhooks**:
    (template). Resposta dentro de 24h da última mensagem do lead é grátis.
 4. **View de conversa no `Ads/crm.html`** — thread por lead + campo de
    resposta que chama a Cloud API (`POST /{phone-number-id}/messages`).
+
+## 15. CRM — Gestão de equipe pelo painel (Edge Function `equipe-admin`)
+
+Deixa o gestor cadastrar/desativar vendedor sem entrar no Supabase. A
+função valida o JWT de quem chamou e **só age se for `papel = 'gestor'`
+e `ativo`**. Usa a service_role key (só no servidor) + a Admin API do
+Auth. Não apaga conta de auth (por causa das FKs) — desativa via
+`perfis.ativo = false`.
+
+Supabase → **Edge Functions** → **Deploy a new function** → nome
+**`equipe-admin`** → cola:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const URL_  = Deno.env.get("SUPABASE_URL")!;
+const ANON  = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SVC   = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const CRM_URL = "https://congressocancer.novvasaudeintegrativa.com.br/Ads/crm.html";
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${userToken}` } });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
+async function ehGestor(uid: string) {
+  const r = await fetch(`${URL_}/rest/v1/perfis?id=eq.${uid}&select=papel,ativo`, { headers: svcHeaders });
+  const rows = await r.json();
+  const p = rows && rows[0];
+  return !!(p && p.ativo && p.papel === "gestor");
+}
+
+Deno.serve(async (req) => {
+  if (req.method !== "POST") return new Response("method", { status: 405 });
+
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.replace(/^Bearer\s+/i, "");
+  const u = await quemChamou(token);
+  if (!u) return new Response(JSON.stringify({ erro: "não autenticado" }), { status: 401 });
+  if (!(await ehGestor(u.id))) return new Response(JSON.stringify({ erro: "só gestor" }), { status: 403 });
+
+  let body: any;
+  try { body = await req.json(); } catch { return new Response(JSON.stringify({ erro: "bad body" }), { status: 400 }); }
+  const j = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json" } });
+
+  if (body.action === "list") {
+    const pr = await fetch(`${URL_}/rest/v1/perfis?select=id,nome,papel,ativo,criado_em&order=criado_em.asc`, { headers: svcHeaders });
+    const perfis = await pr.json();
+    // e-mails: Admin API lista os usuários
+    const ur = await fetch(`${URL_}/auth/v1/admin/users?per_page=200`, { headers: svcHeaders });
+    const uj = await ur.json();
+    const email: Record<string, string> = {};
+    (uj.users || []).forEach((x: any) => { email[x.id] = x.email; });
+    return j((perfis || []).map((p: any) => ({ ...p, email: email[p.id] || null })));
+  }
+
+  if (body.action === "criar") {
+    const nome = String(body.nome || "").trim();
+    const mail = String(body.email || "").trim().toLowerCase();
+    const papel = body.papel === "gestor" ? "gestor" : "vendedor";
+    if (!nome || !mail) return j({ erro: "nome e e-mail obrigatórios" }, 400);
+
+    // convite = cria a conta + manda e-mail com link pra definir senha
+    const inv = await fetch(`${URL_}/auth/v1/invite`, {
+      method: "POST", headers: svcHeaders,
+      body: JSON.stringify({ email: mail, data: { redirect_to: CRM_URL } }),
+    });
+    const invBody = await inv.json();
+    if (!inv.ok) return j({ erro: "convite: " + (invBody.msg || invBody.error_description || JSON.stringify(invBody)) }, 400);
+
+    const novoId = invBody.id;
+    const pr = await fetch(`${URL_}/rest/v1/perfis`, {
+      method: "POST", headers: { ...svcHeaders, prefer: "return=minimal,resolution=merge-duplicates" },
+      body: JSON.stringify({ id: novoId, nome, papel }),
+    });
+    if (!pr.ok) return j({ erro: "perfis: " + (await pr.text()) }, 500);
+    return j({ ok: true, id: novoId });
+  }
+
+  if (body.action === "atualizar") {
+    const id = String(body.id || "");
+    if (!id) return j({ erro: "id obrigatório" }, 400);
+    const patch: Record<string, unknown> = {};
+    if (body.nome !== undefined)  patch.nome  = String(body.nome).trim();
+    if (body.papel !== undefined) patch.papel = body.papel === "gestor" ? "gestor" : "vendedor";
+    if (body.ativo !== undefined) patch.ativo = !!body.ativo;
+    if (id === u.id && patch.papel === "vendedor")
+      return j({ erro: "você não pode rebaixar a si mesmo" }, 400);
+    const pr = await fetch(`${URL_}/rest/v1/perfis?id=eq.${id}`, {
+      method: "PATCH", headers: { ...svcHeaders, prefer: "return=minimal" },
+      body: JSON.stringify(patch),
+    });
+    if (!pr.ok) return j({ erro: await pr.text() }, 500);
+    return j({ ok: true });
+  }
+
+  return j({ erro: "ação desconhecida" }, 400);
+});
+```
+
+**Deploy.** Mantém **"Verify JWT with legacy secret" LIGADO** (o painel manda
+o JWT do usuário como Bearer — passa; a função ainda revalida por dentro).
+Nenhum secret novo — `SUPABASE_URL` / `SUPABASE_ANON_KEY` /
+`SUPABASE_SERVICE_ROLE_KEY` já vêm preenchidos.
+
+No `crm.html`, seção **"Equipe"** (só aparece pro gestor): lista + form
+"adicionar vendedor". Ao adicionar, o vendedor recebe e-mail com link pra
+definir a senha (SMTP do Gmail já configurado, §13.3).

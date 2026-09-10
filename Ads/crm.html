@@ -119,6 +119,26 @@
     .inbox-lista{max-height:220px;border-right:0;border-bottom:1px solid var(--linha);}
     .inbox-thread{height:62vh;}
   }
+
+  /* ---- equipe ---- */
+  #view-equipe{margin-top:26px;}
+  .equipe-tabela-wrap{overflow-x:auto;border:1px solid var(--linha);border-radius:12px;background:var(--card);}
+  .equipe-tabela{width:100%;border-collapse:collapse;font-size:13px;}
+  .equipe-tabela td{padding:10px 14px;border-top:1px solid var(--linha);vertical-align:middle;}
+  .equipe-tabela tr:first-child td{border-top:0;}
+  .equipe-tabela .e-nome{font-family:var(--tit);font-weight:800;}
+  .equipe-tabela .e-mail{color:var(--soft);font-size:12px;}
+  .equipe-tabela .e-papel{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:#efe8e4;color:var(--soft);}
+  .equipe-tabela .e-papel.gestor{background:rgba(185,45,61,.12);color:var(--bordo-vivo);}
+  .equipe-tabela .e-inativo{opacity:.5;}
+  .equipe-tabela .e-acao{font-family:var(--tit);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:5px 11px;border-radius:999px;cursor:pointer;}
+  .equipe-tabela .e-acao:hover{border-color:var(--bordo);color:var(--bordo);}
+  .form-vendedor{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px;}
+  .form-vendedor input,.form-vendedor select{font-family:var(--corpo);font-size:13px;padding:8px 10px;border-radius:9px;border:1px solid var(--linha);background:#fff;color:var(--ink);}
+  .form-vendedor input{min-width:150px;}
+  .form-vendedor button{font-family:var(--tit);font-weight:800;font-size:12px;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:9px;padding:9px 16px;cursor:pointer;}
+  .form-vendedor button:disabled{opacity:.5;cursor:default;}
+  .v-msg{font-size:12px;color:var(--soft);}
 </style>
 </head>
 <body>
@@ -188,6 +208,21 @@
       <div class="inbox-lista" id="inbox-lista"></div>
       <div class="inbox-thread" id="inbox-thread"><div class="thread-vazio">Escolha uma conversa à esquerda</div></div>
     </div>
+  </div>
+
+  <div id="view-equipe" hidden>
+    <div class="sec-crm"><span>Equipe</span></div>
+    <div class="equipe-tabela-wrap"><table class="equipe-tabela"><tbody id="equipe-lista"></tbody></table></div>
+    <form id="form-vendedor" class="form-vendedor">
+      <input type="text" id="v-nome" placeholder="nome" required>
+      <input type="email" id="v-email" placeholder="e-mail" required>
+      <select id="v-papel">
+        <option value="vendedor">vendedor</option>
+        <option value="gestor">gestor</option>
+      </select>
+      <button type="submit" id="v-btn">Adicionar</button>
+      <span class="v-msg" id="v-msg"></span>
+    </form>
   </div>
 
   <p class="foot">CRM Novva · Fase 1 — <a href="novva-ads.html">voltar ao painel</a></p>
@@ -343,6 +378,7 @@
       $('app').hidden = false;
       dbg('app visível, carregando pipeline + conversas');
       carregarConversas();
+      if (estado.ehGestor) { $('view-equipe').hidden = false; carregarEquipe(); }
       return carregarPipeline();
     });
   }
@@ -585,6 +621,67 @@
   }
 
   $('btn-atualizar-conv').addEventListener('click', carregarConversas);
+
+  // ---------- equipe (só gestor) ----------
+  function equipeAdmin(action, extra){
+    return fetch(SUPABASE_URL + '/functions/v1/equipe-admin', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ action: action }, extra || {}))
+    }).then(function(r){ return r.text().then(function(t){
+      var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
+      if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
+      return data;
+    }); });
+  }
+
+  function carregarEquipe(){
+    return equipeAdmin('list').then(renderEquipe).catch(function(err){
+      $('equipe-lista').innerHTML = '<tr><td style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>';
+    });
+  }
+
+  function renderEquipe(rows){
+    rows = rows || [];
+    $('equipe-lista').innerHTML = rows.map(function(p){
+      var inativo = !p.ativo;
+      return '<tr class="' + (inativo ? 'e-inativo' : '') + '" data-id="' + p.id + '">' +
+        '<td><div class="e-nome">' + esc(p.nome || '(sem nome)') + '</div><div class="e-mail">' + esc(p.email || '') + '</div></td>' +
+        '<td><span class="e-papel ' + (p.papel === 'gestor' ? 'gestor' : '') + '">' + p.papel + '</span></td>' +
+        '<td>' + (inativo ? 'inativo' : 'ativo') + '</td>' +
+        '<td style="text-align:right">' +
+          (p.id === estado.eu.id ? '<span class="e-mail">você</span>'
+            : '<button type="button" class="e-acao" data-ativo="' + (inativo ? '1' : '0') + '">' + (inativo ? 'Reativar' : 'Desativar') + '</button>') +
+        '</td></tr>';
+    }).join('') || '<tr><td>Ninguém cadastrado ainda.</td></tr>';
+
+    $('equipe-lista').querySelectorAll('.e-acao').forEach(function(b){
+      b.addEventListener('click', function(){
+        var tr = this.closest('tr'), id = tr.dataset.id, reativar = this.dataset.ativo === '1';
+        this.disabled = true; this.textContent = '…';
+        equipeAdmin('atualizar', { id: id, ativo: reativar })
+          .then(carregarEquipe)
+          .catch(function(err){ alert('Não deu: ' + err.message); carregarEquipe(); });
+      });
+    });
+  }
+
+  $('form-vendedor').addEventListener('submit', function(e){
+    e.preventDefault();
+    var nome = $('v-nome').value.trim(), email = $('v-email').value.trim(), papel = $('v-papel').value;
+    if (!nome || !email) return;
+    var btn = $('v-btn'); btn.disabled = true; btn.textContent = 'Adicionando…';
+    $('v-msg').style.color = 'var(--soft)'; $('v-msg').textContent = '';
+    equipeAdmin('criar', { nome: nome, email: email, papel: papel }).then(function(){
+      $('v-msg').style.color = 'var(--verde)';
+      $('v-msg').textContent = 'Adicionado! ' + email + ' vai receber um e-mail pra definir a senha.';
+      $('v-nome').value = ''; $('v-email').value = ''; $('v-papel').value = 'vendedor';
+      return carregarEquipe();
+    }).catch(function(err){
+      $('v-msg').style.color = 'var(--bordo-vivo)';
+      $('v-msg').textContent = err.message;
+    }).finally(function(){ btn.disabled = false; btn.textContent = 'Adicionar'; });
+  });
 
   // sessão salva pelo supabase-js — lida direto do localStorage (getSession() pode travar)
   function sessaoLocal(){
