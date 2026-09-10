@@ -83,6 +83,40 @@
 
   .aviso{background:#faf1f0;border:1px dashed var(--bordo-vivo);border-radius:12px;padding:12px 15px;font-size:12.5px;color:var(--bordo);margin-bottom:14px;}
   .foot{text-align:center;color:var(--faint);font-size:11px;margin-top:20px;}
+
+  /* ---- abas + inbox de conversas ---- */
+  .tabs-crm{display:flex;gap:6px;margin-bottom:14px;}
+  .tabs-crm button{font-family:var(--tit);font-weight:700;font-size:12px;letter-spacing:.02em;padding:7px 16px;border-radius:999px;cursor:pointer;background:#fff;border:1px solid var(--linha);color:var(--soft);}
+  .tabs-crm button.on{background:var(--bordo);border-color:var(--bordo);color:#fff;}
+
+  .inbox{display:grid;grid-template-columns:300px 1fr;border:1px solid var(--linha);border-radius:14px;overflow:hidden;background:var(--card);height:calc(100vh - 190px);min-height:440px;}
+  .inbox-lista{border-right:1px solid var(--linha);overflow-y:auto;}
+  .inbox-item{padding:12px 14px;border-bottom:1px solid var(--linha);cursor:pointer;border-left:3px solid transparent;}
+  .inbox-item:hover{background:#faf1f0;}
+  .inbox-item.on{background:#faf1f0;border-left-color:var(--bordo);}
+  .inbox-item .num{font-family:var(--tit);font-weight:800;font-size:13px;}
+  .inbox-item .prev{font-size:11.5px;color:var(--soft);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .inbox-item .qnd{font-size:10.5px;color:var(--faint);margin-top:3px;}
+
+  .inbox-thread{display:flex;flex-direction:column;min-width:0;}
+  .thread-head{padding:13px 16px;border-bottom:1px solid var(--linha);font-family:var(--tit);font-weight:800;font-size:14px;}
+  .thread-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:#f2ede9;}
+  .bolha{max-width:75%;padding:8px 11px;border-radius:12px;font-size:13px;line-height:1.42;word-break:break-word;white-space:pre-wrap;}
+  .bolha.rec{align-self:flex-start;background:#fff;border:1px solid var(--linha);border-bottom-left-radius:4px;}
+  .bolha.env{align-self:flex-end;background:#dcf5e4;border-bottom-right-radius:4px;}
+  .bolha .hora{display:block;font-size:9.5px;color:var(--faint);margin-top:3px;text-align:right;}
+  .thread-vazio{margin:auto;color:var(--faint);font-size:13px;text-align:center;padding:20px;}
+  .thread-nota{padding:8px 16px;font-size:11px;color:var(--dourado);background:#fbf5e8;border-top:1px solid var(--linha);}
+  .thread-resp{padding:10px 12px;border-top:1px solid var(--linha);display:flex;gap:8px;align-items:flex-end;}
+  .thread-resp textarea{flex:1;border:1px solid var(--linha);border-radius:10px;padding:8px 10px;font-family:var(--corpo);font-size:13px;resize:none;min-height:38px;max-height:120px;color:var(--ink);background:#fff;}
+  .thread-resp button{font-family:var(--tit);font-weight:800;font-size:12px;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:10px;padding:9px 16px;cursor:pointer;}
+  .thread-resp button:disabled{opacity:.5;cursor:default;}
+
+  @media (max-width:760px){
+    .inbox{grid-template-columns:1fr;height:auto;}
+    .inbox-lista{max-height:220px;border-right:0;border-bottom:1px solid var(--linha);}
+    .inbox-thread{height:62vh;}
+  }
 </style>
 </head>
 <body>
@@ -127,22 +161,37 @@
     <button type="button" class="btn-sair" id="btn-sair">Sair</button>
   </div>
 
-  <div class="aviso" id="aviso-gestor" hidden>
-    Você é <b>gestor</b>: vê todos os leads e distribui. A coluna <b>Não triados</b> são leads do quiz que ainda não têm vendedor — escolha o responsável no card pra jogar no funil.
+  <div class="tabs-crm">
+    <button type="button" id="tab-pipeline" class="on">Pipeline</button>
+    <button type="button" id="tab-conversas">Conversas</button>
   </div>
 
-  <div class="filtros">
-    <select id="f-nivel">
-      <option value="">Todos os níveis</option>
-      <option value="iniciante">Iniciante</option>
-      <option value="intermediario">Intermediário</option>
-      <option value="avancado">Avançado</option>
-    </select>
-    <input type="search" id="f-busca" placeholder="buscar por nome…">
-    <span class="cont" id="cont"></span>
+  <div id="view-pipeline">
+    <div class="aviso" id="aviso-gestor" hidden>
+      Você é <b>gestor</b>: vê todos os leads e distribui. A coluna <b>Não triados</b> são leads do quiz que ainda não têm vendedor — escolha o responsável no card pra jogar no funil.
+    </div>
+
+    <div class="filtros">
+      <select id="f-nivel">
+        <option value="">Todos os níveis</option>
+        <option value="iniciante">Iniciante</option>
+        <option value="intermediario">Intermediário</option>
+        <option value="avancado">Avançado</option>
+      </select>
+      <input type="search" id="f-busca" placeholder="buscar por nome…">
+      <span class="cont" id="cont"></span>
+    </div>
+
+    <div class="board" id="board"></div>
   </div>
 
-  <div class="board" id="board"></div>
+  <div id="view-conversas" hidden>
+    <div class="inbox">
+      <div class="inbox-lista" id="inbox-lista"></div>
+      <div class="inbox-thread" id="inbox-thread"><div class="thread-vazio">Escolha uma conversa à esquerda</div></div>
+    </div>
+  </div>
+
   <p class="foot">CRM Novva · Fase 1 — <a href="novva-ads.html">voltar ao painel</a></p>
 </div>
 
@@ -462,6 +511,89 @@
 
   $('f-nivel').addEventListener('change', render);
   $('f-busca').addEventListener('input', render);
+
+  // ---------- conversas (inbox WhatsApp — só leitura por enquanto) ----------
+  var conversas = {};
+  var conversaAtual = null;
+
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function fmtQuando(iso){
+    if (!iso) return '';
+    var d = new Date(iso), hoje = new Date();
+    var hm = d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+    if (d.toDateString() === hoje.toDateString()) return hm;
+    return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) + ' ' + hm;
+  }
+
+  function carregarConversas(){
+    return apiGet('mensagens?select=id,lead_whatsapp,direcao,tipo,texto,status,wa_timestamp,criado_em&order=criado_em.asc')
+      .then(function(msgs){
+        conversas = {};
+        (msgs || []).forEach(function(m){
+          (conversas[m.lead_whatsapp] = conversas[m.lead_whatsapp] || []).push(m);
+        });
+        renderInboxLista();
+        if (conversaAtual && conversas[conversaAtual]) renderThread(conversaAtual);
+        else if (conversaAtual) { conversaAtual = null; $('inbox-thread').innerHTML = '<div class="thread-vazio">Escolha uma conversa à esquerda</div>'; }
+      })
+      .catch(function(err){
+        $('inbox-lista').innerHTML = '<div class="thread-vazio">Erro: ' + esc(err.message) + '</div>';
+      });
+  }
+
+  function renderInboxLista(){
+    var nums = Object.keys(conversas).sort(function(a,b){
+      var ua = conversas[a][conversas[a].length-1].criado_em || '';
+      var ub = conversas[b][conversas[b].length-1].criado_em || '';
+      return ub.localeCompare(ua);
+    });
+    if (!nums.length){
+      $('inbox-lista').innerHTML = '<div class="thread-vazio">Nenhuma conversa ainda.<br>Mande um WhatsApp pro número do congresso pra testar.</div>';
+      return;
+    }
+    $('inbox-lista').innerHTML = nums.map(function(n){
+      var arr = conversas[n], u = arr[arr.length-1];
+      var prev = (u.texto || '(' + (u.tipo || '?') + ')').replace(/\s+/g,' ');
+      return '<div class="inbox-item' + (n===conversaAtual?' on':'') + '" data-n="' + n + '">' +
+        '<div class="num">+' + esc(n) + '</div>' +
+        '<div class="prev">' + (u.direcao==='enviada'?'Você: ':'') + esc(prev) + '</div>' +
+        '<div class="qnd">' + fmtQuando(u.criado_em) + ' · ' + arr.length + ' msg</div>' +
+      '</div>';
+    }).join('');
+    $('inbox-lista').querySelectorAll('.inbox-item').forEach(function(el){
+      el.addEventListener('click', function(){ renderThread(this.dataset.n); });
+    });
+  }
+
+  function renderThread(n){
+    conversaAtual = n;
+    $('inbox-lista').querySelectorAll('.inbox-item').forEach(function(el){ el.classList.toggle('on', el.dataset.n === n); });
+    var arr = conversas[n] || [];
+    $('inbox-thread').innerHTML =
+      '<div class="thread-head">+' + esc(n) + '</div>' +
+      '<div class="thread-msgs" id="thread-msgs">' +
+        arr.map(function(m){
+          return '<div class="bolha ' + (m.direcao==='enviada'?'env':'rec') + '">' +
+            esc(m.texto || '(' + (m.tipo || 'sem texto') + ')') +
+            '<span class="hora">' + fmtQuando(m.wa_timestamp || m.criado_em) +
+            (m.direcao==='enviada' && m.status ? ' · ' + esc(m.status) : '') + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+      '<div class="thread-nota">Responder pelo CRM ainda não está ligado (Fase 3 — falta o token de envio). Por ora, responda pelo WhatsApp normal.</div>' +
+      '<div class="thread-resp"><textarea placeholder="responder…" disabled></textarea><button type="button" disabled>Enviar</button></div>';
+    var tm = $('thread-msgs'); tm.scrollTop = tm.scrollHeight;
+  }
+
+  function trocarView(v){
+    $('tab-pipeline').classList.toggle('on', v === 'pipeline');
+    $('tab-conversas').classList.toggle('on', v === 'conversas');
+    $('view-pipeline').hidden = v !== 'pipeline';
+    $('view-conversas').hidden = v !== 'conversas';
+    if (v === 'conversas') carregarConversas();
+  }
+  $('tab-pipeline').addEventListener('click', function(){ trocarView('pipeline'); });
+  $('tab-conversas').addEventListener('click', function(){ trocarView('conversas'); });
 
   // sessão salva pelo supabase-js — lida direto do localStorage (getSession() pode travar)
   function sessaoLocal(){
