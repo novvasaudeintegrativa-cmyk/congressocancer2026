@@ -33,6 +33,8 @@
   #login button:hover{background:var(--bordo-vivo);}
   #login button:disabled{opacity:.6;cursor:default;}
   #login .erro{margin-top:12px;font-size:12.5px;color:var(--bordo-vivo);min-height:1em;}
+  .link-esqueci{background:none;border:0;color:var(--soft);font-size:12px;margin-top:10px;cursor:pointer;text-decoration:underline;padding:0;width:100%;}
+  .link-esqueci:hover{color:var(--bordo);}
 
   /* ---- app ---- */
   #app{padding:16px 18px 40px;}
@@ -94,7 +96,20 @@
     <label for="li-senha">Senha</label>
     <input type="password" id="li-senha" autocomplete="current-password" required>
     <button type="submit" id="li-btn">Entrar</button>
+    <button type="button" class="link-esqueci" id="li-esqueci">Esqueci a senha</button>
     <div class="erro" id="li-erro"></div>
+  </form>
+
+  <form class="box" id="novasenha-form" hidden>
+    <div class="mark">CC</div>
+    <h1>Definir senha</h1>
+    <div class="sub">Escolha uma senha nova para entrar no CRM.</div>
+    <label for="ns-senha">Nova senha</label>
+    <input type="password" id="ns-senha" autocomplete="new-password" minlength="8" required>
+    <label for="ns-senha2">Repita a senha</label>
+    <input type="password" id="ns-senha2" autocomplete="new-password" minlength="8" required>
+    <button type="submit" id="ns-btn">Salvar e entrar</button>
+    <div class="erro" id="ns-erro"></div>
   </form>
 </div>
 
@@ -133,6 +148,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
 <script>
 (function(){
+  // captura a URL antes do supabase-js processar/limpar o hash de recuperação
+  var URL_INICIAL = location.href;
   var SUPABASE_URL = 'https://nbhekjgbszyuuxrynzfo.supabase.co';
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iaGVramdic3p5dXV4cnluemZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzM0MDUsImV4cCI6MjA5MjMwOTQwNX0.d8f346ONCOHjr__C8RLmSJOFW0kZfqFkCGHmotwxiXc';
   var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -168,7 +185,52 @@
   });
 
   $('btn-sair').addEventListener('click', function(){
-    sb.auth.signOut().then(function(){ location.reload(); });
+    sb.auth.signOut().then(function(){ location.href = location.pathname; });
+  });
+
+  // ---------- recuperação de senha ----------
+  var emRecuperacao = /[#&?]type=recovery/.test(URL_INICIAL);
+
+  function telaNovaSenha(){
+    emRecuperacao = true;
+    $('login-form').hidden = true;
+    $('novasenha-form').hidden = false;
+    $('login').hidden = false;
+    $('app').hidden = true;
+  }
+  if (emRecuperacao) telaNovaSenha();
+
+  sb.auth.onAuthStateChange(function(event){
+    if (event === 'PASSWORD_RECOVERY') telaNovaSenha();
+  });
+
+  $('li-esqueci').addEventListener('click', function(){
+    var email = $('li-email').value.trim();
+    if (!email) { $('li-erro').textContent = 'Digite o e-mail primeiro, aí clique em "Esqueci a senha".'; return; }
+    this.disabled = true; this.textContent = 'Enviando…';
+    var self = this;
+    sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname })
+      .then(function(){ $('li-erro').style.color = 'var(--verde)'; $('li-erro').textContent = 'Link enviado pro seu e-mail. Abra e volte pra definir a senha.'; })
+      .catch(function(err){ $('li-erro').textContent = 'Erro: ' + err.message; })
+      .finally(function(){ self.disabled = false; self.textContent = 'Esqueci a senha'; });
+  });
+
+  $('novasenha-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var s1 = $('ns-senha').value, s2 = $('ns-senha2').value;
+    if (s1 !== s2) { $('ns-erro').textContent = 'As senhas não são iguais.'; return; }
+    if (s1.length < 8) { $('ns-erro').textContent = 'Mínimo 8 caracteres.'; return; }
+    var btn = $('ns-btn'); btn.disabled = true; btn.textContent = 'Salvando…';
+    $('ns-erro').textContent = '';
+    sb.auth.updateUser({ password: s1 }).then(function(res){
+      if (res.error) throw res.error;
+      emRecuperacao = false;
+      history.replaceState(null, '', location.pathname);
+      return iniciar();
+    }).catch(function(err){
+      $('ns-erro').textContent = 'Erro: ' + err.message;
+      btn.disabled = false; btn.textContent = 'Salvar e entrar';
+    });
   });
 
   function iniciar(){
@@ -198,6 +260,7 @@
   function mostrarLogin(){
     $('app').hidden = true;
     $('login').hidden = false;
+    if (!emRecuperacao) { $('login-form').hidden = false; $('novasenha-form').hidden = true; }
   }
 
   // ---------- dados ----------
@@ -332,7 +395,7 @@
   $('f-busca').addEventListener('input', render);
 
   // ---------- boot ----------
-  iniciar();
+  if (!emRecuperacao) iniciar();
 })();
 </script>
 </body>
