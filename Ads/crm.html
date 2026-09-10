@@ -139,6 +139,15 @@
   .form-vendedor button{font-family:var(--tit);font-weight:800;font-size:12px;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:9px;padding:9px 16px;cursor:pointer;}
   .form-vendedor button:disabled{opacity:.5;cursor:default;}
   .v-msg{font-size:12px;color:var(--soft);}
+
+  /* ---- modificar senha ---- */
+  #painel-senha{margin-bottom:16px;}
+  .form-senha{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:12px 14px;}
+  .form-senha-tit{font-family:var(--tit);font-weight:800;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--bordo);margin-right:4px;}
+  .form-senha input{font-family:var(--corpo);font-size:13px;padding:8px 10px;border-radius:9px;border:1px solid var(--linha);background:#fff;color:var(--ink);min-width:150px;}
+  .form-senha #ms-btn{font-family:var(--tit);font-weight:800;font-size:12px;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:9px;padding:9px 16px;cursor:pointer;}
+  .form-senha #ms-cancelar{font-family:var(--tit);font-weight:700;font-size:11px;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);border-radius:9px;padding:8px 12px;cursor:pointer;}
+  .form-senha #ms-btn:disabled{opacity:.5;cursor:default;}
 </style>
 </head>
 <body>
@@ -180,7 +189,19 @@
       </div>
     </div>
     <span class="eu" id="eu"></span>
+    <button type="button" class="btn-sair" id="btn-modificar-senha">Modificar senha</button>
     <button type="button" class="btn-sair" id="btn-sair">Sair</button>
+  </div>
+
+  <div id="painel-senha" hidden>
+    <form id="form-modificar-senha" class="form-senha">
+      <span class="form-senha-tit">Modificar senha</span>
+      <input type="password" id="ms-senha" placeholder="nova senha (mín. 8)" autocomplete="new-password" minlength="8" required>
+      <input type="password" id="ms-senha2" placeholder="repita" autocomplete="new-password" minlength="8" required>
+      <button type="submit" id="ms-btn">Salvar</button>
+      <button type="button" id="ms-cancelar">Cancelar</button>
+      <span class="v-msg" id="ms-msg"></span>
+    </form>
   </div>
 
   <div id="view-pipeline">
@@ -284,6 +305,39 @@
 
   $('btn-sair').addEventListener('click', function(){
     sb.auth.signOut().then(function(){ location.href = location.pathname; });
+  });
+
+  // ---------- modificar senha (logado) ----------
+  $('btn-modificar-senha').addEventListener('click', function(){
+    var p = $('painel-senha');
+    p.hidden = !p.hidden;
+    if (!p.hidden) $('ms-senha').focus();
+  });
+  $('ms-cancelar').addEventListener('click', function(){
+    $('painel-senha').hidden = true;
+    $('ms-senha').value = ''; $('ms-senha2').value = ''; $('ms-msg').textContent = '';
+  });
+  $('form-modificar-senha').addEventListener('submit', function(e){
+    e.preventDefault();
+    var s1 = $('ms-senha').value, s2 = $('ms-senha2').value;
+    if (s1 !== s2) { $('ms-msg').style.color = 'var(--bordo-vivo)'; $('ms-msg').textContent = 'As senhas não são iguais.'; return; }
+    if (s1.length < 8) { $('ms-msg').style.color = 'var(--bordo-vivo)'; $('ms-msg').textContent = 'Mínimo 8 caracteres.'; return; }
+    var btn = $('ms-btn'); btn.disabled = true; btn.textContent = 'Salvando…';
+    $('ms-msg').style.color = 'var(--soft)'; $('ms-msg').textContent = '';
+    fetch(SUPABASE_URL + '/auth/v1/user', {
+      method: 'PUT',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: s1 })
+    }).then(function(r){ return r.text().then(function(t){
+      var d; try { d = t ? JSON.parse(t) : {}; } catch(e){ d = {}; }
+      if (!r.ok) throw new Error(d.msg || d.error_description || ('HTTP ' + r.status));
+      $('ms-msg').style.color = 'var(--verde)';
+      $('ms-msg').textContent = 'Senha alterada. Use a nova no próximo login.';
+      $('ms-senha').value = ''; $('ms-senha2').value = '';
+    }); }).catch(function(err){
+      $('ms-msg').style.color = 'var(--bordo-vivo)';
+      $('ms-msg').textContent = 'Erro: ' + err.message;
+    }).finally(function(){ btn.disabled = false; btn.textContent = 'Salvar'; });
   });
 
   // ---------- recuperação de senha ----------
