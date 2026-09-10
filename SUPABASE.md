@@ -1117,7 +1117,23 @@ notify pgrst, 'reload schema';
 4. Adicionar um 3º vendedor depois = repetir os passos 2-3, sem mexer em
    mais nada.
 
-### 13.3. O que o `Ads/crm.html` vai fazer (próximo passo)
+### 13.3. Estado — Fase 1 CONCLUÍDA e testada (10/09/2026)
+
+- Login funcionando: `novvasaudeintegrativa@gmail.com` (papel gestor).
+- SMTP: Gmail (`smtp.gmail.com:465`, senha de app) configurado em
+  Authentication -> Emails, porque o e-mail nativo do Supabase é limitado
+  a ~2-4/hora.
+- **Pegadinha 1 (resolvida):** senha via SQL precisa de custo bcrypt 10 —
+  `crypt(senha, gen_salt('bf', 10))`. Sem o `10` o GoTrue recusa.
+- **Pegadinha 2 (resolvida):** policy `for all` em `perfis` que chama
+  função lendo `perfis` = recursão. Separada em insert/update/delete.
+- **Pegadinha 3 (resolvida, no `crm.html`):** `#login{display:flex}` ganhava
+  do atributo `hidden` -> a tela de login nunca sumia. Fix: `[hidden]{display:none!important}`.
+- **Pegadinha 4 (resolvida, no `crm.html`):** supabase-js trava num lock
+  interno na 1ª chamada `.from()` pós-login -> o `crm.html` lê dados por
+  `fetch` REST direto com o token, usa supabase-js só pra auth.
+
+### 13.4. O que o `Ads/crm.html` faz
 
 - Login (Supabase Auth, e-mail/senha) — sem sessão, sem acesso.
 - Pipeline Kanban por `etapa`, lido de `rpc_crm_pipeline()`.
