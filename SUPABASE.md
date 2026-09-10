@@ -1124,3 +1124,179 @@ notify pgrst, 'reload schema';
   distribuir; muda `atribuido_a` de qualquer lead.
 - Vendedor: vê só a carteira + os urgentes; muda `etapa`/`nota`/`urgente`,
   **não** muda o responsável (trigger barra).
+
+## 14. CRM — Fase 2 (receber mensagens do WhatsApp via Cloud API)
+
+**Estado do lado da Meta (10/09/2026):** WABA `885985207685253` ("Novva
+Saúde Integrativa"), número `+55 11 93487-3737`, Phone Number ID
+`1039296279264556`, empresa verificada, número Conectado / qualidade Alta,
+sem BSP. App **"Novva CRM"** criado no portfólio "Saúde Integrativa".
+
+Esta fase **só recebe** mensagens (grava em `mensagens`). Responder de
+dentro do CRM e mandar template é fase seguinte (precisa de token de envio
++ forma de pagamento + app publicado).
+
+### 14.1. SQL — tabela `mensagens`
+
+```sql
+create table if not exists public.mensagens (
+  id             bigint generated always as identity primary key,
+  criado_em      timestamptz not null default now(),
+  wa_message_id  text unique,           -- id no WhatsApp, usado pra dedupe
+  lead_whatsapp  text not null,         -- número em dígitos (ex "5511934873737")
+  direcao        text not null check (direcao in ('recebida','enviada')),
+  tipo           text,                  -- text, image, audio, button...
+  texto          text,
+  status         text,                  -- enviadas: sent/delivered/read/failed
+  wa_timestamp   timestamptz,
+  raw            jsonb not null default '{}'::jsonb
+);
+create index if not exists mensagens_lead_idx on public.mensagens (lead_whatsapp, criado_em);
+alter table public.mensagens enable row level security;
+
+-- só quem loga e enxerga o lead vê as mensagens dele (mesma regra do lead_status)
+drop policy if exists "equipe vê mensagens" on public.mensagens;
+create policy "equipe vê mensagens" on public.mensagens
+  for select to authenticated
+  using (
+    exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+    and (
+      public.eh_gestor()
+      or exists (
+        select 1 from public.lead_status s
+        where s.whatsapp = mensagens.lead_whatsapp
+          and (s.atribuido_a = auth.uid() or s.urgente = true)
+      )
+    )
+  );
+
+-- ninguém escreve por aqui a não ser a Edge Function (service role)
+revoke insert, update, delete on public.mensagens from anon, authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+> **Nota de formato:** o WhatsApp entrega o número em dígitos sem `+`
+> (`5511934873737`). O `quiz_leads.whatsapp` foi digitado pela pessoa e
+> pode vir em outro formato (`(11) 93487-3737`). Casar `mensagens` com
+> `crm_leads`/`lead_status` vai precisar de uma normalização (só dígitos,
+> com/sem DDI 55) — fica pra quando ligarmos a conversa no `crm.html`.
+
+### 14.2. Edge Function `whatsapp-webhook`
+
+Supabase → **Edge Functions** → **Deploy a new function** → nome
+**`whatsapp-webhook`** → editor → apaga tudo e cola:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const VERIFY_TOKEN = Deno.env.get("WHATSAPP_VERIFY_TOKEN")?.trim();
+const APP_SECRET   = Deno.env.get("WHATSAPP_APP_SECRET")?.trim(); // opcional: valida X-Hub-Signature-256
+
+async function assinaturaOk(req: Request, body: string): Promise<boolean> {
+  if (!APP_SECRET) return true;               // sem secret, não valida
+  const sig = req.headers.get("x-hub-signature-256");
+  if (!sig) return false;
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(APP_SECRET),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
+  const hex = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return sig === `sha256=${hex}`;
+}
+
+Deno.serve(async (req) => {
+  const url = new URL(req.url);
+
+  // verificação do webhook (Meta faz um GET quando você salva a URL)
+  if (req.method === "GET") {
+    const mode = url.searchParams.get("hub.mode");
+    const token = url.searchParams.get("hub.verify_token");
+    const challenge = url.searchParams.get("hub.challenge");
+    if (mode === "subscribe" && token === VERIFY_TOKEN && challenge) {
+      return new Response(challenge, { status: 200 });
+    }
+    return new Response("forbidden", { status: 403 });
+  }
+  if (req.method !== "POST") return new Response("method", { status: 405 });
+
+  const bodyText = await req.text();
+  if (!(await assinaturaOk(req, bodyText))) return new Response("bad signature", { status: 401 });
+
+  let payload: any;
+  try { payload = JSON.parse(bodyText); } catch { return new Response("bad json", { status: 400 }); }
+
+  const linhas: Record<string, unknown>[] = [];
+  for (const entry of payload.entry ?? []) {
+    for (const ch of entry.changes ?? []) {
+      const v = ch.value ?? {};
+      for (const m of v.messages ?? []) {
+        linhas.push({
+          wa_message_id: m.id,
+          lead_whatsapp: m.from,
+          direcao: "recebida",
+          tipo: m.type ?? null,
+          texto: m.text?.body ?? m.button?.text ??
+                 m.interactive?.button_reply?.title ??
+                 m.interactive?.list_reply?.title ?? null,
+          wa_timestamp: m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : null,
+          raw: m,
+        });
+      }
+      for (const s of v.statuses ?? []) {
+        linhas.push({
+          wa_message_id: s.id,
+          lead_whatsapp: s.recipient_id,
+          direcao: "enviada",
+          status: s.status ?? null,
+          wa_timestamp: s.timestamp ? new Date(Number(s.timestamp) * 1000).toISOString() : null,
+        });
+      }
+    }
+  }
+
+  if (linhas.length) {
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/mensagens?on_conflict=wa_message_id`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        apikey: KEY, authorization: `Bearer ${KEY}`,
+        prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify(linhas),
+    });
+    // nunca devolve erro pra Meta (ela reenvia em loop) — só loga
+    if (!resp.ok) console.error("insert mensagens:", resp.status, await resp.text());
+  }
+  return new Response("ok", { status: 200 });
+});
+```
+
+**Deploy.** Depois de publicar, **desliga "Verify JWT with legacy secret"**
+(Edge Functions → whatsapp-webhook → Settings) — a Meta chama sem JWT do
+Supabase, igual o `eduzz-webhook`.
+
+**Secrets** (Edge Functions → Secrets):
+- `WHATSAPP_VERIFY_TOKEN` = `442dff951c8b79e114f4efc555a6f6f26beb1880`
+- `WHATSAPP_APP_SECRET` = a "Chave secreta do app" (Novva CRM → Configurações do app → Básico) — opcional mas recomendado; sem ele a função aceita qualquer POST.
+
+### 14.3. Configurar o webhook no app (Meta)
+
+No app **Novva CRM** → Etapa 2 → **Configurar webhooks**:
+- **URL de callback:** `https://nbhekjgbszyuuxrynzfo.supabase.co/functions/v1/whatsapp-webhook`
+- **Verificar token:** `442dff951c8b79e114f4efc555a6f6f26beb1880`
+- Salvar (a Meta faz um GET de verificação na hora — a função responde o challenge).
+- Depois, em **Campos de webhook**, assina o campo **`messages`**.
+
+### 14.4. Ainda falta (pra mensagem real chegar)
+
+1. **Publicar o app** — enquanto "Não publicado", só chega webhook de
+   teste. App que usa só a WABA da própria empresa costuma publicar sem
+   App Review, mas é um passo a fazer.
+2. **Assinar a WABA no app** — WhatsApp Manager → a WABA → apps assinados,
+   confirmar que "Novva CRM" está lá recebendo `messages`.
+3. Teste: manda um WhatsApp pro `+55 11 93487-3737` de outro celular →
+   confere **Table Editor → mensagens** → linha nova `direcao='recebida'`.
