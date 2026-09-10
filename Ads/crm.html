@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>CRM Novva — Leads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f2ef; --card:#ffffff; --linha:#e8e3dd; --track:#efe8e4;
+    --ink:#2a2320; --soft:#857b74; --faint:#afa59d;
+    --bordo:#8a222e; --bordo-vivo:#b92d3d; --dourado:#c98b1f; --verde:#1f8a4c; --azul:#2f6f9e;
+    --tit:'League Spartan','Segoe UI',sans-serif;
+    --corpo:'Roboto','Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--corpo);line-height:1.5;}
+  h1,h2,h3{font-family:var(--tit);margin:0;}
+  a{color:var(--bordo);}
+
+  /* ---- login ---- */
+  #login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  #login .box{background:var(--card);border:1px solid var(--linha);border-radius:18px;padding:32px 28px;width:100%;max-width:360px;}
+  #login .mark{width:40px;height:40px;border-radius:11px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--tit);font-weight:800;font-size:17px;margin-bottom:16px;}
+  #login h1{font-size:20px;font-weight:800;margin-bottom:4px;}
+  #login .sub{font-size:12.5px;color:var(--soft);margin-bottom:22px;}
+  #login label{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);margin:12px 0 5px;font-weight:600;}
+  #login input{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--linha);background:#fff;color:var(--ink);font-family:var(--corpo);font-size:14px;}
+  #login button{width:100%;margin-top:18px;font-family:var(--tit);font-weight:800;font-size:13px;letter-spacing:.02em;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:10px;padding:12px;cursor:pointer;}
+  #login button:hover{background:var(--bordo-vivo);}
+  #login button:disabled{opacity:.6;cursor:default;}
+  #login .erro{margin-top:12px;font-size:12.5px;color:var(--bordo-vivo);min-height:1em;}
+
+  /* ---- app ---- */
+  #app{padding:16px 18px 40px;}
+  .topbar{display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap;margin-bottom:16px;}
+  .brand{display:flex;align-items:center;gap:10px;margin-right:auto;}
+  .brand .mark{width:30px;height:30px;border-radius:8px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--tit);font-weight:800;font-size:13px;}
+  .brand h1{font-size:15px;font-weight:800;letter-spacing:.03em;}
+  .brand .sub{font-size:11px;color:var(--soft);}
+  .eu{font-size:12px;color:var(--soft);}
+  .eu b{color:var(--ink);}
+  .btn-sair{font-family:var(--tit);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:7px 13px;border-radius:999px;cursor:pointer;}
+  .btn-sair:hover{border-color:var(--bordo);color:var(--bordo);}
+
+  .filtros{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .filtros select,.filtros input{font-family:var(--corpo);font-size:12.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--linha);background:#fff;color:var(--ink);}
+  .filtros .cont{font-size:11.5px;color:var(--faint);margin-left:auto;}
+
+  .board{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start;}
+  .col{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:10px;min-width:230px;max-width:260px;flex:0 0 auto;}
+  .col.triar{border-color:var(--dourado);background:#fdf7ec;}
+  .col > .cab{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 4px 10px;}
+  .col > .cab b{font-family:var(--tit);font-weight:800;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--bordo);}
+  .col.triar > .cab b{color:var(--dourado);}
+  .col > .cab .n{font-size:11px;color:var(--faint);font-weight:700;}
+
+  .card{background:#fbfaf8;border:1px solid var(--linha);border-radius:11px;padding:11px 12px;margin-bottom:9px;}
+  .card.urg{border-color:var(--bordo-vivo);box-shadow:0 0 0 1px var(--bordo-vivo) inset;}
+  .card .nome{font-family:var(--tit);font-weight:800;font-size:13.5px;line-height:1.2;}
+  .card .meta{font-size:11px;color:var(--soft);margin-top:3px;}
+  .card .badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;}
+  .badge{font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 7px;border-radius:999px;}
+  .badge.iniciante{background:rgba(47,111,158,.13);color:var(--azul);}
+  .badge.intermediario{background:rgba(201,139,31,.15);color:var(--dourado);}
+  .badge.avancado{background:rgba(185,45,61,.13);color:var(--bordo-vivo);}
+  .badge.origem{background:#efe8e4;color:var(--soft);}
+  .card .linha-acao{display:flex;gap:6px;align-items:center;margin-top:9px;flex-wrap:wrap;}
+  .card select{font-family:var(--corpo);font-size:11px;padding:4px 6px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--ink);max-width:100%;}
+  .card .wa{font-size:11px;font-weight:700;text-decoration:none;color:var(--verde);border:1px solid var(--verde);padding:4px 9px;border-radius:999px;white-space:nowrap;}
+  .card .wa:hover{background:var(--verde);color:#fff;}
+  .card .urg-btn{font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:4px 9px;border-radius:999px;cursor:pointer;background:#fff;border:1px solid var(--linha);color:var(--soft);}
+  .card .urg-btn.on{background:var(--bordo-vivo);border-color:var(--bordo-vivo);color:#fff;}
+  .card .nota{width:100%;margin-top:8px;font-family:var(--corpo);font-size:11.5px;padding:6px 8px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--ink);resize:vertical;min-height:34px;}
+  .card .resp{font-size:10.5px;color:var(--faint);margin-top:6px;}
+  .vazio-col{font-size:11px;color:var(--faint);text-align:center;padding:14px 4px;}
+
+  .aviso{background:#faf1f0;border:1px dashed var(--bordo-vivo);border-radius:12px;padding:12px 15px;font-size:12.5px;color:var(--bordo);margin-bottom:14px;}
+  .foot{text-align:center;color:var(--faint);font-size:11px;margin-top:20px;}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="box" id="login-form">
+    <div class="mark">CC</div>
+    <h1>CRM Novva</h1>
+    <div class="sub">Gestão de leads do Congresso · acesso restrito à equipe</div>
+    <label for="li-email">E-mail</label>
+    <input type="email" id="li-email" autocomplete="username" required>
+    <label for="li-senha">Senha</label>
+    <input type="password" id="li-senha" autocomplete="current-password" required>
+    <button type="submit" id="li-btn">Entrar</button>
+    <div class="erro" id="li-erro"></div>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <div class="topbar">
+    <div class="brand">
+      <span class="mark">CC</span>
+      <div>
+        <h1>CRM Novva</h1>
+        <div class="sub">leads do Congresso · Fase 1 (conversa no WhatsApp normal)</div>
+      </div>
+    </div>
+    <span class="eu" id="eu"></span>
+    <button type="button" class="btn-sair" id="btn-sair">Sair</button>
+  </div>
+
+  <div class="aviso" id="aviso-gestor" hidden>
+    Você é <b>gestor</b>: vê todos os leads e distribui. A coluna <b>Não triados</b> são leads do quiz que ainda não têm vendedor — escolha o responsável no card pra jogar no funil.
+  </div>
+
+  <div class="filtros">
+    <select id="f-nivel">
+      <option value="">Todos os níveis</option>
+      <option value="iniciante">Iniciante</option>
+      <option value="intermediario">Intermediário</option>
+      <option value="avancado">Avançado</option>
+    </select>
+    <input type="search" id="f-busca" placeholder="buscar por nome…">
+    <span class="cont" id="cont"></span>
+  </div>
+
+  <div class="board" id="board"></div>
+  <p class="foot">CRM Novva · Fase 1 — <a href="novva-ads.html">voltar ao painel</a></p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+  var SUPABASE_URL = 'https://nbhekjgbszyuuxrynzfo.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iaGVramdic3p5dXV4cnluemZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzM0MDUsImV4cCI6MjA5MjMwOTQwNX0.d8f346ONCOHjr__C8RLmSJOFW0kZfqFkCGHmotwxiXc';
+  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  var ETAPAS = [
+    { id:'novo',        rot:'Novo' },
+    { id:'contato',     rot:'Contato feito' },
+    { id:'conversando', rot:'Conversando' },
+    { id:'proposta',    rot:'Proposta' },
+    { id:'ganho',       rot:'Ganho' },
+    { id:'perdido',     rot:'Perdido' }
+  ];
+  var ROT_ETAPA = {}; ETAPAS.forEach(function(e){ ROT_ETAPA[e.id] = e.rot; });
+
+  var estado = { eu:null, ehGestor:false, vendedores:[], leads:[] };
+
+  // ---------- auth ----------
+  $('login-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var btn = $('li-btn'); btn.disabled = true; btn.textContent = 'Entrando…';
+    $('li-erro').textContent = '';
+    sb.auth.signInWithPassword({ email: $('li-email').value.trim(), password: $('li-senha').value })
+      .then(function(res){
+        if (res.error) throw res.error;
+        return iniciar();
+      })
+      .catch(function(err){
+        $('li-erro').textContent = err.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : ('Erro: ' + err.message);
+      })
+      .finally(function(){ btn.disabled = false; btn.textContent = 'Entrar'; });
+  });
+
+  $('btn-sair').addEventListener('click', function(){
+    sb.auth.signOut().then(function(){ location.reload(); });
+  });
+
+  function iniciar(){
+    return sb.auth.getUser().then(function(res){
+      var user = res.data && res.data.user;
+      if (!user) { mostrarLogin(); return; }
+      return sb.from('perfis').select('id,nome,papel,ativo').then(function(r){
+        if (r.error) throw r.error;
+        var perfis = r.data || [];
+        var meu = perfis.find(function(p){ return p.id === user.id; });
+        if (!meu || !meu.ativo) {
+          $('li-erro').textContent = 'Sua conta não está liberada no CRM. Fale com o gestor.';
+          return sb.auth.signOut().then(mostrarLogin);
+        }
+        estado.eu = meu;
+        estado.ehGestor = meu.papel === 'gestor';
+        estado.vendedores = perfis.filter(function(p){ return p.ativo; });
+        $('eu').innerHTML = '<b>' + meu.nome + '</b> · ' + (estado.ehGestor ? 'gestor' : 'vendedor');
+        $('aviso-gestor').hidden = !estado.ehGestor;
+        $('login').hidden = true;
+        $('app').hidden = false;
+        return carregarPipeline();
+      });
+    });
+  }
+
+  function mostrarLogin(){
+    $('app').hidden = true;
+    $('login').hidden = false;
+  }
+
+  // ---------- dados ----------
+  function carregarPipeline(){
+    return sb.rpc('rpc_crm_pipeline').then(function(r){
+      if (r.error) throw r.error;
+      estado.leads = r.data || [];
+      render();
+    }).catch(function(err){
+      $('board').innerHTML = '<div class="vazio-col">Erro ao carregar: ' + err.message + '</div>';
+    });
+  }
+
+  function upsertLead(whatsapp, patch){
+    var row = Object.assign({ whatsapp: whatsapp }, patch);
+    return sb.from('lead_status').upsert(row, { onConflict: 'whatsapp' }).then(function(r){
+      if (r.error) { alert('Não deu pra salvar: ' + r.error.message); throw r.error; }
+      return carregarPipeline();
+    });
+  }
+
+  // ---------- render ----------
+  function leadVisivelNoFiltro(l){
+    var fn = $('f-nivel').value;
+    var fb = $('f-busca').value.trim().toLowerCase();
+    if (fn && l.nivel !== fn) return false;
+    if (fb && (l.nome || '').toLowerCase().indexOf(fb) === -1) return false;
+    return true;
+  }
+
+  function render(){
+    var leads = estado.leads.filter(leadVisivelNoFiltro);
+    $('cont').textContent = leads.length + ' lead(s)';
+    var board = $('board');
+    board.innerHTML = '';
+
+    // coluna "não triados" só pro gestor
+    if (estado.ehGestor){
+      var naoTriados = leads.filter(function(l){ return !l.etapa; });
+      board.appendChild(coluna('Não triados', naoTriados, true));
+    }
+    ETAPAS.forEach(function(e){
+      var doStage = leads.filter(function(l){ return l.etapa === e.id; });
+      board.appendChild(coluna(e.rot, doStage, false, e.id));
+    });
+  }
+
+  function coluna(rotulo, leads, triar, etapaId){
+    var col = document.createElement('div');
+    col.className = 'col' + (triar ? ' triar' : '');
+    col.innerHTML = '<div class="cab"><b>' + rotulo + '</b><span class="n">' + leads.length + '</span></div>';
+    if (!leads.length){
+      var v = document.createElement('div');
+      v.className = 'vazio-col';
+      v.textContent = triar ? 'nada pra distribuir' : '—';
+      col.appendChild(v);
+    } else {
+      leads.forEach(function(l){ col.appendChild(cardLead(l, triar)); });
+    }
+    return col;
+  }
+
+  function cardLead(l, triar){
+    var c = document.createElement('div');
+    c.className = 'card' + (l.urgente ? ' urg' : '');
+
+    var origem = l.utm_source ? (l.utm_source + (l.utm_campaign ? ' · ' + l.utm_campaign : '')) : 'origem não rastreada';
+    var wpp = (l.whatsapp || '').replace(/\D/g, '');
+    var nivelBadge = l.nivel ? '<span class="badge ' + l.nivel + '">' + l.nivel + '</span>' : '';
+
+    c.innerHTML =
+      '<div class="nome">' + (l.nome || '(sem nome)') + '</div>' +
+      '<div class="meta">' + (l.profissao || 'profissão não informada') + '</div>' +
+      '<div class="badges">' + nivelBadge + '<span class="badge origem">' + origem + '</span></div>' +
+      '<div class="linha-acao">' +
+        '<a class="wa" href="https://wa.me/' + wpp + '" target="_blank" rel="noopener">WhatsApp</a>' +
+        (triar ? '' : '<button type="button" class="urg-btn' + (l.urgente ? ' on' : '') + '">Urgente</button>') +
+      '</div>' +
+      '<div class="linha-acao">' +
+        (triar ? '' : '<select class="sel-etapa"></select>') +
+        (estado.ehGestor ? '<select class="sel-resp"></select>' : '') +
+      '</div>' +
+      (triar ? '' : '<textarea class="nota" placeholder="anotação…">' + (l.nota || '') + '</textarea>') +
+      (!estado.ehGestor && l.atribuido_nome ? '' : (l.atribuido_nome ? '<div class="resp">responsável: ' + l.atribuido_nome + '</div>' : (triar ? '' : '<div class="resp">sem responsável</div>')));
+
+    // etapa
+    if (!triar){
+      var selE = c.querySelector('.sel-etapa');
+      ETAPAS.forEach(function(e){
+        var o = document.createElement('option');
+        o.value = e.id; o.textContent = e.rot;
+        if (e.id === l.etapa) o.selected = true;
+        selE.appendChild(o);
+      });
+      selE.addEventListener('change', function(){ upsertLead(l.whatsapp, { etapa: this.value }); });
+    }
+
+    // responsável (gestor)
+    if (estado.ehGestor){
+      var selR = c.querySelector('.sel-resp');
+      var o0 = document.createElement('option');
+      o0.value = ''; o0.textContent = triar ? 'escolher vendedor…' : 'sem responsável';
+      selR.appendChild(o0);
+      estado.vendedores.forEach(function(v){
+        var o = document.createElement('option');
+        o.value = v.id; o.textContent = v.nome + (v.papel === 'gestor' ? ' (gestor)' : '');
+        if (v.id === l.atribuido_a) o.selected = true;
+        selR.appendChild(o);
+      });
+      selR.addEventListener('change', function(){
+        var patch = { atribuido_a: this.value || null };
+        if (triar && this.value) patch.etapa = 'novo';
+        upsertLead(l.whatsapp, patch);
+      });
+    }
+
+    // urgente
+    var urg = c.querySelector('.urg-btn');
+    if (urg) urg.addEventListener('click', function(){ upsertLead(l.whatsapp, { urgente: !l.urgente }); });
+
+    // nota (salva ao sair do campo, se mudou)
+    var nota = c.querySelector('.nota');
+    if (nota) nota.addEventListener('blur', function(){
+      var novo = this.value.trim();
+      if (novo !== (l.nota || '')) upsertLead(l.whatsapp, { nota: novo || null });
+    });
+
+    return c;
+  }
+
+  $('f-nivel').addEventListener('change', render);
+  $('f-busca').addEventListener('input', render);
+
+  // ---------- boot ----------
+  iniciar();
+})();
+</script>
+</body>
+</html>
