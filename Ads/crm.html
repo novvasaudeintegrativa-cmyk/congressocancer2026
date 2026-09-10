@@ -672,9 +672,12 @@
     if (!nome || !email) return;
     var btn = $('v-btn'); btn.disabled = true; btn.textContent = 'Adicionando…';
     $('v-msg').style.color = 'var(--soft)'; $('v-msg').textContent = '';
-    equipeAdmin('criar', { nome: nome, email: email, papel: papel }).then(function(){
+    equipeAdmin('criar', { nome: nome, email: email, papel: papel }).then(function(res){
       $('v-msg').style.color = 'var(--verde)';
-      $('v-msg').textContent = 'Adicionado! ' + email + ' vai receber um e-mail pra definir a senha.';
+      var senha = res && res.senha_provisoria;
+      $('v-msg').textContent = senha
+        ? 'Adicionado! Senha provisória de ' + email + ': ' + senha + ' — passe pro vendedor, ele troca depois em "Esqueci a senha".'
+        : 'Adicionado!';
       $('v-nome').value = ''; $('v-email').value = ''; $('v-papel').value = 'vendedor';
       return carregarEquipe();
     }).catch(function(err){

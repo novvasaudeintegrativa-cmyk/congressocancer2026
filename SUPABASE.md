@@ -1407,22 +1407,36 @@ Deno.serve(async (req) => {
     const papel = body.papel === "gestor" ? "gestor" : "vendedor";
     if (!nome || !mail) return j({ erro: "nome e e-mail obrigatórios" }, 400);
 
-    // convite = cria a conta + manda e-mail com link pra definir senha.
-    // redirect_to vai como QUERY PARAM (não no body) — senão o link volta pro Site URL (index.html).
-    const inv = await fetch(`${URL_}/auth/v1/invite?redirect_to=${encodeURIComponent(CRM_URL)}`, {
-      method: "POST", headers: svcHeaders,
-      body: JSON.stringify({ email: mail }),
-    });
-    const invBody = await inv.json();
-    if (!inv.ok) return j({ erro: "convite: " + (invBody.msg || invBody.error_description || JSON.stringify(invBody)) }, 400);
+    // senha provisória — o vendedor troca depois. Não depende de e-mail/SMTP.
+    const senhaTemp = "Nv" + crypto.randomUUID().replace(/-/g, "").slice(0, 10);
 
-    const novoId = invBody.id;
+    let novoId: string | null = null;
+    const cr = await fetch(`${URL_}/auth/v1/admin/users`, {
+      method: "POST", headers: svcHeaders,
+      body: JSON.stringify({ email: mail, password: senhaTemp, email_confirm: true }),
+    });
+    const crBody = await cr.json();
+    if (cr.ok && crBody.id) {
+      novoId = crBody.id;
+    } else {
+      // já existe (convite anterior que falhou) → acha o id e reseta a senha
+      const lu = await fetch(`${URL_}/auth/v1/admin/users?per_page=200`, { headers: svcHeaders });
+      const luj = await lu.json();
+      const achado = (luj.users || []).find((x: any) => (x.email || "").toLowerCase() === mail);
+      if (!achado) return j({ erro: "criar usuário: " + (crBody.msg || JSON.stringify(crBody)) }, 400);
+      novoId = achado.id;
+      await fetch(`${URL_}/auth/v1/admin/users/${novoId}`, {
+        method: "PUT", headers: svcHeaders,
+        body: JSON.stringify({ password: senhaTemp, email_confirm: true }),
+      });
+    }
+
     const pr = await fetch(`${URL_}/rest/v1/perfis`, {
       method: "POST", headers: { ...svcHeaders, prefer: "return=minimal,resolution=merge-duplicates" },
       body: JSON.stringify({ id: novoId, nome, papel }),
     });
     if (!pr.ok) return j({ erro: "perfis: " + (await pr.text()) }, 500);
-    return j({ ok: true, id: novoId });
+    return j({ ok: true, id: novoId, senha_provisoria: senhaTemp });
   }
 
   if (body.action === "atualizar") {
