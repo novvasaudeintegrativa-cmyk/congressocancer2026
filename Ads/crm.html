@@ -17,6 +17,7 @@
     --corpo:'Roboto','Segoe UI',system-ui,sans-serif;
   }
   *{box-sizing:border-box;}
+  [hidden]{display:none!important;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--corpo);line-height:1.5;}
   h1,h2,h3{font-family:var(--tit);margin:0;}
   a{color:var(--bordo);}
@@ -98,7 +99,7 @@
     <button type="submit" id="li-btn">Entrar</button>
     <button type="button" class="link-esqueci" id="li-esqueci">Esqueci a senha</button>
     <div class="erro" id="li-erro"></div>
-    <pre id="dbg" style="margin-top:12px;font-size:10px;line-height:1.4;color:var(--soft);white-space:pre-wrap;word-break:break-all;max-height:180px;overflow:auto;"></pre>
+    <pre id="dbg" style="margin-top:12px;font-size:10px;line-height:1.5;color:var(--soft);white-space:pre-wrap;word-break:break-all;"></pre>
   </form>
 
   <form class="box" id="novasenha-form" hidden>
@@ -293,16 +294,19 @@
       dbg('perfis recebido: ' + JSON.stringify(perfis).slice(0,300));
       perfis = perfis || [];
       var meu = perfis.find(function(p){ return p.id === user.id; });
+      dbg('meu perfil: ' + (meu ? (meu.papel + ' ativo=' + meu.ativo) : 'NÃO ENCONTRADO (user.id=' + user.id + ')'));
       if (!meu) throw new Error('seu usuário (' + user.id.slice(0,8) + '…) não está na tabela perfis');
       if (!meu.ativo) throw new Error('sua conta está marcada como inativa');
       estado.eu = meu;
       estado.ehGestor = meu.papel === 'gestor';
       estado.vendedores = perfis.filter(function(p){ return p.ativo; });
+      dbg('trocando pra tela do app');
       $('eu').innerHTML = '<b>' + meu.nome + '</b> · ' + (estado.ehGestor ? 'gestor' : 'vendedor');
       $('aviso-gestor').hidden = !estado.ehGestor;
       $('li-erro').textContent = '';
       $('login').hidden = true;
       $('app').hidden = false;
+      dbg('app visível, carregando pipeline');
       return carregarPipeline();
     });
   }
@@ -331,8 +335,9 @@
       }); });
   }
   function apiPost(pathq, body, extra){
+    dbg('apiPost ' + pathq);
     return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { method:'POST', headers: apiHeaders(extra), body: JSON.stringify(body) })
-      .then(function(r){ return r.text().then(function(t){
+      .then(function(r){ dbg('apiPost ' + pathq + ' -> HTTP ' + r.status); return r.text().then(function(t){
         if (!r.ok) throw new Error((t && t.slice(0,200)) || ('HTTP ' + r.status));
         return t ? JSON.parse(t) : null;
       }); });
@@ -340,10 +345,13 @@
 
   // ---------- dados ----------
   function carregarPipeline(){
+    dbg('carregarPipeline: apiPost rpc/rpc_crm_pipeline');
     return apiPost('rpc/rpc_crm_pipeline', {}).then(function(data){
+      dbg('pipeline ok: ' + (Array.isArray(data) ? data.length + ' leads' : typeof data));
       estado.leads = data || [];
       render();
     }).catch(function(err){
+      dbg('pipeline ERRO: ' + (err && err.message ? err.message : String(err)));
       $('board').innerHTML = '<div class="vazio-col">Erro ao carregar: ' + err.message + '</div>';
     });
   }
