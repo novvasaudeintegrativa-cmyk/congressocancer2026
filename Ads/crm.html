@@ -730,7 +730,7 @@
       $('v-msg').style.color = 'var(--verde)';
       var senha = res && res.senha_provisoria;
       $('v-msg').textContent = senha
-        ? 'Adicionado! Senha provisória de ' + email + ': ' + senha + ' — passe pro vendedor, ele troca depois em "Esqueci a senha".'
+        ? 'Adicionado! Senha provisória de ' + email + ': ' + senha + ' — passe pro vendedor, ele troca depois em "Modificar senha".'
         : 'Adicionado!';
       $('v-nome').value = ''; $('v-email').value = ''; $('v-papel').value = 'vendedor';
       return carregarEquipe();
