@@ -1291,12 +1291,24 @@ No app **Novva CRM** → Etapa 2 → **Configurar webhooks**:
 - Salvar (a Meta faz um GET de verificação na hora — a função responde o challenge).
 - Depois, em **Campos de webhook**, assina o campo **`messages`**.
 
-### 14.4. Ainda falta (pra mensagem real chegar)
+### 14.4. Estado (10/09/2026) — RECEBER está pronto e testado com mensagem real ✅
 
-1. **Publicar o app** — enquanto "Não publicado", só chega webhook de
-   teste. App que usa só a WABA da própria empresa costuma publicar sem
-   App Review, mas é um passo a fazer.
-2. **Assinar a WABA no app** — WhatsApp Manager → a WABA → apps assinados,
-   confirmar que "Novva CRM" está lá recebendo `messages`.
-3. Teste: manda um WhatsApp pro `+55 11 93487-3737` de outro celular →
-   confere **Table Editor → mensagens** → linha nova `direcao='recebida'`.
+- App ID **`1081100977750031`**, App **publicado** (Live).
+- WABA assinada no app via Graph API:
+  `POST /885985207685253/subscribed_apps` → `{"success": true}`
+  (feito uma vez, persiste — não precisa refazer).
+- Campo `messages` assinado no app.
+- Teste com WhatsApp real → linha em `mensagens` com `direcao='recebida'`. OK.
+
+### 14.5. Fase 3 — responder de dentro do CRM (ainda não feito)
+
+1. **Token permanente** — o de envio precisa ser de Usuário do Sistema
+   (Configurações do Negócio → Usuários do Sistema → gerar token com
+   `whatsapp_business_messaging` + `whatsapp_business_management`). O token
+   do Graph API Explorer é temporário (~1h), serviu só pro subscribe.
+2. **Normalizar telefone** — casar `mensagens.lead_whatsapp` (dígitos, ex
+   `553284040133`) com `crm_leads.whatsapp` (digitado pela pessoa).
+3. **Forma de pagamento** na WABA — só pra mandar fora da janela de 24h
+   (template). Resposta dentro de 24h da última mensagem do lead é grátis.
+4. **View de conversa no `Ads/crm.html`** — thread por lead + campo de
+   resposta que chama a Cloud API (`POST /{phone-number-id}/messages`).
