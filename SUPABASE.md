@@ -1433,7 +1433,7 @@ Deno.serve(async (req) => {
 
     const pr = await fetch(`${URL_}/rest/v1/perfis`, {
       method: "POST", headers: { ...svcHeaders, prefer: "return=minimal,resolution=merge-duplicates" },
-      body: JSON.stringify({ id: novoId, nome, papel }),
+      body: JSON.stringify({ id: novoId, nome, papel, ativo: true }),
     });
     if (!pr.ok) return j({ erro: "perfis: " + (await pr.text()) }, 500);
     return j({ ok: true, id: novoId, senha_provisoria: senhaTemp });
