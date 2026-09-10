@@ -84,12 +84,14 @@
   .aviso{background:#faf1f0;border:1px dashed var(--bordo-vivo);border-radius:12px;padding:12px 15px;font-size:12.5px;color:var(--bordo);margin-bottom:14px;}
   .foot{text-align:center;color:var(--faint);font-size:11px;margin-top:20px;}
 
-  /* ---- abas + inbox de conversas ---- */
-  .tabs-crm{display:flex;gap:6px;margin-bottom:14px;}
-  .tabs-crm button{font-family:var(--tit);font-weight:700;font-size:12px;letter-spacing:.02em;padding:7px 16px;border-radius:999px;cursor:pointer;background:#fff;border:1px solid var(--linha);color:var(--soft);}
-  .tabs-crm button.on{background:var(--bordo);border-color:var(--bordo);color:#fff;}
+  /* ---- seções + inbox de conversas ---- */
+  #view-conversas{margin-top:26px;}
+  .sec-crm{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;}
+  .sec-crm > span:first-child{font-family:var(--tit);font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--bordo);}
+  .btn-atualizar{font-family:var(--tit);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:5px 12px;border-radius:999px;cursor:pointer;}
+  .btn-atualizar:hover{border-color:var(--bordo);color:var(--bordo);}
 
-  .inbox{display:grid;grid-template-columns:300px 1fr;border:1px solid var(--linha);border-radius:14px;overflow:hidden;background:var(--card);height:calc(100vh - 190px);min-height:440px;}
+  .inbox{display:grid;grid-template-columns:300px 1fr;border:1px solid var(--linha);border-radius:14px;overflow:hidden;background:var(--card);height:min(60vh,560px);min-height:400px;}
   .inbox-lista{border-right:1px solid var(--linha);overflow-y:auto;}
   .inbox-item{padding:12px 14px;border-bottom:1px solid var(--linha);cursor:pointer;border-left:3px solid transparent;}
   .inbox-item:hover{background:#faf1f0;}
@@ -161,16 +163,12 @@
     <button type="button" class="btn-sair" id="btn-sair">Sair</button>
   </div>
 
-  <div class="tabs-crm">
-    <button type="button" id="tab-pipeline" class="on">Pipeline</button>
-    <button type="button" id="tab-conversas">Conversas</button>
-  </div>
-
   <div id="view-pipeline">
     <div class="aviso" id="aviso-gestor" hidden>
       Você é <b>gestor</b>: vê todos os leads e distribui. A coluna <b>Não triados</b> são leads do quiz que ainda não têm vendedor — escolha o responsável no card pra jogar no funil.
     </div>
 
+    <div class="sec-crm"><span>Pipeline</span><span class="cont" id="cont"></span></div>
     <div class="filtros">
       <select id="f-nivel">
         <option value="">Todos os níveis</option>
@@ -179,13 +177,13 @@
         <option value="avancado">Avançado</option>
       </select>
       <input type="search" id="f-busca" placeholder="buscar por nome…">
-      <span class="cont" id="cont"></span>
     </div>
 
     <div class="board" id="board"></div>
   </div>
 
-  <div id="view-conversas" hidden>
+  <div id="view-conversas">
+    <div class="sec-crm"><span>Conversas</span><button type="button" class="btn-atualizar" id="btn-atualizar-conv">Atualizar</button></div>
     <div class="inbox">
       <div class="inbox-lista" id="inbox-lista"></div>
       <div class="inbox-thread" id="inbox-thread"><div class="thread-vazio">Escolha uma conversa à esquerda</div></div>
@@ -343,7 +341,8 @@
       $('li-erro').textContent = '';
       $('login').hidden = true;
       $('app').hidden = false;
-      dbg('app visível, carregando pipeline');
+      dbg('app visível, carregando pipeline + conversas');
+      carregarConversas();
       return carregarPipeline();
     });
   }
@@ -585,15 +584,7 @@
     var tm = $('thread-msgs'); tm.scrollTop = tm.scrollHeight;
   }
 
-  function trocarView(v){
-    $('tab-pipeline').classList.toggle('on', v === 'pipeline');
-    $('tab-conversas').classList.toggle('on', v === 'conversas');
-    $('view-pipeline').hidden = v !== 'pipeline';
-    $('view-conversas').hidden = v !== 'conversas';
-    if (v === 'conversas') carregarConversas();
-  }
-  $('tab-pipeline').addEventListener('click', function(){ trocarView('pipeline'); });
-  $('tab-conversas').addEventListener('click', function(){ trocarView('conversas'); });
+  $('btn-atualizar-conv').addEventListener('click', carregarConversas);
 
   // sessão salva pelo supabase-js — lida direto do localStorage (getSession() pode travar)
   function sessaoLocal(){
