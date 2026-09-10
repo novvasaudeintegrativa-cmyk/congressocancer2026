@@ -98,6 +98,7 @@
     <button type="submit" id="li-btn">Entrar</button>
     <button type="button" class="link-esqueci" id="li-esqueci">Esqueci a senha</button>
     <div class="erro" id="li-erro"></div>
+    <pre id="dbg" style="margin-top:12px;font-size:10px;line-height:1.4;color:var(--soft);white-space:pre-wrap;word-break:break-all;max-height:180px;overflow:auto;"></pre>
   </form>
 
   <form class="box" id="novasenha-form" hidden>
@@ -156,6 +157,22 @@
 
   var $ = function(id){ return document.getElementById(id); };
 
+  function dbg(m){
+    try {
+      var d = $('dbg');
+      var linha = new Date().toISOString().slice(11,23) + '  ' + m;
+      if (d) d.textContent += (d.textContent ? '\n' : '') + linha;
+      console.log('[crm]', m);
+    } catch(e){}
+  }
+  window.addEventListener('unhandledrejection', function(ev){
+    dbg('!! rejeição não tratada: ' + (ev.reason && (ev.reason.message || ev.reason.toString()) || ev.reason));
+  });
+  window.addEventListener('error', function(ev){
+    dbg('!! erro JS: ' + ev.message + ' (' + (ev.filename||'') + ':' + ev.lineno + ')');
+  });
+  dbg('script carregado');
+
   var ETAPAS = [
     { id:'novo',        rot:'Novo' },
     { id:'contato',     rot:'Contato feito' },
@@ -175,17 +192,20 @@
   $('login-form').addEventListener('submit', function(e){
     e.preventDefault();
     var btn = $('li-btn'); btn.disabled = true; btn.textContent = 'Entrando…';
-    diag('autenticando…');
+    diag('submit: chamando signInWithPassword');
     sb.auth.signInWithPassword({ email: $('li-email').value.trim(), password: $('li-senha').value })
       .then(function(res){
+        dbg('signIn respondeu. error=' + (res.error ? res.error.message : 'null') + ' session=' + (res.data && res.data.session ? 'sim' : 'não') + ' user=' + (res.data && res.data.user ? res.data.user.id.slice(0,8) : 'não'));
         if (res.error) throw res.error;
         if (!res.data || !res.data.session) throw new Error('login sem sessão na resposta');
         TOKEN = res.data.session.access_token;
-        diag('senha ok, carregando perfil…');
+        dbg('TOKEN definido (' + TOKEN.slice(0,12) + '…), chamando iniciar');
         return iniciar(res.data.user);
       })
+      .then(function(){ dbg('iniciar terminou'); })
       .catch(function(err){
         var m = err && err.message ? err.message : String(err);
+        dbg('CATCH login: ' + m);
         erroLogin(m === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : ('Erro: ' + m));
       })
       .finally(function(){ btn.disabled = false; btn.textContent = 'Entrar'; });
@@ -267,8 +287,10 @@
   });
 
   function iniciar(user){
-    if (!user || !TOKEN) { mostrarLogin(); return Promise.resolve(); }
+    dbg('iniciar: user=' + (user ? user.id.slice(0,8) : 'nulo') + ' TOKEN=' + (TOKEN ? 'sim' : 'não'));
+    if (!user || !TOKEN) { dbg('iniciar: sem user/token -> volta pro login'); mostrarLogin(); return Promise.resolve(); }
     return apiGet('perfis?select=id,nome,papel,ativo').then(function(perfis){
+      dbg('perfis recebido: ' + JSON.stringify(perfis).slice(0,300));
       perfis = perfis || [];
       var meu = perfis.find(function(p){ return p.id === user.id; });
       if (!meu) throw new Error('seu usuário (' + user.id.slice(0,8) + '…) não está na tabela perfis');
@@ -301,8 +323,9 @@
     }, extra || {});
   }
   function apiGet(pathq){
+    dbg('apiGet ' + pathq);
     return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { headers: apiHeaders() })
-      .then(function(r){ return r.text().then(function(t){
+      .then(function(r){ dbg('apiGet ' + pathq + ' -> HTTP ' + r.status); return r.text().then(function(t){
         if (!r.ok) throw new Error((t && t.slice(0,200)) || ('HTTP ' + r.status));
         return t ? JSON.parse(t) : null;
       }); });
@@ -458,11 +481,14 @@
   }
 
   // ---------- boot ----------
+  dbg('boot. emRecuperacao=' + emRecuperacao);
   if (!emRecuperacao) {
     var sl = sessaoLocal();
+    dbg('sessaoLocal: ' + (sl ? ('achou, exp=' + new Date(sl.expires_at*1000).toISOString().slice(11,19)) : 'nenhuma'));
     if (sl) {
       TOKEN = sl.access_token;
       iniciar(sl.user).catch(function(err){
+        dbg('CATCH boot: ' + (err && err.message ? err.message : String(err)));
         erroLogin(err && err.message ? err.message : String(err));
         mostrarLogin();
       });
