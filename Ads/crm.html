@@ -189,7 +189,10 @@
   });
 
   // ---------- recuperação de senha ----------
-  var emRecuperacao = /[#&?]type=recovery/.test(URL_INICIAL);
+  // pega os dois fluxos: implícito (#...&type=recovery) e PKCE (?code=...)
+  var emRecuperacao = /[#&?]type=recovery/.test(URL_INICIAL) ||
+                      /[?&]code=/.test(URL_INICIAL) ||
+                      /[#&]access_token=/.test(URL_INICIAL);
 
   function telaNovaSenha(){
     emRecuperacao = true;
@@ -198,10 +201,24 @@
     $('login').hidden = false;
     $('app').hidden = true;
   }
+  function esperarSessao(msMax){
+    var ini = Date.now();
+    return new Promise(function(resolve){
+      (function tenta(){
+        sb.auth.getSession().then(function(r){
+          if (r.data && r.data.session) return resolve(true);
+          if (Date.now() - ini > msMax) return resolve(false);
+          setTimeout(tenta, 300);
+        });
+      })();
+    });
+  }
   if (emRecuperacao) telaNovaSenha();
 
   sb.auth.onAuthStateChange(function(event){
     if (event === 'PASSWORD_RECOVERY') telaNovaSenha();
+    // PKCE às vezes emite SIGNED_IN em vez de PASSWORD_RECOVERY
+    if (event === 'SIGNED_IN' && emRecuperacao) telaNovaSenha();
   });
 
   $('li-esqueci').addEventListener('click', function(){
@@ -222,7 +239,11 @@
     if (s1.length < 8) { $('ns-erro').textContent = 'Mínimo 8 caracteres.'; return; }
     var btn = $('ns-btn'); btn.disabled = true; btn.textContent = 'Salvando…';
     $('ns-erro').textContent = '';
-    sb.auth.updateUser({ password: s1 }).then(function(res){
+    // garante que a sessão do link já foi estabelecida (PKCE é assíncrono)
+    esperarSessao(6000).then(function(temSessao){
+      if (!temSessao) throw new Error('O link expirou ou já foi usado. Peça outro em "Esqueci a senha".');
+      return sb.auth.updateUser({ password: s1 });
+    }).then(function(res){
       if (res.error) throw res.error;
       emRecuperacao = false;
       history.replaceState(null, '', location.pathname);
