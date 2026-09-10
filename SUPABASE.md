@@ -1353,6 +1353,13 @@ const CRM_URL = "https://congressocancer.novvasaudeintegrativa.com.br/Ads/crm.ht
 
 const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
 
+// CORS — o painel (outro domínio) precisa disso, senão dá "Failed to fetch"
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 async function quemChamou(userToken: string) {
   const r = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${userToken}` } });
   if (!r.ok) return null;
@@ -1367,17 +1374,21 @@ async function ehGestor(uid: string) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method !== "POST") return new Response("method", { status: 405 });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+
+  if (req.method !== "POST") return j({ erro: "method" }, 405);
 
   const auth = req.headers.get("authorization") || "";
   const token = auth.replace(/^Bearer\s+/i, "");
   const u = await quemChamou(token);
-  if (!u) return new Response(JSON.stringify({ erro: "não autenticado" }), { status: 401 });
-  if (!(await ehGestor(u.id))) return new Response(JSON.stringify({ erro: "só gestor" }), { status: 403 });
+  if (!u) return j({ erro: "não autenticado" }, 401);
+  if (!(await ehGestor(u.id))) return j({ erro: "só gestor" }, 403);
 
   let body: any;
-  try { body = await req.json(); } catch { return new Response(JSON.stringify({ erro: "bad body" }), { status: 400 }); }
-  const j = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "content-type": "application/json" } });
+  try { body = await req.json(); } catch { return j({ erro: "bad body" }, 400); }
 
   if (body.action === "list") {
     const pr = await fetch(`${URL_}/rest/v1/perfis?select=id,nome,papel,ativo,criado_em&order=criado_em.asc`, { headers: svcHeaders });
