@@ -952,3 +952,166 @@ liberar editar/apagar.
 O painel (`Ads/novva-ads.html`, seção ROI) tem um link "Gerenciar
 lançamentos" que pede esse token uma vez (fica salvo só nesse
 navegador) e mostra a lista com editar/apagar inline.
+
+## 13. CRM — Fase 1 (login de equipe + pipeline de leads reais)
+
+Substitui a Kommo pra **gestão de leads** (não pra conversa de WhatsApp —
+isso é Fase 2, depende da API do Meta). Tela nova `Ads/crm.html` atrás de
+login: cada vendedor vê a carteira dele, gestor vê e distribui tudo.
+
+**Conceito de "lead" aqui:** uma **pessoa** (identificada pelo WhatsApp),
+não uma linha de `quiz_leads`. Como o quiz grava 2 linhas por pessoa
+(contato + quiz completo), o CRM lê de uma **view deduplicada**.
+
+### 13.1. SQL — rodar uma vez no SQL Editor
+
+```sql
+-- ---------- perfis da equipe (liga em auth.users) ----------
+create table if not exists public.perfis (
+  id         uuid primary key references auth.users(id) on delete cascade,
+  nome       text not null,
+  papel      text not null default 'vendedor' check (papel in ('gestor','vendedor')),
+  ativo      boolean not null default true,
+  criado_em  timestamptz not null default now()
+);
+alter table public.perfis enable row level security;
+
+drop policy if exists "equipe lê perfis" on public.perfis;
+create policy "equipe lê perfis" on public.perfis
+  for select to authenticated using (true);
+
+drop policy if exists "gestor edita perfis" on public.perfis;
+create policy "gestor edita perfis" on public.perfis
+  for all to authenticated
+  using  (exists (select 1 from public.perfis p where p.id = auth.uid() and p.papel = 'gestor'))
+  with check (exists (select 1 from public.perfis p where p.id = auth.uid() and p.papel = 'gestor'));
+
+-- helper: o usuário atual é gestor?
+create or replace function public.eh_gestor()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select papel = 'gestor' from public.perfis where id = auth.uid()), false);
+$$;
+
+-- ---------- view: 1 linha por pessoa (dedupe da quiz_leads pelo whatsapp) ----------
+create or replace view public.crm_leads as
+  select distinct on (whatsapp)
+    whatsapp,
+    nome, email, profissao, nivel, pontuacao,
+    utm_source, utm_medium, utm_campaign,
+    created_at as captado_em
+  from public.quiz_leads
+  where whatsapp is not null and whatsapp <> ''
+  order by whatsapp, (pontuacao is not null) desc, created_at desc;
+
+-- ---------- estado do lead no CRM (chave = whatsapp da pessoa) ----------
+create table if not exists public.lead_status (
+  whatsapp        text primary key,
+  atribuido_a     uuid references auth.users(id),
+  etapa           text not null default 'novo'
+                  check (etapa in ('novo','contato','conversando','proposta','ganho','perdido')),
+  nota            text,
+  urgente         boolean not null default false,
+  atualizado_por  uuid references auth.users(id),
+  atualizado_em   timestamptz not null default now(),
+  criado_em       timestamptz not null default now()
+);
+alter table public.lead_status enable row level security;
+
+-- trigger: só gestor muda o responsável; carimba quem/quando atualizou
+create or replace function public.guarda_lead_status()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'UPDATE'
+     and new.atribuido_a is distinct from old.atribuido_a
+     and not public.eh_gestor() then
+    raise exception 'só gestor pode mudar o vendedor responsável';
+  end if;
+  new.atualizado_por := auth.uid();
+  new.atualizado_em  := now();
+  return new;
+end;
+$$;
+drop trigger if exists lead_status_guarda on public.lead_status;
+create trigger lead_status_guarda before insert or update on public.lead_status
+  for each row execute function public.guarda_lead_status();
+
+-- RLS lead_status: gestor tudo; vendedor só os dele + os marcados urgente
+drop policy if exists "vê lead_status" on public.lead_status;
+create policy "vê lead_status" on public.lead_status
+  for select to authenticated
+  using (public.eh_gestor() or atribuido_a = auth.uid() or urgente = true);
+
+drop policy if exists "insere lead_status" on public.lead_status;
+create policy "insere lead_status" on public.lead_status
+  for insert to authenticated with check (true);
+
+drop policy if exists "edita lead_status" on public.lead_status;
+create policy "edita lead_status" on public.lead_status
+  for update to authenticated
+  using (public.eh_gestor() or atribuido_a = auth.uid() or urgente = true)
+  with check (public.eh_gestor() or atribuido_a = auth.uid() or urgente = true);
+
+drop policy if exists "gestor apaga lead_status" on public.lead_status;
+create policy "gestor apaga lead_status" on public.lead_status
+  for delete to authenticated using (public.eh_gestor());
+
+-- ---------- quiz_leads: liberar SELECT só pra quem loga (anon continua fora) ----------
+drop policy if exists "equipe lê quiz_leads" on public.quiz_leads;
+create policy "equipe lê quiz_leads" on public.quiz_leads
+  for select to authenticated using (true);
+
+grant select on public.crm_leads to authenticated;
+
+-- ---------- RPC: pipeline pronto pro Ads/crm.html ----------
+create or replace function public.rpc_crm_pipeline()
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(row_to_json(t) order by t.captado_em desc), '[]'::json)
+  from (
+    select
+      l.whatsapp, l.nome, l.email, l.profissao, l.nivel, l.pontuacao,
+      l.utm_source, l.utm_campaign, l.captado_em,
+      s.etapa, s.nota, s.urgente, s.atribuido_a,
+      pa.nome as atribuido_nome,
+      s.atualizado_em
+    from public.crm_leads l
+    left join public.lead_status s on s.whatsapp = l.whatsapp
+    left join public.perfis pa on pa.id = s.atribuido_a
+    where
+      public.eh_gestor()
+      or s.atribuido_a = auth.uid()
+      or s.urgente = true
+  ) t;
+$$;
+revoke execute on function public.rpc_crm_pipeline() from anon;
+grant execute on function public.rpc_crm_pipeline() to authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+### 13.2. Ativar o login (Supabase Auth)
+
+1. **Authentication → Providers → Email**: liga o provider **Email**.
+   Desliga "Confirm email" (equipe pequena, senha definida pelo gestor) —
+   ou deixa ligado e cada um confirma pelo e-mail.
+2. **Authentication → Users → Add user**: cria as contas (gestor + 2
+   vendedores) com e-mail + senha.
+3. Pra cada conta criada, pega o `id` (UUID) do usuário e roda:
+   ```sql
+   insert into public.perfis (id, nome, papel) values
+     ('<uuid-do-gestor>',     'Nome do Gestor',    'gestor'),
+     ('<uuid-do-vendedor-1>', 'Nome do Vendedor 1','vendedor'),
+     ('<uuid-do-vendedor-2>', 'Nome do Vendedor 2','vendedor');
+   ```
+4. Adicionar um 3º vendedor depois = repetir os passos 2-3, sem mexer em
+   mais nada.
+
+### 13.3. O que o `Ads/crm.html` vai fazer (próximo passo)
+
+- Login (Supabase Auth, e-mail/senha) — sem sessão, sem acesso.
+- Pipeline Kanban por `etapa`, lido de `rpc_crm_pipeline()`.
+- Card do lead: nome, nível (frio/morno/quente), profissão, origem (UTM),
+  botão "abrir conversa" (`wa.me/<whatsapp>`), nota, toggle "urgente".
+- Gestor: coluna extra de leads **não triados** (sem `lead_status`) pra
+  distribuir; muda `atribuido_a` de qualquer lead.
+- Vendedor: vê só a carteira + os urgentes; muda `etapa`/`nota`/`urgente`,
+  **não** muda o responsável (trigger barra).
