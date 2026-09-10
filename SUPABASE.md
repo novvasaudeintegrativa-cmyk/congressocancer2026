@@ -991,9 +991,13 @@ create or replace function public.eh_gestor()
 returns boolean language sql stable security definer set search_path = public as $$
   select coalesce((select papel = 'gestor' from public.perfis where id = auth.uid()), false);
 $$;
+revoke execute on function public.eh_gestor() from public, anon;
+grant execute on function public.eh_gestor() to authenticated;
 
 -- ---------- view: 1 linha por pessoa (dedupe da quiz_leads pelo whatsapp) ----------
-create or replace view public.crm_leads as
+-- security_invoker = true: a view respeita o RLS de quem consulta, então o
+-- anon (sem policy de select em quiz_leads) não enxerga nada por ela.
+create or replace view public.crm_leads with (security_invoker = true) as
   select distinct on (whatsapp)
     whatsapp,
     nome, email, profissao, nivel, pontuacao,
@@ -1002,6 +1006,8 @@ create or replace view public.crm_leads as
   from public.quiz_leads
   where whatsapp is not null and whatsapp <> ''
   order by whatsapp, (pontuacao is not null) desc, created_at desc;
+
+revoke all on public.crm_leads from anon, public;
 
 -- ---------- estado do lead no CRM (chave = whatsapp da pessoa) ----------
 create table if not exists public.lead_status (
@@ -1063,6 +1069,9 @@ create policy "equipe lê quiz_leads" on public.quiz_leads
 grant select on public.crm_leads to authenticated;
 
 -- ---------- RPC: pipeline pronto pro Ads/crm.html ----------
+-- security definer, mas o 1º filtro exige que quem chama seja membro ativo
+-- da equipe (senão retorna vazio) — sem isso, o "or urgente" deixaria
+-- qualquer não-logado ler PII de lead urgente.
 create or replace function public.rpc_crm_pipeline()
 returns json language sql stable security definer set search_path = public as $$
   select coalesce(json_agg(row_to_json(t) order by t.captado_em desc), '[]'::json)
@@ -1077,12 +1086,11 @@ returns json language sql stable security definer set search_path = public as $$
     left join public.lead_status s on s.whatsapp = l.whatsapp
     left join public.perfis pa on pa.id = s.atribuido_a
     where
-      public.eh_gestor()
-      or s.atribuido_a = auth.uid()
-      or s.urgente = true
+      exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+      and (public.eh_gestor() or s.atribuido_a = auth.uid() or s.urgente = true)
   ) t;
 $$;
-revoke execute on function public.rpc_crm_pipeline() from anon;
+revoke execute on function public.rpc_crm_pipeline() from public, anon;
 grant execute on function public.rpc_crm_pipeline() to authenticated;
 
 notify pgrst, 'reload schema';
@@ -1095,10 +1103,11 @@ notify pgrst, 'reload schema';
    ou deixa ligado e cada um confirma pelo e-mail.
 2. **Authentication → Users → Add user**: cria as contas (gestor + 2
    vendedores) com e-mail + senha.
-3. Pra cada conta criada, pega o `id` (UUID) do usuário e roda:
+3. Pra cada conta criada, pega o `id` (UUID) do usuário (Authentication →
+   Users → clica no usuário) e roda:
    ```sql
    insert into public.perfis (id, nome, papel) values
-     ('<uuid-do-gestor>',     'Nome do Gestor',    'gestor'),
+     ('<uuid-do-gestor>',     'Novva (gestor)',    'gestor'),   -- novvasaudeintegrativa@gmail.com
      ('<uuid-do-vendedor-1>', 'Nome do Vendedor 1','vendedor'),
      ('<uuid-do-vendedor-2>', 'Nome do Vendedor 2','vendedor');
    ```
