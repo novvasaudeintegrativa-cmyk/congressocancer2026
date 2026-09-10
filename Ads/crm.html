@@ -99,7 +99,6 @@
     <button type="submit" id="li-btn">Entrar</button>
     <button type="button" class="link-esqueci" id="li-esqueci">Esqueci a senha</button>
     <div class="erro" id="li-erro"></div>
-    <pre id="dbg" style="margin-top:12px;font-size:10px;line-height:1.5;color:var(--soft);white-space:pre-wrap;word-break:break-all;"></pre>
   </form>
 
   <form class="box" id="novasenha-form" hidden>
@@ -158,21 +157,10 @@
 
   var $ = function(id){ return document.getElementById(id); };
 
-  function dbg(m){
-    try {
-      var d = $('dbg');
-      var linha = new Date().toISOString().slice(11,23) + '  ' + m;
-      if (d) d.textContent += (d.textContent ? '\n' : '') + linha;
-      console.log('[crm]', m);
-    } catch(e){}
-  }
+  function dbg(m){ try { console.log('[crm]', m); } catch(e){} }
   window.addEventListener('unhandledrejection', function(ev){
-    dbg('!! rejeição não tratada: ' + (ev.reason && (ev.reason.message || ev.reason.toString()) || ev.reason));
+    dbg('rejeição não tratada: ' + (ev.reason && (ev.reason.message || ev.reason.toString()) || ev.reason));
   });
-  window.addEventListener('error', function(ev){
-    dbg('!! erro JS: ' + ev.message + ' (' + (ev.filename||'') + ':' + ev.lineno + ')');
-  });
-  dbg('script carregado');
 
   var ETAPAS = [
     { id:'novo',        rot:'Novo' },
