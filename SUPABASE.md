@@ -1396,10 +1396,11 @@ Deno.serve(async (req) => {
     const papel = body.papel === "gestor" ? "gestor" : "vendedor";
     if (!nome || !mail) return j({ erro: "nome e e-mail obrigatórios" }, 400);
 
-    // convite = cria a conta + manda e-mail com link pra definir senha
-    const inv = await fetch(`${URL_}/auth/v1/invite`, {
+    // convite = cria a conta + manda e-mail com link pra definir senha.
+    // redirect_to vai como QUERY PARAM (não no body) — senão o link volta pro Site URL (index.html).
+    const inv = await fetch(`${URL_}/auth/v1/invite?redirect_to=${encodeURIComponent(CRM_URL)}`, {
       method: "POST", headers: svcHeaders,
-      body: JSON.stringify({ email: mail, data: { redirect_to: CRM_URL } }),
+      body: JSON.stringify({ email: mail }),
     });
     const invBody = await inv.json();
     if (!inv.ok) return j({ erro: "convite: " + (invBody.msg || invBody.error_description || JSON.stringify(invBody)) }, 400);
