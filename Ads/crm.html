@@ -179,7 +179,8 @@
     sb.auth.signInWithPassword({ email: $('li-email').value.trim(), password: $('li-senha').value })
       .then(function(res){
         if (res.error) throw res.error;
-        if (!res.data || !res.data.user) throw new Error('login sem usuário na resposta');
+        if (!res.data || !res.data.session) throw new Error('login sem sessão na resposta');
+        TOKEN = res.data.session.access_token;
         diag('senha ok, carregando perfil…');
         return iniciar(res.data.user);
       })
@@ -253,35 +254,34 @@
       if (res.error) throw res.error;
       emRecuperacao = false;
       history.replaceState(null, '', location.pathname);
-      return iniciar();
+      return sb.auth.getSession();
+    }).then(function(r){
+      var sess = r && r.data && r.data.session;
+      if (!sess) throw new Error('senha salva, mas a sessão não veio — recarregue e faça login com a senha nova.');
+      TOKEN = sess.access_token;
+      return iniciar(sess.user);
     }).catch(function(err){
       $('ns-erro').textContent = 'Erro: ' + err.message;
       btn.disabled = false; btn.textContent = 'Salvar e entrar';
     });
   });
 
-  function iniciar(userConhecido){
-    var pUser = userConhecido
-      ? Promise.resolve(userConhecido)
-      : sb.auth.getUser().then(function(res){ return res.data && res.data.user; });
-
-    return pUser.then(function(user){
-      if (!user) { mostrarLogin(); return; }
-      return sb.from('perfis').select('id,nome,papel,ativo').then(function(r){
-        if (r.error) throw new Error('perfis: ' + r.error.message);
-        var perfis = r.data || [];
-        var meu = perfis.find(function(p){ return p.id === user.id; });
-        if (!meu) throw new Error('seu usuário (' + user.id.slice(0,8) + '…) não está na tabela perfis');
-        if (!meu.ativo) throw new Error('sua conta está marcada como inativa');
-        estado.eu = meu;
-        estado.ehGestor = meu.papel === 'gestor';
-        estado.vendedores = perfis.filter(function(p){ return p.ativo; });
-        $('eu').innerHTML = '<b>' + meu.nome + '</b> · ' + (estado.ehGestor ? 'gestor' : 'vendedor');
-        $('aviso-gestor').hidden = !estado.ehGestor;
-        $('login').hidden = true;
-        $('app').hidden = false;
-        return carregarPipeline();
-      });
+  function iniciar(user){
+    if (!user || !TOKEN) { mostrarLogin(); return Promise.resolve(); }
+    return apiGet('perfis?select=id,nome,papel,ativo').then(function(perfis){
+      perfis = perfis || [];
+      var meu = perfis.find(function(p){ return p.id === user.id; });
+      if (!meu) throw new Error('seu usuário (' + user.id.slice(0,8) + '…) não está na tabela perfis');
+      if (!meu.ativo) throw new Error('sua conta está marcada como inativa');
+      estado.eu = meu;
+      estado.ehGestor = meu.papel === 'gestor';
+      estado.vendedores = perfis.filter(function(p){ return p.ativo; });
+      $('eu').innerHTML = '<b>' + meu.nome + '</b> · ' + (estado.ehGestor ? 'gestor' : 'vendedor');
+      $('aviso-gestor').hidden = !estado.ehGestor;
+      $('li-erro').textContent = '';
+      $('login').hidden = true;
+      $('app').hidden = false;
+      return carregarPipeline();
     });
   }
 
@@ -291,11 +291,34 @@
     if (!emRecuperacao) { $('login-form').hidden = false; $('novasenha-form').hidden = true; }
   }
 
+  // ---------- API REST direta (evita o lock interno do supabase-js pós-login) ----------
+  var TOKEN = null;
+  function apiHeaders(extra){
+    return Object.assign({
+      apikey: SUPABASE_KEY,
+      Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY),
+      'Content-Type': 'application/json'
+    }, extra || {});
+  }
+  function apiGet(pathq){
+    return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { headers: apiHeaders() })
+      .then(function(r){ return r.text().then(function(t){
+        if (!r.ok) throw new Error((t && t.slice(0,200)) || ('HTTP ' + r.status));
+        return t ? JSON.parse(t) : null;
+      }); });
+  }
+  function apiPost(pathq, body, extra){
+    return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { method:'POST', headers: apiHeaders(extra), body: JSON.stringify(body) })
+      .then(function(r){ return r.text().then(function(t){
+        if (!r.ok) throw new Error((t && t.slice(0,200)) || ('HTTP ' + r.status));
+        return t ? JSON.parse(t) : null;
+      }); });
+  }
+
   // ---------- dados ----------
   function carregarPipeline(){
-    return sb.rpc('rpc_crm_pipeline').then(function(r){
-      if (r.error) throw r.error;
-      estado.leads = r.data || [];
+    return apiPost('rpc/rpc_crm_pipeline', {}).then(function(data){
+      estado.leads = data || [];
       render();
     }).catch(function(err){
       $('board').innerHTML = '<div class="vazio-col">Erro ao carregar: ' + err.message + '</div>';
@@ -304,10 +327,9 @@
 
   function upsertLead(whatsapp, patch){
     var row = Object.assign({ whatsapp: whatsapp }, patch);
-    return sb.from('lead_status').upsert(row, { onConflict: 'whatsapp' }).then(function(r){
-      if (r.error) { alert('Não deu pra salvar: ' + r.error.message); throw r.error; }
-      return carregarPipeline();
-    });
+    return apiPost('lead_status?on_conflict=whatsapp', [row], { Prefer: 'resolution=merge-duplicates,return=minimal' })
+      .then(function(){ return carregarPipeline(); })
+      .catch(function(err){ alert('Não deu pra salvar: ' + err.message); throw err; });
   }
 
   // ---------- render ----------
@@ -422,13 +444,31 @@
   $('f-nivel').addEventListener('change', render);
   $('f-busca').addEventListener('input', render);
 
+  // sessão salva pelo supabase-js — lida direto do localStorage (getSession() pode travar)
+  function sessaoLocal(){
+    try {
+      var raw = localStorage.getItem('sb-nbhekjgbszyuuxrynzfo-auth-token');
+      if (!raw) return null;
+      var s = JSON.parse(raw);
+      var sess = s && s.access_token ? s : (s && s.currentSession) || null;
+      if (!sess || !sess.access_token || !sess.user) return null;
+      if (sess.expires_at && sess.expires_at * 1000 < Date.now() + 10000) return null; // expirada/quase
+      return sess;
+    } catch(e){ return null; }
+  }
+
   // ---------- boot ----------
   if (!emRecuperacao) {
-    iniciar().catch(function(err){
-      // sessão persistida inválida / erro de perfil: volta pro login mostrando o motivo
-      erroLogin(err && err.message ? err.message : String(err));
+    var sl = sessaoLocal();
+    if (sl) {
+      TOKEN = sl.access_token;
+      iniciar(sl.user).catch(function(err){
+        erroLogin(err && err.message ? err.message : String(err));
+        mostrarLogin();
+      });
+    } else {
       mostrarLogin();
-    });
+    }
   }
 })();
 </script>
