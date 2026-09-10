@@ -540,7 +540,7 @@
 
     <section id="sec-fila" class="fila-secao">
       <div class="sec-head" style="margin-bottom:14px;">
-        <span class="sec"><span class="bar"></span><b>Fila da Cristina</b> <small>conversas sem vendedor ainda</small> <span class="tag-simulacao">Modo Simulação</span></span>
+        <span class="sec"><span class="bar"></span><b>Fila da Cris</b> <small>conversas sem vendedor ainda</small> <span class="tag-simulacao">Modo Simulação</span></span>
         <span class="hint">venda conjunta por enquanto — quem assumir primeiro atende</span>
       </div>
       <div id="fila-ia"></div>
@@ -1294,7 +1294,7 @@
   // ---- preview de conversa (clicável, dado de exemplo) ----
   // Simula a Fase 3 do plano: IA responde pergunta logística, escala pro
   // vendedor atribuído fechar o que ela não deve responder sozinha.
-  var NOME_IA = 'Cristina';
+  var NOME_IA = 'Cris';
 
   function conversaExemplo(lead){
     var primeiro = lead.nome.replace(/\(exemplo\)/i,'').replace(/^(Dra?\.|Fisio|Enf\.|Nutri)\s*/i,'').trim().split(' ')[0];
@@ -1350,7 +1350,7 @@
     function proxima(){
       if (minhaSequencia !== sequenciaConversa || idx >= mensagens.length) return;
       var m = mensagens[idx];
-      var respondendo = m.de !== 'lead'; // Cristina/vendedor "digitando" antes de responder
+      var respondendo = m.de !== 'lead'; // Cris/vendedor "digitando" antes de responder
       var atraso = respondendo ? (900 + Math.random() * 900) : 350;
 
       var digitando = null;
@@ -1398,7 +1398,7 @@
 
   // ---- tour guiado (primeiro contato com o CRM) ----
   var TOUR_PASSOS = [
-    { sel:'#sec-fila', titulo:'1. Fila da Cristina', texto:'Todo lead novo começa aqui, sendo respondido só pela Cristina (IA), sem vendedor ainda. Qualquer pessoa da equipe pode clicar em "Assumir conversa" — é venda conjunta, quem assumir primeiro atende.' },
+    { sel:'#sec-fila', titulo:'1. Fila da Cris', texto:'Todo lead novo começa aqui, sendo respondido só pela Cris (IA), sem vendedor ainda. Qualquer pessoa da equipe pode clicar em "Assumir conversa" — é venda conjunta, quem assumir primeiro atende.' },
     { sel:'#equipe-grid', titulo:'2. Equipe', texto:'Aqui fica quem faz parte do time: nome, WhatsApp e se está conectado. Cada pessoa edita o próprio card.' },
     { sel:'#kanban', titulo:'3. Pipeline', texto:'Depois de assumido, o lead entra aqui e passa por 4 etapas: Novo → Respondeu no WhatsApp → Comprou → Perdido.' },
     { sel:'.lead-card .nome', titulo:'4. Conversa', texto:'Clique no nome do lead pra abrir a conversa. Dá pra desativar a IA e responder você mesmo a qualquer momento.' },

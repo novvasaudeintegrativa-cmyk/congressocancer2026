@@ -57,7 +57,7 @@ Base comum: `docs/persona.md` (persona, dores, desejos, objeções — toda mens
 
 **Continua valendo (e é de graça):**
 - Links com UTM — o site já lê e propaga `utm_source/medium/campaign/term/content`.
-- O botão `wa.me/5511934873737` — conversa manual, uma a uma (ou, quando a Fase 2 do CRM estiver pronta, via `Ads/crm.html` com Cristina/IA + equipe).
+- O botão `wa.me/5511934873737` — conversa manual, uma a uma (ou, quando a Fase 2 do CRM estiver pronta, via `Ads/crm.html` com Cris/IA + equipe).
 - Posts orgânicos, stories, comentários e DMs respondidos manualmente.
 
 ### Convenção de UTM (usar sempre)
@@ -225,7 +225,7 @@ Agora com cronograma e criativos prontos (seções 2, 5 e 6 deste documento). Ot
 Artigo otimizado (ex: "Terapias complementares no câncer: o que diz a ciência") captando quem pesquisa isso no Google. Ciclo mais longo, sem custo por clique.
 
 ### B5 — Chatbot de qualificação
-2-3 perguntas de qualificação antes de cair pra atendimento humano. Converge com a Fase 3 do CRM (Cristina/IA) — ver `plano-divulgacao-2026` na memória do projeto.
+2-3 perguntas de qualificação antes de cair pra atendimento humano. Converge com a Fase 3 do CRM (Cris/IA) — ver `plano-divulgacao-2026` na memória do projeto.
 
 **Ordem de ativação:** B1 (já em andamento) → B4 → B2/B3 (assim que a conta for autorizada) → B5.
 
