@@ -774,9 +774,16 @@
   function renderThread(n){
     var rascunhoAnterior = '';
     var tinhaFoco = false;
+    var pertoDoFim = true;
+    var scrollAnterior = 0;
     if (conversaAtual === n){
       var txtAnterior = $('resp-texto');
       if (txtAnterior){ rascunhoAnterior = txtAnterior.value; tinhaFoco = document.activeElement === txtAnterior; }
+      var msgsAnterior = $('thread-msgs');
+      if (msgsAnterior){
+        scrollAnterior = msgsAnterior.scrollTop;
+        pertoDoFim = (msgsAnterior.scrollHeight - msgsAnterior.scrollTop - msgsAnterior.clientHeight) < 80;
+      }
     }
     conversaAtual = n;
     $('inbox-lista').querySelectorAll('.inbox-item').forEach(function(el){ el.classList.toggle('on', el.dataset.n === n); });
@@ -806,7 +813,8 @@
         RESPOSTAS_RAPIDAS.map(function(r, i){ return '<button type="button" class="btn-rapida" data-i="' + i + '">' + esc(r.rotulo) + '</button>'; }).join('') +
       '</div>' +
       '<div class="thread-resp"><textarea id="resp-texto" placeholder="responder…"></textarea><button type="button" id="resp-enviar">Enviar</button></div>';
-    var tm = $('thread-msgs'); tm.scrollTop = tm.scrollHeight;
+    var tm = $('thread-msgs');
+    tm.scrollTop = pertoDoFim ? tm.scrollHeight : Math.min(scrollAnterior, tm.scrollHeight);
     if (rascunhoAnterior){
       var txtNovo = $('resp-texto');
       txtNovo.value = rascunhoAnterior;
