@@ -1400,6 +1400,18 @@ Deno.serve(async (req) => {
   const texto = String(body.texto || "").trim();
   if (!numero || !texto) return j({ erro: "numero e texto obrigatórios" }, 400);
 
+  // responder já reivindica o lead (primeiro que responde vira o dono) — usa o
+  // token de quem chamou pra auth.uid() bater dentro da função
+  const assumeResp = await fetch(`${URL_}/rest/v1/rpc/rpc_assumir_lead`, {
+    method: "POST",
+    headers: { apikey: ANON, authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ p_whatsapp: numero }),
+  });
+  if (!assumeResp.ok) {
+    const errBody = await assumeResp.json().catch(() => ({}));
+    return j({ erro: errBody.message || errBody.erro || "não foi possível assumir esse lead" }, 409);
+  }
+
   const metaResp = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
     method: "POST",
     headers: { authorization: `Bearer ${WA_TOKEN}`, "content-type": "application/json" },
@@ -1425,13 +1437,6 @@ Deno.serve(async (req) => {
     }]),
   });
 
-  // handoff: humano respondeu, a Cris para de falar com esse lead
-  await fetch(`${URL_}/rest/v1/lead_status?on_conflict=whatsapp`, {
-    method: "POST",
-    headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
-    body: JSON.stringify([{ whatsapp: numero, ia_ativa: false }]),
-  });
-
   return j({ ok: true, wa_message_id: waId });
 });
 ```
@@ -1441,18 +1446,14 @@ o JWT do usuário logado, igual o `equipe-admin`).
 
 **Secrets** (Edge Functions → Secrets):
 - `WHATSAPP_PERMANENT_TOKEN` — o token gerado no passo 1 (Usuário de
-  Sistema). **Ainda pendente.**
-- `WHATSAPP_PHONE_NUMBER_ID` = `1039296279264556` (já conhecido, pode
-  cadastrar já).
+  Sistema).
+- `WHATSAPP_PHONE_NUMBER_ID` = `1039296279264556`.
 
-Qualquer membro de equipe **ativo** (gestor ou vendedor) pode responder —
-não restringe a lead atribuído, porque dentro da janela de 24h isso é
-raro travar o atendimento. Se depois quiser travar por lead atribuído,
-dá pra repetir a lógica de `guarda_lead_status` aqui.
-
-No `Ads/crm.html`, o campo de resposta na thread (`#resp-texto` /
-`#resp-enviar`) já chama essa função e recarrega a conversa ao enviar —
-só falta o secret do token pra funcionar de ponta a ponta.
+**Decisão (11/09/2026):** responder já reivindica o lead automaticamente
+(chama `rpc_assumir_lead` antes de enviar) — não existe mais um botão
+separado de "Assumir conversa" no `crm.html`. Se o lead já for de outro
+vendedor, o envio é recusado com erro 409 antes de gastar a chamada da
+Meta.
 
 ## 15. CRM — Gestão de equipe pelo painel (Edge Function `equipe-admin`)
 
@@ -2017,8 +2018,8 @@ begin
     limit 1;
 
   if achado.whatsapp is null then
-    insert into public.lead_status (whatsapp, atribuido_a, ia_ativa)
-      values (p_whatsapp, auth.uid(), false);
+    insert into public.lead_status (whatsapp, atribuido_a, ia_ativa, etapa)
+      values (p_whatsapp, auth.uid(), false, 'conversando');
     return;
   end if;
 
@@ -2027,7 +2028,8 @@ begin
   end if;
 
   update public.lead_status
-    set atribuido_a = auth.uid(), ia_ativa = false
+    set atribuido_a = auth.uid(), ia_ativa = false,
+        etapa = case when etapa = 'novo' then 'conversando' else etapa end
     where whatsapp = achado.whatsapp;
 end;
 $$;
