@@ -622,9 +622,11 @@
         (estado.ehGestor ? '<select class="sel-resp"></select>' : '') +
       '</div>' +
       (triar ? '' : '<textarea class="nota" placeholder="anotação…">' + (l.nota || '') + '</textarea>') +
-      (l.atribuido_nome
-        ? '<div class="resp">responsável: <span class="resp-nome">' + esc(l.atribuido_nome) + '</span></div>'
-        : (triar ? '' : '<div class="resp">sem responsável <button type="button" class="btn-assumir-resp" data-w="' + esc(l.whatsapp || '') + '">assumir</button></div>'));
+      (triar ? '' :
+        '<div class="resp">' +
+          (l.atribuido_nome ? 'responsável: <span class="resp-nome">' + esc(l.atribuido_nome) + '</span>' : 'sem responsável') +
+          (l.atribuido_a !== estado.eu.id ? ' <button type="button" class="btn-assumir-resp" data-w="' + esc(l.whatsapp || '') + '">assumir</button>' : '') +
+        '</div>');
 
     // etapa
     if (!triar){

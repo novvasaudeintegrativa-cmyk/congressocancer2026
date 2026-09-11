@@ -1740,7 +1740,7 @@ async function baixarEArmazenarMidia(mediaId: string, mimeType: string): Promise
     const path = `${mediaId}.${ext}`;
     const upR = await fetch(`${SUPABASE_URL}/storage/v1/object/whatsapp-media/${path}`, {
       method: "POST",
-      headers: { authorization: `Bearer ${SVC_KEY}`, "content-type": mimeType || "application/octet-stream", "x-upsert": "true" },
+      headers: { apikey: SVC_KEY, authorization: `Bearer ${SVC_KEY}`, "content-type": mimeType || "application/octet-stream", "x-upsert": "true" },
       body: bytes,
     });
     if (!upR.ok) { console.error("upload midia:", upR.status, await upR.text()); return null; }
@@ -2074,9 +2074,10 @@ begin
   if tg_op = 'UPDATE'
      and new.atribuido_a is distinct from old.atribuido_a
      and not public.eh_gestor()
-     and not (old.atribuido_a is null and new.atribuido_a = auth.uid())
-     and not (old.atribuido_a = auth.uid() and new.atribuido_a is null) then
-    raise exception 'só gestor pode passar o lead pra outra pessoa';
+     and not (new.atribuido_a = auth.uid())               -- qualquer um pode assumir pra si, mesmo já tendo dono
+     and not (old.atribuido_a = auth.uid() and new.atribuido_a is null) -- e liberar o que é seu
+  then
+    raise exception 'só gestor pode passar o lead pra outra pessoa (que não seja você mesmo)';
   end if;
   new.atualizado_por := auth.uid();
   new.atualizado_em  := now();
@@ -2431,23 +2432,17 @@ const ANTHROPIC_KEY   = Deno.env.get("ANTHROPIC_API_KEY")!;
 
 const svcHeaders = { apikey: SVC_KEY, authorization: `Bearer ${SVC_KEY}`, "content-type": "application/json" };
 
-const CRIS_INSTRUCOES = `Você é a Cris, da equipe do Congresso Câncer 2026 (congresso de práticas integrativas oncológicas, 2 dias em São Paulo). Você pode conversar de verdade com o lead: tirar dúvidas, explicar do que se trata o congresso, falar preço e mandar o link de inscrição.
+const CRIS_INSTRUCOES = `Você é a Cris, da equipe do Congresso Câncer 2026 (congresso de práticas integrativas oncológicas, 2 dias em São Paulo). Sua função é criar uma conexão inicial calorosa com o lead e levar ele pra nossa página oficial — é lá que tem a apresentação completa (inclusive vídeo), que já responde as dúvidas mais comuns e foi feita pra converter. O site é: https://congressocancer.novvasaudeintegrativa.com.br
 
 Perfil de quem mais aproveita o congresso: médico(a)/dentista/farmacêutico(a)/enfermeiro(a)/fisioterapeuta/terapeuta que atende ou quer atender pacientes oncológicos e quer ampliar repertório em práticas integrativas.
 
-RESPOSTAS DE REFERÊNCIA (o time humano usa exatamente essas — adapte ao tom da conversa, mas mantenha a mesma informação):
-- Valores: "Os valores são: Lote VIP — 12x de R$149,70 ou R$1.497 à vista (https://chk.eduzz.com/6W4G83QY0Z); Lote 1 — 12x de R$49,70 ou R$497 à vista (https://chk.eduzz.com/39ZRQ8ZBWE). Os lotes seguintes sobem de preço, então quanto antes garantir, melhor!"
-- Site: "Você pode ver todos os detalhes direto no nosso site: https://congressocancer.novvasaudeintegrativa.com.br"
-- Certificado: "Sim! O congresso emite certificado digital de 16 horas, reconhecido — ótimo pro seu portfólio profissional."
-- Local/datas: "O congresso é em São Paulo, 2 dias de imersão em práticas integrativas oncológicas. As datas exatas eu confirmo em instantes!"
-
-Regras importantes:
-- Use SOMENTE as informações das seções "RESPOSTAS DE REFERÊNCIA" e "CONTEÚDO ATUAL DO SITE" abaixo pra falar de preço, lote, data, palestrante, programação ou qualquer outro dado factual do congresso — são a fonte de verdade, sempre atualizadas. Nunca invente ou complete com dado que não estiver lá.
-- Se souber quem é o lead (seção "QUEM É ESSE CONTATO"), trate com familiaridade, chame pelo nome e não repita pergunta de qualificação que você já sabe a resposta.
-- Se perguntarem algo que não está no conteúdo do site, diga que vai confirmar com a equipe e chama pra ver as novidades direto no site.
-- Não empurre a venda de forma agressiva nem finja urgência falsa. Pode mandar o link de compra quando fizer sentido na conversa.
-- Se a pessoa pedir explicitamente pra falar com um humano: se for dentro do horário comercial (8h-17h, seg-sex), diga que já chamou alguém do time e a pessoa deve aparecer a qualquer momento; se for fora desse horário, diga que chama assim que o time abrir. Nos dois casos, continue disponível pra ajudar enquanto isso.
-- Tom: brasileiro, informal, caloroso, mensagens curtas (2-5 linhas), no máximo 1 emoji por mensagem. Nunca mencione que é uma IA a menos que perguntem diretamente.`;
+Regras importantes (decisão da empresa, 11/09/2026):
+- NÃO informe valores, preço de lote, datas, programação, nomes de palestrantes, certificado ou qualquer detalhe aprofundado do congresso diretamente na conversa — pra qualquer pergunta desse tipo, responda breve e sempre mande pra página: "Isso está bem explicadinho na nossa página, com todos os detalhes — dá uma olhada: https://congressocancer.novvasaudeintegrativa.com.br". Nunca cite valor em R$ na conversa, nem repita o que está no "CONTEÚDO ATUAL DO SITE" abaixo — esse conteúdo é só pra você mesma saber do que se trata o congresso, não pra repassar em detalhe.
+- Pode confirmar o básico/geral sem detalhar (ex: "sim, é sobre práticas integrativas em oncologia", "é em São Paulo, 2 dias"), mas sempre fechando com o convite pra ver tudo na página.
+- Se souber quem é o lead (seção "QUEM É ESSE CONTATO"), trate com familiaridade e chame pelo nome.
+- Não empurre a venda de forma agressiva nem finja urgência falsa — só reforce com naturalidade que vale a pena conferir a página agora.
+- Se a pessoa pedir explicitamente pra falar com um humano: se for dentro do horário comercial (8h-17h, seg-sex), diga que já chamou alguém do time e a pessoa deve aparecer a qualquer momento; se for fora desse horário, diga que chama assim que o time abrir. Nos dois casos, continue reforçando a página enquanto isso.
+- Tom: brasileiro, informal, caloroso, mensagens curtas (2-4 linhas), no máximo 1 emoji por mensagem. Nunca mencione que é uma IA a menos que perguntem diretamente.`;
 
 const SITE_URL = "https://congressocancer.novvasaudeintegrativa.com.br/";
 const SITE_TTL_MS = 30 * 60 * 1000;
@@ -2535,7 +2530,7 @@ async function crisResponde(msgsHist: any[], conhecido: { nome: string; profissa
   const notaHorario = emComercial
     ? "Estamos dentro do horário comercial agora — um humano da equipe já foi avisado e pode assumir a qualquer momento."
     : "Estamos fora do horário comercial agora (a equipe volta às 8h no próximo dia útil).";
-  let system = CRIS_INSTRUCOES + "\n\n" + notaHorario + "\n\nCONTEÚDO ATUAL DO SITE (extraído agora, é a fonte de verdade):\n" + site;
+  let system = CRIS_INSTRUCOES + "\n\n" + notaHorario + "\n\nCONTEÚDO ATUAL DO SITE (só pra seu conhecimento — NÃO repita preço/data/programação daqui na conversa, é só a página que deve mostrar isso):\n" + site;
   if (conhecido) {
     system += `\n\nQUEM É ESSE CONTATO: nome ${conhecido.nome}` +
       (conhecido.profissao ? `, profissão ${conhecido.profissao}` : "") +
@@ -2579,7 +2574,7 @@ async function baixarEArmazenarMidia(mediaId: string, mimeType: string): Promise
     const path = `${mediaId}.${ext}`;
     const upR = await fetch(`${SUPABASE_URL}/storage/v1/object/whatsapp-media/${path}`, {
       method: "POST",
-      headers: { authorization: `Bearer ${SVC_KEY}`, "content-type": mimeType || "application/octet-stream", "x-upsert": "true" },
+      headers: { apikey: SVC_KEY, authorization: `Bearer ${SVC_KEY}`, "content-type": mimeType || "application/octet-stream", "x-upsert": "true" },
       body: bytes,
     });
     if (!upR.ok) { console.error("upload midia:", upR.status, await upR.text()); return null; }
