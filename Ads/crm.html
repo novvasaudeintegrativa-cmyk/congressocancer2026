@@ -66,7 +66,7 @@
 
   .card{background:#fbfaf8;border:1px solid var(--linha);border-radius:11px;padding:11px 12px;margin-bottom:9px;}
   .card-head{display:flex;align-items:center;gap:9px;}
-  .avatar{width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--tit);font-weight:800;font-size:12px;flex-shrink:0;}
+  .avatar{width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;line-height:1;flex-shrink:0;}
   .card.urg{border-color:var(--bordo-vivo);box-shadow:0 0 0 1px var(--bordo-vivo) inset;}
   .card .nome{font-family:var(--tit);font-weight:800;font-size:13.5px;line-height:1.2;}
   .card .meta{font-size:11px;color:var(--soft);margin-top:3px;}
@@ -699,16 +699,17 @@
     for (var i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
     return AVATAR_CORES[h % AVATAR_CORES.length];
   }
-  function avatarIniciais(nome, wpp){
-    if (nome){
-      var partes = nome.trim().split(/\s+/);
-      return (partes[0][0] + (partes[1] ? partes[1][0] : '')).toUpperCase();
-    }
-    return wpp ? wpp.slice(-2) : '?';
+  var NOMES_MASCULINOS_TERMINADOS_EM_A = ['luca','joshua','saulo','elisha','nikita','ilya','anda'];
+  function generoPorNome(nome){
+    var primeiro = nome.trim().split(/\s+/)[0].toLowerCase();
+    if (NOMES_MASCULINOS_TERMINADOS_EM_A.indexOf(primeiro) !== -1) return 'm';
+    return /a$/.test(primeiro) ? 'f' : 'm';
   }
   function avatarHtml(nome, wpp){
     var seed = wpp || nome || '?';
-    return '<div class="avatar" style="background:' + avatarCor(seed) + '">' + esc(avatarIniciais(nome, wpp)) + '</div>';
+    var cor = avatarCor(seed);
+    var emoji = nome ? (generoPorNome(nome) === 'f' ? '👩' : '👨') : '👤';
+    return '<div class="avatar" style="background:' + cor + '">' + emoji + '</div>';
   }
   function fmtQuando(iso){
     if (!iso) return '';
