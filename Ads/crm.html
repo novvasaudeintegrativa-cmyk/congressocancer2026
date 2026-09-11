@@ -65,6 +65,8 @@
   .col > .cab .n{font-size:11px;color:var(--faint);font-weight:700;}
 
   .card{background:#fbfaf8;border:1px solid var(--linha);border-radius:11px;padding:11px 12px;margin-bottom:9px;}
+  .card-head{display:flex;align-items:center;gap:9px;}
+  .avatar{width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--tit);font-weight:800;font-size:12px;flex-shrink:0;}
   .card.urg{border-color:var(--bordo-vivo);box-shadow:0 0 0 1px var(--bordo-vivo) inset;}
   .card .nome{font-family:var(--tit);font-weight:800;font-size:13.5px;line-height:1.2;}
   .card .meta{font-size:11px;color:var(--soft);margin-top:3px;}
@@ -97,7 +99,8 @@
 
   .inbox{display:grid;grid-template-columns:300px 1fr;border:1px solid var(--linha);border-radius:14px;overflow:hidden;background:var(--card);height:min(60vh,560px);min-height:400px;}
   .inbox-lista{border-right:1px solid var(--linha);overflow-y:auto;}
-  .inbox-item{padding:12px 14px;border-bottom:1px solid var(--linha);cursor:pointer;border-left:3px solid transparent;}
+  .inbox-item{padding:12px 14px;border-bottom:1px solid var(--linha);cursor:pointer;border-left:3px solid transparent;display:flex;gap:9px;align-items:flex-start;}
+  .inbox-item-corpo{flex:1;min-width:0;}
   .inbox-item:hover{background:#faf1f0;}
   .inbox-item.on{background:#faf1f0;border-left-color:var(--bordo);}
   .inbox-item .num{font-family:var(--tit);font-weight:800;font-size:13px;}
