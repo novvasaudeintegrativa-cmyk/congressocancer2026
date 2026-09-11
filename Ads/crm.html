@@ -323,8 +323,7 @@
     { id:'contato',     rot:'Prospecção' },
     { id:'conversando', rot:'Em Atendimento' },
     { id:'proposta',    rot:'Aguardando Compra' },
-    { id:'ganho',       rot:'Finalizado' },
-    { id:'perdido',     rot:'Perdido' }
+    { id:'ganho',       rot:'Finalizado' }
   ];
   var ROT_ETAPA = {}; ETAPAS.forEach(function(e){ ROT_ETAPA[e.id] = e.rot; });
 
@@ -605,19 +604,21 @@
     });
     c.addEventListener('dragend', function(){ c.classList.remove('arrastando'); });
 
-    var origem = l.utm_source ? (l.utm_source + (l.utm_campaign ? ' · ' + l.utm_campaign : '')) : 'origem não rastreada';
+    var origem = l.utm_source ? (l.utm_source + (l.utm_campaign ? ' · ' + l.utm_campaign : '')) : '';
     var wpp = (l.whatsapp || '').replace(/\D/g, '');
     var nivelBadge = l.nivel ? '<span class="badge ' + l.nivel + '">' + l.nivel + '</span>' : '';
+    var badges = nivelBadge + (origem ? '<span class="badge origem">' + esc(origem) + '</span>' : '');
+    var ICON_WA = '<svg class="ic-wa" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm0 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 012.41 5.82c0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.4-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.188 8.188 0 01-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23zm-4.55 4.72c-.15 0-.4.06-.6.29-.21.23-.8.78-.8 1.91s.82 2.22.94 2.37c.11.15 1.6 2.57 3.97 3.5 1.96.77 2.36.62 2.78.58.42-.04 1.36-.55 1.55-1.09.19-.53.19-.99.14-1.09-.06-.1-.21-.15-.44-.27-.23-.11-1.36-.67-1.57-.75-.21-.08-.36-.11-.51.12-.15.23-.59.75-.72.9-.13.15-.26.17-.49.06-.23-.12-.96-.35-1.83-1.13-.68-.6-1.13-1.35-1.27-1.58-.13-.23-.01-.35.1-.47.11-.11.23-.27.35-.4.11-.13.15-.23.23-.38.08-.15.04-.29-.02-.4-.06-.11-.51-1.24-.71-1.7-.19-.45-.38-.39-.51-.4h-.44z"/></svg>';
 
     c.innerHTML =
       '<div class="card-head">' + avatarHtml(l.nome, wpp) +
         '<div><div class="nome">' + (l.nome || (wpp ? '+' + wpp : '(sem nome)')) + '</div>' +
-        '<div class="meta">' + (l.profissao || 'profissão não informada') + '</div></div>' +
+        (l.profissao ? '<div class="meta">' + esc(l.profissao) + '</div>' : '') + '</div>' +
       '</div>' +
-      '<div class="badges">' + nivelBadge + '<span class="badge origem">' + origem + '</span></div>' +
+      (badges ? '<div class="badges">' + badges + '</div>' : '') +
       (l.captado_em ? '<div class="quando">desde ' + fmtQuando(l.captado_em) + '</div>' : '') +
       '<div class="linha-acao">' +
-        '<a class="wa" href="https://wa.me/' + wpp + '" target="_blank" rel="noopener">WhatsApp</a>' +
+        '<a class="wa" href="https://wa.me/' + wpp + '" target="_blank" rel="noopener">' + ICON_WA + ' WhatsApp</a>' +
         (triar ? '' : '<button type="button" class="urg-btn' + (l.urgente ? ' on' : '') + '">Urgente</button>') +
       '</div>' +
       '<div class="linha-acao">' +
