@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>CRM Novva — Leads</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#8a222e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CRM Novva">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -300,6 +307,8 @@
     </form>
   </div>
 
+  <p class="foot"><button type="button" id="btn-notif" class="btn-atualizar">🔔 Ativar notificações neste aparelho</button></p>
+
   <p class="foot">CRM Novva · Fase 1 — <a href="novva-ads.html">voltar ao painel</a></p>
 </div>
 
@@ -311,6 +320,8 @@
   var SUPABASE_URL = 'https://nbhekjgbszyuuxrynzfo.supabase.co';
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iaGVramdic3p5dXV4cnluemZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzM0MDUsImV4cCI6MjA5MjMwOTQwNX0.d8f346ONCOHjr__C8RLmSJOFW0kZfqFkCGHmotwxiXc';
   var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  var VAPID_PUBLIC = 'BGEEfwa8xAK4IW_Gfx7M6fuoo-F6ykcpIaw7tehbgfbgKEdQoeuaYv7bRzhYH6XYYU-_V0zZRE7i9sPWmG6Ubf0';
 
   var $ = function(id){ return document.getElementById(id); };
 
@@ -1063,6 +1074,56 @@
       return sess;
     } catch(e){ return null; }
   }
+
+  // ---------- notificações push ----------
+  function urlBase64ToUint8Array(base64String){
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    var raw = atob(base64);
+    var out = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; ++i) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  function registrarServiceWorker(){
+    if (!('serviceWorker' in navigator)) return Promise.resolve(null);
+    return navigator.serviceWorker.register('sw.js').catch(function(err){ dbg('sw erro: ' + err.message); return null; });
+  }
+
+  function ativarNotificacoes(){
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)){
+      alert('Esse navegador não suporta notificações push.');
+      return;
+    }
+    Notification.requestPermission().then(function(perm){
+      if (perm !== 'granted'){ alert('Permissão de notificação negada.'); return; }
+      registrarServiceWorker().then(function(reg){
+        if (!reg) return;
+        return reg.pushManager.getSubscription().then(function(existente){
+          return existente || reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
+          });
+        });
+      }).then(function(sub){
+        if (!sub) return;
+        var json = sub.toJSON();
+        return apiPost('push_subscriptions?on_conflict=endpoint', [{
+          user_id: estado.eu.id,
+          endpoint: json.endpoint,
+          p256dh: json.keys.p256dh,
+          auth: json.keys.auth,
+        }], { Prefer: 'resolution=merge-duplicates,return=minimal' });
+      }).then(function(){
+        alert('Notificações ativadas neste aparelho! 🔔');
+      }).catch(function(err){
+        alert('Não deu pra ativar: ' + err.message);
+      });
+    });
+  }
+
+  registrarServiceWorker();
+  if ($('btn-notif')) $('btn-notif').addEventListener('click', ativarNotificacoes);
 
   // ---------- boot ----------
   dbg('boot. emRecuperacao=' + emRecuperacao);
