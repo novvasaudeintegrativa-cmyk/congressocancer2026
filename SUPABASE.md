@@ -1400,18 +1400,6 @@ Deno.serve(async (req) => {
   const texto = String(body.texto || "").trim();
   if (!numero || !texto) return j({ erro: "numero e texto obrigatórios" }, 400);
 
-  // responder já reivindica o lead (primeiro que responde vira o dono) — usa o
-  // token de quem chamou pra auth.uid() bater dentro da função
-  const assumeResp = await fetch(`${URL_}/rest/v1/rpc/rpc_assumir_lead`, {
-    method: "POST",
-    headers: { apikey: ANON, authorization: `Bearer ${token}`, "content-type": "application/json" },
-    body: JSON.stringify({ p_whatsapp: numero }),
-  });
-  if (!assumeResp.ok) {
-    const errBody = await assumeResp.json().catch(() => ({}));
-    return j({ erro: errBody.message || errBody.erro || "não foi possível assumir esse lead" }, 409);
-  }
-
   const metaResp = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
     method: "POST",
     headers: { authorization: `Bearer ${WA_TOKEN}`, "content-type": "application/json" },
@@ -1437,6 +1425,19 @@ Deno.serve(async (req) => {
     }]),
   });
 
+  // desliga a Cris e avança "Novos" -> "Em Atendimento" — sem dono, qualquer
+  // um da equipe pode responder qualquer lead (sem comissão, mesmo objetivo)
+  await fetch(`${URL_}/rest/v1/lead_status?on_conflict=whatsapp`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([{ whatsapp: numero, ia_ativa: false }]),
+  });
+  await fetch(`${URL_}/rest/v1/lead_status?whatsapp=eq.${numero}&etapa=eq.novo`, {
+    method: "PATCH",
+    headers: { ...svcHeaders, prefer: "return=minimal" },
+    body: JSON.stringify({ etapa: "conversando" }),
+  });
+
   return j({ ok: true, wa_message_id: waId });
 });
 ```
@@ -1449,11 +1450,10 @@ o JWT do usuário logado, igual o `equipe-admin`).
   Sistema).
 - `WHATSAPP_PHONE_NUMBER_ID` = `1039296279264556`.
 
-**Decisão (11/09/2026):** responder já reivindica o lead automaticamente
-(chama `rpc_assumir_lead` antes de enviar) — não existe mais um botão
-separado de "Assumir conversa" no `crm.html`. Se o lead já for de outro
-vendedor, o envio é recusado com erro 409 antes de gastar a chamada da
-Meta.
+**Decisão (11/09/2026):** sem comissão por vendedor, então qualquer membro
+ativo da equipe pode responder qualquer lead a qualquer momento — não tem
+mais reivindicação/dono (ver §15.7). Responder só desliga a Cris e avança
+a etapa.
 
 ## 15. CRM — Gestão de equipe pelo painel (Edge Function `equipe-admin`)
 
@@ -1629,11 +1629,11 @@ returns json language sql stable security definer set search_path = public as $$
     from public.lead_status s
     left join public.crm_leads l on public.wa_norm(l.whatsapp) = public.wa_norm(s.whatsapp)
     left join public.perfis pa on pa.id = s.atribuido_a
-    where
-      exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
-      and (public.eh_gestor() or s.atribuido_a = auth.uid() or coalesce(s.urgente, false) = true)
+    where exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
   ) t;
 $$;
+
+notify pgrst, 'reload schema';
 
 notify pgrst, 'reload schema';
 ```
@@ -1669,6 +1669,88 @@ async function garantirLeadStatus(numero: string) {
 Chamada logo no início de `deixarCrisResponder`, antes de qualquer outra
 coisa — assim toda mensagem nova, não importa o horário, já garante um
 card na coluna "Novo" do Kanban.
+
+## 15.7. CRM — sem "dono" do lead (todo mundo pode responder qualquer um)
+
+Decisão (11/09/2026): não existe comissão por vendedor — todo mundo
+trabalha pelo mesmo objetivo (fechar venda), então a trava de "esse lead
+já é de outro vendedor" (criada em §17.6/§17.7) foi **removida**. Agora:
+
+- Qualquer membro ativo da equipe vê e edita qualquer lead no Kanban
+  (etapa, nota, urgente, atribuir/desatribuir se quiser usar pra
+  organização própria — mas não é mais obrigatório nem trava nada).
+- Responder pelo WhatsApp (via `whatsapp-send`) não reivindica mais o
+  lead — só desliga a Cris e avança a etapa de "Novos" pra "Em
+  Atendimento", sem checar dono.
+
+```sql
+drop policy if exists "vê lead_status" on public.lead_status;
+create policy "vê lead_status" on public.lead_status
+  for select to authenticated
+  using (exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo));
+
+drop policy if exists "edita lead_status" on public.lead_status;
+create policy "edita lead_status" on public.lead_status
+  for update to authenticated
+  using (exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo))
+  with check (exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo));
+
+notify pgrst, 'reload schema';
+```
+
+`rpc_crm_pipeline` também precisa soltar o filtro de dono/urgente — ver
+código atualizado logo abaixo.
+
+## 15.8. CRM — recebendo imagens/áudios (mídia do WhatsApp)
+
+O webhook da Meta manda só um **ID temporário** da mídia, não o arquivo —
+pra exibir de verdade, precisa buscar na Graph API e guardar em algum
+lugar antes que o link expire (poucos minutos/horas). Guardamos no
+**Storage do Supabase**, num bucket público.
+
+### SQL
+
+```sql
+insert into storage.buckets (id, name, public)
+values ('whatsapp-media', 'whatsapp-media', true)
+on conflict (id) do update set public = true;
+
+alter table public.mensagens add column if not exists midia_url text;
+
+notify pgrst, 'reload schema';
+```
+
+### `whatsapp-webhook` — trecho novo (baixa e sobe a mídia)
+
+Adiciona essa função e usa no loop de mensagens recebidas (código
+completo em §17.8):
+
+```ts
+async function baixarEArmazenarMidia(mediaId: string, mimeType: string): Promise<string | null> {
+  try {
+    const metaR = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, {
+      headers: { authorization: `Bearer ${WA_TOKEN}` },
+    });
+    if (!metaR.ok) return null;
+    const metaJson = await metaR.json();
+    const fileR = await fetch(metaJson.url, { headers: { authorization: `Bearer ${WA_TOKEN}` } });
+    if (!fileR.ok) return null;
+    const bytes = new Uint8Array(await fileR.arrayBuffer());
+    const ext = (mimeType || "").split("/")[1]?.split(";")[0] || "bin";
+    const path = `${mediaId}.${ext}`;
+    const upR = await fetch(`${SUPABASE_URL}/storage/v1/object/whatsapp-media/${path}`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${SVC_KEY}`, "content-type": mimeType || "application/octet-stream", "x-upsert": "true" },
+      body: bytes,
+    });
+    if (!upR.ok) { console.error("upload midia:", upR.status, await upR.text()); return null; }
+    return `${SUPABASE_URL}/storage/v1/object/public/whatsapp-media/${path}`;
+  } catch (e) { console.error("midia:", e); return null; }
+}
+```
+
+Suporta imagem, áudio, vídeo, documento e sticker (qualquer um com
+`m.image`/`m.video`/`m.audio`/`m.document`/`m.sticker`).
 
 ## 16. CRM — Cris (IA de primeiro contato)
 
@@ -2483,6 +2565,28 @@ async function mandarWhatsapp(numero: string, texto: string): Promise<string | n
   return body.messages?.[0]?.id ?? null;
 }
 
+async function baixarEArmazenarMidia(mediaId: string, mimeType: string): Promise<string | null> {
+  try {
+    const metaR = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, {
+      headers: { authorization: `Bearer ${WA_TOKEN}` },
+    });
+    if (!metaR.ok) return null;
+    const metaJson = await metaR.json();
+    const fileR = await fetch(metaJson.url, { headers: { authorization: `Bearer ${WA_TOKEN}` } });
+    if (!fileR.ok) return null;
+    const bytes = new Uint8Array(await fileR.arrayBuffer());
+    const ext = (mimeType || "").split("/")[1]?.split(";")[0] || "bin";
+    const path = `${mediaId}.${ext}`;
+    const upR = await fetch(`${SUPABASE_URL}/storage/v1/object/whatsapp-media/${path}`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${SVC_KEY}`, "content-type": mimeType || "application/octet-stream", "x-upsert": "true" },
+      body: bytes,
+    });
+    if (!upR.ok) { console.error("upload midia:", upR.status, await upR.text()); return null; }
+    return `${SUPABASE_URL}/storage/v1/object/public/whatsapp-media/${path}`;
+  } catch (e) { console.error("midia:", e); return null; }
+}
+
 async function gravarEnviada(numero: string, waId: string | null, texto: string) {
   await fetch(`${SUPABASE_URL}/rest/v1/mensagens?on_conflict=wa_message_id`, {
     method: "POST",
@@ -2601,6 +2705,8 @@ Deno.serve(async (req) => {
     for (const ch of entry.changes ?? []) {
       const v = ch.value ?? {};
       for (const m of v.messages ?? []) {
+        const midia = m.image || m.video || m.audio || m.document || m.sticker;
+        const midiaUrl = midia?.id ? await baixarEArmazenarMidia(midia.id, midia.mime_type) : null;
         linhas.push({
           wa_message_id: m.id,
           lead_whatsapp: m.from,
@@ -2608,7 +2714,8 @@ Deno.serve(async (req) => {
           tipo: m.type ?? null,
           texto: m.text?.body ?? m.button?.text ??
                  m.interactive?.button_reply?.title ??
-                 m.interactive?.list_reply?.title ?? null,
+                 m.interactive?.list_reply?.title ?? midia?.caption ?? null,
+          midia_url: midiaUrl,
           wa_timestamp: m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : null,
           raw: m,
         });

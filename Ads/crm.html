@@ -120,6 +120,8 @@
   .bolha.rec{align-self:flex-start;background:#fff;border:1px solid var(--linha);border-bottom-left-radius:4px;}
   .bolha.env{align-self:flex-end;background:#dcf5e4;border-bottom-right-radius:4px;}
   .bolha .hora{display:block;font-size:9.5px;color:var(--faint);margin-top:3px;text-align:right;}
+  .bolha-img{max-width:220px;max-height:220px;border-radius:8px;display:block;object-fit:cover;}
+  .bolha-legenda{margin-top:4px;}
   .thread-vazio{margin:auto;color:var(--faint);font-size:13px;text-align:center;padding:20px;}
   .thread-nota{padding:8px 16px;font-size:11px;color:var(--dourado);background:#fbf5e8;border-top:1px solid var(--linha);}
   .thread-ia{padding:10px 16px;font-size:13px;font-weight:700;color:#7a4a00;background:#ffe8b3;border-bottom:2px solid #f0a500;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
@@ -720,7 +722,7 @@
 
   function carregarConversas(){
     return Promise.all([
-      apiGet('mensagens?select=id,lead_whatsapp,direcao,tipo,texto,status,wa_timestamp,criado_em,enviado_por&order=criado_em.asc'),
+      apiGet('mensagens?select=id,lead_whatsapp,direcao,tipo,texto,midia_url,status,wa_timestamp,criado_em,enviado_por&order=criado_em.asc'),
       apiGet('lead_status?select=whatsapp,urgente&urgente=eq.true'),
     ])
       .then(function(res){
@@ -785,9 +787,16 @@
       '<div class="thread-msgs" id="thread-msgs">' +
         arr.map(function(m){
           var quem = m.direcao === 'enviada' ? (m.enviado_por ? '' : '<span class="quem">Cris</span>') : '';
+          var conteudo = m.midia_url
+            ? (m.tipo === 'image'
+                ? '<a href="' + esc(m.midia_url) + '" target="_blank" rel="noopener"><img class="bolha-img" src="' + esc(m.midia_url) + '" alt="imagem"></a>' + (m.texto ? '<div class="bolha-legenda">' + esc(m.texto) + '</div>' : '')
+                : (m.tipo === 'audio'
+                    ? '<audio controls src="' + esc(m.midia_url) + '"></audio>'
+                    : '<a href="' + esc(m.midia_url) + '" target="_blank" rel="noopener">📎 abrir ' + esc(m.tipo || 'arquivo') + '</a>'))
+            : esc(m.texto || '(' + (m.tipo || 'sem texto') + ')');
           return '<div class="bolha ' + (m.direcao==='enviada'?'env':'rec') + '">' +
             quem +
-            esc(m.texto || '(' + (m.tipo || 'sem texto') + ')') +
+            conteudo +
             '<span class="hora">' + fmtQuando(m.wa_timestamp || m.criado_em) +
             (m.direcao==='enviada' && m.status ? ' · ' + esc(m.status) : '') + '</span>' +
           '</div>';
