@@ -56,6 +56,9 @@
   .board{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start;}
   .col{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:10px;min-width:230px;max-width:260px;flex:0 0 auto;}
   .col.triar{border-color:var(--dourado);background:#fdf7ec;}
+  .col.drag-over{border-color:var(--bordo-vivo);background:#fbeef0;}
+  .card{cursor:grab;}
+  .card.arrastando{opacity:.4;}
   .col > .cab{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 4px 10px;}
   .col > .cab b{font-family:var(--tit);font-weight:800;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--bordo);}
   .col.triar > .cab b{color:var(--dourado);}
@@ -66,6 +69,7 @@
   .card .nome{font-family:var(--tit);font-weight:800;font-size:13.5px;line-height:1.2;}
   .card .meta{font-size:11px;color:var(--soft);margin-top:3px;}
   .card .badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;}
+  .card .quando{font-size:10px;color:var(--faint);margin-top:5px;}
   .badge{font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 7px;border-radius:999px;}
   .badge.iniciante{background:rgba(47,111,158,.13);color:var(--azul);}
   .badge.intermediario{background:rgba(201,139,31,.15);color:var(--dourado);}
@@ -109,6 +113,22 @@
   .bolha .hora{display:block;font-size:9.5px;color:var(--faint);margin-top:3px;text-align:right;}
   .thread-vazio{margin:auto;color:var(--faint);font-size:13px;text-align:center;padding:20px;}
   .thread-nota{padding:8px 16px;font-size:11px;color:var(--dourado);background:#fbf5e8;border-top:1px solid var(--linha);}
+  .thread-ia{padding:10px 16px;font-size:13px;font-weight:700;color:#7a4a00;background:#ffe8b3;border-bottom:2px solid #f0a500;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .thread-ia.humano{color:#0a5c2b;background:#d3f5df;border-bottom-color:#2fae5f;}
+  .thread-ia button{font-family:var(--tit);font-weight:800;font-size:12.5px;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:10px;padding:8px 16px;cursor:pointer;}
+  .thread-ia.humano button{background:#2fae5f;animation:none;}
+  .thread-ia button:disabled{opacity:.5;cursor:default;animation:none;}
+  #btn-assumir{animation:pulse-assumir 1.6s ease-in-out infinite;}
+  @keyframes pulse-assumir{
+    0%, 100%{ transform:scale(1); box-shadow:0 4px 14px rgba(122,26,26,.45), 0 0 0 0 rgba(122,26,26,.55); }
+    50%{ transform:scale(1.06); box-shadow:0 4px 14px rgba(122,26,26,.45), 0 0 0 8px rgba(122,26,26,0); }
+  }
+  @media (prefers-reduced-motion: reduce){ #btn-assumir{animation:none;} }
+  .inbox-item .btn-assumir-rapido{margin-top:4px;font-family:var(--tit);font-weight:800;font-size:9.5px;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:7px;padding:3px 8px;cursor:pointer;animation:pulse-assumir 1.6s ease-in-out infinite;}
+  .thread-rapidas{padding:8px 12px 0;display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid var(--linha);}
+  .btn-rapida{font-family:var(--corpo);font-size:11.5px;background:#fff;color:var(--ink);border:1px solid var(--linha);border-radius:14px;padding:5px 10px;cursor:pointer;}
+  .btn-rapida:hover{background:#f2ede9;}
+  .bolha .quem{display:block;font-size:9.5px;font-weight:800;text-transform:uppercase;color:var(--dourado);margin-bottom:2px;}
   .thread-resp{padding:10px 12px;border-top:1px solid var(--linha);display:flex;gap:8px;align-items:flex-end;}
   .thread-resp textarea{flex:1;border:1px solid var(--linha);border-radius:10px;padding:8px 10px;font-family:var(--corpo);font-size:13px;resize:none;min-height:38px;max-height:120px;color:var(--ink);background:#fff;}
   .thread-resp button{font-family:var(--tit);font-weight:800;font-size:12px;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:10px;padding:9px 16px;cursor:pointer;}
@@ -133,6 +153,12 @@
   .equipe-tabela .e-inativo{opacity:.5;}
   .equipe-tabela .e-acao{font-family:var(--tit);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:5px 11px;border-radius:999px;cursor:pointer;}
   .equipe-tabela .e-acao:hover{border-color:var(--bordo);color:var(--bordo);}
+
+  .quiz-tabela-wrap{overflow-x:auto;border:1px solid var(--linha);border-radius:12px;background:var(--card);}
+  .quiz-tabela{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap;}
+  .quiz-tabela th{text-align:left;padding:9px 12px;font-family:var(--tit);font-weight:800;font-size:10.5px;text-transform:uppercase;color:var(--soft);border-bottom:2px solid var(--linha);}
+  .quiz-tabela td{padding:9px 12px;border-top:1px solid var(--linha);vertical-align:middle;}
+  .quiz-tabela tr:first-child td{border-top:0;}
   .form-vendedor{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px;}
   .form-vendedor input,.form-vendedor select{font-family:var(--corpo);font-size:13px;padding:8px 10px;border-radius:9px;border:1px solid var(--linha);background:#fff;color:var(--ink);}
   .form-vendedor input{min-width:150px;}
@@ -231,6 +257,30 @@
     </div>
   </div>
 
+  <div id="view-quiz">
+    <div class="sec-crm"><span>Quiz</span><span class="cont" id="quiz-cont"></span></div>
+    <div class="filtros">
+      <select id="q-nivel">
+        <option value="">Todos os níveis</option>
+        <option value="iniciante">Iniciante</option>
+        <option value="intermediario">Intermediário</option>
+        <option value="avancado">Avançado</option>
+      </select>
+      <input type="search" id="q-busca" placeholder="buscar por nome…">
+      <button type="button" id="q-exportar" class="btn-atualizar">⬇ Exportar CSV</button>
+    </div>
+    <div class="quiz-tabela-wrap">
+      <table class="quiz-tabela">
+        <thead><tr>
+          <th><input type="checkbox" id="q-marcar-todos"></th>
+          <th>Nome</th><th>Profissão</th><th>Nível</th><th>Pontuação</th>
+          <th>WhatsApp</th><th>E-mail</th><th>Origem</th><th>Data</th>
+        </tr></thead>
+        <tbody id="quiz-lista"></tbody>
+      </table>
+    </div>
+  </div>
+
   <div id="view-equipe" hidden>
     <div class="sec-crm"><span>Equipe</span></div>
     <div class="equipe-tabela-wrap"><table class="equipe-tabela"><tbody id="equipe-lista"></tbody></table></div>
@@ -266,11 +316,11 @@
   });
 
   var ETAPAS = [
-    { id:'novo',        rot:'Novo' },
-    { id:'contato',     rot:'Contato feito' },
-    { id:'conversando', rot:'Conversando' },
-    { id:'proposta',    rot:'Proposta' },
-    { id:'ganho',       rot:'Ganho' },
+    { id:'novo',        rot:'Novos' },
+    { id:'contato',     rot:'Prospecção' },
+    { id:'conversando', rot:'Em Atendimento' },
+    { id:'proposta',    rot:'Aguardando Compra' },
+    { id:'ganho',       rot:'Finalizado' },
     { id:'perdido',     rot:'Perdido' }
   ];
   var ROT_ETAPA = {}; ETAPAS.forEach(function(e){ ROT_ETAPA[e.id] = e.rot; });
@@ -432,6 +482,8 @@
       $('app').hidden = false;
       dbg('app visível, carregando pipeline + conversas');
       carregarConversas();
+      ligarRealtime();
+      carregarQuiz();
       if (estado.ehGestor) { $('view-equipe').hidden = false; carregarEquipe(); }
       return carregarPipeline();
     });
@@ -527,21 +579,40 @@
     } else {
       leads.forEach(function(l){ col.appendChild(cardLead(l, triar)); });
     }
+    if (!triar && etapaId){
+      col.addEventListener('dragover', function(e){ e.preventDefault(); col.classList.add('drag-over'); });
+      col.addEventListener('dragleave', function(){ col.classList.remove('drag-over'); });
+      col.addEventListener('drop', function(e){
+        e.preventDefault();
+        col.classList.remove('drag-over');
+        var wpp = e.dataTransfer.getData('text/plain');
+        if (wpp) upsertLead(wpp, { etapa: etapaId });
+      });
+    }
     return col;
   }
 
   function cardLead(l, triar){
     var c = document.createElement('div');
     c.className = 'card' + (l.urgente ? ' urg' : '');
+    c.draggable = true;
+    c.addEventListener('dragstart', function(e){
+      e.dataTransfer.setData('text/plain', l.whatsapp);
+      c.classList.add('arrastando');
+    });
+    c.addEventListener('dragend', function(){ c.classList.remove('arrastando'); });
 
     var origem = l.utm_source ? (l.utm_source + (l.utm_campaign ? ' · ' + l.utm_campaign : '')) : 'origem não rastreada';
     var wpp = (l.whatsapp || '').replace(/\D/g, '');
     var nivelBadge = l.nivel ? '<span class="badge ' + l.nivel + '">' + l.nivel + '</span>' : '';
 
     c.innerHTML =
-      '<div class="nome">' + (l.nome || '(sem nome)') + '</div>' +
-      '<div class="meta">' + (l.profissao || 'profissão não informada') + '</div>' +
+      '<div class="card-head">' + avatarHtml(l.nome, wpp) +
+        '<div><div class="nome">' + (l.nome || (wpp ? '+' + wpp : '(sem nome)')) + '</div>' +
+        '<div class="meta">' + (l.profissao || 'profissão não informada') + '</div></div>' +
+      '</div>' +
       '<div class="badges">' + nivelBadge + '<span class="badge origem">' + origem + '</span></div>' +
+      (l.captado_em ? '<div class="quando">desde ' + fmtQuando(l.captado_em) + '</div>' : '') +
       '<div class="linha-acao">' +
         '<a class="wa" href="https://wa.me/' + wpp + '" target="_blank" rel="noopener">WhatsApp</a>' +
         (triar ? '' : '<button type="button" class="urg-btn' + (l.urgente ? ' on' : '') + '">Urgente</button>') +
@@ -605,7 +676,35 @@
   var conversas = {};
   var conversaAtual = null;
 
+  var RESPOSTAS_RAPIDAS = [
+    { rotulo: '💰 Valores', texto: 'Os valores são: Lote VIP — 12x de R$149,70 ou R$1.497 à vista (https://chk.eduzz.com/6W4G83QY0Z); Lote 1 — 12x de R$49,70 ou R$497 à vista (https://chk.eduzz.com/39ZRQ8ZBWE). Os lotes seguintes sobem de preço, então quanto antes garantir, melhor!' },
+    { rotulo: '🔗 Site', texto: 'Você pode ver todos os detalhes direto no nosso site: https://congressocancer.novvasaudeintegrativa.com.br' },
+    { rotulo: '🎓 Certificado', texto: 'Sim! O congresso emite certificado digital de 16 horas, reconhecido — ótimo pro seu portfólio profissional.' },
+    { rotulo: '📍 Local/Datas', texto: 'O congresso é em São Paulo, 2 dias de imersão em práticas integrativas oncológicas. As datas exatas eu confirmo com você em instantes!' },
+    { rotulo: '⏳ Aguarde', texto: 'Só um minutinho que já te retorno, tá bom? 😊' },
+    { rotulo: '👋 Segue o jogo', texto: 'Oi! Tudo bem? Vi sua mensagem aqui — em que posso te ajudar?' },
+  ];
+
   function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+
+  var AVATAR_CORES = ['#8a222e','#b92d3d','#2f6f9e','#1f8a4c','#c98b1f','#6b4fa0','#a0522d'];
+  function avatarCor(seed){
+    seed = seed || '?';
+    var h = 0;
+    for (var i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+    return AVATAR_CORES[h % AVATAR_CORES.length];
+  }
+  function avatarIniciais(nome, wpp){
+    if (nome){
+      var partes = nome.trim().split(/\s+/);
+      return (partes[0][0] + (partes[1] ? partes[1][0] : '')).toUpperCase();
+    }
+    return wpp ? wpp.slice(-2) : '?';
+  }
+  function avatarHtml(nome, wpp){
+    var seed = wpp || nome || '?';
+    return '<div class="avatar" style="background:' + avatarCor(seed) + '">' + esc(avatarIniciais(nome, wpp)) + '</div>';
+  }
   function fmtQuando(iso){
     if (!iso) return '';
     var d = new Date(iso), hoje = new Date();
@@ -614,13 +713,21 @@
     return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) + ' ' + hm;
   }
 
+  var urgentesConversa = {};
+
   function carregarConversas(){
-    return apiGet('mensagens?select=id,lead_whatsapp,direcao,tipo,texto,status,wa_timestamp,criado_em&order=criado_em.asc')
-      .then(function(msgs){
+    return Promise.all([
+      apiGet('mensagens?select=id,lead_whatsapp,direcao,tipo,texto,status,wa_timestamp,criado_em,enviado_por&order=criado_em.asc'),
+      apiGet('lead_status?select=whatsapp,urgente&urgente=eq.true'),
+    ])
+      .then(function(res){
+        var msgs = res[0], urgentes = res[1];
         conversas = {};
         (msgs || []).forEach(function(m){
           (conversas[m.lead_whatsapp] = conversas[m.lead_whatsapp] || []).push(m);
         });
+        urgentesConversa = {};
+        (urgentes || []).forEach(function(u){ urgentesConversa[u.whatsapp] = true; });
         renderInboxLista();
         if (conversaAtual && conversas[conversaAtual]) renderThread(conversaAtual);
         else if (conversaAtual) { conversaAtual = null; $('inbox-thread').innerHTML = '<div class="thread-vazio">Escolha uma conversa à esquerda</div>'; }
@@ -632,9 +739,11 @@
 
   function renderInboxLista(){
     var nums = Object.keys(conversas).sort(function(a,b){
-      var ua = conversas[a][conversas[a].length-1].criado_em || '';
-      var ub = conversas[b][conversas[b].length-1].criado_em || '';
-      return ub.localeCompare(ua);
+      var ua = urgentesConversa[a] ? '1' : '0', ub = urgentesConversa[b] ? '1' : '0';
+      if (ua !== ub) return ub.localeCompare(ua); // urgentes primeiro
+      var da = conversas[a][conversas[a].length-1].criado_em || '';
+      var db = conversas[b][conversas[b].length-1].criado_em || '';
+      return db.localeCompare(da);
     });
     if (!nums.length){
       $('inbox-lista').innerHTML = '<div class="thread-vazio">Nenhuma conversa ainda.<br>Mande um WhatsApp pro número do congresso pra testar.</div>';
@@ -644,13 +753,29 @@
       var arr = conversas[n], u = arr[arr.length-1];
       var prev = (u.texto || '(' + (u.tipo || '?') + ')').replace(/\s+/g,' ');
       return '<div class="inbox-item' + (n===conversaAtual?' on':'') + '" data-n="' + n + '">' +
-        '<div class="num">+' + esc(n) + '</div>' +
-        '<div class="prev">' + (u.direcao==='enviada'?'Você: ':'') + esc(prev) + '</div>' +
-        '<div class="qnd">' + fmtQuando(u.criado_em) + ' · ' + arr.length + ' msg</div>' +
+        avatarHtml(null, n) +
+        '<div class="inbox-item-corpo">' +
+          '<div class="num">' + (urgentesConversa[n] ? '🔴 ' : '') + '+' + esc(n) + '</div>' +
+          '<div class="prev">' + (u.direcao==='enviada' ? (u.enviado_por ? 'Você: ' : 'Cris: ') : '') + esc(prev) + '</div>' +
+          '<div class="qnd">' + fmtQuando(u.criado_em) + ' · ' + arr.length + ' msg</div>' +
+          (urgentesConversa[n] ? '<button type="button" class="btn-assumir-rapido" data-assumir="' + n + '">🙋 Assumir</button>' : '') +
+        '</div>' +
       '</div>';
     }).join('');
     $('inbox-lista').querySelectorAll('.inbox-item').forEach(function(el){
-      el.addEventListener('click', function(){ renderThread(this.dataset.n); });
+      el.addEventListener('click', function(e){
+        if (e.target.closest('[data-assumir]')) return;
+        renderThread(this.dataset.n);
+      });
+    });
+    $('inbox-lista').querySelectorAll('[data-assumir]').forEach(function(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var n = this.dataset.assumir;
+        btn.disabled = true;
+        rpcAssumirLead(n).then(function(){ renderThread(n); return carregarConversas(); })
+          .catch(function(err){ btn.disabled = false; alert(err.message); });
+      });
     });
   }
 
@@ -660,21 +785,193 @@
     var arr = conversas[n] || [];
     $('inbox-thread').innerHTML =
       '<div class="thread-head">+' + esc(n) + '</div>' +
+      '<div class="thread-ia" id="thread-ia">carregando…</div>' +
       '<div class="thread-msgs" id="thread-msgs">' +
         arr.map(function(m){
+          var quem = m.direcao === 'enviada' ? (m.enviado_por ? '' : '<span class="quem">Cris</span>') : '';
           return '<div class="bolha ' + (m.direcao==='enviada'?'env':'rec') + '">' +
+            quem +
             esc(m.texto || '(' + (m.tipo || 'sem texto') + ')') +
             '<span class="hora">' + fmtQuando(m.wa_timestamp || m.criado_em) +
             (m.direcao==='enviada' && m.status ? ' · ' + esc(m.status) : '') + '</span>' +
           '</div>';
         }).join('') +
       '</div>' +
-      '<div class="thread-nota">Responder pelo CRM ainda não está ligado (Fase 3 — falta o token de envio). Por ora, responda pelo WhatsApp normal.</div>' +
-      '<div class="thread-resp"><textarea placeholder="responder…" disabled></textarea><button type="button" disabled>Enviar</button></div>';
+      '<div class="thread-rapidas" id="thread-rapidas">' +
+        RESPOSTAS_RAPIDAS.map(function(r, i){ return '<button type="button" class="btn-rapida" data-i="' + i + '">' + esc(r.rotulo) + '</button>'; }).join('') +
+      '</div>' +
+      '<div class="thread-resp"><textarea id="resp-texto" placeholder="responder…"></textarea><button type="button" id="resp-enviar">Enviar</button></div>';
     var tm = $('thread-msgs'); tm.scrollTop = tm.scrollHeight;
+    $('thread-rapidas').querySelectorAll('.btn-rapida').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var txt = $('resp-texto');
+        txt.value = RESPOSTAS_RAPIDAS[Number(this.dataset.i)].texto;
+        txt.focus();
+      });
+    });
+
+    var btn = $('resp-enviar'), txt = $('resp-texto');
+    btn.addEventListener('click', function(){
+      var texto = (txt.value || '').trim();
+      if (!texto) return;
+      btn.disabled = true;
+      whatsappEnviar(n, texto).then(function(){
+        txt.value = '';
+        btn.disabled = false;
+        return carregarConversas();
+      }).catch(function(err){
+        btn.disabled = false;
+        alert('Erro ao enviar: ' + err.message);
+      });
+    });
+
+    carregarIaStatus(n);
+  }
+
+  function carregarIaStatus(n){
+    apiGet('lead_status?whatsapp=eq.' + encodeURIComponent(n) + '&select=ia_ativa').then(function(rows){
+      if (n !== conversaAtual) return;
+      var ativa = !rows || !rows.length || rows[0].ia_ativa !== false;
+      renderIaStatus(n, ativa);
+    }).catch(function(){
+      if (n !== conversaAtual) return;
+      renderIaStatus(n, true);
+    });
+  }
+
+  function renderIaStatus(n, ativa){
+    var el = $('thread-ia');
+    if (!el) return;
+    el.classList.toggle('humano', !ativa);
+    el.innerHTML = ativa
+      ? '🤖 <b>Cris (IA) está respondendo essa conversa</b> <button type="button" id="btn-assumir">🙋 Assumir conversa agora</button>'
+      : '👤 <b>Você está no controle dessa conversa</b> <button type="button" id="btn-devolver">🤖 Devolver pra Cris</button>';
+    var a = $('btn-assumir'), d = $('btn-devolver');
+    if (a) a.addEventListener('click', function(){
+      a.disabled = true;
+      rpcAssumirLead(n).then(function(){ renderIaStatus(n, false); return carregarConversas(); }).catch(function(err){ a.disabled = false; alert(err.message); });
+    });
+    if (d) d.addEventListener('click', function(){
+      d.disabled = true;
+      upsertLead(n, { ia_ativa: true }).then(function(){ renderIaStatus(n, true); return carregarConversas(); }).catch(function(err){ d.disabled = false; alert('Erro: ' + err.message); });
+    });
+  }
+
+  // ---------- Quiz (todo mundo que preencheu o formulário do site) ----------
+  var quizLeads = [];
+
+  function carregarQuiz(){
+    return apiGet('crm_leads?select=whatsapp,nome,email,profissao,nivel,pontuacao,utm_source,utm_campaign,captado_em&order=captado_em.desc')
+      .then(function(rows){ quizLeads = rows || []; renderQuiz(); })
+      .catch(function(err){ $('quiz-lista').innerHTML = '<tr><td colspan="9" style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>'; });
+  }
+
+  function quizFiltrados(){
+    var fn = $('q-nivel').value;
+    var fb = $('q-busca').value.trim().toLowerCase();
+    return quizLeads.filter(function(l){
+      if (fn && l.nivel !== fn) return false;
+      if (fb && (l.nome || '').toLowerCase().indexOf(fb) === -1) return false;
+      return true;
+    });
+  }
+
+  function renderQuiz(){
+    var leads = quizFiltrados();
+    $('quiz-cont').textContent = leads.length + ' lead(s)';
+    if (!leads.length){
+      $('quiz-lista').innerHTML = '<tr><td colspan="9" style="color:var(--faint)">Nenhum lead encontrado.</td></tr>';
+      return;
+    }
+    $('quiz-lista').innerHTML = leads.map(function(l){
+      var origem = l.utm_source ? (l.utm_source + (l.utm_campaign ? ' · ' + l.utm_campaign : '')) : '—';
+      var data = l.captado_em ? new Date(l.captado_em).toLocaleDateString('pt-BR') : '—';
+      var nivelBadge = l.nivel ? '<span class="badge ' + l.nivel + '">' + l.nivel + '</span>' : '—';
+      return '<tr>' +
+        '<td><input type="checkbox" class="q-check" data-w="' + esc(l.whatsapp || '') + '"></td>' +
+        '<td>' + esc(l.nome || '(sem nome)') + '</td>' +
+        '<td>' + esc(l.profissao || '—') + '</td>' +
+        '<td>' + nivelBadge + '</td>' +
+        '<td>' + (l.pontuacao == null ? '—' : l.pontuacao) + '</td>' +
+        '<td>' + esc(l.whatsapp || '—') + '</td>' +
+        '<td>' + esc(l.email || '—') + '</td>' +
+        '<td>' + esc(origem) + '</td>' +
+        '<td>' + data + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  $('q-nivel').addEventListener('change', renderQuiz);
+  $('q-busca').addEventListener('input', renderQuiz);
+  $('q-marcar-todos').addEventListener('change', function(){
+    var on = this.checked;
+    $('quiz-lista').querySelectorAll('.q-check').forEach(function(cb){ cb.checked = on; });
+  });
+
+  function csvEscape(v){
+    v = String(v == null ? '' : v);
+    return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  }
+
+  $('q-exportar').addEventListener('click', function(){
+    var marcados = Array.prototype.slice.call($('quiz-lista').querySelectorAll('.q-check:checked')).map(function(cb){ return cb.dataset.w; });
+    var base = quizFiltrados();
+    var leads = marcados.length ? base.filter(function(l){ return marcados.indexOf(l.whatsapp) !== -1; }) : base;
+    if (!leads.length){ alert('Nenhum lead pra exportar.'); return; }
+    var cols = ['nome','whatsapp','email','profissao','nivel','pontuacao','utm_source','utm_campaign','captado_em'];
+    var linhas = [cols.join(';')].concat(leads.map(function(l){
+      return cols.map(function(c){ return csvEscape(l[c]); }).join(';');
+    }));
+    var blob = new Blob(['﻿' + linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'leads-quiz-congresso-cancer-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  function rpcAssumirLead(numero){
+    return fetch(SUPABASE_URL + '/rest/v1/rpc/rpc_assumir_lead', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_whatsapp: numero })
+    }).then(function(r){ return r.text().then(function(t){
+      var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = null; }
+      if (!r.ok) throw new Error((data && (data.message || data.erro)) || ('HTTP ' + r.status));
+      return data;
+    }); });
+  }
+
+  function whatsappEnviar(numero, texto){
+    return fetch(SUPABASE_URL + '/functions/v1/whatsapp-send', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ numero: numero, texto: texto })
+    }).then(function(r){ return r.text().then(function(t){
+      var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
+      if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
+      return data;
+    }); });
   }
 
   $('btn-atualizar-conv').addEventListener('click', carregarConversas);
+
+  var realtimeLigado = false;
+  function ligarRealtime(){
+    if (realtimeLigado) return;
+    realtimeLigado = true;
+    sb.channel('crm-mensagens')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensagens' }, function(){ carregarConversas(); })
+      .subscribe();
+    sb.channel('crm-lead-status')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_status' }, function(){
+        if (conversaAtual) carregarIaStatus(conversaAtual);
+        carregarPipeline();
+      })
+      .subscribe();
+    // rede de segurança: se o realtime cair sem avisar, ainda atualiza sozinho de vez em quando
+    setInterval(carregarConversas, 30000);
+  }
 
   // ---------- equipe (só gestor) ----------
   function equipeAdmin(action, extra){
