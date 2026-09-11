@@ -87,8 +87,6 @@
   .icon-btn.wa{background:rgba(31,138,76,.13);color:var(--verde);}
   .icon-btn.wa:hover{background:var(--verde);color:#fff;}
   .icon-btn:hover{filter:brightness(.94);}
-  .card .urg-btn{font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:4px 9px;border-radius:999px;cursor:pointer;background:#fff;border:1px solid var(--linha);color:var(--soft);}
-  .card .urg-btn.on{background:var(--bordo-vivo);border-color:var(--bordo-vivo);color:#fff;}
   .card .nota{width:100%;margin-top:8px;font-family:var(--corpo);font-size:11.5px;padding:6px 8px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--ink);resize:vertical;min-height:34px;}
   .card .resp{font-size:10.5px;color:var(--faint);margin-top:6px;}
   .vazio-col{font-size:11px;color:var(--faint);text-align:center;padding:14px 4px;}
@@ -616,8 +614,6 @@
         '<a class="icon-btn wa" href="https://wa.me/' + wpp + '" target="_blank" rel="noopener" title="Abrir no WhatsApp">' + ICON_WA + '</a>' +
         (l.email ? '<a class="icon-btn" href="mailto:' + esc(l.email) + '" title="Enviar e-mail">✉️</a>' : '') +
         (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="Ver conversa no CRM">💬</button>') +
-        '<span class="spacer"></span>' +
-        (triar ? '' : '<button type="button" class="urg-btn' + (l.urgente ? ' on' : '') + '">🔥 Urgente</button>') +
       '</div>' +
       '<div class="linha-acao">' +
         (triar ? '' : '<select class="sel-etapa"></select>') +
@@ -656,10 +652,6 @@
         upsertLead(l.whatsapp, patch);
       });
     }
-
-    // urgente
-    var urg = c.querySelector('.urg-btn');
-    if (urg) urg.addEventListener('click', function(){ upsertLead(l.whatsapp, { urgente: !l.urgente }); });
 
     // ver conversa (pula pra seção Conversas e abre a thread desse número)
     var verConv = c.querySelector('.btn-ver-conversa');
