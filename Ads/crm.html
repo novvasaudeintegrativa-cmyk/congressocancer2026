@@ -89,6 +89,7 @@
   .icon-btn:hover{filter:brightness(.94);}
   .card .nota{width:100%;margin-top:8px;font-family:var(--corpo);font-size:11.5px;padding:6px 8px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--ink);resize:vertical;min-height:34px;}
   .card .resp{font-size:10.5px;color:var(--faint);margin-top:6px;}
+  .resp-nome{font-family:var(--tit);font-weight:800;font-size:11.5px;color:var(--bordo);}
   .btn-assumir-resp{font-family:var(--tit);font-weight:800;font-size:10px;text-transform:uppercase;background:none;border:0;color:var(--bordo);text-decoration:underline;cursor:pointer;padding:0;}
   .vazio-col{font-size:11px;color:var(--faint);text-align:center;padding:14px 4px;}
 
@@ -622,7 +623,7 @@
       '</div>' +
       (triar ? '' : '<textarea class="nota" placeholder="anotação…">' + (l.nota || '') + '</textarea>') +
       (l.atribuido_nome
-        ? '<div class="resp">responsável: ' + esc(l.atribuido_nome) + '</div>'
+        ? '<div class="resp">responsável: <span class="resp-nome">' + esc(l.atribuido_nome) + '</span></div>'
         : (triar ? '' : '<div class="resp">sem responsável <button type="button" class="btn-assumir-resp" data-w="' + esc(l.whatsapp || '') + '">assumir</button></div>'));
 
     // etapa
