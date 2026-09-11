@@ -842,6 +842,12 @@
         alert('Erro ao enviar: ' + err.message);
       });
     });
+    txt.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' && !e.shiftKey){
+        e.preventDefault();
+        btn.click();
+      }
+    });
 
     carregarIaStatus(n);
   }
