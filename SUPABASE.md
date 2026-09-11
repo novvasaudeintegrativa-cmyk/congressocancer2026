@@ -1276,20 +1276,23 @@ Deno.serve(async (req) => {
   }
 
   if (linhas.length) {
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const resp = await fetch(`${SUPABASE_URL}/rest/v1/mensagens?on_conflict=wa_message_id`, {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        apikey: KEY, authorization: `Bearer ${KEY}`,
-        prefer: "resolution=merge-duplicates,return=minimal",
-      },
+      headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
       body: JSON.stringify(linhas),
     });
     // nunca devolve erro pra Meta (ela reenvia em loop) — só loga
     if (!resp.ok) console.error("insert mensagens:", resp.status, await resp.text());
   }
+
+  // Cris responde os leads sob controle dela (ver §16) — nunca deixa a
+  // Meta esperar por isso, então roda depois do "ok" de verdade não dá,
+  // mas cada erro individual só loga e não derruba o webhook.
+  for (const numero of numerosRecebidos) {
+    try { await deixarCrisResponder(numero); }
+    catch (e) { console.error("cris:", numero, e); }
+  }
+
   return new Response("ok", { status: 200 });
 });
 ```
@@ -1297,6 +1300,10 @@ Deno.serve(async (req) => {
 **Deploy.** Depois de publicar, **desliga "Verify JWT with legacy secret"**
 (Edge Functions → whatsapp-webhook → Settings) — a Meta chama sem JWT do
 Supabase, igual o `eduzz-webhook`.
+
+> O código acima já pressupõe as peças da Cris (`svcHeaders`, `SUPABASE_URL`,
+> `numerosRecebidos`, `deixarCrisResponder`) — o arquivo completo pra colar
+> de uma vez está em **§16.2**, não só esse trecho.
 
 **Secrets** (Edge Functions → Secrets):
 - `WHATSAPP_VERIFY_TOKEN` = `442dff951c8b79e114f4efc555a6f6f26beb1880`
@@ -1331,6 +1338,121 @@ No app **Novva CRM** → Etapa 2 → **Configurar webhooks**:
    (template). Resposta dentro de 24h da última mensagem do lead é grátis.
 4. **View de conversa no `Ads/crm.html`** — thread por lead + campo de
    resposta que chama a Cloud API (`POST /{phone-number-id}/messages`).
+
+**Status (11/09/2026):** passos 2 e 4 já feitos (o campo de resposta no
+`crm.html` está ligado e a função abaixo já escreve `direcao='enviada'`
+com `lead_whatsapp` normalizado por dígitos, igual o webhook grava).
+**Falta só o passo 1** (token permanente) — sem ele a função de envio
+responde erro 502 da Meta. Passo 3 (forma de pagamento) só é necessário
+pra template fora da janela de 24h, não bloqueia o teste inicial.
+
+### 14.6. Edge Function `whatsapp-send` (responder pelo CRM)
+
+Supabase → **Edge Functions** → **Deploy a new function** → nome
+**`whatsapp-send`** → cola:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const URL_  = Deno.env.get("SUPABASE_URL")!;
+const ANON  = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SVC   = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const WA_TOKEN = Deno.env.get("WHATSAPP_PERMANENT_TOKEN")!;
+const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!; // 1039296279264556
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${userToken}` } });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
+async function ehEquipeAtiva(uid: string) {
+  const r = await fetch(`${URL_}/rest/v1/perfis?id=eq.${uid}&select=papel,ativo`, { headers: svcHeaders });
+  const rows = await r.json();
+  const p = rows && rows[0];
+  return !!(p && p.ativo);
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method" }, 405);
+
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.replace(/^Bearer\s+/i, "");
+  const u = await quemChamou(token);
+  if (!u) return j({ erro: "não autenticado" }, 401);
+  if (!(await ehEquipeAtiva(u.id))) return j({ erro: "usuário inativo" }, 403);
+
+  let body: any;
+  try { body = await req.json(); } catch { return j({ erro: "bad body" }, 400); }
+
+  const numero = String(body.numero || "").replace(/\D/g, "");
+  const texto = String(body.texto || "").trim();
+  if (!numero || !texto) return j({ erro: "numero e texto obrigatórios" }, 400);
+
+  const metaResp = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${WA_TOKEN}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to: numero,
+      type: "text",
+      text: { body: texto },
+    }),
+  });
+  const metaBody = await metaResp.json();
+  if (!metaResp.ok) return j({ erro: metaBody.error?.message || "falha ao enviar" }, 502);
+
+  const waId = metaBody.messages && metaBody.messages[0] && metaBody.messages[0].id;
+
+  await fetch(`${URL_}/rest/v1/mensagens?on_conflict=wa_message_id`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([{
+      wa_message_id: waId, lead_whatsapp: numero, direcao: "enviada",
+      tipo: "text", texto, status: "sent", wa_timestamp: new Date().toISOString(),
+      enviado_por: u.id, raw: metaBody,
+    }]),
+  });
+
+  // handoff: humano respondeu, a Cris para de falar com esse lead
+  await fetch(`${URL_}/rest/v1/lead_status?on_conflict=whatsapp`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([{ whatsapp: numero, ia_ativa: false }]),
+  });
+
+  return j({ ok: true, wa_message_id: waId });
+});
+```
+
+**Deploy.** Mantém **"Verify JWT with legacy secret" LIGADO** (o CRM manda
+o JWT do usuário logado, igual o `equipe-admin`).
+
+**Secrets** (Edge Functions → Secrets):
+- `WHATSAPP_PERMANENT_TOKEN` — o token gerado no passo 1 (Usuário de
+  Sistema). **Ainda pendente.**
+- `WHATSAPP_PHONE_NUMBER_ID` = `1039296279264556` (já conhecido, pode
+  cadastrar já).
+
+Qualquer membro de equipe **ativo** (gestor ou vendedor) pode responder —
+não restringe a lead atribuído, porque dentro da janela de 24h isso é
+raro travar o atendimento. Se depois quiser travar por lead atribuído,
+dá pra repetir a lógica de `guarda_lead_status` aqui.
+
+No `Ads/crm.html`, o campo de resposta na thread (`#resp-texto` /
+`#resp-enviar`) já chama essa função e recarrega a conversa ao enviar —
+só falta o secret do token pra funcionar de ponta a ponta.
 
 ## 15. CRM — Gestão de equipe pelo painel (Edge Function `equipe-admin`)
 
@@ -1468,3 +1590,1063 @@ Nenhum secret novo — `SUPABASE_URL` / `SUPABASE_ANON_KEY` /
 No `crm.html`, seção **"Equipe"** (só aparece pro gestor): lista + form
 "adicionar vendedor". Ao adicionar, o vendedor recebe e-mail com link pra
 definir a senha (SMTP do Gmail já configurado, §13.3).
+
+## 15.5. CRM — leads que só existem no WhatsApp (sem ter feito o quiz)
+
+**Problema (11/09/2026):** o Kanban (`rpc_crm_pipeline`) monta a lista a partir
+de `crm_leads` (dedupe de `quiz_leads`) — quem nunca preencheu o formulário
+do site e só mandou WhatsApp direto **não aparece em lugar nenhum**, mesmo
+tendo uma conversa ativa em `mensagens`. E pior: uma linha em `lead_status`
+só era criada quando a Cris marcava `urgente` (só acontece em horário
+comercial) — fora do horário, nem isso existia.
+
+**Correção — duas partes:**
+
+### 1. `rpc_crm_pipeline` — volta a ser só WhatsApp (Pipeline ≠ Quiz)
+
+Decisão (11/09/2026): o Pipeline mostra **só quem está em conversa de
+WhatsApp** (tem linha em `lead_status`, que agora é criada por
+`garantirLeadStatus` desde a 1ª mensagem, em qualquer horário). Quem só
+preencheu o quiz e nunca mandou WhatsApp fica de fora daqui — mora na aba
+**Quiz** (§15.6). Se o mesmo número também fez o quiz, o nome/profissão
+aparecem enriquecidos via join com `crm_leads`.
+
+```sql
+create or replace function public.rpc_crm_pipeline()
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(row_to_json(t) order by t.captado_em desc nulls last), '[]'::json)
+  from (
+    select
+      s.whatsapp,
+      l.nome, l.email, l.profissao, l.nivel, l.pontuacao,
+      l.utm_source, l.utm_campaign,
+      coalesce(s.criado_em, l.captado_em) as captado_em,
+      coalesce(s.etapa, 'novo') as etapa,
+      s.nota, coalesce(s.urgente, false) as urgente, s.atribuido_a,
+      pa.nome as atribuido_nome,
+      s.atualizado_em
+    from public.lead_status s
+    left join public.crm_leads l on public.wa_norm(l.whatsapp) = public.wa_norm(s.whatsapp)
+    left join public.perfis pa on pa.id = s.atribuido_a
+    where
+      exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+      and (public.eh_gestor() or s.atribuido_a = auth.uid() or coalesce(s.urgente, false) = true)
+  ) t;
+$$;
+
+notify pgrst, 'reload schema';
+```
+
+Quem só existe via WhatsApp (nunca fez o quiz) aparece com `nome = null` (o
+`crm.html` já mostra "(sem nome)" nesse caso).
+
+## 15.6. CRM — aba "Quiz" (todo mundo que preencheu o formulário)
+
+Lista separada do Pipeline, direto de `crm_leads` (não depende de ter
+WhatsApp iniciado). Mostra nível (iniciante/intermediário/avançado) e
+pontuação, com filtro e exportação em CSV — pra virar lista de abordagem
+manual (WhatsApp um a um, ou repasse pra e-mail marketing). Sem envio em
+massa automático pelo WhatsApp (ver decisão de compliance na conversa/no
+plano de marketing — arriscaria a qualidade do número).
+
+### 2. `whatsapp-webhook` — cria a linha de `lead_status` já na 1ª mensagem,
+em qualquer horário
+
+Adiciona essas duas peças no código (ver §17.7 pra versão completa já com
+isso embutido):
+
+```ts
+async function garantirLeadStatus(numero: string) {
+  await fetch(`${SUPABASE_URL}/rest/v1/lead_status?on_conflict=whatsapp`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([{ whatsapp: numero }]),
+  });
+}
+```
+
+Chamada logo no início de `deixarCrisResponder`, antes de qualquer outra
+coisa — assim toda mensagem nova, não importa o horário, já garante um
+card na coluna "Novo" do Kanban.
+
+## 16. CRM — Cris (IA de primeiro contato)
+
+Implementa o que já estava desenhado como simulação no `ads/novva-ads.html`
+("Fila da Cris") e registrado como **B5 — Chatbot de qualificação** na
+estratégia de marketing: todo lead novo é atendido primeiro pela Cris (IA),
+que faz 2-3 perguntas de qualificação, e só depois passa pra um humano —
+seja porque alguém da equipe respondeu manualmente (handoff automático),
+seja porque a própria Cris já qualificou o suficiente (handoff automático
+depois de 3 respostas dela).
+
+**Coração-chave:** o controle de "quem está no comando" (`ia_ativa`) mora
+numa linha de `lead_status` **chaveada pelo número em dígitos** (o mesmo
+formato que a Meta manda em `mensagens.lead_whatsapp`), não pelo número
+como a pessoa digitou no quiz. É uma simplificação deliberada: a linha de
+`lead_status` "oficial" do pipeline (Kanban, `atribuido_a`, `etapa`) pode
+ter uma chave em outro formato pro mesmo humano — harmless pra esse
+propósito, porque `ia_ativa` só é lido/escrito pelo fluxo de conversa
+(`crm.html` e as duas Edge Functions), que sempre trabalham com o número em
+dígitos. Unificar as duas chaves de vez é trabalho futuro (normalizar
+`quiz_leads.whatsapp` na captura), não bloqueia isso.
+
+A única normalização que **precisa** cruzar os dois formatos é a policy de
+leitura de `mensagens` (pra um vendedor ver a conversa do lead que é dele,
+mesmo se o `lead_status` dele foi criado com o número digitado no quiz).
+
+### 16.1. SQL — migração
+
+Roda no SQL Editor do Supabase:
+
+```sql
+-- normaliza número: só dígitos, sem o DDI 55 quando presente
+create or replace function public.wa_norm(t text) returns text
+language sql immutable as $$
+  select case
+    when length(d) = 13 and left(d,2) = '55' then right(d, 11)
+    when length(d) = 12 and left(d,2) = '55' then right(d, 10)
+    else d
+  end
+  from (select regexp_replace(coalesce(t,''), '\D', '', 'g') as d) s;
+$$;
+
+-- quem está no comando da conversa: true = Cris, false = humano assumiu
+alter table public.lead_status add column if not exists ia_ativa boolean not null default true;
+
+-- quem mandou a mensagem "enviada": null = Cris, uuid = humano da equipe
+alter table public.mensagens add column if not exists enviado_por uuid references auth.users(id);
+
+-- corrige a policy pra casar dígitos (mensagens) com o formato digitado (lead_status)
+drop policy if exists "equipe vê mensagens" on public.mensagens;
+create policy "equipe vê mensagens" on public.mensagens
+  for select to authenticated
+  using (
+    exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+    and (
+      public.eh_gestor()
+      or exists (
+        select 1 from public.lead_status s
+        where public.wa_norm(s.whatsapp) = public.wa_norm(mensagens.lead_whatsapp)
+          and (s.atribuido_a = auth.uid() or s.urgente = true)
+      )
+    )
+  );
+
+notify pgrst, 'reload schema';
+```
+
+### 16.2. Edge Function `whatsapp-webhook` (versão completa, com a Cris)
+
+> **Superada por §17.3** (horário comercial + site como fonte de verdade).
+> Cola sempre a versão de §17.3, não essa — ficou aqui só de histórico.
+
+Substitui inteiro o código de **§14.2** — cola por cima:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const VERIFY_TOKEN    = Deno.env.get("WHATSAPP_VERIFY_TOKEN")?.trim();
+const APP_SECRET      = Deno.env.get("WHATSAPP_APP_SECRET")?.trim();
+const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
+const SVC_KEY         = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const WA_TOKEN        = Deno.env.get("WHATSAPP_PERMANENT_TOKEN")!;
+const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
+const ANTHROPIC_KEY   = Deno.env.get("ANTHROPIC_API_KEY")!;
+
+const svcHeaders = { apikey: SVC_KEY, authorization: `Bearer ${SVC_KEY}`, "content-type": "application/json" };
+
+const CRIS_SYSTEM = `Você é a Cris, da equipe do Congresso Câncer 2026 (congresso de práticas integrativas oncológicas, 2 dias em São Paulo). Está conversando pelo WhatsApp com alguém que acabou de chegar. Seu único trabalho agora é qualificar essa pessoa com perguntas curtas e naturais, uma de cada vez, nunca em lista:
+1) qual a profissão/área de atuação dela;
+2) se já atende ou pretende atender pacientes oncológicos;
+3) o que mais busca no congresso (atualizar tecnicamente, fazer networking, etc).
+Perfil ideal: médico(a)/dentista/farmacêutico(a)/enfermeiro(a)/fisioterapeuta/terapeuta interessado(a) em práticas integrativas oncológicas, disposto(a) a investir entre R$500 e R$1.500.
+Depois de entender isso (o suficiente já em 2-3 trocas), avise com naturalidade que vai chamar alguém da equipe pra continuar e tirar dúvidas de valores/inscrição — não informe preço nem feche venda sozinha.
+Tom: brasileiro, informal, caloroso, mensagens curtas (2-4 linhas), no máximo 1 emoji por mensagem. Nunca mencione que é uma IA a menos que perguntem diretamente.`;
+
+async function assinaturaOk(req: Request, body: string): Promise<boolean> {
+  if (!APP_SECRET) return true;
+  const sig = req.headers.get("x-hub-signature-256");
+  if (!sig) return false;
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(APP_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
+  const hex = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return sig === `sha256=${hex}`;
+}
+
+async function iaAtiva(numero: string): Promise<boolean> {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/lead_status?whatsapp=eq.${numero}&select=ia_ativa`, { headers: svcHeaders });
+  if (!r.ok) return true; // sem linha ainda = lead novo, Cris atende
+  const rows = await r.json();
+  return !rows.length || rows[0].ia_ativa !== false;
+}
+
+async function historico(numero: string) {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/mensagens?lead_whatsapp=eq.${numero}&select=direcao,texto,enviado_por&order=criado_em.asc&limit=20`,
+    { headers: svcHeaders },
+  );
+  return r.ok ? await r.json() : [];
+}
+
+async function crisResponde(msgsHist: any[]): Promise<string | null> {
+  const msgs = msgsHist
+    .filter((m: any) => m.texto)
+    .map((m: any) => ({ role: m.direcao === "recebida" ? "user" : "assistant", content: m.texto }));
+  if (!msgs.length || msgs[msgs.length - 1].role !== "user") return null; // só responde se a última for do lead
+
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 300, system: CRIS_SYSTEM, messages: msgs }),
+  });
+  if (!resp.ok) { console.error("anthropic:", resp.status, await resp.text()); return null; }
+  const data = await resp.json();
+  const texto = (data.content || []).map((b: any) => b.text || "").join("").trim();
+  return texto || null;
+}
+
+async function mandarWhatsapp(numero: string, texto: string): Promise<string | null> {
+  const r = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${WA_TOKEN}`, "content-type": "application/json" },
+    body: JSON.stringify({ messaging_product: "whatsapp", to: numero, type: "text", text: { body: texto } }),
+  });
+  const body = await r.json();
+  if (!r.ok) { console.error("envio cris:", r.status, body); return null; }
+  return body.messages?.[0]?.id ?? null;
+}
+
+async function contarRespostasCris(numero: string): Promise<number> {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/mensagens?lead_whatsapp=eq.${numero}&direcao=eq.enviada&enviado_por=is.null&select=id`,
+    { headers: svcHeaders },
+  );
+  const rows = r.ok ? await r.json() : [];
+  return rows.length;
+}
+
+async function deixarCrisResponder(numero: string) {
+  if (!(await iaAtiva(numero))) return;
+  const hist = await historico(numero);
+  const texto = await crisResponde(hist);
+  if (!texto) return;
+  const waId = await mandarWhatsapp(numero, texto);
+  await fetch(`${SUPABASE_URL}/rest/v1/mensagens?on_conflict=wa_message_id`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([{
+      wa_message_id: waId, lead_whatsapp: numero, direcao: "enviada",
+      tipo: "text", texto, status: "sent", wa_timestamp: new Date().toISOString(),
+      enviado_por: null, raw: {},
+    }]),
+  });
+  // depois de 3 respostas da Cris, entrega pra um humano continuar
+  if ((await contarRespostasCris(numero)) >= 3) {
+    await fetch(`${SUPABASE_URL}/rest/v1/lead_status?on_conflict=whatsapp`, {
+      method: "POST",
+      headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify([{ whatsapp: numero, ia_ativa: false }]),
+    });
+  }
+}
+
+Deno.serve(async (req) => {
+  const url = new URL(req.url);
+
+  if (req.method === "GET") {
+    const mode = url.searchParams.get("hub.mode");
+    const token = url.searchParams.get("hub.verify_token");
+    const challenge = url.searchParams.get("hub.challenge");
+    if (mode === "subscribe" && token === VERIFY_TOKEN && challenge) return new Response(challenge, { status: 200 });
+    return new Response("forbidden", { status: 403 });
+  }
+  if (req.method !== "POST") return new Response("method", { status: 405 });
+
+  const bodyText = await req.text();
+  if (!(await assinaturaOk(req, bodyText))) return new Response("bad signature", { status: 401 });
+
+  let payload: any;
+  try { payload = JSON.parse(bodyText); } catch { return new Response("bad json", { status: 400 }); }
+
+  const linhas: Record<string, unknown>[] = [];
+  const numerosRecebidos = new Set<string>();
+  for (const entry of payload.entry ?? []) {
+    for (const ch of entry.changes ?? []) {
+      const v = ch.value ?? {};
+      for (const m of v.messages ?? []) {
+        linhas.push({
+          wa_message_id: m.id,
+          lead_whatsapp: m.from,
+          direcao: "recebida",
+          tipo: m.type ?? null,
+          texto: m.text?.body ?? m.button?.text ??
+                 m.interactive?.button_reply?.title ??
+                 m.interactive?.list_reply?.title ?? null,
+          wa_timestamp: m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : null,
+          raw: m,
+        });
+        numerosRecebidos.add(m.from);
+      }
+      for (const s of v.statuses ?? []) {
+        linhas.push({
+          wa_message_id: s.id,
+          lead_whatsapp: s.recipient_id,
+          direcao: "enviada",
+          status: s.status ?? null,
+          wa_timestamp: s.timestamp ? new Date(Number(s.timestamp) * 1000).toISOString() : null,
+        });
+      }
+    }
+  }
+
+  if (linhas.length) {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/mensagens?on_conflict=wa_message_id`, {
+      method: "POST",
+      headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify(linhas),
+    });
+    // nunca devolve erro pra Meta (ela reenvia em loop) — só loga
+    if (!resp.ok) console.error("insert mensagens:", resp.status, await resp.text());
+  }
+
+  for (const numero of numerosRecebidos) {
+    try { await deixarCrisResponder(numero); }
+    catch (e) { console.error("cris:", numero, e); }
+  }
+
+  return new Response("ok", { status: 200 });
+});
+```
+
+**Deploy.** Continua igual (`whatsapp-webhook` já existe) — só substitui o
+código e clica em **Deploy**. Não muda nenhuma config: "Verify JWT with
+legacy secret" continua **desligado**, os secrets `WHATSAPP_VERIFY_TOKEN`/
+`WHATSAPP_APP_SECRET` continuam os mesmos, e os novos
+(`WHATSAPP_PERMANENT_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `ANTHROPIC_API_KEY`)
+já foram cadastrados em §14.6/16 do processo de setup.
+
+**Modelo usado:** `claude-haiku-4-5-20251001` — rápido e barato o bastante
+pra qualificação (poucas linhas por resposta). Trocar por um Sonnet se um
+dia a Cris precisar ser mais sofisticada.
+
+### 16.3. `Ads/crm.html` — o que mudou
+
+- Balão de mensagem "enviada" mostra a etiqueta **"Cris"** quando
+  `enviado_por` é nulo (senão é presumido "Você", ou seja, alguém da
+  equipe).
+- Faixa no topo da conversa: **"🤖 Cris está respondendo"** com botão
+  **Assumir conversa**, ou **"👤 Você está no controle"** com botão
+  **Devolver pra Cris** — lê/grava `lead_status.ia_ativa` (chave = número
+  em dígitos, ver nota do início da seção).
+- Mandar uma resposta manual pelo `whatsapp-send` já desliga a Cris
+  automaticamente pra aquele lead (handoff), sem precisar clicar em nada.
+
+### 16.4. Handoff — quando a Cris para de falar
+
+1. Alguém da equipe manda uma resposta manual pelo CRM → `whatsapp-send`
+   marca `ia_ativa = false`.
+2. Alguém da equipe clica em **"Assumir conversa"** no `crm.html`.
+3. A própria Cris já mandou 3 respostas pro mesmo lead → o webhook desliga
+   sozinho, presumindo que já qualificou o suficiente.
+
+Devolver o controle pra Cris (botão **"Devolver pra Cris"**) é manual, pra
+não devolver sem querer uma conversa que um vendedor já está tocando.
+
+## 17. CRM — visibilidade aberta + "assumir lead" (venda conjunta)
+
+Mudança de regra: **todo vendedor ativo vê qualquer conversa que chega no
+CRM**, não só a carteira dele. Isso é o modelo "Fila da Cris" que já estava
+desenhado como simulação no `novva-ads.html` — venda conjunta, quem
+assumir primeiro atende. Depois que a Cris faz o primeiro contato, cabe a
+qualquer vendedor pedir pra assumir aquele lead; o primeiro que clicar
+"Assumir conversa" vira o dono, e mais ninguém rouba depois.
+
+### 17.1. SQL — migração
+
+```sql
+-- mensagens: qualquer membro ativo da equipe vê tudo (não só a carteira dele)
+drop policy if exists "equipe vê mensagens" on public.mensagens;
+create policy "equipe vê mensagens" on public.mensagens
+  for select to authenticated
+  using (exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo));
+
+-- lead_status: todo mundo enxerga também os leads ainda sem dono (fila aberta)
+drop policy if exists "vê lead_status" on public.lead_status;
+create policy "vê lead_status" on public.lead_status
+  for select to authenticated
+  using (public.eh_gestor() or atribuido_a = auth.uid() or urgente = true or atribuido_a is null);
+
+-- permite abrir (fazer UPDATE) numa linha ainda sem dono, pra poder reivindicar
+drop policy if exists "edita lead_status" on public.lead_status;
+create policy "edita lead_status" on public.lead_status
+  for update to authenticated
+  using (public.eh_gestor() or atribuido_a = auth.uid() or urgente = true or atribuido_a is null)
+  with check (public.eh_gestor() or atribuido_a = auth.uid() or urgente = true);
+
+-- trigger: continua só gestor pra REATRIBUIR, mas libera autoatribuição
+-- (pegar um lead livre) e autoliberação (devolver um lead que é seu)
+create or replace function public.guarda_lead_status()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'UPDATE'
+     and new.atribuido_a is distinct from old.atribuido_a
+     and not public.eh_gestor()
+     and not (old.atribuido_a is null and new.atribuido_a = auth.uid())
+     and not (old.atribuido_a = auth.uid() and new.atribuido_a is null) then
+    raise exception 'só gestor pode passar o lead pra outra pessoa';
+  end if;
+  new.atualizado_por := auth.uid();
+  new.atualizado_em  := now();
+  return new;
+end;
+$$;
+
+-- RPC: "assumir lead" — pega um lead livre (ou já seu) e desliga a Cris;
+-- se já for de outro vendedor, recusa (evita corrida/roubo de lead)
+create or replace function public.rpc_assumir_lead(p_whatsapp text)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  achado public.lead_status;
+begin
+  if not exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo) then
+    raise exception 'não autorizado';
+  end if;
+
+  select * into achado from public.lead_status
+    where public.wa_norm(whatsapp) = public.wa_norm(p_whatsapp)
+    limit 1;
+
+  if achado.whatsapp is null then
+    insert into public.lead_status (whatsapp, atribuido_a, ia_ativa)
+      values (p_whatsapp, auth.uid(), false);
+    return;
+  end if;
+
+  if achado.atribuido_a is not null and achado.atribuido_a <> auth.uid() then
+    raise exception 'esse lead já está com outro vendedor';
+  end if;
+
+  update public.lead_status
+    set atribuido_a = auth.uid(), ia_ativa = false
+    where whatsapp = achado.whatsapp;
+end;
+$$;
+revoke execute on function public.rpc_assumir_lead(text) from public, anon;
+grant execute on function public.rpc_assumir_lead(text) to authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+### 17.2. Horário comercial — Cris muda de comportamento
+
+- **8h–17h, seg-sex (horário de Brasília):** Cris manda só uma saudação
+  curta avisando que já vai chamar alguém da equipe, e desliga a IA na
+  hora (handoff imediato, não espera 3 respostas).
+- **Fora desse horário** (noite, manhã cedo, fim de semana): Cris conversa
+  de verdade — tira dúvida sobre o congresso, fala preço (só Lote VIP e
+  Lote 1, que são os que têm inscrição aberta) e manda o link de compra,
+  mas não fecha venda nem inventa data/palestrante (isso ainda é
+  hipótese de 2025, ver `docs/persona.md`). Handoff automático continua
+  existindo, só que com um teto maior (8 respostas em vez de 3).
+
+Código completo (substitui o `whatsapp-webhook` de novo) em **§17.3**.
+
+### 17.3. Edge Function `whatsapp-webhook` (versão com horário comercial)
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const VERIFY_TOKEN    = Deno.env.get("WHATSAPP_VERIFY_TOKEN")?.trim();
+const APP_SECRET      = Deno.env.get("WHATSAPP_APP_SECRET")?.trim();
+const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
+const SVC_KEY         = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const WA_TOKEN        = Deno.env.get("WHATSAPP_PERMANENT_TOKEN")!;
+const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
+const ANTHROPIC_KEY   = Deno.env.get("ANTHROPIC_API_KEY")!;
+
+const svcHeaders = { apikey: SVC_KEY, authorization: `Bearer ${SVC_KEY}`, "content-type": "application/json" };
+
+const BOAS_VINDAS_COMERCIAL =
+  "Oi! Tudo bem? Aqui é da equipe do Congresso Câncer 2026 😊 " +
+  "Recebi sua mensagem — já vou chamar alguém do nosso time pra te atender direitinho, só um instante!";
+
+const CRIS_INSTRUCOES = `Você é a Cris, da equipe do Congresso Câncer 2026 (congresso de práticas integrativas oncológicas, 2 dias em São Paulo). É fora do horário comercial (8h-17h, seg-sex), então você mesma pode conversar de verdade com o lead: tirar dúvidas, explicar do que se trata o congresso, falar preço e mandar o link de inscrição.
+
+Perfil de quem mais aproveita o congresso: médico(a)/dentista/farmacêutico(a)/enfermeiro(a)/fisioterapeuta/terapeuta que atende ou quer atender pacientes oncológicos e quer ampliar repertório em práticas integrativas.
+
+Regras importantes:
+- Use SOMENTE as informações da seção "CONTEÚDO ATUAL DO SITE" abaixo pra falar de preço, lote, data, palestrante, programação ou qualquer outro dado factual do congresso — é a fonte de verdade, sempre atualizada. Nunca invente ou complete com dado que não estiver lá.
+- Se perguntarem algo que não está no conteúdo do site, diga que vai confirmar com a equipe e chama pra ver as novidades direto no site.
+- Não empurre a venda de forma agressiva nem finja urgência falsa. Pode mandar o link de compra quando fizer sentido na conversa.
+- Se a pessoa pedir explicitamente pra falar com um humano, avise que vai chamar alguém assim que o time abrir (comercial 8h-17h) e pare de insistir em vender.
+- Tom: brasileiro, informal, caloroso, mensagens curtas (2-5 linhas), no máximo 1 emoji por mensagem. Nunca mencione que é uma IA a menos que perguntem diretamente.`;
+
+const SITE_URL = "https://congressocancer.novvasaudeintegrativa.com.br/";
+const SITE_TTL_MS = 30 * 60 * 1000; // 30 min de cache — evita bater no site a cada mensagem
+let siteCache: { texto: string; quando: number } | null = null;
+
+async function textoDoSite(): Promise<string> {
+  if (siteCache && Date.now() - siteCache.quando < SITE_TTL_MS) return siteCache.texto;
+  try {
+    const r = await fetch(SITE_URL);
+    const html = await r.text();
+    const texto = html
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<!--[\s\S]*?-->/g, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&")
+      .replace(/&quot;/gi, '"').replace(/&#39;/g, "'")
+      .replace(/[ \t]+/g, " ").replace(/\n{2,}/g, "\n")
+      .trim()
+      .slice(0, 9000); // teto de tamanho pra não estourar tokens
+    siteCache = { texto, quando: Date.now() };
+    return texto;
+  } catch (e) {
+    console.error("fetch site:", e);
+    return siteCache?.texto ?? "";
+  }
+}
+
+function horaBrasil(): { dia: number; hora: number } {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo", hour12: false, weekday: "short", hour: "2-digit",
+  });
+  const partes = fmt.formatToParts(new Date());
+  const hora = Number(partes.find((p) => p.type === "hour")?.value ?? "0");
+  const diaTxt = partes.find((p) => p.type === "weekday")?.value ?? "";
+  const dias: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { dia: dias[diaTxt] ?? 0, hora };
+}
+function dentroComercial(): boolean {
+  const { dia, hora } = horaBrasil();
+  return dia >= 1 && dia <= 5 && hora >= 8 && hora < 17;
+}
+
+async function assinaturaOk(req: Request, body: string): Promise<boolean> {
+  if (!APP_SECRET) return true;
+  const sig = req.headers.get("x-hub-signature-256");
+  if (!sig) return false;
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(APP_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
+  const hex = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return sig === `sha256=${hex}`;
+}
+
+async function iaAtiva(numero: string): Promise<boolean> {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/lead_status?whatsapp=eq.${numero}&select=ia_ativa`, { headers: svcHeaders });
+  if (!r.ok) return true;
+  const rows = await r.json();
+  return !rows.length || rows[0].ia_ativa !== false;
+}
+
+async function historico(numero: string) {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/mensagens?lead_whatsapp=eq.${numero}&select=direcao,texto,enviado_por&order=criado_em.asc&limit=20`,
+    { headers: svcHeaders },
+  );
+  return r.ok ? await r.json() : [];
+}
+
+async function crisResponde(msgsHist: any[]): Promise<string | null> {
+  const msgs = msgsHist
+    .filter((m: any) => m.texto)
+    .map((m: any) => ({ role: m.direcao === "recebida" ? "user" : "assistant", content: m.texto }));
+  if (!msgs.length || msgs[msgs.length - 1].role !== "user") return null;
+
+  const site = await textoDoSite();
+  const system = CRIS_INSTRUCOES + "\n\nCONTEÚDO ATUAL DO SITE (extraído agora, é a fonte de verdade):\n" + site;
+
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 350, system, messages: msgs }),
+  });
+  if (!resp.ok) { console.error("anthropic:", resp.status, await resp.text()); return null; }
+  const data = await resp.json();
+  const texto = (data.content || []).map((b: any) => b.text || "").join("").trim();
+  return texto || null;
+}
+
+async function mandarWhatsapp(numero: string, texto: string): Promise<string | null> {
+  const r = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${WA_TOKEN}`, "content-type": "application/json" },
+    body: JSON.stringify({ messaging_product: "whatsapp", to: numero, type: "text", text: { body: texto } }),
+  });
+  const body = await r.json();
+  if (!r.ok) { console.error("envio cris:", r.status, body); return null; }
+  return body.messages?.[0]?.id ?? null;
+}
+
+async function gravarEnviada(numero: string, waId: string | null, texto: string) {
+  await fetch(`${SUPABASE_URL}/rest/v1/mensagens?on_conflict=wa_message_id`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([{
+      wa_message_id: waId, lead_whatsapp: numero, direcao: "enviada",
+      tipo: "text", texto, status: "sent", wa_timestamp: new Date().toISOString(),
+      enviado_por: null, raw: {},
+    }]),
+  });
+}
+
+async function desligarIa(numero: string) {
+  await fetch(`${SUPABASE_URL}/rest/v1/lead_status?on_conflict=whatsapp`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([{ whatsapp: numero, ia_ativa: false }]),
+  });
+}
+
+async function contarRespostasCris(numero: string): Promise<number> {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/mensagens?lead_whatsapp=eq.${numero}&direcao=eq.enviada&enviado_por=is.null&select=id`,
+    { headers: svcHeaders },
+  );
+  const rows = r.ok ? await r.json() : [];
+  return rows.length;
+}
+
+async function deixarCrisResponder(numero: string) {
+  if (!(await iaAtiva(numero))) return;
+
+  if (dentroComercial()) {
+    // já mandou a saudação de horário comercial pra esse lead? não manda de novo.
+    if ((await contarRespostasCris(numero)) > 0) return;
+    const waId = await mandarWhatsapp(numero, BOAS_VINDAS_COMERCIAL);
+    await gravarEnviada(numero, waId, BOAS_VINDAS_COMERCIAL);
+    await desligarIa(numero); // handoff imediato pro time humano
+    return;
+  }
+
+  const hist = await historico(numero);
+  const texto = await crisResponde(hist);
+  if (!texto) return;
+  const waId = await mandarWhatsapp(numero, texto);
+  await gravarEnviada(numero, waId, texto);
+  if ((await contarRespostasCris(numero)) >= 8) await desligarIa(numero);
+}
+
+Deno.serve(async (req) => {
+  const url = new URL(req.url);
+
+  if (req.method === "GET") {
+    const mode = url.searchParams.get("hub.mode");
+    const token = url.searchParams.get("hub.verify_token");
+    const challenge = url.searchParams.get("hub.challenge");
+    if (mode === "subscribe" && token === VERIFY_TOKEN && challenge) return new Response(challenge, { status: 200 });
+    return new Response("forbidden", { status: 403 });
+  }
+  if (req.method !== "POST") return new Response("method", { status: 405 });
+
+  const bodyText = await req.text();
+  if (!(await assinaturaOk(req, bodyText))) return new Response("bad signature", { status: 401 });
+
+  let payload: any;
+  try { payload = JSON.parse(bodyText); } catch { return new Response("bad json", { status: 400 }); }
+
+  const linhas: Record<string, unknown>[] = [];
+  const numerosRecebidos = new Set<string>();
+  for (const entry of payload.entry ?? []) {
+    for (const ch of entry.changes ?? []) {
+      const v = ch.value ?? {};
+      for (const m of v.messages ?? []) {
+        linhas.push({
+          wa_message_id: m.id,
+          lead_whatsapp: m.from,
+          direcao: "recebida",
+          tipo: m.type ?? null,
+          texto: m.text?.body ?? m.button?.text ??
+                 m.interactive?.button_reply?.title ??
+                 m.interactive?.list_reply?.title ?? null,
+          wa_timestamp: m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : null,
+          raw: m,
+        });
+        numerosRecebidos.add(m.from);
+      }
+      for (const s of v.statuses ?? []) {
+        linhas.push({
+          wa_message_id: s.id,
+          lead_whatsapp: s.recipient_id,
+          direcao: "enviada",
+          status: s.status ?? null,
+          wa_timestamp: s.timestamp ? new Date(Number(s.timestamp) * 1000).toISOString() : null,
+        });
+      }
+    }
+  }
+
+  if (linhas.length) {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/mensagens?on_conflict=wa_message_id`, {
+      method: "POST",
+      headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify(linhas),
+    });
+    if (!resp.ok) console.error("insert mensagens:", resp.status, await resp.text());
+  }
+
+  for (const numero of numerosRecebidos) {
+    try { await deixarCrisResponder(numero); }
+    catch (e) { console.error("cris:", numero, e); }
+  }
+
+  return new Response("ok", { status: 200 });
+});
+```
+
+### 17.4. Cris lembra quem é o lead (cruza com o cadastro do quiz)
+
+A Cris já enxergava o **histórico de mensagens** daquele número (até 20
+últimas, sem limite de tempo — se a pessoa já conversou antes, ela lê tudo
+de novo). O que faltava: se a pessoa já preencheu o quiz do site antes
+(nome, profissão, nível), a Cris não sabia disso na primeira mensagem por
+WhatsApp — só descobriria conversando de novo.
+
+Agora ela cruza o número com `crm_leads` (via `wa_norm`, porque o quiz
+grava o número como a pessoa digitou, formato diferente do que a Meta
+manda) e, se achar, já entra sabendo nome/profissão/nível — trata com
+familiaridade, chama pelo nome e não repete pergunta que já sabe a
+resposta. Se não achar (número novo, nunca fez o quiz), segue qualificando
+do zero, igual antes.
+
+**SQL** (roda no SQL Editor):
+
+```sql
+create or replace function public.rpc_lead_conhecido(p_whatsapp text)
+returns table(nome text, profissao text, nivel text, pontuacao numeric, captado_em timestamptz)
+language sql stable security definer set search_path = public as $$
+  select nome, profissao, nivel, pontuacao, captado_em
+  from public.crm_leads
+  where public.wa_norm(whatsapp) = public.wa_norm(p_whatsapp)
+  limit 1;
+$$;
+revoke execute on function public.rpc_lead_conhecido(text) from public, anon;
+grant execute on function public.rpc_lead_conhecido(text) to authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+**Edge Function:** o `whatsapp-webhook` completo com isso embutido está em
+**§17.5** — substitui de novo o código inteiro.
+
+### 17.5. Edge Function `whatsapp-webhook` (com memória do lead)
+
+Cola por cima, substituindo o de §17.3:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const VERIFY_TOKEN    = Deno.env.get("WHATSAPP_VERIFY_TOKEN")?.trim();
+const APP_SECRET      = Deno.env.get("WHATSAPP_APP_SECRET")?.trim();
+const SUPABASE_URL    = Deno.env.get("SUPABASE_URL")!;
+const SVC_KEY         = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const WA_TOKEN        = Deno.env.get("WHATSAPP_PERMANENT_TOKEN")!;
+const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
+const ANTHROPIC_KEY   = Deno.env.get("ANTHROPIC_API_KEY")!;
+
+const svcHeaders = { apikey: SVC_KEY, authorization: `Bearer ${SVC_KEY}`, "content-type": "application/json" };
+
+const CRIS_INSTRUCOES = `Você é a Cris, da equipe do Congresso Câncer 2026 (congresso de práticas integrativas oncológicas, 2 dias em São Paulo). Você pode conversar de verdade com o lead: tirar dúvidas, explicar do que se trata o congresso, falar preço e mandar o link de inscrição.
+
+Perfil de quem mais aproveita o congresso: médico(a)/dentista/farmacêutico(a)/enfermeiro(a)/fisioterapeuta/terapeuta que atende ou quer atender pacientes oncológicos e quer ampliar repertório em práticas integrativas.
+
+RESPOSTAS DE REFERÊNCIA (o time humano usa exatamente essas — adapte ao tom da conversa, mas mantenha a mesma informação):
+- Valores: "Os valores são: Lote VIP — 12x de R$149,70 ou R$1.497 à vista (https://chk.eduzz.com/6W4G83QY0Z); Lote 1 — 12x de R$49,70 ou R$497 à vista (https://chk.eduzz.com/39ZRQ8ZBWE). Os lotes seguintes sobem de preço, então quanto antes garantir, melhor!"
+- Site: "Você pode ver todos os detalhes direto no nosso site: https://congressocancer.novvasaudeintegrativa.com.br"
+- Certificado: "Sim! O congresso emite certificado digital de 16 horas, reconhecido — ótimo pro seu portfólio profissional."
+- Local/datas: "O congresso é em São Paulo, 2 dias de imersão em práticas integrativas oncológicas. As datas exatas eu confirmo em instantes!"
+
+Regras importantes:
+- Use SOMENTE as informações das seções "RESPOSTAS DE REFERÊNCIA" e "CONTEÚDO ATUAL DO SITE" abaixo pra falar de preço, lote, data, palestrante, programação ou qualquer outro dado factual do congresso — são a fonte de verdade, sempre atualizadas. Nunca invente ou complete com dado que não estiver lá.
+- Se souber quem é o lead (seção "QUEM É ESSE CONTATO"), trate com familiaridade, chame pelo nome e não repita pergunta de qualificação que você já sabe a resposta.
+- Se perguntarem algo que não está no conteúdo do site, diga que vai confirmar com a equipe e chama pra ver as novidades direto no site.
+- Não empurre a venda de forma agressiva nem finja urgência falsa. Pode mandar o link de compra quando fizer sentido na conversa.
+- Se a pessoa pedir explicitamente pra falar com um humano: se for dentro do horário comercial (8h-17h, seg-sex), diga que já chamou alguém do time e a pessoa deve aparecer a qualquer momento; se for fora desse horário, diga que chama assim que o time abrir. Nos dois casos, continue disponível pra ajudar enquanto isso.
+- Tom: brasileiro, informal, caloroso, mensagens curtas (2-5 linhas), no máximo 1 emoji por mensagem. Nunca mencione que é uma IA a menos que perguntem diretamente.`;
+
+const SITE_URL = "https://congressocancer.novvasaudeintegrativa.com.br/";
+const SITE_TTL_MS = 30 * 60 * 1000;
+let siteCache: { texto: string; quando: number } | null = null;
+
+async function textoDoSite(): Promise<string> {
+  if (siteCache && Date.now() - siteCache.quando < SITE_TTL_MS) return siteCache.texto;
+  try {
+    const r = await fetch(SITE_URL);
+    const html = await r.text();
+    const texto = html
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<!--[\s\S]*?-->/g, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&")
+      .replace(/&quot;/gi, '"').replace(/&#39;/g, "'")
+      .replace(/[ \t]+/g, " ").replace(/\n{2,}/g, "\n")
+      .trim()
+      .slice(0, 9000);
+    siteCache = { texto, quando: Date.now() };
+    return texto;
+  } catch (e) {
+    console.error("fetch site:", e);
+    return siteCache?.texto ?? "";
+  }
+}
+
+function horaBrasil(): { dia: number; hora: number } {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo", hour12: false, weekday: "short", hour: "2-digit",
+  });
+  const partes = fmt.formatToParts(new Date());
+  const hora = Number(partes.find((p) => p.type === "hour")?.value ?? "0");
+  const diaTxt = partes.find((p) => p.type === "weekday")?.value ?? "";
+  const dias: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { dia: dias[diaTxt] ?? 0, hora };
+}
+function dentroComercial(): boolean {
+  const { dia, hora } = horaBrasil();
+  return dia >= 1 && dia <= 5 && hora >= 8 && hora < 17;
+}
+
+async function assinaturaOk(req: Request, body: string): Promise<boolean> {
+  if (!APP_SECRET) return true;
+  const sig = req.headers.get("x-hub-signature-256");
+  if (!sig) return false;
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(APP_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
+  const hex = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return sig === `sha256=${hex}`;
+}
+
+async function iaAtiva(numero: string): Promise<boolean> {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/lead_status?whatsapp=eq.${numero}&select=ia_ativa`, { headers: svcHeaders });
+  if (!r.ok) return true;
+  const rows = await r.json();
+  return !rows.length || rows[0].ia_ativa !== false;
+}
+
+async function leadConhecido(numero: string): Promise<{ nome: string; profissao: string | null; nivel: string | null } | null> {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/rpc_lead_conhecido`, {
+    method: "POST", headers: svcHeaders, body: JSON.stringify({ p_whatsapp: numero }),
+  });
+  if (!r.ok) return null;
+  const rows = await r.json();
+  return rows && rows[0] ? rows[0] : null;
+}
+
+async function historico(numero: string) {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/mensagens?lead_whatsapp=eq.${numero}&select=direcao,texto,enviado_por&order=criado_em.asc&limit=20`,
+    { headers: svcHeaders },
+  );
+  return r.ok ? await r.json() : [];
+}
+
+async function crisResponde(msgsHist: any[], conhecido: { nome: string; profissao: string | null; nivel: string | null } | null, emComercial: boolean): Promise<string | null> {
+  const msgs = msgsHist
+    .filter((m: any) => m.texto)
+    .map((m: any) => ({ role: m.direcao === "recebida" ? "user" : "assistant", content: m.texto }));
+  if (!msgs.length || msgs[msgs.length - 1].role !== "user") return null;
+
+  const site = await textoDoSite();
+  const notaHorario = emComercial
+    ? "Estamos dentro do horário comercial agora — um humano da equipe já foi avisado e pode assumir a qualquer momento."
+    : "Estamos fora do horário comercial agora (a equipe volta às 8h no próximo dia útil).";
+  let system = CRIS_INSTRUCOES + "\n\n" + notaHorario + "\n\nCONTEÚDO ATUAL DO SITE (extraído agora, é a fonte de verdade):\n" + site;
+  if (conhecido) {
+    system += `\n\nQUEM É ESSE CONTATO: nome ${conhecido.nome}` +
+      (conhecido.profissao ? `, profissão ${conhecido.profissao}` : "") +
+      (conhecido.nivel ? `, nível de interesse ${conhecido.nivel}` : "") +
+      ". Já preencheu o formulário do site antes.";
+  }
+
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 350, system, messages: msgs }),
+  });
+  if (!resp.ok) { console.error("anthropic:", resp.status, await resp.text()); return null; }
+  const data = await resp.json();
+  const texto = (data.content || []).map((b: any) => b.text || "").join("").trim();
+  return texto || null;
+}
+
+async function mandarWhatsapp(numero: string, texto: string): Promise<string | null> {
+  const r = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${WA_TOKEN}`, "content-type": "application/json" },
+    body: JSON.stringify({ messaging_product: "whatsapp", to: numero, type: "text", text: { body: texto } }),
+  });
+  const body = await r.json();
+  if (!r.ok) { console.error("envio cris:", r.status, body); return null; }
+  return body.messages?.[0]?.id ?? null;
+}
+
+async function gravarEnviada(numero: string, waId: string | null, texto: string) {
+  await fetch(`${SUPABASE_URL}/rest/v1/mensagens?on_conflict=wa_message_id`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([{
+      wa_message_id: waId, lead_whatsapp: numero, direcao: "enviada",
+      tipo: "text", texto, status: "sent", wa_timestamp: new Date().toISOString(),
+      enviado_por: null, raw: {},
+    }]),
+  });
+}
+
+async function desligarIa(numero: string) {
+  await fetch(`${SUPABASE_URL}/rest/v1/lead_status?on_conflict=whatsapp`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([{ whatsapp: numero, ia_ativa: false }]),
+  });
+}
+
+async function crisFalouRecentemente(numero: string, horas: number): Promise<boolean> {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/mensagens?lead_whatsapp=eq.${numero}&direcao=eq.enviada&enviado_por=is.null&select=criado_em&order=criado_em.desc&limit=1`,
+    { headers: svcHeaders },
+  );
+  const rows = r.ok ? await r.json() : [];
+  if (!rows.length) return false;
+  const diffMs = Date.now() - new Date(rows[0].criado_em).getTime();
+  return diffMs < horas * 60 * 60 * 1000;
+}
+
+async function marcarUrgente(numero: string) {
+  await fetch(`${SUPABASE_URL}/rest/v1/lead_status?on_conflict=whatsapp`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([{ whatsapp: numero, urgente: true }]),
+  });
+}
+
+async function contarRespostasCris(numero: string): Promise<number> {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/mensagens?lead_whatsapp=eq.${numero}&direcao=eq.enviada&enviado_por=is.null&select=id`,
+    { headers: svcHeaders },
+  );
+  const rows = r.ok ? await r.json() : [];
+  return rows.length;
+}
+
+async function garantirLeadStatus(numero: string) {
+  await fetch(`${SUPABASE_URL}/rest/v1/lead_status?on_conflict=whatsapp`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([{ whatsapp: numero }]),
+  });
+}
+
+async function deixarCrisResponder(numero: string) {
+  await garantirLeadStatus(numero); // garante que todo contato aparece no Kanban, em qualquer horário
+  if (!(await iaAtiva(numero))) return;
+  const conhecido = await leadConhecido(numero);
+  const emComercial = dentroComercial();
+
+  if (emComercial && !(await crisFalouRecentemente(numero, 6))) {
+    // primeiro contato (ou faz +6h do último) em horário comercial — saudação curta avisando o time
+    const texto = conhecido
+      ? `Oi, ${conhecido.nome}! Tudo bem? Aqui é da equipe do Congresso Câncer 2026 😊 Já vou chamar alguém do nosso time pra continuar com você, só um instante!`
+      : "Oi! Tudo bem? Aqui é da equipe do Congresso Câncer 2026 😊 Recebi sua mensagem — já vou chamar alguém do nosso time pra te atender direitinho, só um instante!";
+    const waId = await mandarWhatsapp(numero, texto);
+    if (!waId) return;
+    await gravarEnviada(numero, waId, texto);
+    await marcarUrgente(numero); // já sinaliza pro time desde a primeira mensagem
+    return;
+  }
+
+  if (emComercial) {
+    await marcarUrgente(numero); // continua sinalizando enquanto ninguém assumiu
+    const jaAjudouDeVerdade = (await contarRespostasCris(numero)) >= 2; // já passou da fase "só saudação" alguma vez
+    if (!jaAjudouDeVerdade && (await crisFalouRecentemente(numero, 0.25))) {
+      // ainda dentro dos 15 min de tolerância pro vendedor aparecer — fica quieta, só sinalizando urgente
+      return;
+    }
+    // passou de 15 min sem ninguém assumir (ou já estava ajudando de verdade) — não deixa a
+    // conversa esfriar, a Cris continua ajudando até um humano realmente assumir
+  }
+
+  const hist = await historico(numero);
+  const texto = await crisResponde(hist, conhecido, emComercial);
+  if (!texto) return;
+  const waId = await mandarWhatsapp(numero, texto);
+  if (!waId) return; // não grava se não foi entregue
+  await gravarEnviada(numero, waId, texto);
+  // sem desligamento automático — só humano desliga a Cris (assumir conversa ou responder manualmente)
+}
+
+Deno.serve(async (req) => {
+  const url = new URL(req.url);
+
+  if (req.method === "GET") {
+    const mode = url.searchParams.get("hub.mode");
+    const token = url.searchParams.get("hub.verify_token");
+    const challenge = url.searchParams.get("hub.challenge");
+    if (mode === "subscribe" && token === VERIFY_TOKEN && challenge) return new Response(challenge, { status: 200 });
+    return new Response("forbidden", { status: 403 });
+  }
+  if (req.method !== "POST") return new Response("method", { status: 405 });
+
+  const bodyText = await req.text();
+  if (!(await assinaturaOk(req, bodyText))) return new Response("bad signature", { status: 401 });
+
+  let payload: any;
+  try { payload = JSON.parse(bodyText); } catch { return new Response("bad json", { status: 400 }); }
+
+  const linhas: Record<string, unknown>[] = [];
+  const numerosRecebidos = new Set<string>();
+  for (const entry of payload.entry ?? []) {
+    for (const ch of entry.changes ?? []) {
+      const v = ch.value ?? {};
+      for (const m of v.messages ?? []) {
+        linhas.push({
+          wa_message_id: m.id,
+          lead_whatsapp: m.from,
+          direcao: "recebida",
+          tipo: m.type ?? null,
+          texto: m.text?.body ?? m.button?.text ??
+                 m.interactive?.button_reply?.title ??
+                 m.interactive?.list_reply?.title ?? null,
+          wa_timestamp: m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : null,
+          raw: m,
+        });
+        numerosRecebidos.add(m.from);
+      }
+      for (const s of v.statuses ?? []) {
+        linhas.push({
+          wa_message_id: s.id,
+          lead_whatsapp: s.recipient_id,
+          direcao: "enviada",
+          status: s.status ?? null,
+          wa_timestamp: s.timestamp ? new Date(Number(s.timestamp) * 1000).toISOString() : null,
+        });
+      }
+    }
+  }
+
+  if (linhas.length) {
+    const resp = await fetch(`${SUPABASE_URL}/rest/v1/mensagens?on_conflict=wa_message_id`, {
+      method: "POST",
+      headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify(linhas),
+    });
+    if (!resp.ok) console.error("insert mensagens:", resp.status, await resp.text());
+  }
+
+  for (const numero of numerosRecebidos) {
+    try { await deixarCrisResponder(numero); }
+    catch (e) { console.error("cris:", numero, e); }
+  }
+
+  return new Response("ok", { status: 200 });
+});
+```
+
+> §17.3 fica só de histórico — usa sempre esta versão (§17.5) daqui pra frente.
+
+### 17.6. `Ads/crm.html` — botão "Assumir conversa" agora reivindica o lead
+
+Antes só desligava a Cris (`ia_ativa=false`); agora chama
+`rpc_assumir_lead`, que também tenta virar o `atribuido_a` — se outro
+vendedor já assumiu antes, a chamada falha com "esse lead já está com
+outro vendedor" e o botão mostra esse erro em vez de assumir silenciosamente.
