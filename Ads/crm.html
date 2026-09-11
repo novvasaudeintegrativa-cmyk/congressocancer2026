@@ -241,7 +241,7 @@
 
   <div id="view-pipeline">
     <div class="aviso" id="aviso-gestor" hidden>
-      Você é <b>gestor</b>: vê todos os leads e distribui. A coluna <b>Não triados</b> são leads do quiz que ainda não têm vendedor — escolha o responsável no card pra jogar no funil.
+      Você é <b>gestor</b>: vê todos os leads e distribui. Escolha o responsável no card, ou deixe em aberto pra qualquer vendedor assumir na fila (seção Conversas).
     </div>
 
     <div class="sec-crm"><span>Pipeline</span><span class="cont" id="cont"></span></div>
@@ -326,7 +326,6 @@
 
   var ETAPAS = [
     { id:'novo',        rot:'Novos' },
-    { id:'contato',     rot:'Prospecção' },
     { id:'conversando', rot:'Em Atendimento' },
     { id:'proposta',    rot:'Aguardando Compra' },
     { id:'ganho',       rot:'Finalizado' }
@@ -564,11 +563,6 @@
     var board = $('board');
     board.innerHTML = '';
 
-    // coluna "não triados" só pro gestor
-    if (estado.ehGestor){
-      var naoTriados = leads.filter(function(l){ return !l.etapa; });
-      board.appendChild(coluna('Não triados', naoTriados, true));
-    }
     ETAPAS.forEach(function(e){
       var doStage = leads.filter(function(l){ return l.etapa === e.id; });
       board.appendChild(coluna(e.rot, doStage, false, e.id));
