@@ -81,6 +81,12 @@
   .card select{font-family:var(--corpo);font-size:11px;padding:4px 6px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--ink);max-width:100%;}
   .card .wa{font-size:11px;font-weight:700;text-decoration:none;color:var(--verde);border:1px solid var(--verde);padding:4px 9px;border-radius:999px;white-space:nowrap;}
   .card .wa:hover{background:var(--verde);color:#fff;}
+  .acoes-rapidas{display:flex;align-items:center;gap:6px;}
+  .acoes-rapidas .spacer{flex:1;}
+  .icon-btn{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;text-decoration:none;background:#efe8e4;color:var(--soft);border:0;cursor:pointer;flex-shrink:0;}
+  .icon-btn.wa{background:rgba(31,138,76,.13);color:var(--verde);}
+  .icon-btn.wa:hover{background:var(--verde);color:#fff;}
+  .icon-btn:hover{filter:brightness(.94);}
   .card .urg-btn{font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:4px 9px;border-radius:999px;cursor:pointer;background:#fff;border:1px solid var(--linha);color:var(--soft);}
   .card .urg-btn.on{background:var(--bordo-vivo);border-color:var(--bordo-vivo);color:#fff;}
   .card .nota{width:100%;margin-top:8px;font-family:var(--corpo);font-size:11.5px;padding:6px 8px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--ink);resize:vertical;min-height:34px;}
@@ -616,10 +622,13 @@
         (l.profissao ? '<div class="meta">' + esc(l.profissao) + '</div>' : '') + '</div>' +
       '</div>' +
       (badges ? '<div class="badges">' + badges + '</div>' : '') +
-      (l.captado_em ? '<div class="quando">desde ' + fmtQuando(l.captado_em) + '</div>' : '') +
-      '<div class="linha-acao">' +
-        '<a class="wa" href="https://wa.me/' + wpp + '" target="_blank" rel="noopener">' + ICON_WA + ' WhatsApp</a>' +
-        (triar ? '' : '<button type="button" class="urg-btn' + (l.urgente ? ' on' : '') + '">Urgente</button>') +
+      (l.captado_em ? '<div class="quando">🕐 desde ' + fmtQuando(l.captado_em) + '</div>' : '') +
+      '<div class="linha-acao acoes-rapidas">' +
+        '<a class="icon-btn wa" href="https://wa.me/' + wpp + '" target="_blank" rel="noopener" title="Abrir no WhatsApp">' + ICON_WA + '</a>' +
+        (l.email ? '<a class="icon-btn" href="mailto:' + esc(l.email) + '" title="Enviar e-mail">✉️</a>' : '') +
+        (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="Ver conversa no CRM">💬</button>') +
+        '<span class="spacer"></span>' +
+        (triar ? '' : '<button type="button" class="urg-btn' + (l.urgente ? ' on' : '') + '">🔥 Urgente</button>') +
       '</div>' +
       '<div class="linha-acao">' +
         (triar ? '' : '<select class="sel-etapa"></select>') +
@@ -662,6 +671,14 @@
     // urgente
     var urg = c.querySelector('.urg-btn');
     if (urg) urg.addEventListener('click', function(){ upsertLead(l.whatsapp, { urgente: !l.urgente }); });
+
+    // ver conversa (pula pra seção Conversas e abre a thread desse número)
+    var verConv = c.querySelector('.btn-ver-conversa');
+    if (verConv) verConv.addEventListener('click', function(){
+      var n = this.dataset.w;
+      $('view-conversas').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(function(){ renderThread(n); }, 350);
+    });
 
     // nota (salva ao sair do campo, se mudou)
     var nota = c.querySelector('.nota');
