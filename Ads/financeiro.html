@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Novva Controle Financeiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f2ef; --card:#ffffff; --linha:#e8e3dd; --track:#efe8e4;
+    --ink:#2a2320; --soft:#857b74; --faint:#afa59d;
+    --bordo:#8a222e; --bordo-vivo:#b92d3d; --dourado:#c98b1f; --verde:#1f8a4c; --azul:#2f6f9e;
+    --tit:'League Spartan','Segoe UI',sans-serif;
+    --corpo:'Roboto','Segoe UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  [hidden]{display:none!important;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--corpo);line-height:1.5;}
+  h1,h2,h3{font-family:var(--tit);margin:0;}
+  a{color:var(--bordo);}
+
+  /* ---- login (mesmo padrão do crm.html) ---- */
+  #login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  #login .box{background:var(--card);border:1px solid var(--linha);border-radius:18px;padding:32px 28px;width:100%;max-width:360px;}
+  #login .mark{width:40px;height:40px;border-radius:11px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--tit);font-weight:800;font-size:17px;margin-bottom:16px;}
+  #login h1{font-size:20px;font-weight:800;margin-bottom:4px;}
+  #login .sub{font-size:12.5px;color:var(--soft);margin-bottom:22px;}
+  #login label{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);margin:12px 0 5px;font-weight:600;}
+  #login input{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--linha);background:#fff;color:var(--ink);font-family:var(--corpo);font-size:14px;}
+  #login button{width:100%;margin-top:18px;font-family:var(--tit);font-weight:800;font-size:13px;letter-spacing:.02em;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:10px;padding:12px;cursor:pointer;}
+  #login button:hover{background:var(--bordo-vivo);}
+  #login button:disabled{opacity:.6;cursor:default;}
+  #login .erro{margin-top:12px;font-size:12.5px;color:var(--bordo-vivo);min-height:1em;}
+  .link-esqueci{background:none;border:0;color:var(--soft);font-size:12px;margin-top:10px;cursor:pointer;text-decoration:underline;padding:0;width:100%;}
+  .link-esqueci:hover{color:var(--bordo);}
+
+  /* ---- app ---- */
+  #app{padding:16px 18px 40px;max-width:1180px;margin:0 auto;}
+  .topbar{display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap;margin-bottom:16px;}
+  .brand{display:flex;align-items:center;gap:10px;margin-right:auto;}
+  .brand .mark{width:30px;height:30px;border-radius:8px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--tit);font-weight:800;font-size:13px;}
+  .brand h1{font-size:15px;font-weight:800;letter-spacing:.03em;}
+  .brand .sub{font-size:11px;color:var(--soft);}
+  .eu{font-size:12px;color:var(--soft);}
+  .eu b{color:var(--ink);}
+  .btn-mini{font-family:var(--tit);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:7px 13px;border-radius:999px;cursor:pointer;}
+  .btn-mini:hover{border-color:var(--bordo);color:var(--bordo);}
+
+  #painel-senha{margin-bottom:16px;}
+  .form-senha{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:12px 14px;}
+  .form-senha-tit{font-family:var(--tit);font-weight:800;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--bordo);margin-right:4px;}
+  .form-senha input{font-family:var(--corpo);font-size:13px;padding:8px 10px;border-radius:9px;border:1px solid var(--linha);background:#fff;color:var(--ink);min-width:150px;}
+  .form-senha button{font-family:var(--tit);font-weight:800;font-size:12px;text-transform:uppercase;border:0;border-radius:9px;padding:9px 16px;cursor:pointer;}
+  .form-senha #ms-btn{background:var(--bordo);color:#fff;}
+  .form-senha #ms-cancelar{background:#fff;border:1px solid var(--linha);color:var(--soft);font-weight:700;font-size:11px;}
+
+  .restrito{max-width:420px;margin:80px auto;text-align:center;background:var(--card);border:1px solid var(--linha);border-radius:16px;padding:32px;}
+  .restrito h2{font-size:19px;}
+  .restrito p{font-size:13.5px;color:var(--soft);margin-top:10px;}
+
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+  @media (min-width:760px){.kpis{grid-template-columns:repeat(4,1fr);}}
+  .kpi{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:16px 18px;}
+  .kpi .l{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);}
+  .kpi .n{font-family:var(--tit);font-weight:800;font-size:24px;color:var(--ink);margin-top:6px;line-height:1;font-variant-numeric:tabular-nums;}
+  .kpi .s{font-size:11px;color:var(--faint);margin-top:6px;}
+  .kpi.saldo .n.pos{color:var(--verde);} .kpi.saldo .n.neg{color:var(--bordo-vivo);}
+
+  section{background:var(--card);border:1px solid var(--linha);border-radius:16px;padding:20px 22px;margin-bottom:16px;}
+  .sec{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+  .sec .t{display:inline-flex;align-items:center;gap:8px;font-family:var(--tit);font-weight:800;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--bordo);}
+  .sec .t .bar{width:14px;height:2px;background:var(--bordo);border-radius:2px;}
+  .sec .hint{font-size:11.5px;color:var(--faint);}
+
+  .duas-col{display:grid;grid-template-columns:1fr;gap:20px;}
+  @media (min-width:860px){.duas-col{grid-template-columns:1.3fr 1fr;}}
+
+  form.lanc{display:flex;flex-direction:column;gap:0;}
+  form.lanc label{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);margin:10px 0 5px;font-weight:600;}
+  form.lanc label:first-child{margin-top:0;}
+  form.lanc input,form.lanc select{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--linha);background:#fff;color:var(--ink);font-family:var(--corpo);font-size:13px;}
+  form.lanc .lin2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  form.lanc .chk{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;}
+  form.lanc .chk input{width:auto;}
+  .btn-lancar{margin-top:14px;font-family:var(--tit);font-weight:800;font-size:12.5px;letter-spacing:.02em;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:10px;padding:11px 16px;cursor:pointer;width:100%;}
+  .btn-lancar:hover{background:var(--bordo-vivo);}
+  .btn-lancar:disabled{opacity:.6;cursor:default;}
+  .msg-form{margin-top:8px;font-size:12px;text-align:left;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;padding:0 8px 9px 0;color:var(--faint);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:.05em;}
+  td{padding:9px 8px 9px 0;border-top:1px solid #f1eae3;color:var(--ink);vertical-align:top;}
+  td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .scroll-x{overflow-x:auto;}
+  .pill{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap;}
+  .pill.pago{background:rgba(31,138,76,.12);color:var(--verde);}
+  .pill.pendente{background:rgba(201,139,31,.14);color:var(--dourado);}
+  .pill.cancelado{background:#efe8e4;color:var(--soft);}
+  .del{font-family:var(--tit);font-weight:700;font-size:10.5px;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:4px 9px;border-radius:999px;cursor:pointer;}
+  .del:hover{border-color:var(--bordo-vivo);color:var(--bordo-vivo);}
+  .vazio{color:var(--faint);font-size:12px;text-align:center;padding:16px 4px;}
+
+  .cats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .cat-chip{display:flex;align-items:center;gap:8px;background:#fbfaf8;border:1px solid var(--linha);border-radius:999px;padding:6px 6px 6px 14px;font-size:12.5px;}
+  .cat-chip b{font-family:var(--tit);font-weight:800;}
+  .cat-chip .x{width:20px;height:20px;border-radius:50%;background:#fff;border:1px solid var(--linha);color:var(--soft);font-size:12px;line-height:1;cursor:pointer;display:grid;place-items:center;}
+  .cat-chip .x:hover{border-color:var(--bordo-vivo);color:var(--bordo-vivo);}
+  .form-cat{display:flex;gap:8px;flex-wrap:wrap;}
+  .form-cat input{flex:1;min-width:120px;padding:8px 10px;border-radius:9px;border:1px solid var(--linha);font-family:var(--corpo);font-size:13px;}
+  .form-cat button{font-family:var(--tit);font-weight:700;font-size:11px;text-transform:uppercase;background:var(--ink);color:#fff;border:0;border-radius:9px;padding:8px 14px;cursor:pointer;}
+
+  .barra-grupo{margin-bottom:12px;}
+  .barra-grupo .cab{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;}
+  .barra-grupo .cab b{font-family:var(--tit);}
+  .barra-grupo .trilho{height:9px;border-radius:5px;background:var(--track);overflow:hidden;}
+  .barra-grupo .trilho i{display:block;height:100%;background:var(--bordo);border-radius:5px;}
+
+  .foot{text-align:center;color:var(--faint);font-size:11.5px;margin-top:22px;}
+  .foot a{color:var(--bordo);}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="box" id="login-form">
+    <div class="mark">$</div>
+    <h1>Novva Controle Financeiro</h1>
+    <div class="sub">Financeiro do Congresso · acesso restrito ao gestor</div>
+    <label for="li-email">E-mail</label>
+    <input type="email" id="li-email" autocomplete="username" required>
+    <label for="li-senha">Senha</label>
+    <input type="password" id="li-senha" autocomplete="current-password" required>
+    <button type="submit" id="li-btn">Entrar</button>
+    <button type="button" class="link-esqueci" id="li-esqueci">Esqueci a senha</button>
+    <div class="erro" id="li-erro"></div>
+  </form>
+
+  <form class="box" id="novasenha-form" hidden>
+    <div class="mark">$</div>
+    <h1>Definir senha</h1>
+    <div class="sub">Escolha uma senha nova para entrar.</div>
+    <label for="ns-senha">Nova senha</label>
+    <input type="password" id="ns-senha" autocomplete="new-password" minlength="8" required>
+    <label for="ns-senha2">Repita a senha</label>
+    <input type="password" id="ns-senha2" autocomplete="new-password" minlength="8" required>
+    <button type="submit" id="ns-btn">Salvar e entrar</button>
+    <div class="erro" id="ns-erro"></div>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <div class="topbar">
+    <div class="brand">
+      <span class="mark">$</span>
+      <div>
+        <h1>Novva Controle Financeiro</h1>
+        <div class="sub">receitas e despesas do Congresso · só gestor</div>
+      </div>
+    </div>
+    <span class="eu" id="eu"></span>
+    <button type="button" class="btn-mini" id="btn-modificar-senha">Modificar senha</button>
+    <button type="button" class="btn-mini" id="btn-sair">Sair</button>
+  </div>
+
+  <div id="painel-senha" hidden>
+    <form id="form-modificar-senha" class="form-senha">
+      <span class="form-senha-tit">Modificar senha</span>
+      <input type="password" id="ms-senha" placeholder="nova senha (mín. 8)" autocomplete="new-password" minlength="8" required>
+      <input type="password" id="ms-senha2" placeholder="repita" autocomplete="new-password" minlength="8" required>
+      <button type="submit" id="ms-btn">Salvar</button>
+      <button type="button" id="ms-cancelar">Cancelar</button>
+      <span class="msg-form" id="ms-msg"></span>
+    </form>
+  </div>
+
+  <div id="sem-acesso" hidden class="restrito">
+    <h2>Acesso restrito</h2>
+    <p>Esse painel é só para o gestor do Congresso. Sua conta não tem essa permissão.</p>
+  </div>
+
+  <div id="conteudo" hidden>
+    <div class="kpis">
+      <div class="kpi"><div class="l">Total recebido</div><div class="n" id="k-receitas">—</div><div class="s" id="k-receitas-pend"></div></div>
+      <div class="kpi"><div class="l">Total gasto</div><div class="n" id="k-despesas">—</div><div class="s" id="k-despesas-pend"></div></div>
+      <div class="kpi saldo"><div class="l">Saldo</div><div class="n" id="k-saldo">—</div><div class="s">recebido − gasto</div></div>
+      <div class="kpi"><div class="l">Expositores</div><div class="n" id="k-expositores">—</div><div class="s">categorias cadastradas: <span id="k-cats"></span></div></div>
+    </div>
+
+    <section>
+      <div class="sec"><span class="t"><span class="bar"></span>Despesas por grupo</span></div>
+      <div id="grafico-grupos"><p class="vazio">Sem despesa lançada ainda.</p></div>
+    </section>
+
+    <section>
+      <div class="sec"><span class="t"><span class="bar"></span>Receita de expositores</span><span class="hint">categorias de valor + lançamentos</span></div>
+
+      <div id="lista-categorias" class="cats"></div>
+      <form id="form-categoria" class="form-cat">
+        <input type="text" id="cat-nome" placeholder="nome da categoria (ex: Categoria Ouro)" required>
+        <input type="number" id="cat-valor" placeholder="valor R$" step="0.01" min="0" required style="max-width:140px;">
+        <button type="submit">Adicionar categoria</button>
+      </form>
+
+      <div class="duas-col" style="margin-top:20px;">
+        <div class="scroll-x">
+          <table>
+            <thead><tr><th>Expositor</th><th>Categoria</th><th>Status</th><th class="n">Valor</th><th></th></tr></thead>
+            <tbody id="tabela-receitas"><tr><td class="vazio" colspan="5">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+        <form id="form-receita" class="lanc">
+          <label for="r-tipo">Tipo</label>
+          <select id="r-tipo">
+            <option value="expositor">Expositor</option>
+            <option value="outro">Outra receita</option>
+          </select>
+          <label for="r-nome" id="r-nome-lbl">Nome do expositor</label>
+          <input type="text" id="r-nome" placeholder="ex: Clínica Bem-Estar">
+          <label for="r-cat" id="r-cat-wrap">Categoria</label>
+          <select id="r-cat"></select>
+          <label for="r-desc">Descrição (opcional)</label>
+          <input type="text" id="r-desc" placeholder="observação">
+          <div class="lin2">
+            <div><label for="r-valor">Valor (R$)</label><input type="number" id="r-valor" step="0.01" min="0" required></div>
+            <div><label for="r-status">Status</label>
+              <select id="r-status"><option value="pago">Pago</option><option value="pendente">Pendente</option><option value="cancelado">Cancelado</option></select>
+            </div>
+          </div>
+          <label for="r-data">Data</label>
+          <input type="date" id="r-data" required>
+          <button type="submit" class="btn-lancar" id="r-btn">Lançar receita</button>
+          <div class="msg-form" id="r-msg"></div>
+        </form>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec"><span class="t"><span class="bar"></span>Despesas</span><span class="hint">marketing, equipe, infraestrutura e evento</span></div>
+      <div class="duas-col">
+        <div class="scroll-x">
+          <table>
+            <thead><tr><th>Grupo / Item</th><th>Status</th><th class="n">Valor</th><th></th></tr></thead>
+            <tbody id="tabela-despesas"><tr><td class="vazio" colspan="4">Carregando…</td></tr></tbody>
+          </table>
+        </div>
+        <form id="form-despesa" class="lanc">
+          <label for="d-grupo">Grupo</label>
+          <select id="d-grupo"></select>
+          <label for="d-item">Item</label>
+          <select id="d-item"></select>
+          <input type="text" id="d-item-outro" placeholder="descreva o item" hidden>
+          <label for="d-desc">Descrição (opcional)</label>
+          <input type="text" id="d-desc" placeholder="observação">
+          <div class="lin2">
+            <div><label for="d-valor">Valor (R$)</label><input type="number" id="d-valor" step="0.01" min="0" required></div>
+            <div><label for="d-status">Status</label>
+              <select id="d-status"><option value="pago">Pago</option><option value="pendente">Pendente</option><option value="cancelado">Cancelado</option></select>
+            </div>
+          </div>
+          <label for="d-data">Data</label>
+          <input type="date" id="d-data" required>
+          <div class="chk"><input type="checkbox" id="d-recorrente"><label for="d-recorrente" style="margin:0;text-transform:none;font-weight:400;letter-spacing:0;">é uma despesa recorrente (mensal)</label></div>
+          <button type="submit" class="btn-lancar" id="d-btn">Lançar despesa</button>
+          <div class="msg-form" id="d-msg"></div>
+        </form>
+      </div>
+    </section>
+
+    <p class="foot">Novva Controle Financeiro — <a href="novva-ads.html">voltar ao painel</a> · <a href="crm.html">CRM</a></p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+  var URL_INICIAL = location.href;
+  var SUPABASE_URL = 'https://nbhekjgbszyuuxrynzfo.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iaGVramdic3p5dXV4cnluemZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzM0MDUsImV4cCI6MjA5MjMwOTQwNX0.d8f346ONCOHjr__C8RLmSJOFW0kZfqFkCGHmotwxiXc';
+  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var $ = function(id){ return document.getElementById(id); };
+  function esc(s){ return String(s==null?'':s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function fmtMoeda(n){ return (n==null?0:n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+  function hojeISO(){ var d=new Date(); return d.toISOString().slice(0,10); }
+
+  var GRUPOS = {
+    'Marketing Digital': ['Editor de Imagens','Editor de Vídeo','IA de Pesquisa (SEO)','IA Generativa'],
+    'Profissionais & Equipe': ['Webdesigner','Copywriter','Social Media','Gestor de Tráfego','Equipe Comercial','Trackeamento de Dados Avançado'],
+    'Infraestrutura': ['Hospedagem TurboCloud','Domínio'],
+    'Evento': ['Hospedagem Hotel','Refeições — Café da Manhã','Refeições — Almoço','Refeições — Café da Tarde','Refeições — Janta']
+  };
+
+  var TOKEN = null;
+  var estado = { eu:null, ehGestor:false, categorias:[] };
+
+  function apiHeaders(extra){
+    return Object.assign({ apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' }, extra || {});
+  }
+  function apiGet(pathq){
+    return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { headers: apiHeaders() })
+      .then(function(r){ return r.text().then(function(t){ if(!r.ok) throw new Error((t&&t.slice(0,200))||('HTTP '+r.status)); return t?JSON.parse(t):null; }); });
+  }
+  function apiWrite(method, pathq, body, extra){
+    return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { method: method, headers: apiHeaders(extra), body: body!=null?JSON.stringify(body):undefined })
+      .then(function(r){ return r.text().then(function(t){ if(!r.ok) throw new Error((t&&t.slice(0,200))||('HTTP '+r.status)); return t?JSON.parse(t):null; }); });
+  }
+  function apiPost(pathq, body, extra){
+    return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { method:'POST', headers: apiHeaders(extra), body: JSON.stringify(body) })
+      .then(function(r){ return r.text().then(function(t){ if(!r.ok) throw new Error((t&&t.slice(0,200))||('HTTP '+r.status)); return t?JSON.parse(t):null; }); });
+  }
+
+  // ---------- auth ----------
+  function diag(msg){ $('li-erro').style.color='var(--soft)'; $('li-erro').textContent = msg; }
+  function erroLogin(msg){ $('li-erro').style.color='var(--bordo-vivo)'; $('li-erro').textContent = msg; }
+
+  $('login-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var btn=$('li-btn'); btn.disabled=true; btn.textContent='Entrando…';
+    diag('autenticando…');
+    sb.auth.signInWithPassword({ email:$('li-email').value.trim(), password:$('li-senha').value })
+      .then(function(res){
+        if (res.error) throw res.error;
+        if (!res.data || !res.data.session) throw new Error('login sem sessão na resposta');
+        TOKEN = res.data.session.access_token;
+        return iniciar(res.data.user);
+      })
+      .catch(function(err){
+        var m = err && err.message ? err.message : String(err);
+        erroLogin(m==='Invalid login credentials' ? 'E-mail ou senha incorretos.' : ('Erro: '+m));
+      })
+      .finally(function(){ btn.disabled=false; btn.textContent='Entrar'; });
+  });
+
+  $('btn-sair').addEventListener('click', function(){ sb.auth.signOut().then(function(){ location.href = location.pathname; }); });
+
+  var emRecuperacao = /[#&?]type=recovery/.test(URL_INICIAL) || /[?&]code=/.test(URL_INICIAL) || /[#&]access_token=/.test(URL_INICIAL);
+  function telaNovaSenha(){ emRecuperacao=true; $('login-form').hidden=true; $('novasenha-form').hidden=false; $('login').hidden=false; $('app').hidden=true; }
+  function esperarSessao(msMax){
+    var ini=Date.now();
+    return new Promise(function(resolve){ (function tenta(){ sb.auth.getSession().then(function(r){
+      if (r.data && r.data.session) return resolve(true);
+      if (Date.now()-ini > msMax) return resolve(false);
+      setTimeout(tenta, 300);
+    }); })(); });
+  }
+  if (emRecuperacao) telaNovaSenha();
+  sb.auth.onAuthStateChange(function(event){
+    if (event==='PASSWORD_RECOVERY') telaNovaSenha();
+    if (event==='SIGNED_IN' && emRecuperacao) telaNovaSenha();
+  });
+  $('li-esqueci').addEventListener('click', function(){
+    var email=$('li-email').value.trim();
+    if (!email){ $('li-erro').textContent='Digite o e-mail primeiro, aí clique em "Esqueci a senha".'; return; }
+    this.disabled=true; this.textContent='Enviando…'; var self=this;
+    sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname })
+      .then(function(){ $('li-erro').style.color='var(--verde)'; $('li-erro').textContent='Link enviado pro seu e-mail.'; })
+      .catch(function(err){ $('li-erro').textContent='Erro: '+err.message; })
+      .finally(function(){ self.disabled=false; self.textContent='Esqueci a senha'; });
+  });
+  $('novasenha-form').addEventListener('submit', function(e){
+    e.preventDefault();
+    var s1=$('ns-senha').value, s2=$('ns-senha2').value;
+    if (s1!==s2){ $('ns-erro').textContent='As senhas não são iguais.'; return; }
+    if (s1.length<8){ $('ns-erro').textContent='Mínimo 8 caracteres.'; return; }
+    var btn=$('ns-btn'); btn.disabled=true; btn.textContent='Salvando…'; $('ns-erro').textContent='';
+    esperarSessao(6000).then(function(tem){
+      if (!tem) throw new Error('O link expirou ou já foi usado. Peça outro em "Esqueci a senha".');
+      return sb.auth.updateUser({ password: s1 });
+    }).then(function(res){
+      if (res.error) throw res.error;
+      emRecuperacao=false; history.replaceState(null,'',location.pathname);
+      return sb.auth.getSession();
+    }).then(function(r){
+      var sess = r && r.data && r.data.session;
+      if (!sess) throw new Error('senha salva, mas a sessão não veio — recarregue e faça login com a senha nova.');
+      TOKEN = sess.access_token;
+      return iniciar(sess.user);
+    }).catch(function(err){
+      $('ns-erro').textContent='Erro: '+err.message;
+      btn.disabled=false; btn.textContent='Salvar e entrar';
+    });
+  });
+
+  $('btn-modificar-senha').addEventListener('click', function(){
+    var p=$('painel-senha'); p.hidden=!p.hidden; if (!p.hidden) $('ms-senha').focus();
+  });
+  $('ms-cancelar').addEventListener('click', function(){ $('painel-senha').hidden=true; $('ms-senha').value=''; $('ms-senha2').value=''; $('ms-msg').textContent=''; });
+  $('form-modificar-senha').addEventListener('submit', function(e){
+    e.preventDefault();
+    var s1=$('ms-senha').value, s2=$('ms-senha2').value;
+    if (s1!==s2){ $('ms-msg').style.color='var(--bordo-vivo)'; $('ms-msg').textContent='As senhas não são iguais.'; return; }
+    if (s1.length<8){ $('ms-msg').style.color='var(--bordo-vivo)'; $('ms-msg').textContent='Mínimo 8 caracteres.'; return; }
+    var btn=$('ms-btn'); btn.disabled=true; btn.textContent='Salvando…'; $('ms-msg').style.color='var(--soft)'; $('ms-msg').textContent='';
+    fetch(SUPABASE_URL+'/auth/v1/user', { method:'PUT', headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'}, body: JSON.stringify({password:s1}) })
+      .then(function(r){ return r.text().then(function(t){ var d; try{d=t?JSON.parse(t):{};}catch(e){d={};} if(!r.ok) throw new Error(d.msg||d.error_description||('HTTP '+r.status));
+        $('ms-msg').style.color='var(--verde)'; $('ms-msg').textContent='Senha alterada.'; $('ms-senha').value=''; $('ms-senha2').value=''; }); })
+      .catch(function(err){ $('ms-msg').style.color='var(--bordo-vivo)'; $('ms-msg').textContent='Erro: '+err.message; })
+      .finally(function(){ btn.disabled=false; btn.textContent='Salvar'; });
+  });
+
+  function mostrarLogin(){ $('app').hidden=true; $('login').hidden=false; if(!emRecuperacao){ $('login-form').hidden=false; $('novasenha-form').hidden=true; } }
+
+  function iniciar(user){
+    if (!user || !TOKEN){ mostrarLogin(); return Promise.resolve(); }
+    return apiGet('perfis?select=id,nome,papel,ativo').then(function(perfis){
+      perfis = perfis || [];
+      var meu = perfis.find(function(p){ return p.id === user.id; });
+      if (!meu) throw new Error('seu usuário não está na tabela perfis');
+      if (!meu.ativo) throw new Error('sua conta está marcada como inativa');
+      estado.eu = meu; estado.ehGestor = meu.papel === 'gestor';
+      $('eu').innerHTML = '<b>'+esc(meu.nome)+'</b> · '+(estado.ehGestor?'gestor':'vendedor');
+      $('login').hidden = true; $('app').hidden = false;
+      if (!estado.ehGestor){ $('sem-acesso').hidden = false; $('conteudo').hidden = true; return; }
+      $('sem-acesso').hidden = true; $('conteudo').hidden = false;
+      montarFormularios();
+      return carregarTudo();
+    }).catch(function(err){ mostrarLogin(); erroLogin(err.message||String(err)); });
+  }
+
+  function sessaoLocal(){
+    try{
+      var raw = localStorage.getItem('sb-nbhekjgbszyuuxrynzfo-auth-token');
+      if (!raw) return null;
+      var s = JSON.parse(raw);
+      var sess = (s && s.access_token) ? s : (s && s.currentSession) || null;
+      if (!sess || !sess.access_token || !sess.user) return null;
+      if (sess.expires_at && sess.expires_at*1000 < Date.now()+10000) return null;
+      return sess;
+    }catch(e){ return null; }
+  }
+  if (!emRecuperacao){
+    var sl = sessaoLocal();
+    if (sl){ TOKEN = sl.access_token; iniciar(sl.user); } else { mostrarLogin(); }
+  }
+
+  // ---------- formulários (grupo/item dependente, categoria) ----------
+  function montarFormularios(){
+    var selGrupo = $('d-grupo');
+    selGrupo.innerHTML = Object.keys(GRUPOS).map(function(g){ return '<option value="'+esc(g)+'">'+esc(g)+'</option>'; }).join('');
+    function montarItens(){
+      var g = selGrupo.value;
+      var itens = (GRUPOS[g]||[]).concat(['Outro']);
+      $('d-item').innerHTML = itens.map(function(i){ return '<option value="'+esc(i)+'">'+esc(i)+'</option>'; }).join('');
+      $('d-item-outro').hidden = $('d-item').value !== 'Outro';
+    }
+    selGrupo.addEventListener('change', montarItens);
+    $('d-item').addEventListener('change', function(){ $('d-item-outro').hidden = this.value !== 'Outro'; });
+    montarItens();
+
+    $('r-data').value = hojeISO();
+    $('d-data').value = hojeISO();
+
+    $('r-tipo').addEventListener('change', atualizarTipoReceita);
+    atualizarTipoReceita();
+  }
+  function atualizarTipoReceita(){
+    var ehExpositor = $('r-tipo').value === 'expositor';
+    $('r-nome-lbl').style.display = ehExpositor ? '' : 'none';
+    $('r-nome').style.display = ehExpositor ? '' : 'none';
+    $('r-cat-wrap').style.display = ehExpositor ? '' : 'none';
+    $('r-cat').style.display = ehExpositor ? '' : 'none';
+  }
+
+  // ---------- categorias ----------
+  function carregarCategorias(){
+    return apiGet('fin_categorias_expositor?select=id,nome,valor,ativo&ativo=eq.true&order=valor.asc').then(function(cats){
+      estado.categorias = cats || [];
+      renderCategorias();
+    });
+  }
+  function renderCategorias(){
+    $('lista-categorias').innerHTML = estado.categorias.length
+      ? estado.categorias.map(function(c){
+          return '<span class="cat-chip"><b>'+esc(c.nome)+'</b> · '+fmtMoeda(c.valor)+' <span class="x" data-id="'+c.id+'" title="remover categoria">×</span></span>';
+        }).join('')
+      : '<span class="vazio">Nenhuma categoria cadastrada ainda.</span>';
+    $('lista-categorias').querySelectorAll('.x').forEach(function(x){
+      x.addEventListener('click', function(){
+        if (!confirm('Remover essa categoria? (não apaga receitas já lançadas)')) return;
+        apiWrite('PATCH', 'fin_categorias_expositor?id=eq.'+this.dataset.id, { ativo:false }, { Prefer:'return=minimal' })
+          .then(carregarCategorias).catch(function(err){ alert('Não deu: '+err.message); });
+      });
+    });
+    $('r-cat').innerHTML = '<option value="">— selecione —</option>' + estado.categorias.map(function(c){
+      return '<option value="'+c.id+'" data-valor="'+c.valor+'">'+esc(c.nome)+' ('+fmtMoeda(c.valor)+')</option>';
+    }).join('');
+    $('k-cats').textContent = estado.categorias.length;
+  }
+  $('form-categoria').addEventListener('submit', function(e){
+    e.preventDefault();
+    var nome = $('cat-nome').value.trim(), valor = parseFloat($('cat-valor').value);
+    if (!nome || !valor) return;
+    apiPost('fin_categorias_expositor', { nome:nome, valor:valor }, { Prefer:'return=minimal' })
+      .then(function(){ $('cat-nome').value=''; $('cat-valor').value=''; return carregarCategorias(); })
+      .catch(function(err){ alert('Não deu: '+err.message); });
+  });
+  $('r-cat').addEventListener('change', function(){
+    var op = this.options[this.selectedIndex];
+    if (op && op.dataset.valor) $('r-valor').value = op.dataset.valor;
+  });
+
+  // ---------- receitas ----------
+  function carregarReceitas(){
+    return apiGet('fin_receitas?select=id,data,tipo,expositor_nome,descricao,valor,status,categoria_id&order=data.desc,id.desc&limit=100').then(function(rows){
+      renderReceitas(rows || []);
+    });
+  }
+  function nomeCategoria(id){ var c = estado.categorias.find(function(x){ return x.id===id; }); return c ? c.nome : '—'; }
+  function renderReceitas(rows){
+    $('tabela-receitas').innerHTML = rows.length ? rows.map(function(r){
+      return '<tr data-id="'+r.id+'"><td>'+esc(r.expositor_nome || r.descricao || '(sem nome)')+'</td>'+
+        '<td>'+(r.tipo==='expositor' ? esc(nomeCategoria(r.categoria_id)) : 'Outra')+'</td>'+
+        '<td><span class="pill '+r.status+'">'+r.status+'</span></td>'+
+        '<td class="n">'+fmtMoeda(r.valor)+'</td>'+
+        '<td><button type="button" class="del">Apagar</button></td></tr>';
+    }).join('') : '<tr><td class="vazio" colspan="5">Nenhuma receita lançada ainda.</td></tr>';
+    $('tabela-receitas').querySelectorAll('.del').forEach(function(b){
+      b.addEventListener('click', function(){
+        if (!confirm('Apagar esse lançamento?')) return;
+        var id = this.closest('tr').dataset.id;
+        apiWrite('DELETE', 'fin_receitas?id=eq.'+id, null, { Prefer:'return=minimal' }).then(carregarTudo).catch(function(err){ alert('Não deu: '+err.message); });
+      });
+    });
+  }
+  $('form-receita').addEventListener('submit', function(e){
+    e.preventDefault();
+    var tipo = $('r-tipo').value;
+    var row = {
+      tipo: tipo,
+      expositor_nome: tipo==='expositor' ? ($('r-nome').value.trim() || null) : null,
+      categoria_id: tipo==='expositor' && $('r-cat').value ? Number($('r-cat').value) : null,
+      descricao: $('r-desc').value.trim() || null,
+      valor: parseFloat($('r-valor').value),
+      status: $('r-status').value,
+      data: $('r-data').value
+    };
+    if (!row.valor || row.valor <= 0) return;
+    var btn = $('r-btn'); btn.disabled=true; btn.textContent='Lançando…'; $('r-msg').textContent='';
+    apiPost('fin_receitas', row, { Prefer:'return=minimal' }).then(function(){
+      $('r-msg').style.color='var(--verde)'; $('r-msg').textContent='Lançado!';
+      $('form-receita').reset(); $('r-data').value = hojeISO(); atualizarTipoReceita();
+      return carregarTudo();
+    }).catch(function(err){ $('r-msg').style.color='var(--bordo-vivo)'; $('r-msg').textContent='Erro: '+err.message; })
+      .finally(function(){ btn.disabled=false; btn.textContent='Lançar receita'; });
+  });
+
+  // ---------- despesas ----------
+  function carregarDespesas(){
+    return apiGet('fin_despesas?select=id,data,grupo,item,descricao,valor,status,recorrente&order=data.desc,id.desc&limit=200').then(function(rows){
+      renderDespesas(rows || []);
+      return rows || [];
+    });
+  }
+  function renderDespesas(rows){
+    $('tabela-despesas').innerHTML = rows.length ? rows.map(function(d){
+      return '<tr data-id="'+d.id+'"><td><b>'+esc(d.grupo)+'</b><br><span style="color:var(--soft);font-size:12px;">'+esc(d.item)+(d.recorrente?' · mensal':'')+'</span></td>'+
+        '<td><span class="pill '+d.status+'">'+d.status+'</span></td>'+
+        '<td class="n">'+fmtMoeda(d.valor)+'</td>'+
+        '<td><button type="button" class="del">Apagar</button></td></tr>';
+    }).join('') : '<tr><td class="vazio" colspan="4">Nenhuma despesa lançada ainda.</td></tr>';
+    $('tabela-despesas').querySelectorAll('.del').forEach(function(b){
+      b.addEventListener('click', function(){
+        if (!confirm('Apagar essa despesa?')) return;
+        var id = this.closest('tr').dataset.id;
+        apiWrite('DELETE', 'fin_despesas?id=eq.'+id, null, { Prefer:'return=minimal' }).then(carregarTudo).catch(function(err){ alert('Não deu: '+err.message); });
+      });
+    });
+  }
+  $('form-despesa').addEventListener('submit', function(e){
+    e.preventDefault();
+    var item = $('d-item').value === 'Outro' ? ($('d-item-outro').value.trim() || 'Outro') : $('d-item').value;
+    var row = {
+      grupo: $('d-grupo').value,
+      item: item,
+      descricao: $('d-desc').value.trim() || null,
+      valor: parseFloat($('d-valor').value),
+      status: $('d-status').value,
+      data: $('d-data').value,
+      recorrente: $('d-recorrente').checked
+    };
+    if (!row.valor || row.valor <= 0) return;
+    var btn = $('d-btn'); btn.disabled=true; btn.textContent='Lançando…'; $('d-msg').textContent='';
+    apiPost('fin_despesas', row, { Prefer:'return=minimal' }).then(function(){
+      $('d-msg').style.color='var(--verde)'; $('d-msg').textContent='Lançado!';
+      $('d-desc').value=''; $('d-valor').value=''; $('d-recorrente').checked=false; $('d-data').value = hojeISO();
+      return carregarTudo();
+    }).catch(function(err){ $('d-msg').style.color='var(--bordo-vivo)'; $('d-msg').textContent='Erro: '+err.message; })
+      .finally(function(){ btn.disabled=false; btn.textContent='Lançar despesa'; });
+  });
+
+  // ---------- resumo / KPIs / gráfico ----------
+  function carregarResumo(){
+    return apiPost('rpc/rpc_financeiro_resumo', {}).then(function(d){
+      d = d || {};
+      var receitas = d.total_receitas || 0, despesas = d.total_despesas || 0, saldo = receitas - despesas;
+      $('k-receitas').textContent = fmtMoeda(receitas);
+      $('k-receitas-pend').textContent = d.pendente_receitas ? (fmtMoeda(d.pendente_receitas) + ' pendente') : '';
+      $('k-despesas').textContent = fmtMoeda(despesas);
+      $('k-despesas-pend').textContent = d.pendente_despesas ? (fmtMoeda(d.pendente_despesas) + ' pendente') : '';
+      var kSaldo = $('k-saldo');
+      kSaldo.textContent = fmtMoeda(saldo);
+      kSaldo.className = 'n ' + (saldo >= 0 ? 'pos' : 'neg');
+      var totalExp = (d.receitas_por_categoria||[]).reduce(function(a,c){ return a + (c.qtd||0); }, 0);
+      $('k-expositores').textContent = totalExp;
+      renderGrafico(d.despesas_por_grupo || []);
+    }).catch(function(err){
+      $('grafico-grupos').innerHTML = '<p class="vazio">Erro ao carregar resumo: '+esc(err.message)+'</p>';
+    });
+  }
+  function renderGrafico(grupos){
+    if (!grupos.length){ $('grafico-grupos').innerHTML = '<p class="vazio">Sem despesa lançada ainda.</p>'; return; }
+    var max = Math.max.apply(null, grupos.map(function(g){ return g.total; }));
+    $('grafico-grupos').innerHTML = grupos.map(function(g){
+      var pct = max ? Math.round(g.total/max*100) : 0;
+      return '<div class="barra-grupo"><div class="cab"><b>'+esc(g.grupo)+'</b><span>'+fmtMoeda(g.total)+'</span></div>'+
+        '<div class="trilho"><i style="width:'+pct+'%"></i></div></div>';
+    }).join('');
+  }
+
+  function carregarTudo(){
+    return carregarCategorias().then(function(){
+      return Promise.all([carregarReceitas(), carregarDespesas(), carregarResumo()]);
+    });
+  }
+})();
+</script>
+</body>
+</html>

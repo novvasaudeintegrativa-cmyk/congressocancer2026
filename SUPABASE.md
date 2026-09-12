@@ -3209,3 +3209,160 @@ Deno.serve(async (req) => {
   return new Response("ok", { status: 200 });
 });
 ```
+
+## 19. Apagar usuário de teste — "Database error deleting user"
+
+O botão **Delete** em Authentication → Users (e o Admin API do GoTrue por
+trás dele) pode falhar com **"Database error deleting user"** mesmo sem
+nenhuma linha real travando — checamos todas as tabelas com FK pra
+`auth.users` (inclusive as internas do Supabase e as do CRM antigo:
+`workspace_members`, `contacts`, `leads`, `activities`, `tasks`) e nenhuma
+tinha registro para o usuário problemático. Causa raiz não identificada
+(algo no caminho interno do GoTrue, não no schema).
+
+**O que funciona de verdade** — apagar direto por SQL, no SQL Editor:
+
+```sql
+delete from auth.users where id = 'UID_DO_USUARIO';
+```
+
+O `perfis` (FK com `on delete cascade`) some junto automaticamente. Se o
+usuário tiver linha em `lead_status`/`mensagens` como responsável, essas
+colunas não têm cascade — rodar antes, se precisar:
+
+```sql
+update public.lead_status set atribuido_a = null where atribuido_a = 'UID_DO_USUARIO';
+update public.lead_status set atualizado_por = null where atualizado_por = 'UID_DO_USUARIO';
+```
+
+## 20. Novva Controle Financeiro — painel financeiro do evento
+
+Painel novo (`Ads/financeiro.html`), **mesmo login da equipe** (Supabase
+Auth, mesma tabela `perfis`), mas **só gestor entra** — dado financeiro não
+é pra vendedor ver. Cobre: receita de expositores (por categoria/valor) e
+despesas do evento organizadas por grupo (marketing digital, profissionais,
+infraestrutura, evento/logística).
+
+### 20.1. SQL — rodar no SQL Editor
+
+```sql
+-- ---------- categorias de expositor (valor por categoria) ----------
+create table if not exists public.fin_categorias_expositor (
+  id        bigint generated always as identity primary key,
+  nome      text not null,
+  valor     numeric(10,2) not null,
+  ativo     boolean not null default true,
+  criado_em timestamptz not null default now()
+);
+
+-- ---------- receitas (hoje: expositores; "outro" cobre o resto) ----------
+create table if not exists public.fin_receitas (
+  id             bigint generated always as identity primary key,
+  criado_em      timestamptz not null default now(),
+  data           date not null default current_date,
+  tipo           text not null default 'expositor' check (tipo in ('expositor','outro')),
+  expositor_nome text,
+  categoria_id   bigint references public.fin_categorias_expositor(id),
+  descricao      text,
+  valor          numeric(10,2) not null,
+  status         text not null default 'pago' check (status in ('pago','pendente','cancelado')),
+  criado_por     uuid references auth.users(id)
+);
+
+-- ---------- despesas, por grupo + item ----------
+create table if not exists public.fin_despesas (
+  id          bigint generated always as identity primary key,
+  criado_em   timestamptz not null default now(),
+  data        date not null default current_date,
+  grupo       text not null,   -- 'Marketing Digital' | 'Profissionais & Equipe' | 'Infraestrutura' | 'Evento'
+  item        text not null,   -- ex: 'Editor de Imagens', 'Hospedagem Hotel', 'Refeições — Almoço'...
+  descricao   text,
+  valor       numeric(10,2) not null,
+  recorrente  boolean not null default false,
+  status      text not null default 'pago' check (status in ('pago','pendente','cancelado')),
+  criado_por  uuid references auth.users(id)
+);
+
+create index if not exists fin_receitas_data_idx on public.fin_receitas (data desc);
+create index if not exists fin_despesas_data_idx on public.fin_despesas (data desc);
+create index if not exists fin_despesas_grupo_idx on public.fin_despesas (grupo);
+
+alter table public.fin_categorias_expositor enable row level security;
+alter table public.fin_receitas enable row level security;
+alter table public.fin_despesas enable row level security;
+
+-- só gestor lê/escreve nas 3 tabelas (eh_gestor() já existe — seção 13)
+drop policy if exists "gestor tudo categorias" on public.fin_categorias_expositor;
+create policy "gestor tudo categorias" on public.fin_categorias_expositor
+  for all to authenticated using (public.eh_gestor()) with check (public.eh_gestor());
+
+drop policy if exists "gestor tudo receitas" on public.fin_receitas;
+create policy "gestor tudo receitas" on public.fin_receitas
+  for all to authenticated using (public.eh_gestor()) with check (public.eh_gestor());
+
+drop policy if exists "gestor tudo despesas" on public.fin_despesas;
+create policy "gestor tudo despesas" on public.fin_despesas
+  for all to authenticated using (public.eh_gestor()) with check (public.eh_gestor());
+
+revoke all on public.fin_categorias_expositor from anon;
+revoke all on public.fin_receitas from anon;
+revoke all on public.fin_despesas from anon;
+
+-- ---------- RPC: resumo pronto pro painel ----------
+create or replace function public.rpc_financeiro_resumo()
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object(
+    'total_receitas', (select coalesce(sum(valor),0) from public.fin_receitas where status = 'pago' and public.eh_gestor()),
+    'total_despesas', (select coalesce(sum(valor),0) from public.fin_despesas where status = 'pago' and public.eh_gestor()),
+    'pendente_receitas', (select coalesce(sum(valor),0) from public.fin_receitas where status = 'pendente' and public.eh_gestor()),
+    'pendente_despesas', (select coalesce(sum(valor),0) from public.fin_despesas where status = 'pendente' and public.eh_gestor()),
+    'despesas_por_grupo', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
+        select grupo, sum(valor) as total
+        from public.fin_despesas where status = 'pago' and public.eh_gestor()
+        group by grupo) t),
+    'receitas_por_categoria', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
+        select coalesce(c.nome, r.tipo) as categoria, count(*) as qtd, sum(r.valor) as total
+        from public.fin_receitas r
+        left join public.fin_categorias_expositor c on c.id = r.categoria_id
+        where r.status = 'pago' and public.eh_gestor()
+        group by 1) t)
+  );
+$$;
+revoke execute on function public.rpc_financeiro_resumo() from public, anon;
+grant execute on function public.rpc_financeiro_resumo() to authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+> A checagem `and public.eh_gestor()` **dentro** de cada subquery da RPC é
+> de propósito: se um vendedor autenticado chamar essa função (ela é
+> `security definer`, então ignora RLS por padrão), cada soma vira `0`/`[]`
+> em vez de vazar dado financeiro. Defesa em profundidade, não confia só na
+> policy das tabelas.
+
+### 20.2. Categorias de expositor iniciais (ajustar valores reais)
+
+```sql
+insert into public.fin_categorias_expositor (nome, valor) values
+  ('Categoria Bronze', 800.00),
+  ('Categoria Prata',  1500.00),
+  ('Categoria Ouro',   2500.00)
+on conflict do nothing;
+```
+
+### 20.3. Taxonomia de despesas (grupo → itens fixos no painel)
+
+- **Marketing Digital:** Editor de Imagens, Editor de Vídeo, IA de Pesquisa (SEO), IA Generativa
+- **Profissionais & Equipe:** Webdesigner, Copywriter, Social Media, Gestor de Tráfego, Equipe Comercial, Trackeamento de Dados Avançado
+- **Infraestrutura:** Hospedagem TurboCloud, Domínio
+- **Evento:** Hospedagem Hotel, Refeições — Café da Manhã, Refeições — Almoço, Refeições — Café da Tarde, Refeições — Janta
+
+Sempre tem opção **"Outro"** com descrição livre, pra não travar o
+lançamento em algo fora da lista.
+
+### 20.4. Acesso
+
+`Ads/financeiro.html` — mesmo login/senha da equipe (`crm.html`), mas com
+checagem extra: só quem tem `papel = 'gestor'` na `perfis` entra; vendedor
+vê mensagem de acesso restrito e é deslogado. Mesma base de código (fetch
+direto pra API REST, evitando o lock do supabase-js — ver seção 13.3).
