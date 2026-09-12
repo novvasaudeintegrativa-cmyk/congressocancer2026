@@ -3260,7 +3260,7 @@ create table if not exists public.fin_receitas (
   id             bigint generated always as identity primary key,
   criado_em      timestamptz not null default now(),
   data           date not null default current_date,
-  tipo           text not null default 'expositor' check (tipo in ('expositor','outro')),
+  tipo           text not null default 'expositor' check (tipo in ('expositor','investimento','outro')),
   expositor_nome text,
   categoria_id   bigint references public.fin_categorias_expositor(id),
   descricao      text,
@@ -3274,7 +3274,7 @@ create table if not exists public.fin_despesas (
   id          bigint generated always as identity primary key,
   criado_em   timestamptz not null default now(),
   data        date not null default current_date,
-  grupo       text not null,   -- 'Marketing Digital' | 'Profissionais & Equipe' | 'Infraestrutura' | 'Evento'
+  grupo       text not null,   -- 'Marketing Digital' | 'Profissionais' | 'Equipe' | 'Infraestrutura' | 'Evento'
   item        text not null,   -- ex: 'Editor de Imagens', 'Hospedagem Hotel', 'Refeições — Almoço'...
   descricao   text,
   valor       numeric(10,2) not null,
@@ -3316,10 +3316,15 @@ returns json language sql stable security definer set search_path = public as $$
     'total_despesas', (select coalesce(sum(valor),0) from public.fin_despesas where status = 'pago' and public.eh_gestor()),
     'pendente_receitas', (select coalesce(sum(valor),0) from public.fin_receitas where status = 'pendente' and public.eh_gestor()),
     'pendente_despesas', (select coalesce(sum(valor),0) from public.fin_despesas where status = 'pendente' and public.eh_gestor()),
+    'qtd_expositores_pagos', (select count(*) from public.fin_receitas where status = 'pago' and tipo = 'expositor' and public.eh_gestor()),
     'despesas_por_grupo', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
         select grupo, sum(valor) as total
         from public.fin_despesas where status = 'pago' and public.eh_gestor()
         group by grupo) t),
+    'receitas_por_tipo', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
+        select tipo, count(*) as qtd, sum(valor) as total
+        from public.fin_receitas where status = 'pago' and public.eh_gestor()
+        group by tipo) t),
     'receitas_por_categoria', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
         select coalesce(c.nome, r.tipo) as categoria, count(*) as qtd, sum(r.valor) as total
         from public.fin_receitas r
@@ -3352,13 +3357,55 @@ on conflict do nothing;
 
 ### 20.3. Taxonomia de despesas (grupo → itens fixos no painel)
 
-- **Marketing Digital:** Editor de Imagens, Editor de Vídeo, IA de Pesquisa (SEO), IA Generativa
-- **Profissionais & Equipe:** Webdesigner, Copywriter, Social Media, Gestor de Tráfego, Equipe Comercial, Trackeamento de Dados Avançado
-- **Infraestrutura:** Hospedagem TurboCloud, Domínio
+> Revisado — evento tem sócio, então a categorização precisa bater exata
+> com o que foi combinado, sem juntar grupos que o usuário pediu separados.
+
+- **Marketing Digital:** Editor de Imagens, Editor de Vídeo, IA de Pesquisa (SEO), IA Generativa, E-mail Marketing, Disparo de WhatsApp
+- **Profissionais:** Webdesigner, Copywriter, Social Media, Gestor de Tráfego
+- **Equipe:** Equipe Comercial, Trackeamento de Dados Avançado
+- **Infraestrutura:** Hospedagem TurboCloud (4 meses), Domínio (Anual)
 - **Evento:** Hospedagem Hotel, Refeições — Café da Manhã, Refeições — Almoço, Refeições — Café da Tarde, Refeições — Janta
 
 Sempre tem opção **"Outro"** com descrição livre, pra não travar o
-lançamento em algo fora da lista.
+lançamento em algo fora da lista. "Profissionais" (prestadores pagos por
+serviço/projeto) e "Equipe" (papéis fixos da operação comercial) ficam em
+grupos separados de propósito — eram um grupo só ("Profissionais & Equipe")
+antes desta revisão.
+
+### 20.3.1. Receitas — "entrada" inclui o aporte do sócio
+
+`fin_receitas.tipo` tem 3 valores: **`expositor`** (venda por categoria de
+valor), **`investimento`** (aporte/injeção de capital do sócio do evento —
+usa o mesmo campo `expositor_nome` pra guardar o nome do sócio/investidor)
+e **`outro`** (qualquer outra entrada, ex: patrocínio avulso). Os três
+contam pra "Total recebido" — a distinção existe só pra dar visibilidade de
+**composição** da receita pro sócio (o painel mostra um resumo por tipo
+logo acima da lista de categorias). Já **Despesas** representa toda a
+"saída" do evento, sem essa distinção — não tem contrapartida de "tipo"
+do lado de despesa.
+
+**Migração pra quem já rodou o SQL da seção 20.1 antes desta revisão**
+(adiciona `investimento` ao check constraint existente — grupo/item de
+despesa não precisa de migração porque são `text` livre, sem `check`):
+
+```sql
+do $$
+declare c text;
+begin
+  select conname into c from pg_constraint
+    where conrelid = 'public.fin_receitas'::regclass
+      and contype = 'c'
+      and pg_get_constraintdef(oid) ilike '%tipo%';
+  if c is not null then
+    execute format('alter table public.fin_receitas drop constraint %I', c);
+  end if;
+end $$;
+alter table public.fin_receitas add constraint fin_receitas_tipo_check
+  check (tipo in ('expositor','investimento','outro'));
+
+-- reaplicar a RPC inteira da seção 20.1 (ganhou os campos
+-- qtd_expositores_pagos e receitas_por_tipo)
+```
 
 ### 20.4. Acesso
 

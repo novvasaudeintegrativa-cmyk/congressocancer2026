@@ -104,6 +104,8 @@
   .vazio{color:var(--faint);font-size:12px;text-align:center;padding:16px 4px;}
 
   .cats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .chip-tipo{display:inline-flex;align-items:center;gap:6px;background:#fbfaf8;border:1px solid var(--linha);border-radius:999px;padding:6px 14px;font-size:12px;color:var(--soft);}
+  .chip-tipo b{font-family:var(--tit);font-weight:800;color:var(--ink);}
   .cat-chip{display:flex;align-items:center;gap:8px;background:#fbfaf8;border:1px solid var(--linha);border-radius:999px;padding:6px 6px 6px 14px;font-size:12.5px;}
   .cat-chip b{font-family:var(--tit);font-weight:800;}
   .cat-chip .x{width:20px;height:20px;border-radius:50%;background:#fff;border:1px solid var(--linha);color:var(--soft);font-size:12px;line-height:1;cursor:pointer;display:grid;place-items:center;}
@@ -201,6 +203,8 @@
     <section>
       <div class="sec"><span class="t"><span class="bar"></span>Receita de expositores</span><span class="hint">categorias de valor + lançamentos</span></div>
 
+      <div id="resumo-tipos" class="cats" style="margin-bottom:10px;"></div>
+
       <div id="lista-categorias" class="cats"></div>
       <form id="form-categoria" class="form-cat">
         <input type="text" id="cat-nome" placeholder="nome da categoria (ex: Categoria Ouro)" required>
@@ -211,7 +215,7 @@
       <div class="duas-col" style="margin-top:20px;">
         <div class="scroll-x">
           <table>
-            <thead><tr><th>Expositor</th><th>Categoria</th><th>Status</th><th class="n">Valor</th><th></th></tr></thead>
+            <thead><tr><th>Nome / descrição</th><th>Tipo / categoria</th><th>Status</th><th class="n">Valor</th><th></th></tr></thead>
             <tbody id="tabela-receitas"><tr><td class="vazio" colspan="5">Carregando…</td></tr></tbody>
           </table>
         </div>
@@ -219,6 +223,7 @@
           <label for="r-tipo">Tipo</label>
           <select id="r-tipo">
             <option value="expositor">Expositor</option>
+            <option value="investimento">Investimento do sócio</option>
             <option value="outro">Outra receita</option>
           </select>
           <label for="r-nome" id="r-nome-lbl">Nome do expositor</label>
@@ -290,9 +295,10 @@
   function hojeISO(){ var d=new Date(); return d.toISOString().slice(0,10); }
 
   var GRUPOS = {
-    'Marketing Digital': ['Editor de Imagens','Editor de Vídeo','IA de Pesquisa (SEO)','IA Generativa'],
-    'Profissionais & Equipe': ['Webdesigner','Copywriter','Social Media','Gestor de Tráfego','Equipe Comercial','Trackeamento de Dados Avançado'],
-    'Infraestrutura': ['Hospedagem TurboCloud','Domínio'],
+    'Marketing Digital': ['Editor de Imagens','Editor de Vídeo','IA de Pesquisa (SEO)','IA Generativa','E-mail Marketing','Disparo de WhatsApp'],
+    'Profissionais': ['Webdesigner','Copywriter','Social Media','Gestor de Tráfego'],
+    'Equipe': ['Equipe Comercial','Trackeamento de Dados Avançado'],
+    'Infraestrutura': ['Hospedagem TurboCloud (4 meses)','Domínio (Anual)'],
     'Evento': ['Hospedagem Hotel','Refeições — Café da Manhã','Refeições — Almoço','Refeições — Café da Tarde','Refeições — Janta']
   };
 
@@ -437,7 +443,8 @@
       { id:'d1', data:hojeISO(), tipo:'expositor', expositor_nome:'Clínica Bem-Estar', descricao:null, valor:2500, status:'pago', categoria_id:'d3' },
       { id:'d2', data:hojeISO(), tipo:'expositor', expositor_nome:'Instituto VitaSaúde', descricao:null, valor:1500, status:'pago', categoria_id:'d2' },
       { id:'d3', data:hojeISO(), tipo:'expositor', expositor_nome:'Espaço Integrar', descricao:null, valor:800, status:'pendente', categoria_id:'d1' },
-      { id:'d4', data:hojeISO(), tipo:'outro', expositor_nome:null, descricao:'Patrocínio coffee break', valor:600, status:'pago', categoria_id:null }
+      { id:'d4', data:hojeISO(), tipo:'outro', expositor_nome:null, descricao:'Patrocínio coffee break', valor:600, status:'pago', categoria_id:null },
+      { id:'d5', data:hojeISO(), tipo:'investimento', expositor_nome:'Sócio Exemplo', descricao:null, valor:10000, status:'pago', categoria_id:null }
     ];
     estado.despesas = [
       { id:'d1', data:hojeISO(), grupo:'Marketing Digital', item:'Gestor de Tráfego', descricao:null, valor:3200, status:'pago', recorrente:true },
@@ -465,11 +472,26 @@
     $('k-despesas').textContent = fmtMoeda(totalDespesas);
     var pendD = soma(despesas,'pendente'); $('k-despesas-pend').textContent = pendD ? (fmtMoeda(pendD)+' pendente') : '';
     var kSaldo = $('k-saldo'); kSaldo.textContent = fmtMoeda(saldo); kSaldo.className = 'n ' + (saldo>=0?'pos':'neg');
-    $('k-expositores').textContent = receitas.filter(function(r){ return r.status==='pago'; }).length;
+    $('k-expositores').textContent = receitas.filter(function(r){ return r.status==='pago' && r.tipo==='expositor'; }).length;
     var porGrupo = {};
     despesas.filter(function(d){ return d.status==='pago'; }).forEach(function(d){ porGrupo[d.grupo] = (porGrupo[d.grupo]||0) + d.valor; });
     var grupos = Object.keys(porGrupo).map(function(g){ return { grupo:g, total:porGrupo[g] }; }).sort(function(a,b){ return b.total-a.total; });
     renderGrafico(grupos);
+    var porTipo = {};
+    receitas.filter(function(r){ return r.status==='pago'; }).forEach(function(r){
+      if (!porTipo[r.tipo]) porTipo[r.tipo] = { tipo:r.tipo, qtd:0, total:0 };
+      porTipo[r.tipo].qtd++; porTipo[r.tipo].total += r.valor;
+    });
+    renderResumoTipos(Object.keys(porTipo).map(function(t){ return porTipo[t]; }));
+  }
+  function rotuloTipo(t){
+    return t==='expositor' ? 'Expositores' : (t==='investimento' ? 'Investimento do sócio' : 'Outras receitas');
+  }
+  function renderResumoTipos(porTipo){
+    if (!porTipo.length){ $('resumo-tipos').innerHTML = ''; return; }
+    $('resumo-tipos').innerHTML = porTipo.map(function(t){
+      return '<span class="chip-tipo">'+esc(rotuloTipo(t.tipo))+': <b>'+fmtMoeda(t.total)+'</b> ('+t.qtd+')</span>';
+    }).join('');
   }
   $('li-demo').addEventListener('click', modoExemplo);
 
@@ -510,9 +532,14 @@
     atualizarTipoReceita();
   }
   function atualizarTipoReceita(){
-    var ehExpositor = $('r-tipo').value === 'expositor';
-    $('r-nome-lbl').style.display = ehExpositor ? '' : 'none';
-    $('r-nome').style.display = ehExpositor ? '' : 'none';
+    var tipo = $('r-tipo').value;
+    var ehExpositor = tipo === 'expositor';
+    var ehInvestimento = tipo === 'investimento';
+    var mostrarNome = ehExpositor || ehInvestimento;
+    $('r-nome-lbl').textContent = ehInvestimento ? 'Nome do sócio / investidor' : 'Nome do expositor';
+    $('r-nome').placeholder = ehInvestimento ? 'ex: Fulano de Tal' : 'ex: Clínica Bem-Estar';
+    $('r-nome-lbl').style.display = mostrarNome ? '' : 'none';
+    $('r-nome').style.display = mostrarNome ? '' : 'none';
     $('r-cat-wrap').style.display = ehExpositor ? '' : 'none';
     $('r-cat').style.display = ehExpositor ? '' : 'none';
   }
@@ -575,10 +602,15 @@
     });
   }
   function nomeCategoria(id){ var c = estado.categorias.find(function(x){ return x.id===id; }); return c ? c.nome : '—'; }
+  function rotuloTipoReceita(r){
+    if (r.tipo === 'expositor') return esc(nomeCategoria(r.categoria_id));
+    if (r.tipo === 'investimento') return 'Investimento do sócio';
+    return 'Outra receita';
+  }
   function renderReceitas(rows){
     $('tabela-receitas').innerHTML = rows.length ? rows.map(function(r){
       return '<tr data-id="'+r.id+'"><td>'+esc(r.expositor_nome || r.descricao || '(sem nome)')+'</td>'+
-        '<td>'+(r.tipo==='expositor' ? esc(nomeCategoria(r.categoria_id)) : 'Outra')+'</td>'+
+        '<td>'+rotuloTipoReceita(r)+'</td>'+
         '<td><span class="pill '+r.status+'">'+r.status+'</span></td>'+
         '<td class="n">'+fmtMoeda(r.valor)+'</td>'+
         '<td><button type="button" class="del">Apagar</button></td></tr>';
@@ -602,7 +634,7 @@
     var tipo = $('r-tipo').value;
     var row = {
       tipo: tipo,
-      expositor_nome: tipo==='expositor' ? ($('r-nome').value.trim() || null) : null,
+      expositor_nome: (tipo==='expositor' || tipo==='investimento') ? ($('r-nome').value.trim() || null) : null,
       categoria_id: tipo==='expositor' && $('r-cat').value ? Number($('r-cat').value) : null,
       descricao: $('r-desc').value.trim() || null,
       valor: parseFloat($('r-valor').value),
@@ -700,9 +732,9 @@
       var kSaldo = $('k-saldo');
       kSaldo.textContent = fmtMoeda(saldo);
       kSaldo.className = 'n ' + (saldo >= 0 ? 'pos' : 'neg');
-      var totalExp = (d.receitas_por_categoria||[]).reduce(function(a,c){ return a + (c.qtd||0); }, 0);
-      $('k-expositores').textContent = totalExp;
+      $('k-expositores').textContent = d.qtd_expositores_pagos || 0;
       renderGrafico(d.despesas_por_grupo || []);
+      renderResumoTipos(d.receitas_por_tipo || []);
     }).catch(function(err){
       $('grafico-grupos').innerHTML = '<p class="vazio">Erro ao carregar resumo: '+esc(err.message)+'</p>';
     });
