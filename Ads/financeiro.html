@@ -135,6 +135,7 @@
     <input type="password" id="li-senha" autocomplete="current-password" required>
     <button type="submit" id="li-btn">Entrar</button>
     <button type="button" class="link-esqueci" id="li-esqueci">Esqueci a senha</button>
+    <button type="button" class="link-esqueci" id="li-demo">Ver com dados de exemplo (sem login)</button>
     <div class="erro" id="li-erro"></div>
   </form>
 
@@ -182,6 +183,9 @@
   </div>
 
   <div id="conteudo" hidden>
+    <div id="aviso-demo" hidden style="background:#fbf5e8;border:1px dashed var(--dourado);border-radius:12px;padding:12px 16px;font-size:12.5px;color:var(--dourado);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span><b>Modo exemplo</b> — os números aqui são fictícios, só pra ajustar o layout. Nada disso é salvo. <a href="financeiro.html" style="color:inherit;text-decoration:underline;">Sair do modo exemplo</a></span>
+    </div>
     <div class="kpis">
       <div class="kpi"><div class="l">Total recebido</div><div class="n" id="k-receitas">—</div><div class="s" id="k-receitas-pend"></div></div>
       <div class="kpi"><div class="l">Total gasto</div><div class="n" id="k-despesas">—</div><div class="s" id="k-despesas-pend"></div></div>
@@ -293,7 +297,7 @@
   };
 
   var TOKEN = null;
-  var estado = { eu:null, ehGestor:false, categorias:[] };
+  var estado = { eu:null, ehGestor:false, categorias:[], demo:false, receitas:[], despesas:[] };
 
   function apiHeaders(extra){
     return Object.assign({ apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' }, extra || {});
@@ -419,6 +423,56 @@
     }).catch(function(err){ mostrarLogin(); erroLogin(err.message||String(err)); });
   }
 
+  // ---------- modo exemplo (sem login, sem backend) ----------
+  function modoExemplo(){
+    estado.demo = true;
+    estado.eu = { nome:'Exemplo', papel:'gestor' };
+    estado.ehGestor = true;
+    estado.categorias = [
+      { id:'d1', nome:'Categoria Bronze', valor:800, ativo:true },
+      { id:'d2', nome:'Categoria Prata', valor:1500, ativo:true },
+      { id:'d3', nome:'Categoria Ouro', valor:2500, ativo:true }
+    ];
+    estado.receitas = [
+      { id:'d1', data:hojeISO(), tipo:'expositor', expositor_nome:'Clínica Bem-Estar', descricao:null, valor:2500, status:'pago', categoria_id:'d3' },
+      { id:'d2', data:hojeISO(), tipo:'expositor', expositor_nome:'Instituto VitaSaúde', descricao:null, valor:1500, status:'pago', categoria_id:'d2' },
+      { id:'d3', data:hojeISO(), tipo:'expositor', expositor_nome:'Espaço Integrar', descricao:null, valor:800, status:'pendente', categoria_id:'d1' },
+      { id:'d4', data:hojeISO(), tipo:'outro', expositor_nome:null, descricao:'Patrocínio coffee break', valor:600, status:'pago', categoria_id:null }
+    ];
+    estado.despesas = [
+      { id:'d1', data:hojeISO(), grupo:'Marketing Digital', item:'Gestor de Tráfego', descricao:null, valor:3200, status:'pago', recorrente:true },
+      { id:'d2', data:hojeISO(), grupo:'Profissionais & Equipe', item:'Webdesigner', descricao:null, valor:2800, status:'pago', recorrente:false },
+      { id:'d3', data:hojeISO(), grupo:'Infraestrutura', item:'Hospedagem TurboCloud', descricao:'4 meses', valor:960, status:'pago', recorrente:true },
+      { id:'d4', data:hojeISO(), grupo:'Evento', item:'Hospedagem Hotel', descricao:null, valor:4500, status:'pendente', recorrente:false },
+      { id:'d5', data:hojeISO(), grupo:'Evento', item:'Refeições — Almoço', descricao:null, valor:1800, status:'pago', recorrente:false }
+    ];
+    $('eu').innerHTML = '<b>Exemplo</b> · modo demonstração';
+    $('login').hidden = true; $('app').hidden = false;
+    $('sem-acesso').hidden = true; $('conteudo').hidden = false;
+    $('aviso-demo').hidden = false;
+    montarFormularios();
+    renderCategorias();
+    renderReceitas(estado.receitas);
+    renderDespesas(estado.despesas);
+    renderResumoLocal();
+  }
+  function renderResumoLocal(){
+    var receitas = estado.receitas, despesas = estado.despesas;
+    function soma(arr, status){ return arr.filter(function(x){ return x.status===status; }).reduce(function(a,x){ return a+x.valor; }, 0); }
+    var totalReceitas = soma(receitas,'pago'), totalDespesas = soma(despesas,'pago'), saldo = totalReceitas - totalDespesas;
+    $('k-receitas').textContent = fmtMoeda(totalReceitas);
+    var pendR = soma(receitas,'pendente'); $('k-receitas-pend').textContent = pendR ? (fmtMoeda(pendR)+' pendente') : '';
+    $('k-despesas').textContent = fmtMoeda(totalDespesas);
+    var pendD = soma(despesas,'pendente'); $('k-despesas-pend').textContent = pendD ? (fmtMoeda(pendD)+' pendente') : '';
+    var kSaldo = $('k-saldo'); kSaldo.textContent = fmtMoeda(saldo); kSaldo.className = 'n ' + (saldo>=0?'pos':'neg');
+    $('k-expositores').textContent = receitas.filter(function(r){ return r.status==='pago'; }).length;
+    var porGrupo = {};
+    despesas.filter(function(d){ return d.status==='pago'; }).forEach(function(d){ porGrupo[d.grupo] = (porGrupo[d.grupo]||0) + d.valor; });
+    var grupos = Object.keys(porGrupo).map(function(g){ return { grupo:g, total:porGrupo[g] }; }).sort(function(a,b){ return b.total-a.total; });
+    renderGrafico(grupos);
+  }
+  $('li-demo').addEventListener('click', modoExemplo);
+
   function sessaoLocal(){
     try{
       var raw = localStorage.getItem('sb-nbhekjgbszyuuxrynzfo-auth-token');
@@ -479,7 +533,13 @@
     $('lista-categorias').querySelectorAll('.x').forEach(function(x){
       x.addEventListener('click', function(){
         if (!confirm('Remover essa categoria? (não apaga receitas já lançadas)')) return;
-        apiWrite('PATCH', 'fin_categorias_expositor?id=eq.'+this.dataset.id, { ativo:false }, { Prefer:'return=minimal' })
+        var id = this.dataset.id;
+        if (estado.demo){
+          estado.categorias = estado.categorias.filter(function(c){ return String(c.id)!==id; });
+          renderCategorias();
+          return;
+        }
+        apiWrite('PATCH', 'fin_categorias_expositor?id=eq.'+id, { ativo:false }, { Prefer:'return=minimal' })
           .then(carregarCategorias).catch(function(err){ alert('Não deu: '+err.message); });
       });
     });
@@ -492,6 +552,13 @@
     e.preventDefault();
     var nome = $('cat-nome').value.trim(), valor = parseFloat($('cat-valor').value);
     if (!nome || !valor) return;
+    if (estado.demo){
+      estado.categorias.push({ id:'d'+Date.now(), nome:nome, valor:valor, ativo:true });
+      estado.categorias.sort(function(a,b){ return a.valor-b.valor; });
+      $('cat-nome').value=''; $('cat-valor').value='';
+      renderCategorias();
+      return;
+    }
     apiPost('fin_categorias_expositor', { nome:nome, valor:valor }, { Prefer:'return=minimal' })
       .then(function(){ $('cat-nome').value=''; $('cat-valor').value=''; return carregarCategorias(); })
       .catch(function(err){ alert('Não deu: '+err.message); });
@@ -520,6 +587,12 @@
       b.addEventListener('click', function(){
         if (!confirm('Apagar esse lançamento?')) return;
         var id = this.closest('tr').dataset.id;
+        if (estado.demo){
+          estado.receitas = estado.receitas.filter(function(r){ return String(r.id)!==id; });
+          renderReceitas(estado.receitas);
+          renderResumoLocal();
+          return;
+        }
         apiWrite('DELETE', 'fin_receitas?id=eq.'+id, null, { Prefer:'return=minimal' }).then(carregarTudo).catch(function(err){ alert('Não deu: '+err.message); });
       });
     });
@@ -537,6 +610,16 @@
       data: $('r-data').value
     };
     if (!row.valor || row.valor <= 0) return;
+    if (estado.demo){
+      row.id = 'd'+Date.now();
+      row.categoria_id = tipo==='expositor' ? ($('r-cat').value || null) : null;
+      estado.receitas.unshift(row);
+      $('r-msg').style.color='var(--verde)'; $('r-msg').textContent='Lançado! (exemplo)';
+      $('form-receita').reset(); $('r-data').value = hojeISO(); atualizarTipoReceita();
+      renderReceitas(estado.receitas);
+      renderResumoLocal();
+      return;
+    }
     var btn = $('r-btn'); btn.disabled=true; btn.textContent='Lançando…'; $('r-msg').textContent='';
     apiPost('fin_receitas', row, { Prefer:'return=minimal' }).then(function(){
       $('r-msg').style.color='var(--verde)'; $('r-msg').textContent='Lançado!';
@@ -564,6 +647,12 @@
       b.addEventListener('click', function(){
         if (!confirm('Apagar essa despesa?')) return;
         var id = this.closest('tr').dataset.id;
+        if (estado.demo){
+          estado.despesas = estado.despesas.filter(function(d){ return String(d.id)!==id; });
+          renderDespesas(estado.despesas);
+          renderResumoLocal();
+          return;
+        }
         apiWrite('DELETE', 'fin_despesas?id=eq.'+id, null, { Prefer:'return=minimal' }).then(carregarTudo).catch(function(err){ alert('Não deu: '+err.message); });
       });
     });
@@ -581,6 +670,15 @@
       recorrente: $('d-recorrente').checked
     };
     if (!row.valor || row.valor <= 0) return;
+    if (estado.demo){
+      row.id = 'd'+Date.now();
+      estado.despesas.unshift(row);
+      $('d-msg').style.color='var(--verde)'; $('d-msg').textContent='Lançado! (exemplo)';
+      $('d-desc').value=''; $('d-valor').value=''; $('d-recorrente').checked=false; $('d-data').value = hojeISO();
+      renderDespesas(estado.despesas);
+      renderResumoLocal();
+      return;
+    }
     var btn = $('d-btn'); btn.disabled=true; btn.textContent='Lançando…'; $('d-msg').textContent='';
     apiPost('fin_despesas', row, { Prefer:'return=minimal' }).then(function(){
       $('d-msg').style.color='var(--verde)'; $('d-msg').textContent='Lançado!';
