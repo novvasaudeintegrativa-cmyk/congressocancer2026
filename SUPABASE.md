@@ -3321,6 +3321,12 @@ returns json language sql stable security definer set search_path = public as $$
         select grupo, sum(valor) as total
         from public.fin_despesas where status = 'pago' and public.eh_gestor()
         group by grupo) t),
+    'despesas_por_mes', (select coalesce(json_agg(t order by t.mes), '[]'::json) from (
+        select to_char(data,'YYYY-MM') as mes,
+          sum(valor) filter (where status='pago') as pago,
+          sum(valor) filter (where status='pendente') as pendente
+        from public.fin_despesas where status in ('pago','pendente') and public.eh_gestor()
+        group by 1) t),
     'receitas_por_tipo', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
         select tipo, count(*) as qtd, sum(valor) as total
         from public.fin_receitas where status = 'pago' and public.eh_gestor()
@@ -3406,6 +3412,24 @@ alter table public.fin_receitas add constraint fin_receitas_tipo_check
 -- reaplicar a RPC inteira da seção 20.1 (ganhou os campos
 -- qtd_expositores_pagos e receitas_por_tipo)
 ```
+
+### 20.3.2. Editar lançamento (não só apagar)
+
+Cada linha das tabelas de receita/despesa tem um botão **"Editar"** ao
+lado de "Apagar" — transforma as células de Status e Valor em campos
+editáveis (select + input) com Salvar/Cancelar, sem precisar apagar e
+relançar. Útil pro caso comum de marcar uma despesa/receita que estava
+"pendente" como "paga" quando o pagamento efetivamente sai. Faz `PATCH`
+direto em `fin_receitas`/`fin_despesas` pelo `id` (RLS já garante que só
+gestor consegue).
+
+### 20.3.3. Despesas por mês + total geral até o evento
+
+A seção "Despesas por grupo" ganhou uma segunda tabela, **"Despesas por
+mês"**, agrupando por `to_char(data,'YYYY-MM')` com pago/pendente/total
+por mês e uma linha de **Total geral** somando tudo (pago + pendente,
+excluindo cancelado) — dá a visão de fluxo de caixa mês a mês até a data
+do evento, que a RPC já retorna pronta em `despesas_por_mes`.
 
 ### 20.4. Acesso
 

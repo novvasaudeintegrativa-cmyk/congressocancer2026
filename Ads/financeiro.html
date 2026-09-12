@@ -102,6 +102,12 @@
   .del{font-family:var(--tit);font-weight:700;font-size:10.5px;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:4px 9px;border-radius:999px;cursor:pointer;}
   .del:hover{border-color:var(--bordo-vivo);color:var(--bordo-vivo);}
   .vazio{color:var(--faint);font-size:12px;text-align:center;padding:16px 4px;}
+  tr.total-row td{font-weight:800;font-family:var(--tit);border-top:2px solid var(--linha);color:var(--ink);}
+  .col-status select, .col-valor input{font-family:var(--corpo);font-size:12.5px;padding:5px 7px;border-radius:7px;border:1px solid var(--linha);}
+  .edit{font-family:var(--tit);font-weight:700;font-size:10.5px;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:4px 9px;border-radius:999px;cursor:pointer;}
+  .edit:hover{border-color:var(--dourado);color:var(--dourado);}
+  .salvar{font-family:var(--tit);font-weight:700;font-size:10.5px;text-transform:uppercase;background:var(--verde);border:0;color:#fff;padding:4px 10px;border-radius:999px;cursor:pointer;}
+  .cancelar{font-family:var(--tit);font-weight:700;font-size:10.5px;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:4px 9px;border-radius:999px;cursor:pointer;}
 
   .cats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
   .chip-tipo{display:inline-flex;align-items:center;gap:6px;background:#fbfaf8;border:1px solid var(--linha);border-radius:999px;padding:6px 14px;font-size:12px;color:var(--soft);}
@@ -198,6 +204,14 @@
     <section>
       <div class="sec"><span class="t"><span class="bar"></span>Despesas por grupo</span></div>
       <div id="grafico-grupos"><p class="vazio">Sem despesa lançada ainda.</p></div>
+
+      <div class="sec" style="margin-top:22px;"><span class="t"><span class="bar"></span>Despesas por mês</span><span class="hint">pago + pendente, até o evento</span></div>
+      <div class="scroll-x">
+        <table>
+          <thead><tr><th>Mês</th><th class="n">Pago</th><th class="n">Pendente</th><th class="n">Total</th></tr></thead>
+          <tbody id="tabela-mensal"><tr><td class="vazio" colspan="4">Sem despesa lançada ainda.</td></tr></tbody>
+        </table>
+      </div>
     </section>
 
     <section>
@@ -477,6 +491,14 @@
     despesas.filter(function(d){ return d.status==='pago'; }).forEach(function(d){ porGrupo[d.grupo] = (porGrupo[d.grupo]||0) + d.valor; });
     var grupos = Object.keys(porGrupo).map(function(g){ return { grupo:g, total:porGrupo[g] }; }).sort(function(a,b){ return b.total-a.total; });
     renderGrafico(grupos);
+    var porMes = {};
+    despesas.filter(function(d){ return d.status==='pago' || d.status==='pendente'; }).forEach(function(d){
+      var mes = String(d.data).slice(0,7);
+      if (!porMes[mes]) porMes[mes] = { mes:mes, pago:0, pendente:0 };
+      porMes[mes][d.status] += d.valor;
+    });
+    var meses = Object.keys(porMes).map(function(m){ return porMes[m]; }).sort(function(a,b){ return a.mes.localeCompare(b.mes); });
+    renderTabelaMensal(meses);
     var porTipo = {};
     receitas.filter(function(r){ return r.status==='pago'; }).forEach(function(r){
       if (!porTipo[r.tipo]) porTipo[r.tipo] = { tipo:r.tipo, qtd:0, total:0 };
@@ -611,9 +633,9 @@
     $('tabela-receitas').innerHTML = rows.length ? rows.map(function(r){
       return '<tr data-id="'+r.id+'"><td>'+esc(r.expositor_nome || r.descricao || '(sem nome)')+'</td>'+
         '<td>'+rotuloTipoReceita(r)+'</td>'+
-        '<td><span class="pill '+r.status+'">'+r.status+'</span></td>'+
-        '<td class="n">'+fmtMoeda(r.valor)+'</td>'+
-        '<td><button type="button" class="del">Apagar</button></td></tr>';
+        '<td class="col-status"><span class="pill '+r.status+'">'+r.status+'</span></td>'+
+        '<td class="n col-valor">'+fmtMoeda(r.valor)+'</td>'+
+        '<td class="col-acoes"><button type="button" class="del">Apagar</button> <button type="button" class="edit">Editar</button></td></tr>';
     }).join('') : '<tr><td class="vazio" colspan="5">Nenhuma receita lançada ainda.</td></tr>';
     $('tabela-receitas').querySelectorAll('.del').forEach(function(b){
       b.addEventListener('click', function(){
@@ -626,6 +648,32 @@
           return;
         }
         apiWrite('DELETE', 'fin_receitas?id=eq.'+id, null, { Prefer:'return=minimal' }).then(carregarTudo).catch(function(err){ alert('Não deu: '+err.message); });
+      });
+    });
+    $('tabela-receitas').querySelectorAll('.edit').forEach(function(b){
+      b.addEventListener('click', function(){
+        var tr = this.closest('tr');
+        var id = tr.dataset.id;
+        var row = rows.find(function(r){ return String(r.id)===id; });
+        if (!row) return;
+        tr.querySelector('.col-status').innerHTML = '<select class="ed-status">' +
+          ['pago','pendente','cancelado'].map(function(s){ return '<option value="'+s+'"'+(s===row.status?' selected':'')+'>'+s+'</option>'; }).join('') + '</select>';
+        tr.querySelector('.col-valor').innerHTML = '<input type="number" class="ed-valor" step="0.01" min="0" value="'+row.valor+'">';
+        tr.querySelector('.col-acoes').innerHTML = '<button type="button" class="salvar">Salvar</button> <button type="button" class="cancelar">Cancelar</button>';
+        tr.querySelector('.cancelar').addEventListener('click', function(){ renderReceitas(rows); });
+        tr.querySelector('.salvar').addEventListener('click', function(){
+          var novoStatus = tr.querySelector('.ed-status').value;
+          var novoValor = parseFloat(tr.querySelector('.ed-valor').value);
+          if (!novoValor || novoValor <= 0){ alert('Valor inválido.'); return; }
+          if (estado.demo){
+            row.status = novoStatus; row.valor = novoValor;
+            renderReceitas(estado.receitas);
+            renderResumoLocal();
+            return;
+          }
+          apiWrite('PATCH', 'fin_receitas?id=eq.'+id, { status:novoStatus, valor:novoValor }, { Prefer:'return=minimal' })
+            .then(carregarTudo).catch(function(err){ alert('Não deu: '+err.message); });
+        });
       });
     });
   }
@@ -671,9 +719,9 @@
   function renderDespesas(rows){
     $('tabela-despesas').innerHTML = rows.length ? rows.map(function(d){
       return '<tr data-id="'+d.id+'"><td><b>'+esc(d.grupo)+'</b><br><span style="color:var(--soft);font-size:12px;">'+esc(d.item)+(d.recorrente?' · mensal':'')+'</span></td>'+
-        '<td><span class="pill '+d.status+'">'+d.status+'</span></td>'+
-        '<td class="n">'+fmtMoeda(d.valor)+'</td>'+
-        '<td><button type="button" class="del">Apagar</button></td></tr>';
+        '<td class="col-status"><span class="pill '+d.status+'">'+d.status+'</span></td>'+
+        '<td class="n col-valor">'+fmtMoeda(d.valor)+'</td>'+
+        '<td class="col-acoes"><button type="button" class="del">Apagar</button> <button type="button" class="edit">Editar</button></td></tr>';
     }).join('') : '<tr><td class="vazio" colspan="4">Nenhuma despesa lançada ainda.</td></tr>';
     $('tabela-despesas').querySelectorAll('.del').forEach(function(b){
       b.addEventListener('click', function(){
@@ -686,6 +734,32 @@
           return;
         }
         apiWrite('DELETE', 'fin_despesas?id=eq.'+id, null, { Prefer:'return=minimal' }).then(carregarTudo).catch(function(err){ alert('Não deu: '+err.message); });
+      });
+    });
+    $('tabela-despesas').querySelectorAll('.edit').forEach(function(b){
+      b.addEventListener('click', function(){
+        var tr = this.closest('tr');
+        var id = tr.dataset.id;
+        var row = rows.find(function(d){ return String(d.id)===id; });
+        if (!row) return;
+        tr.querySelector('.col-status').innerHTML = '<select class="ed-status">' +
+          ['pago','pendente','cancelado'].map(function(s){ return '<option value="'+s+'"'+(s===row.status?' selected':'')+'>'+s+'</option>'; }).join('') + '</select>';
+        tr.querySelector('.col-valor').innerHTML = '<input type="number" class="ed-valor" step="0.01" min="0" value="'+row.valor+'">';
+        tr.querySelector('.col-acoes').innerHTML = '<button type="button" class="salvar">Salvar</button> <button type="button" class="cancelar">Cancelar</button>';
+        tr.querySelector('.cancelar').addEventListener('click', function(){ renderDespesas(rows); });
+        tr.querySelector('.salvar').addEventListener('click', function(){
+          var novoStatus = tr.querySelector('.ed-status').value;
+          var novoValor = parseFloat(tr.querySelector('.ed-valor').value);
+          if (!novoValor || novoValor <= 0){ alert('Valor inválido.'); return; }
+          if (estado.demo){
+            row.status = novoStatus; row.valor = novoValor;
+            renderDespesas(estado.despesas);
+            renderResumoLocal();
+            return;
+          }
+          apiWrite('PATCH', 'fin_despesas?id=eq.'+id, { status:novoStatus, valor:novoValor }, { Prefer:'return=minimal' })
+            .then(carregarTudo).catch(function(err){ alert('Não deu: '+err.message); });
+        });
       });
     });
   }
@@ -734,10 +808,27 @@
       kSaldo.className = 'n ' + (saldo >= 0 ? 'pos' : 'neg');
       $('k-expositores').textContent = d.qtd_expositores_pagos || 0;
       renderGrafico(d.despesas_por_grupo || []);
+      renderTabelaMensal(d.despesas_por_mes || []);
       renderResumoTipos(d.receitas_por_tipo || []);
     }).catch(function(err){
       $('grafico-grupos').innerHTML = '<p class="vazio">Erro ao carregar resumo: '+esc(err.message)+'</p>';
     });
+  }
+  var MESES_PT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  function mesLabel(mesISO){
+    var p = mesISO.split('-');
+    return MESES_PT[Number(p[1])-1] + '/' + p[0];
+  }
+  function renderTabelaMensal(meses){
+    if (!meses.length){ $('tabela-mensal').innerHTML = '<tr><td class="vazio" colspan="4">Sem despesa lançada ainda.</td></tr>'; return; }
+    var totPago=0, totPend=0;
+    var linhas = meses.map(function(m){
+      var pago = m.pago||0, pendente = m.pendente||0;
+      totPago += pago; totPend += pendente;
+      return '<tr><td>'+esc(mesLabel(m.mes))+'</td><td class="n">'+fmtMoeda(pago)+'</td><td class="n">'+fmtMoeda(pendente)+'</td><td class="n">'+fmtMoeda(pago+pendente)+'</td></tr>';
+    }).join('');
+    linhas += '<tr class="total-row"><td>Total geral</td><td class="n">'+fmtMoeda(totPago)+'</td><td class="n">'+fmtMoeda(totPend)+'</td><td class="n">'+fmtMoeda(totPago+totPend)+'</td></tr>';
+    $('tabela-mensal').innerHTML = linhas;
   }
   function renderGrafico(grupos){
     if (!grupos.length){ $('grafico-grupos').innerHTML = '<p class="vazio">Sem despesa lançada ainda.</p>'; return; }
