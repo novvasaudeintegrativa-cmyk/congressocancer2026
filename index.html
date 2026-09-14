@@ -1595,6 +1595,15 @@
     content:"";
     position:absolute; inset:0;
     background-image:repeating-linear-gradient(115deg, rgba(255,255,255,0.03) 0 2px, transparent 2px 40px);
+    pointer-events:none;
+  }
+  .vsl-box > div{
+    position:relative; z-index:1;
+    width:100%; height:100%;
+  }
+  .vsl-box iframe{
+    width:100%!important; height:100%!important;
+    border:0; display:block;
   }
   .vsl-play{
     position:relative;
@@ -1662,8 +1671,17 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
 
       <div class="vsl-wrap">
         <div class="vsl-box">
-          <div class="vsl-play"></div>
-          <span class="vsl-label">Vídeo em breve</span>
+          <div id="novva-video-26202b28-4dca-4ca6-82ba-26fcac3d35f5"></div>
+          <script
+            src="https://novvavideos.vercel.app/embed.js"
+            data-target="novva-video-26202b28-4dca-4ca6-82ba-26fcac3d35f5"
+            data-video-id="26202b28-4dca-4ca6-82ba-26fcac3d35f5"
+            data-autoplay="true"
+            data-muted="true"
+            data-responsive="true"
+            data-width="800"
+            async
+          ></script>
         </div>
       </div>
       <div class="info-card">
