@@ -1581,21 +1581,13 @@
     width:100%;
     aspect-ratio:16/9;
     border-radius:var(--radius);
-    background:
-      linear-gradient(160deg, rgba(184,45,61,0.35), rgba(0,0,0,0.55)),
-      #1a0609;
+    background:radial-gradient(circle at 50% 50%, rgba(184,45,61,0.45), transparent 65%), linear-gradient(180deg,#3C0101 0%, #170608 50%, #3C0101 100%);
     border:1.5px solid var(--borda-card);
     box-shadow:0 30px 70px rgba(0,0,0,0.55);
     display:flex;
     align-items:center;
     justify-content:center;
     overflow:hidden;
-  }
-  .vsl-box::before{
-    content:"";
-    position:absolute; inset:0;
-    background-image:repeating-linear-gradient(115deg, rgba(255,255,255,0.03) 0 2px, transparent 2px 40px);
-    pointer-events:none;
   }
   .vsl-box > div{
     position:relative; z-index:1;
