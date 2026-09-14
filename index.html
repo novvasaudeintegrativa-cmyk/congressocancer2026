@@ -279,27 +279,9 @@
   .hero::before{
     content:"";
     position:absolute; inset:0;
-    /* degradê escuro (#3C0101) sólido em cima/embaixo, pra fundir sem linha
-       dura com as seções escuras vizinhas, com vermelho em blend "color"
-       (mantém a luminosidade da foto — plateia aparece bem) por cima da
-       foto do auditório lotado. */
-    background-image:
-      linear-gradient(180deg, #3C0101 0%, rgba(60,1,1,0) 18%, rgba(60,1,1,0) 82%, #3C0101 100%),
-      linear-gradient(rgba(163,40,54,0.82), rgba(163,40,54,0.82)),
-      url('Imgs/AuditorioLotado.jpg');
-    background-repeat: no-repeat;
-    background-position: center, center, center;
-    background-size: cover, cover, cover;
-    background-blend-mode: normal, color, normal;
+    /* mesmo degradê radial + linear vinho usado nas outras seções do site */
+    background:radial-gradient(circle at 50% 50%, rgba(184,45,61,0.45), transparent 65%), linear-gradient(180deg,#3C0101 0%, #170608 50%, #3C0101 100%);
     pointer-events:none;
-  }
-  @media (max-width:600px){
-    .hero::before{
-      background-image:
-        linear-gradient(180deg, #3C0101 0%, rgba(60,1,1,0) 18%, rgba(60,1,1,0) 82%, #3C0101 100%),
-        linear-gradient(rgba(163,40,54,0.6), rgba(163,40,54,0.6)),
-        url('Imgs/AuditorioLotado.jpg');
-    }
   }
   .hero::after{
     content:"";
