@@ -364,10 +364,7 @@
 
     <div class="cols">
       <section id="sec-vsl">
-        <div class="sec-head">
-          <span class="sec"><span class="bar"></span><b>VSL</b> <small>· retenção</small></span>
-          <span class="hint" id="vsl-total"></span>
-        </div>
+        <span class="sec"><span class="bar"></span><b>VSL</b> <small>· retenção</small> <small id="vsl-total"></small></span>
         <div class="funil" id="vsl"></div>
       </section>
       <section id="sec-mapa">
@@ -647,10 +644,10 @@
     return { d_from: ymd(from), d_to: ymd(to) };
   }
 
-  function step(titulo, valor, base){
+  function step(titulo, valor, base, semPct){
     var w = base ? Math.max(2, valor/base*100) : 0;
     return '<div class="step"><div class="row"><span>' + titulo + '</span>' +
-      '<span><b>' + fmt(valor) + '</b><span class="pct">' + pct(valor, base) + '</span></span></div>' +
+      '<span><b>' + fmt(valor) + '</b>' + (semPct ? '' : '<span class="pct">' + pct(valor, base) + '</span>') + '</span></div>' +
       '<div class="tk"><i style="width:' + w + '%"></i></div></div>';
   }
 
@@ -675,9 +672,8 @@
       $('vsl-total').textContent = '';
       return;
     }
-    $('vsl-total').textContent = fmt(v.plays) + ' visualizaç' + (v.plays === 1 ? 'ão' : 'ões') + ' no período';
+    $('vsl-total').textContent = '· ' + fmt(v.plays) + ' visualizaç' + (v.plays === 1 ? 'ão' : 'ões') + ' no período';
     $('vsl').innerHTML =
-      step('Video view', v.plays, v.plays) +
       step('Progress 25%', v.p25, v.plays) +
       step('Progress 50%', v.p50, v.plays) +
       step('Progress 75%', v.p75, v.plays) +
