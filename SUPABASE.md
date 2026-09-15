@@ -1752,6 +1752,79 @@ async function baixarEArmazenarMidia(mediaId: string, mimeType: string): Promise
 Suporta imagem, áudio, vídeo, documento e sticker (qualquer um com
 `m.image`/`m.video`/`m.audio`/`m.document`/`m.sticker`).
 
+## 15.9. CRM — progresso da VSL por lead (remarketing e priorização)
+
+**Por quê (12/09/2026):** além do remarketing anônimo pelo Meta Pixel (os
+eventos `VideoPlay`/`VideoProgress`/`VideoComplete` da VSL já vão pro
+`fbq('trackCustom', …)`, então já dá pra criar um Público Personalizado
+no Gerenciador de Anúncios sem nenhuma mudança), o objetivo aqui é
+**identificar qual lead especificamente** assistiu e até onde — pra
+equipe priorizar quem assistiu mais (reduz dependência de tráfego pago
+pra "esquentar" quem já demonstrou interesse assistindo a VSL).
+
+**Como funciona:** `quiz.html` e o site principal usam o mesmo
+`visitor_id` (mesma chave `cc_vid` no `localStorage`, mesmo domínio),
+então dá pra cruzar `quiz_leads.visitor_id` com `events.visitor_id`
+filtrando `props->>'placement' = 'vsl'`. **Limite:** só funciona pra
+quem também preencheu o quiz (é onde o `visitor_id` vira identificável,
+com nome/WhatsApp) — um contato que só mandou WhatsApp direto, sem
+nunca ter passado pelo quiz, não tem `visitor_id` conhecido.
+
+```sql
+-- crm_leads precisa carregar o visitor_id pra poder cruzar com events
+create or replace view public.crm_leads with (security_invoker = true) as
+  select distinct on (whatsapp)
+    whatsapp,
+    nome, email, profissao, nivel, pontuacao,
+    utm_source, utm_medium, utm_campaign,
+    visitor_id,
+    created_at as captado_em
+  from public.quiz_leads
+  where whatsapp is not null and whatsapp <> ''
+  order by whatsapp, (pontuacao is not null) desc, created_at desc;
+
+-- rpc_crm_pipeline ganha o campo vsl_progress (0-100, null = nunca assistiu
+-- ou o lead so existe via WhatsApp, sem visitor_id conhecido)
+create or replace function public.rpc_crm_pipeline()
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(row_to_json(t) order by t.captado_em desc nulls last), '[]'::json)
+  from (
+    select
+      s.whatsapp,
+      l.nome, l.email, l.profissao, l.nivel, l.pontuacao,
+      l.utm_source, l.utm_campaign,
+      coalesce(s.criado_em, l.captado_em) as captado_em,
+      coalesce(s.etapa, 'novo') as etapa,
+      s.nota, coalesce(s.urgente, false) as urgente, s.atribuido_a,
+      pa.nome as atribuido_nome,
+      s.atualizado_em,
+      (select max(
+         case e.event
+           when 'VideoComplete' then 100
+           when 'VideoProgress' then (e.props->>'percent')::int
+           when 'VideoPlay' then 0
+           else null
+         end)
+       from public.events e
+       where e.visitor_id = l.visitor_id
+         and lower(coalesce(e.props->>'placement','')) = 'vsl'
+         and e.event in ('VideoPlay','VideoProgress','VideoComplete')
+      ) as vsl_progress
+    from public.lead_status s
+    left join public.crm_leads l on public.wa_norm(l.whatsapp) = public.wa_norm(s.whatsapp)
+    left join public.perfis pa on pa.id = s.atribuido_a
+    where exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+  ) t;
+$$;
+
+notify pgrst, 'reload schema';
+```
+
+No `crm.html`, cada card do Kanban ganha um badge verde "🎬 VSL 75%" (ou
+"🎬 VSL iniciada" quando `vsl_progress = 0`, ou "🎬 VSL assistida" quando
+`= 100`) ao lado do badge de nível/origem, só quando `vsl_progress` não é
+nulo.
+
 ## 16. CRM — Cris (IA de primeiro contato)
 
 Implementa o que já estava desenhado como simulação no `ads/novva-ads.html`
