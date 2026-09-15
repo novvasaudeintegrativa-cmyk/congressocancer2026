@@ -364,7 +364,10 @@
 
     <div class="cols">
       <section id="sec-vsl">
-        <span class="sec"><span class="bar"></span><b>VSL</b> <small>· retenção</small></span>
+        <div class="sec-head">
+          <span class="sec"><span class="bar"></span><b>VSL</b> <small>· retenção</small></span>
+          <span class="hint" id="vsl-total"></span>
+        </div>
         <div class="funil" id="vsl"></div>
       </section>
       <section id="sec-mapa">
@@ -667,7 +670,12 @@
   }
 
   function renderVsl(v){
-    if (!v || !v.plays){ $('vsl').innerHTML = '<p class="vazio">Sem plays da VSL no período (entra quando o vídeo do Vturb rodar com <code>placement: \'vsl\'</code>).</p>'; return; }
+    if (!v || !v.plays){
+      $('vsl').innerHTML = '<p class="vazio">Sem plays da VSL no período.</p>';
+      $('vsl-total').textContent = '';
+      return;
+    }
+    $('vsl-total').textContent = fmt(v.plays) + ' visualizaç' + (v.plays === 1 ? 'ão' : 'ões') + ' no período';
     $('vsl').innerHTML =
       step('Video view', v.plays, v.plays) +
       step('Progress 25%', v.p25, v.plays) +
