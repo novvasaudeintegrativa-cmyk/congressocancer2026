@@ -1771,14 +1771,18 @@ com nome/WhatsApp) — um contato que só mandou WhatsApp direto, sem
 nunca ter passado pelo quiz, não tem `visitor_id` conhecido.
 
 ```sql
--- crm_leads precisa carregar o visitor_id pra poder cruzar com events
+-- crm_leads precisa carregar o visitor_id pra poder cruzar com events.
+-- visitor_id entra por ULTIMO na lista: CREATE OR REPLACE VIEW só aceita
+-- ACRESCENTAR coluna no final — inserir no meio desloca a posição das
+-- colunas seguintes e o Postgres recusa com "cannot change name of view
+-- column" (ele interpreta como tentativa de renomear, não de inserir).
 create or replace view public.crm_leads with (security_invoker = true) as
   select distinct on (whatsapp)
     whatsapp,
     nome, email, profissao, nivel, pontuacao,
     utm_source, utm_medium, utm_campaign,
-    visitor_id,
-    created_at as captado_em
+    created_at as captado_em,
+    visitor_id
   from public.quiz_leads
   where whatsapp is not null and whatsapp <> ''
   order by whatsapp, (pontuacao is not null) desc, created_at desc;
