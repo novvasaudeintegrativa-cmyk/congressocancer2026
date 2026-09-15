@@ -2626,6 +2626,17 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       tag.src = 'https://www.youtube.com/iframe_api';
       document.head.appendChild(tag);
     }
+
+    /* ---- VSL (player proprio Novva Videos, roda num iframe cross-origin —
+       so da pra saber play/progresso/conclusao via postMessage) ---- */
+    window.addEventListener('message', function(e){
+      var d = e.data;
+      if (!d || d.source !== 'novva-video') return;
+      var base = { video_provider: 'novva', video_title: 'VSL', placement: 'vsl' };
+      if (d.type === 'play') track('VideoPlay', base);
+      else if (d.type === 'progress' && d.percent) track('VideoProgress', Object.assign({ percent: d.percent }, base));
+      else if (d.type === 'complete') track('VideoComplete', base);
+    });
   })();
   </script>
 
