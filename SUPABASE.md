@@ -3310,7 +3310,12 @@ colunas não têm cascade — rodar antes, se precisar:
 ```sql
 update public.lead_status set atribuido_a = null where atribuido_a = 'UID_DO_USUARIO';
 update public.lead_status set atualizado_por = null where atualizado_por = 'UID_DO_USUARIO';
+update public.mensagens set enviado_por = null where enviado_por = 'UID_DO_USUARIO';
 ```
+
+Confirmado na prática (12/09/2026): apagar um vendedor que já respondeu
+mensagem pelo CRM falha com `violates foreign key constraint
+"mensagens_enviado_por_fkey"` se pular a última linha acima.
 
 ## 20. Novva Controle Financeiro — painel financeiro do evento
 
