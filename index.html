@@ -660,55 +660,152 @@
     .cv-modal-head{flex-direction:column;text-align:center;padding-right:0;}
   }
 
-  /* PROGRAMAÇÃO */
+  /* CRONOGRAMA */
   .programacao{background:radial-gradient(circle at 50% 50%, rgba(184,45,61,0.45), transparent 65%), linear-gradient(180deg,#3C0101 0%, #170608 50%, #3C0101 100%);}
-  .prog-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:30px;
-  }
-  .prog-col{
-    border:1px solid rgba(255,255,255,0.12);
-    border-radius:var(--radius);
-    overflow:hidden;
-  }
-  .prog-col-head{
-    background:#1a0609;
-    color:#fff;
-    border-bottom:2px solid var(--vermelho-vivo);
-    font-family:var(--fonte-titulo);
-    font-weight:700;
-    font-size:15px;
-    padding:16px 20px;
-    text-transform:uppercase;
-    letter-spacing:0.03em;
-  }
-  .prog-item{
-    padding:16px 20px;
-    border-top:1px solid rgba(255,255,255,0.08);
-  }
-  .prog-item.coffee{
+  .crono-aviso{
+    text-align:center;
     color:var(--texto-fraco);
-    font-weight:700;
-    font-size:13px;
+    font-size:12.5px;
+    font-style:italic;
+    margin:14px 0 0;
+  }
+  .crono-stats{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:12px;
+    margin:0 0 var(--space-xl);
+  }
+  .crono-stat{
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:14px;
+    padding:12px 22px;
+    min-width:100px;
+    text-align:center;
+  }
+  .crono-stat b{
+    display:block;
+    font-family:var(--fonte-titulo);
+    font-weight:800;
+    font-size:24px;
+    color:var(--dourado);
+    line-height:1.1;
+  }
+  .crono-stat span{
+    font-size:10.5px;
+    color:var(--texto-fraco);
     text-transform:uppercase;
     letter-spacing:0.06em;
-    background:rgba(255,255,255,0.02);
   }
-  .prog-item .hora{
+  .crono-tabs{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:var(--space-xl);
+    flex-wrap:wrap;
+  }
+  .crono-tab{
     font-family:var(--fonte-titulo);
     font-weight:700;
-    color:#fff;
-    font-size:13px;
-    margin-right:8px;
-  }
-  .prog-item .quem{font-weight:700;}
-  .prog-item .assunto{
-    display:block;
+    font-size:14px;
+    letter-spacing:0.02em;
+    padding:11px 26px;
+    border-radius:999px;
+    border:1.5px solid rgba(255,255,255,0.2);
+    background:transparent;
     color:var(--texto-suave);
-    font-style:italic;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .crono-tab:hover{border-color:var(--dourado); color:#fff;}
+  .crono-tab.ativo{background:var(--vermelho-vivo); border-color:var(--vermelho-vivo); color:#fff;}
+
+  .crono-dia{display:none; max-width:760px; margin:0 auto;}
+  .crono-dia.ativo{display:block;}
+  .timeline{position:relative; padding-left:92px;}
+  .timeline::before{
+    content:"";
+    position:absolute;
+    left:57px; top:8px; bottom:8px;
+    width:2px;
+    background:rgba(255,255,255,0.14);
+  }
+  .titem{position:relative; margin-bottom:14px;}
+  .thora{
+    position:absolute;
+    left:-92px; top:16px;
+    width:44px;
+    text-align:right;
+    font-family:var(--fonte-titulo);
+    font-weight:700;
     font-size:13px;
-    margin-top:2px;
+    color:var(--texto-fraco);
+  }
+  .tdot{
+    position:absolute;
+    left:-40px; top:22px;
+    width:10px; height:10px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.25);
+    border:2px solid #2b0b0e;
+  }
+  .titem.confirm .tdot{background:var(--dourado);}
+  .titem.open .tdot{background:var(--vermelho-vivo);}
+  .tcard{
+    background:linear-gradient(180deg, rgba(139,34,46,0.18), rgba(10,2,3,0.4));
+    border:1.5px solid var(--borda-card);
+    border-radius:14px;
+    padding:14px 18px;
+  }
+  .titem.break .tcard{
+    background:rgba(255,255,255,0.02);
+    border:1.5px dashed rgba(255,255,255,0.15);
+    padding:10px 18px;
+  }
+  .titem.break .tnome{
+    font-weight:700;
+    font-size:13px;
+    font-style:italic;
+    color:var(--texto-fraco);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .tnome{font-family:var(--fonte-titulo); font-weight:700; font-size:16.5px; color:#fff; margin:0;}
+  .ttema{font-size:13.5px; color:var(--texto-suave); font-style:italic; margin:4px 0 0;}
+  .ttema.tbd{color:var(--texto-fraco);}
+  .tbadge{
+    display:inline-block;
+    font-family:var(--fonte-titulo);
+    font-weight:700;
+    font-size:9.5px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:3px 9px;
+    border-radius:999px;
+    margin-left:8px;
+    vertical-align:middle;
+    position:relative; top:-1px;
+  }
+  .tbadge.confirm{background:rgba(242,199,68,0.16); color:var(--dourado);}
+  .tbadge.open{background:rgba(185,45,61,0.22); color:#ff8fa0;}
+
+  .crono-legenda{
+    display:flex;
+    justify-content:center;
+    gap:22px;
+    flex-wrap:wrap;
+    margin-top:var(--space-xl);
+    font-size:11.5px;
+    color:var(--texto-fraco);
+  }
+  .crono-legenda span{display:inline-flex; align-items:center; gap:6px;}
+  .crono-legenda i{width:9px; height:9px; border-radius:50%; display:inline-block;}
+  @media (max-width:600px){
+    .timeline{padding-left:64px;}
+    .thora{left:-64px; width:30px; font-size:11px;}
+    .tdot{left:-20px;}
+    .timeline::before{left:49px;}
   }
 
   /* PODCAST */
@@ -1538,7 +1635,6 @@
   @media (max-width: 900px){
     .publico-grid, .cert-grid, .podcast-grid{grid-template-columns:1fr;}
     .grid-palestrantes{grid-template-columns:repeat(2, 1fr);}
-    .prog-grid{grid-template-columns:1fr;}
     section{padding:60px 0; min-height:0;}
   }
   @media (max-width: 760px){
@@ -1810,22 +1906,61 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
   <!-- PROGRAMAÇÃO -->
   <section class="programacao" id="programacao">
     <div class="container">
-      <h2 class="section-title">Programação</h2>
-      <p class="section-sub">Grade final em breve. Exemplo de formato com os palestrantes ilustrativos acima.</p>
-      <div class="prog-grid">
-        <div class="prog-col">
-          <div class="prog-col-head">Sábado · Auditório 1</div>
-          <div class="prog-item"><span class="hora">08:30</span><span class="quem">Dr. Rafael Monteiro</span><span class="assunto">Oncologia integrativa: unindo evidência científica e cuidado humanizado</span></div>
-          <div class="prog-item"><span class="hora">09:40</span><span class="quem">Dra. Beatriz Amaral</span><span class="assunto">Nutrição funcional como suporte ao tratamento oncológico</span></div>
-          <div class="prog-item coffee">10:20 · Coffee break</div>
-        </div>
-        <div class="prog-col">
-          <div class="prog-col-head">Domingo · Auditório 2</div>
-          <div class="prog-item"><span class="hora">08:30</span><span class="quem">Dr. Thiago Osório</span><span class="assunto">Reabilitação oncológica: recuperando qualidade de vida</span></div>
-          <div class="prog-item"><span class="hora">09:40</span><span class="quem">Dra. Camila Duarte</span><span class="assunto">Acupuntura no manejo da dor oncológica</span></div>
-          <div class="prog-item coffee">10:20 · Coffee break</div>
+      <h2 class="section-title">Cronograma</h2>
+      <p class="section-sub">Dois dias, um único auditório. Confira os horários e quem já está confirmado.</p>
+
+      <div class="crono-stats">
+        <div class="crono-stat"><b>2</b><span>Dias</span></div>
+        <div class="crono-stat"><b>15</b><span>Palestrantes</span></div>
+        <div class="crono-stat"><b>7</b><span>Confirmados</span></div>
+      </div>
+
+      <div class="crono-tabs">
+        <button type="button" class="crono-tab ativo" data-dia="sexta">Sexta · 20/11</button>
+        <button type="button" class="crono-tab" data-dia="sabado">Sábado · 21/11</button>
+      </div>
+
+      <div class="crono-dia ativo" id="crono-sexta">
+        <div class="timeline">
+          <div class="titem break"><span class="thora">07:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Credenciamento</p></div></div>
+          <div class="titem confirm"><span class="thora">08:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Juan Carlos Llanos <span class="tbadge confirm">Abertura obrigatória</span></p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">09:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Geisa Quental</p><p class="ttema">Coordenadora Científica do Evento</p></div></div>
+          <div class="titem break"><span class="thora">10:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+          <div class="titem"><span class="thora">10:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Luis Augusto Conrado</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">11:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Claudinei Rodrigues</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem break"><span class="thora">12:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Almoço</p></div></div>
+          <div class="titem confirm"><span class="thora">13:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Lucy Kerr <span class="tbadge confirm">Confirmada</span></p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">14:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Alexia Cambraia</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem break"><span class="thora">15:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+          <div class="titem"><span class="thora">15:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Sara Lambert</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">16:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Alessandro Loiola</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem break"><span class="thora">17:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Encerramento do dia</p></div></div>
         </div>
       </div>
+
+      <div class="crono-dia" id="crono-sabado">
+        <div class="timeline">
+          <div class="titem break"><span class="thora">07:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Credenciamento</p></div></div>
+          <div class="titem"><span class="thora">08:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Juan Lambert</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">09:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Daniela Belisario Baroni</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem break"><span class="thora">10:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+          <div class="titem confirm"><span class="thora">10:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Cláudia B. S. Pacheco <span class="tbadge confirm">Confirmada</span></p><p class="ttema">A Vida Após a Vida: o que a Ciência Descobriu</p></div></div>
+          <div class="titem"><span class="thora">11:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Luciane C. Stern</p><p class="ttema">Para Além do Diagnóstico: o Sujeito Diante do Câncer</p></div></div>
+          <div class="titem break"><span class="thora">12:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Almoço</p></div></div>
+          <div class="titem confirm"><span class="thora">13:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Uronal Zancan <span class="tbadge confirm">Confirmado</span></p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">14:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Luis Stern</p><p class="ttema">Homeopatia e Câncer: a Evolução Clínica em Casos Reais Filmados</p></div></div>
+          <div class="titem break"><span class="thora">15:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+          <div class="titem open"><span class="thora">15:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Espaço livre <span class="tbadge open">Feira &amp; Networking</span></p></div></div>
+          <div class="titem confirm"><span class="thora">18:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Sérgio Felipe de Oliveira e Dra. Marina Renault <span class="tbadge confirm">Encerramento obrigatório</span></p><p class="ttema">Meditação com equipe de músicos</p></div></div>
+        </div>
+      </div>
+
+      <div class="crono-legenda">
+        <span><i style="background:var(--dourado);"></i> Confirmado / obrigatório por compromisso do palestrante</span>
+        <span><i style="background:var(--vermelho-vivo);"></i> Espaço aberto</span>
+        <span><i style="background:rgba(255,255,255,0.25);"></i> Intervalo</span>
+      </div>
+      <p class="crono-aviso">Versão de trabalho — sujeita a alterações.</p>
     </div>
   </section>
 
@@ -2380,6 +2515,20 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         if (e.target === dlg) dlg.close();
       });
     });
+    (function(){
+      var tabs = document.querySelectorAll('.crono-tab');
+      if (!tabs.length) return;
+      tabs.forEach(function(tab){
+        tab.addEventListener('click', function(){
+          tabs.forEach(function(t){ t.classList.remove('ativo'); });
+          document.querySelectorAll('.crono-dia').forEach(function(d){ d.classList.remove('ativo'); });
+          tab.classList.add('ativo');
+          var dia = document.getElementById('crono-' + tab.dataset.dia);
+          if (dia) dia.classList.add('ativo');
+        });
+      });
+    })();
+
     (function(){
       var btn = document.getElementById('hotel-mais-btn');
       var box = document.getElementById('hotel-mais');
