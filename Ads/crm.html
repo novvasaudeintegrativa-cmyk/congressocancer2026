@@ -370,6 +370,8 @@
       <label for="cp-corpo">Corpo do e-mail</label>
       <textarea id="cp-corpo" placeholder="pode usar {{nome}} pra personalizar" required></textarea>
       <div class="dica">{{nome}} no assunto ou no corpo é trocado pelo nome de cada contato na hora do envio.</div>
+      <button type="button" id="cp-optin-cta">📱 Inserir CTA de opt-in WhatsApp</button>
+      <div class="dica">Adiciona no fim do texto um link pronto pra quem quiser também receber novidades por WhatsApp — quem clicar e mandar a mensagem fica registrado como "optou" (ver seção "Opt-in WhatsApp" mais abaixo).</div>
 
       <label for="cp-teste-email">E-mail de teste (manda o assunto/corpo atual pra conferir antes de criar a campanha)</label>
       <input type="email" id="cp-teste-email" placeholder="seu-email@novvasaudeintegrativa.com.br">
@@ -390,6 +392,20 @@
     <div class="aviso">Estimativa calculada a partir dos tokens reais de cada chamada (Cris no WhatsApp + Gerar com IA nas campanhas), pelo preço do Claude Haiku 4.5. Não é o saldo oficial da conta Anthropic — isso só aparece no console.anthropic.com.</div>
     <div class="campanhas-tabela-wrap">
       <table class="campanhas-tabela"><tbody id="custo-ia-lista"></tbody></table>
+    </div>
+  </div>
+
+  <div id="view-optin-whatsapp" hidden>
+    <div class="sec-crm"><span>Opt-in WhatsApp</span><span class="cont" id="optin-cont"></span></div>
+    <div class="aviso">Gente que clicou no CTA de opt-in do e-mail e mandou a mensagem pelo WhatsApp — só quem está aqui pode entrar numa futura campanha de marketing por WhatsApp (a lista antiga da Eduzz não tem esse consentimento, ver §24 do SUPABASE.md).</div>
+    <div class="filtros">
+      <button type="button" id="optin-exportar" class="btn-atualizar">⬇ Exportar CSV</button>
+    </div>
+    <div class="quiz-tabela-wrap">
+      <table class="quiz-tabela">
+        <thead><tr><th>WhatsApp</th><th>Data do opt-in</th><th>Texto recebido</th></tr></thead>
+        <tbody id="optin-lista"></tbody>
+      </table>
     </div>
   </div>
 
@@ -603,6 +619,7 @@
         $('view-equipe').hidden = false; carregarEquipe();
         $('view-campanhas').hidden = false; carregarCampanhas();
         $('view-custo-ia').hidden = false; carregarCustoIA();
+        $('view-optin-whatsapp').hidden = false; carregarOptinWhatsapp();
         if (user.email) $('cp-teste-email').value = user.email;
       }
       return carregarPipeline();
@@ -1442,6 +1459,46 @@
 
     $('custo-ia-lista').innerHTML = linhaTotal + (linhas || '<tr><td colspan="3">Nenhum uso registrado ainda.</td></tr>');
   }
+
+  // ---------- CTA de opt-in WhatsApp no corpo do e-mail ----------
+  var LINK_OPTIN_WHATSAPP = 'https://wa.me/5511934873737?text=Quero%20receber%20novidades%20do%20Congresso%20C%C3%A2ncer%202026%20por%20WhatsApp';
+  $('cp-optin-cta').addEventListener('click', function(){
+    var atual = $('cp-corpo').value;
+    var linha = 'Quer receber novidades também pelo WhatsApp? Clica aqui e manda a mensagem que já vem pronta: ' + LINK_OPTIN_WHATSAPP;
+    $('cp-corpo').value = atual.trim() ? (atual.replace(/\n+$/, '') + '\n\n' + linha) : linha;
+  });
+
+  // ---------- opt-in WhatsApp (lista de quem autorizou, só gestor) ----------
+  var optinLista = [];
+
+  function carregarOptinWhatsapp(){
+    return apiGet('whatsapp_marketing_optin?select=whatsapp,criado_em,texto_recebido&order=criado_em.desc')
+      .then(function(rows){ optinLista = rows || []; renderOptinWhatsapp(); })
+      .catch(function(err){
+        $('optin-lista').innerHTML = '<tr><td colspan="3" style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>';
+      });
+  }
+
+  function renderOptinWhatsapp(){
+    $('optin-cont').textContent = optinLista.length + ' pessoa(s)';
+    $('optin-lista').innerHTML = optinLista.map(function(o){
+      return '<tr><td>+' + esc(o.whatsapp) + '</td><td>' + fmtQuando(o.criado_em) + '</td><td>' + esc(o.texto_recebido || '') + '</td></tr>';
+    }).join('') || '<tr><td colspan="3">Ninguém optou ainda.</td></tr>';
+  }
+
+  $('optin-exportar').addEventListener('click', function(){
+    if (!optinLista.length){ alert('Nenhum contato pra exportar.'); return; }
+    var cols = ['whatsapp', 'criado_em', 'texto_recebido'];
+    var linhas = [cols.join(';')].concat(optinLista.map(function(o){
+      return cols.map(function(c){ return csvEscape(o[c]); }).join(';');
+    }));
+    var blob = new Blob(['﻿' + linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'optin-whatsapp-congresso-cancer-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
 
   // sessão salva pelo supabase-js — lida direto do localStorage (getSession() pode travar)
   function sessaoLocal(){

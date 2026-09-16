@@ -4236,3 +4236,120 @@ No topo da seção "Campanhas", uma linha com o gasto de IA do mês atual
   Haiku 4.5 — não é o saldo oficial da conta Anthropic (esse só aparece
   no console.anthropic.com). Serve pra acompanhar tendência e detectar
   gasto fora do normal, não substitui olhar o console de vez em quando.
+
+## 24. Captura de opt-in de WhatsApp (pré-requisito pra campanha de marketing por lá)
+
+**Por quê (16/09/2026):** o Gestor queria disparo de marketing em massa
+pelo WhatsApp pra lista de compradores antigos (igual §22, mas por
+WhatsApp). Pesquisei a política atual da Meta antes de construir isso:
+
+- Mensagem de marketing custa ~R$ 0,31/disparo no Brasil (vs. ~R$ 0,034
+  de utilidade), sem desconto por volume, cobrada mesmo dentro da janela
+  de 24h.
+- **Precisa de opt-in específico pro WhatsApp** — a documentação oficial
+  da Meta diz que uma relação de cliente já existente (ex.: comprou
+  ingresso em edição passada) **não conta automaticamente** como opt-in.
+  Precisa de uma ação afirmativa da pessoa, nomeando o negócio, nesse
+  canal.
+- A lista de compradores antigos (Eduzz) **não tem esse opt-in
+  documentado** — só sabemos que compraram, não que aceitaram receber
+  WhatsApp de marketing.
+
+Mandar campanha de marketing sem esse opt-in arrisca a **qualidade do
+número** — e é o mesmo número que a Cris usa pra atender lead de verdade
+(§16/§18), então uma restrição ali quebra os dois recursos. Por isso, o
+disparo de marketing em massa por WhatsApp **fica pra depois**, só depois
+de existir uma lista de gente que realmente optou. Esta seção constrói só
+a **captura desse opt-in**, usando o e-mail (canal sem essa exigência da
+Meta) como ponte.
+
+**Mecânica:** o corpo do e-mail de campanha ganha um link
+`https://wa.me/5511934873737?text=...` com uma mensagem pronta. Quando a
+pessoa clica e manda essa mensagem, isso chega como mensagem normal no
+`whatsapp-webhook` — a mesma frase é detectada e a pessoa é registrada
+numa tabela própria de opt-in, com timestamp e o texto recebido (auditoria
+de que o consentimento existe, se um dia precisar comprovar pra Meta).
+
+### 24.1. SQL — rodar uma vez no SQL Editor
+
+```sql
+create table if not exists public.whatsapp_marketing_optin (
+  whatsapp       text primary key,
+  criado_em      timestamptz not null default now(),
+  origem         text,
+  texto_recebido text
+);
+alter table public.whatsapp_marketing_optin enable row level security;
+
+drop policy if exists "gestor ve optin whatsapp" on public.whatsapp_marketing_optin;
+create policy "gestor ve optin whatsapp" on public.whatsapp_marketing_optin
+  for select to authenticated using (public.eh_gestor());
+
+-- ninguém escreve por aqui a não ser o whatsapp-webhook (service role)
+revoke insert, update, delete on public.whatsapp_marketing_optin from anon, authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+### 24.2. Atualizar `whatsapp-webhook` (detecta a frase de opt-in)
+
+De novo, **não repaste a função inteira** — só 3 adições pontuais.
+
+**1.** Logo abaixo da linha `const svcHeaders = { apikey: SVC_KEY, ... };`
+(a mesma região onde entrou a `logarUsoIA` do §23.3), adiciona:
+
+```ts
+const FRASE_OPTIN_WHATSAPP = "quero receber novidades do congresso câncer 2026 por whatsapp";
+function normalizarTexto(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+}
+async function registrarOptinWhatsapp(numero: string, texto: string | null) {
+  if (!texto) return;
+  const norm = normalizarTexto(texto);
+  if (!norm.includes("novidades") || !norm.includes("congresso") || !norm.includes("whatsapp")) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/whatsapp_marketing_optin?on_conflict=whatsapp`, {
+      method: "POST",
+      headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify([{ whatsapp: numero, origem: "email_campanha", texto_recebido: texto }]),
+    });
+  } catch (e) { console.error("optin whatsapp:", e); }
+}
+```
+
+**2.** Dentro do `Deno.serve`, no loop principal, acha o trecho (é dentro de
+`for (const m of v.messages ?? []) { ... }`):
+
+```ts
+        numerosRecebidos.add(m.from);
+```
+
+e adiciona uma linha **logo acima** dela:
+
+```ts
+        await registrarOptinWhatsapp(m.from, texto);
+        numerosRecebidos.add(m.from);
+```
+
+(só essa linha nova — `numerosRecebidos.add(m.from);` continua exatamente
+igual, só ganhou uma linha acima.)
+
+**Deploy.**
+
+### 24.3. O que o `Ads/crm.html` faz
+
+- Na seção **Campanhas**, um botão **📱 Inserir CTA de opt-in WhatsApp**
+  perto do corpo do e-mail — adiciona automaticamente o parágrafo com o
+  link `wa.me` pronto no fim do texto.
+- Nova seção **"Opt-in WhatsApp"** (só Gestor): mostra quantas pessoas já
+  optaram, com tabela (número, data) e botão de exportar CSV — essa lista
+  exportada é o material bruto pra, no futuro, montar a campanha de
+  marketing por WhatsApp de verdade (igual §22, mas com a lista certa).
+
+### 24.4. Conferir
+
+- Manda a mensagem "Quero receber novidades do Congresso Câncer 2026 por
+  WhatsApp" pro número do congresso (simulando o clique no link).
+- Confere **Table Editor → whatsapp_marketing_optin** → deve aparecer uma
+  linha nova.
+- Confere no CRM, seção "Opt-in WhatsApp", se a contagem aumentou.
