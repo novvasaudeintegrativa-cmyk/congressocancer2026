@@ -371,6 +371,11 @@
       <textarea id="cp-corpo" placeholder="pode usar {{nome}} pra personalizar" required></textarea>
       <div class="dica">{{nome}} no assunto ou no corpo é trocado pelo nome de cada contato na hora do envio.</div>
 
+      <label for="cp-teste-email">E-mail de teste (manda o assunto/corpo atual pra conferir antes de criar a campanha)</label>
+      <input type="email" id="cp-teste-email" placeholder="seu-email@novvasaudeintegrativa.com.br">
+      <button type="button" id="cp-teste-btn">📨 Enviar teste</button>
+      <div class="cp-msg" id="cp-teste-msg"></div>
+
       <label for="cp-arquivo">Lista de contatos (CSV com colunas nome, email, lote)</label>
       <input type="file" id="cp-arquivo" accept=".csv,text/csv" required>
       <div class="dica">Aceita , ou ; como separador. Linhas sem e-mail válido são ignoradas.</div>
@@ -586,7 +591,11 @@
       carregarConversas();
       ligarRealtime();
       carregarQuiz();
-      if (estado.ehGestor) { $('view-equipe').hidden = false; carregarEquipe(); $('view-campanhas').hidden = false; carregarCampanhas(); }
+      if (estado.ehGestor) {
+        $('view-equipe').hidden = false; carregarEquipe();
+        $('view-campanhas').hidden = false; carregarCampanhas();
+        if (user.email) $('cp-teste-email').value = user.email;
+      }
       return carregarPipeline();
     });
   }
@@ -1318,6 +1327,34 @@
       $('cp-msg').style.color = 'var(--bordo-vivo)';
       $('cp-msg').textContent = 'Erro ao gerar: ' + err.message;
     }).finally(function(){ btn.disabled = false; btn.textContent = '✨ Gerar com IA'; });
+  });
+
+  $('cp-teste-btn').addEventListener('click', function(){
+    var destino = $('cp-teste-email').value.trim();
+    var assunto = $('cp-assunto').value.trim();
+    var corpo = $('cp-corpo').value.trim();
+    if (!destino){
+      $('cp-teste-msg').style.color = 'var(--bordo-vivo)';
+      $('cp-teste-msg').textContent = 'Preenche o e-mail de teste.';
+      return;
+    }
+    if (!assunto || !corpo){
+      $('cp-teste-msg').style.color = 'var(--bordo-vivo)';
+      $('cp-teste-msg').textContent = 'Preenche assunto e corpo antes de testar.';
+      return;
+    }
+    var nomeTeste = (estado.eu && estado.eu.nome) || 'Teste';
+    var assuntoTeste = '[TESTE] ' + assunto.replace(/\{\{nome\}\}/g, nomeTeste);
+    var corpoTeste = corpo.replace(/\{\{nome\}\}/g, nomeTeste);
+    var btn = this; btn.disabled = true; btn.textContent = 'Enviando…';
+    $('cp-teste-msg').style.color = 'var(--soft)'; $('cp-teste-msg').textContent = '';
+    emailEnviar(destino, assuntoTeste, corpoTeste, null).then(function(){
+      $('cp-teste-msg').style.color = 'var(--verde)';
+      $('cp-teste-msg').textContent = 'Teste enviado pra ' + destino + '! ({{nome}} virou "' + nomeTeste + '" nesse teste)';
+    }).catch(function(err){
+      $('cp-teste-msg').style.color = 'var(--bordo-vivo)';
+      $('cp-teste-msg').textContent = 'Erro: ' + err.message;
+    }).finally(function(){ btn.disabled = false; btn.textContent = '📨 Enviar teste'; });
   });
 
   $('form-campanha').addEventListener('submit', function(e){
