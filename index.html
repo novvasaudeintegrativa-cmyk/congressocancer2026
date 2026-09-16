@@ -2696,7 +2696,18 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         }
       });
     }
+    /* Repassa os UTMs capturados no site pro link do checkout da Eduzz —
+       sem isso a Eduzz nao sabe de onde veio a venda (ela nao herda UTM
+       da pagina sozinha, precisa vir na propria URL do checkout). Assim
+       a fatura paga devolve esses UTMs no webhook (data.utm.*), e da pra
+       medir venda de verdade por vendedor/canal em novva-ads.html. */
+    var UTM_KEYS_EDUZZ = ['utm_source','utm_medium','utm_campaign','utm_term','utm_content'];
     document.querySelectorAll('a[href*="chk.eduzz.com"]').forEach(function(a){
+      try {
+        var u = new URL(a.href);
+        UTM_KEYS_EDUZZ.forEach(function(k){ if (camp[k]) u.searchParams.set(k, camp[k]); });
+        a.href = u.toString();
+      } catch(e){}
       trackLink(a, 'InitiateCheckout', { content_name: (a.textContent || '').trim() });
     });
     document.querySelectorAll('a[href*="wa.me"], a[href*="api.whatsapp.com"]').forEach(function(a){

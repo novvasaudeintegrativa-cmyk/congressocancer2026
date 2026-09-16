@@ -397,6 +397,12 @@
         <span class="sec"><span class="bar"></span><b>ROI</b></span>
         <span class="hint">lançamento manual até a conta de anúncios ser conectada · <a href="#" id="link-gerenciar-inv" style="color:inherit;text-decoration:underline;">gerenciar lançamentos</a></span>
       </div>
+
+      <div id="links-rastreamento" style="border:1px dashed var(--linha);border-radius:12px;padding:12px 16px;margin-bottom:18px;">
+        <div style="font-family:var(--tit);font-weight:800;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--soft);margin-bottom:8px;">Links de rastreamento por vendedor/canal</div>
+        <div id="lista-links-rastreamento" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
       <div class="duas-col">
         <div>
           <div class="kpis" id="roi-kpis" style="grid-template-columns:1fr 1fr;margin-bottom:16px;"></div>
@@ -404,6 +410,12 @@
             <table>
               <thead><tr><th>Produto (Lote)</th><th class="n">Qtd</th><th class="n">Total</th></tr></thead>
               <tbody id="tabela-vendas"></tbody>
+            </table>
+          </div>
+          <div class="scroll-x" style="margin-top:18px;">
+            <table>
+              <thead><tr><th>Canal / vendedor</th><th class="n">Qtd</th><th class="n">Total</th></tr></thead>
+              <tbody id="tabela-vendas-canal"></tbody>
             </table>
           </div>
         </div>
@@ -796,7 +808,44 @@
         return '<tr><td>' + p.produto + '</td><td class="n">' + fmt(p.qtd) + '</td><td class="n">' + fmtMoeda(p.total) + '</td></tr>';
       }).join('');
     }
+
+    var canais = d.por_canal || [];
+    if (!canais.length){
+      $('tabela-vendas-canal').innerHTML = '<tr><td colspan="3" class="vazio">Sem venda com link de vendedor/canal rastreado ainda.</td></tr>';
+    } else {
+      $('tabela-vendas-canal').innerHTML = canais.map(function(c){
+        var rot = c.canal + (c.origem ? ' <span style="color:var(--faint);font-weight:400;">· ' + c.origem + '</span>' : '');
+        return '<tr><td>' + rot + '</td><td class="n">' + fmt(c.qtd) + '</td><td class="n">' + fmtMoeda(c.total) + '</td></tr>';
+      }).join('');
+    }
   }
+
+  var LINKS_RASTREAMENTO = [
+    { nome: 'Gisele', url: 'https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=gisele&utm_medium=vendedora&utm_campaign=gisele' },
+    { nome: 'Juliana', url: 'https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=juliana&utm_medium=vendedora&utm_campaign=juliana' },
+    { nome: 'Podcast (Fernando Beteti)', url: 'https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=podcast&utm_medium=fernando-beteti&utm_campaign=podcast-fernando-beteti' }
+  ];
+  function renderLinksRastreamento(){
+    var el = $('lista-links-rastreamento');
+    if (!el) return;
+    el.innerHTML = LINKS_RASTREAMENTO.map(function(l, i){
+      return '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
+        '<span style="font-weight:700;font-size:12.5px;min-width:150px;">' + l.nome + '</span>' +
+        '<code style="flex:1;min-width:200px;font-size:11px;color:var(--soft);background:var(--track);padding:4px 8px;border-radius:6px;overflow-wrap:anywhere;">' + l.url + '</code>' +
+        '<button type="button" class="btn-mini copiar-link" data-i="' + i + '" style="font-family:var(--tit);font-weight:700;font-size:10.5px;text-transform:uppercase;background:var(--card);border:1px solid var(--linha);color:var(--soft);padding:5px 11px;border-radius:999px;cursor:pointer;white-space:nowrap;">Copiar</button>' +
+        '</div>';
+    }).join('');
+    el.querySelectorAll('.copiar-link').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var l = LINKS_RASTREAMENTO[Number(btn.dataset.i)];
+        navigator.clipboard.writeText(l.url).then(function(){
+          var t = btn.textContent; btn.textContent = 'Copiado!';
+          setTimeout(function(){ btn.textContent = t; }, 1500);
+        }).catch(function(){});
+      });
+    });
+  }
+  renderLinksRastreamento();
 
   function carregarROI(){
     return rpc('rpc_roi', {}).then(renderROI).catch(function(e){

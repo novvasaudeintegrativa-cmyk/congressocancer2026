@@ -755,13 +755,68 @@ as $$
                sum(valor) as total
         from public.vendas
         where status ilike 'pag%' or status ilike 'paid'
-        group by 1) t)
+        group by 1) t),
+    'por_canal', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
+        select coalesce(nullif(utm_campaign,''), '(direto)') as canal,
+               coalesce(nullif(utm_source,''), '')            as origem,
+               count(*) as qtd,
+               sum(valor) as total
+        from public.vendas
+        where status ilike 'pag%' or status ilike 'paid'
+        group by 1, 2) t)
   );
 $$;
 
 grant execute on function public.rpc_roi() to anon;
 notify pgrst, 'reload schema';
 ```
+
+### 11.1. Vendas por canal (vendedor/podcast) — UTM até dentro da Eduzz
+
+**Por quê (16/09/2026):** pra medir venda **de verdade** por vendedor
+(Gisele, Juliana) ou canal (Podcast do Fernando Beteti), não basta marcar
+UTM só na URL do nosso site — a Eduzz não herda isso sozinha. Segundo a
+documentação oficial
+([Como rastrear UTM e Afiliados pelo link da página de vendas](https://ajuda.eduzz.com/hc/pt-br/articles/4402912683803-Como-rastrear-UTM-e-Afiliados-pelo-link-da-p%C3%A1gina-de-vendas)),
+quando se divulga por uma página de vendas própria (o nosso `index.html`),
+é preciso repassar os parâmetros UTM pra URL do checkout — é exatamente
+isso que o script novo em `index.html` faz (§ próxima seção). Depois de
+paga, a fatura carrega esses UTMs de volta no payload do webhook, em
+`data.utm.source` / `campaign` / `medium` / `content` / `term`
+([referência oficial do payload](https://developers.eduzz.com/reference/webhook/myeduzz-invoice-paid)).
+
+```sql
+alter table public.vendas
+  add column if not exists utm_source   text,
+  add column if not exists utm_medium   text,
+  add column if not exists utm_campaign text,
+  add column if not exists utm_content  text,
+  add column if not exists utm_term     text;
+
+create index if not exists vendas_utm_campaign_idx on public.vendas (utm_campaign);
+
+notify pgrst, 'reload schema';
+```
+
+Depois de rodar isso, **reaplique a função `rpc_roi()` acima** (já
+atualizada com o campo `por_canal`) e **redeploy o `eduzz-webhook`**
+(código atualizado na seção 11.2 abaixo) — os dois precisam estar
+juntos pra o painel mostrar dado de verdade.
+
+### 11.2. Links de rastreamento por vendedor/canal (já prontos)
+
+```
+Gisele:
+https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=gisele&utm_medium=vendedora&utm_campaign=gisele
+
+Juliana:
+https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=juliana&utm_medium=vendedora&utm_campaign=juliana
+
+Podcast (Fernando Beteti):
+https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=podcast&utm_medium=fernando-beteti&utm_campaign=podcast-fernando-beteti
+```
+
+Também aparecem prontos pra copiar direto no `novva-ads.html` (seção ROI).
 
 ### Edge Function `eduzz-webhook`
 
@@ -813,6 +868,14 @@ Deno.serve(async (req) => {
     status:        String(pick(body, ["data.status", "situacao", "status"]) ?? ""),
     cliente_nome:  pick(body, ["data.buyer.name", "nome_cliente", "customer_name"]),
     cliente_email: pick(body, ["data.buyer.email", "email_cliente", "customer_email"]),
+    // UTM: a Eduzz so devolve isso se a URL do checkout ja chegou com os
+    // parametros (ver index.html, que repassa os UTMs capturados no site
+    // pro link chk.eduzz.com antes do clique) — path oficial em data.utm.*
+    utm_source:    pick(body, ["data.utm.source", "utm_source"]),
+    utm_medium:    pick(body, ["data.utm.medium", "utm_medium"]),
+    utm_campaign:  pick(body, ["data.utm.campaign", "utm_campaign"]),
+    utm_content:   pick(body, ["data.utm.content", "utm_content"]),
+    utm_term:      pick(body, ["data.utm.term", "utm_term"]),
     raw: body
   };
 
