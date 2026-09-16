@@ -186,6 +186,22 @@
   .form-senha #ms-btn{font-family:var(--tit);font-weight:800;font-size:12px;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:9px;padding:9px 16px;cursor:pointer;}
   .form-senha #ms-cancelar{font-family:var(--tit);font-weight:700;font-size:11px;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);border-radius:9px;padding:8px 12px;cursor:pointer;}
   .form-senha #ms-btn:disabled{opacity:.5;cursor:default;}
+
+  /* ---- modal e-mail ---- */
+  .modal-overlay{position:fixed;inset:0;background:rgba(42,35,32,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50;}
+  .modal-box{background:var(--card);border-radius:16px;padding:22px 22px 18px;width:100%;max-width:440px;}
+  .modal-box h3{font-size:16px;font-weight:800;margin-bottom:2px;}
+  .modal-box .modal-para{font-size:12.5px;color:var(--soft);margin-bottom:16px;}
+  .modal-box label{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);margin:0 0 5px;font-weight:600;}
+  .modal-box input,.modal-box textarea{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--linha);background:#fff;color:var(--ink);font-family:var(--corpo);font-size:13.5px;margin-bottom:14px;resize:vertical;}
+  .modal-box textarea{min-height:140px;}
+  .modal-acoes{display:flex;justify-content:flex-end;gap:8px;}
+  .modal-acoes button{font-family:var(--tit);font-weight:700;font-size:11.5px;text-transform:uppercase;border-radius:9px;padding:10px 16px;cursor:pointer;}
+  #em-cancelar{background:#fff;border:1px solid var(--linha);color:var(--soft);}
+  #em-enviar{background:var(--bordo);border:0;color:#fff;}
+  #em-enviar:hover{background:var(--bordo-vivo);}
+  #em-enviar:disabled{opacity:.6;cursor:default;}
+  .modal-msg{font-size:12px;color:var(--bordo-vivo);min-height:1em;margin-top:10px;}
 </style>
 </head>
 <body>
@@ -311,6 +327,22 @@
   <p class="foot"><button type="button" id="btn-notif" class="btn-atualizar">🔔 Ativar notificações neste aparelho</button></p>
 
   <p class="foot">CRM Novva · Fase 1 — <a href="novva-ads.html">voltar ao painel</a></p>
+</div>
+
+<div id="modal-email" class="modal-overlay" hidden>
+  <div class="modal-box">
+    <h3>Enviar e-mail</h3>
+    <div class="modal-para">para <b id="em-para"></b></div>
+    <label for="em-assunto">Assunto</label>
+    <input type="text" id="em-assunto" maxlength="200">
+    <label for="em-corpo">Mensagem</label>
+    <textarea id="em-corpo" placeholder="escreva a mensagem…"></textarea>
+    <div class="modal-acoes">
+      <button type="button" id="em-cancelar">Cancelar</button>
+      <button type="button" id="em-enviar">Enviar</button>
+    </div>
+    <div class="modal-msg" id="em-msg"></div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
@@ -631,7 +663,7 @@
       (l.captado_em ? '<div class="quando">🕐 desde ' + fmtQuando(l.captado_em) + '</div>' : '') +
       '<div class="linha-acao acoes-rapidas">' +
         '<a class="icon-btn wa" href="https://wa.me/' + wpp + '" target="_blank" rel="noopener" title="Abrir no WhatsApp">' + ICON_WA + '</a>' +
-        (l.email ? '<a class="icon-btn" href="mailto:' + esc(l.email) + '" title="Enviar e-mail">✉️</a>' : '') +
+        (l.email ? '<button type="button" class="icon-btn btn-email" data-email="' + esc(l.email) + '" data-nome="' + esc(l.nome || '') + '" data-wpp="' + esc(wpp) + '" title="Enviar e-mail">✉️</button>' : '') +
         (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="Ver conversa no CRM">💬</button>') +
       '</div>' +
       '<div class="linha-acao">' +
@@ -682,6 +714,12 @@
       var n = this.dataset.w;
       $('view-conversas').scrollIntoView({ behavior: 'smooth', block: 'start' });
       setTimeout(function(){ renderThread(n); }, 350);
+    });
+
+    // enviar e-mail (abre modal, dispara via Resend)
+    var btnEmail = c.querySelector('.btn-email');
+    if (btnEmail) btnEmail.addEventListener('click', function(){
+      abrirModalEmail(this.dataset.email, this.dataset.nome, this.dataset.wpp);
     });
 
     // assumir responsabilidade (informativo — sem trava, todo mundo pode ajudar)
@@ -984,6 +1022,49 @@
       return data;
     }); });
   }
+
+  // ---------- enviar e-mail (Resend, via Edge Function email-send) ----------
+  var emailAlvo = null;
+  function abrirModalEmail(email, nome, wpp){
+    emailAlvo = { email: email, wpp: wpp };
+    $('em-para').textContent = nome ? (nome + ' <' + email + '>') : email;
+    $('em-assunto').value = '';
+    $('em-corpo').value = '';
+    $('em-msg').textContent = '';
+    $('em-enviar').disabled = false;
+    $('modal-email').hidden = false;
+    $('em-assunto').focus();
+  }
+  function fecharModalEmail(){ $('modal-email').hidden = true; emailAlvo = null; }
+  $('em-cancelar').addEventListener('click', fecharModalEmail);
+  $('modal-email').addEventListener('click', function(e){ if (e.target === this) fecharModalEmail(); });
+
+  function emailEnviar(email, assunto, corpo, wpp){
+    return fetch(SUPABASE_URL + '/functions/v1/email-send', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, assunto: assunto, corpo: corpo, lead_whatsapp: wpp || null })
+    }).then(function(r){ return r.text().then(function(t){
+      var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
+      if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
+      return data;
+    }); });
+  }
+
+  $('em-enviar').addEventListener('click', function(){
+    if (!emailAlvo) return;
+    var assunto = $('em-assunto').value.trim();
+    var corpo = $('em-corpo').value.trim();
+    if (!assunto || !corpo){ $('em-msg').textContent = 'Preencha assunto e mensagem.'; return; }
+    $('em-enviar').disabled = true;
+    $('em-msg').textContent = '';
+    emailEnviar(emailAlvo.email, assunto, corpo, emailAlvo.wpp).then(function(){
+      fecharModalEmail();
+    }).catch(function(err){
+      $('em-enviar').disabled = false;
+      $('em-msg').textContent = 'Erro ao enviar: ' + err.message;
+    });
+  });
 
   $('btn-atualizar-conv').addEventListener('click', carregarConversas);
 

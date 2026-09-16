@@ -3624,3 +3624,156 @@ do evento, que a RPC já retorna pronta em `despesas_por_mes`.
 checagem extra: só quem tem `papel = 'gestor'` na `perfis` entra; vendedor
 vê mensagem de acesso restrito e é deslogado. Mesma base de código (fetch
 direto pra API REST, evitando o lock do supabase-js — ver seção 13.3).
+
+## 21. CRM — enviar e-mail pro lead (Resend)
+
+**Domínio verificado no Resend (16/09/2026):** `novvasaudeintegrativa.com.br`
+— DKIM, SPF (`rsend`/`send`) e DMARC com check verde, "Enable Sending"
+ligado. "Enable Receiving" **desligado de propósito**: o CRM só dispara
+e-mail, nunca recebe/processa resposta por e-mail (quem responde, responde
+pelo WhatsApp normal, que já está coberto pelo §14).
+
+**Remetente:** `Novva Saúde Integrativa <contato@novvasaudeintegrativa.com.br>`.
+
+Botão ✉️ no card do lead (que antes era só um `mailto:`) agora abre um
+modal no próprio `crm.html` (assunto + mensagem) e dispara pela Edge
+Function `email-send`, que chama a API do Resend — mesmo padrão de auth do
+`whatsapp-send` (§14.6): exige o JWT do usuário logado e confere
+`perfis.ativo`. Cada envio fica logado em `emails_enviados` (pra auditoria/
+histórico — hoje sem exibição de thread, ao contrário do WhatsApp).
+
+### 21.1. SQL — rodar uma vez no SQL Editor
+
+```sql
+create table if not exists public.emails_enviados (
+  id             bigint generated always as identity primary key,
+  criado_em      timestamptz not null default now(),
+  lead_whatsapp  text,
+  destinatario   text not null,
+  assunto        text not null,
+  corpo          text not null,
+  resend_id      text,
+  status         text,
+  enviado_por    uuid references auth.users(id),
+  raw            jsonb not null default '{}'::jsonb
+);
+create index if not exists emails_enviados_lead_idx on public.emails_enviados (lead_whatsapp, criado_em);
+alter table public.emails_enviados enable row level security;
+
+-- mesmo modelo de visibilidade aberta do §17: qualquer membro ativo vê tudo
+drop policy if exists "equipe vê emails" on public.emails_enviados;
+create policy "equipe vê emails" on public.emails_enviados
+  for select to authenticated
+  using (exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo));
+
+-- ninguém escreve por aqui a não ser a Edge Function (service role)
+revoke insert, update, delete on public.emails_enviados from anon, authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+### 21.2. Edge Function `email-send`
+
+Supabase → **Edge Functions** → **Deploy a new function** → nome
+**`email-send`** → editor no navegador → apaga tudo e cola:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const URL_    = Deno.env.get("SUPABASE_URL")!;
+const ANON    = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SVC     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
+const FROM = "Novva Saúde Integrativa <contato@novvasaudeintegrativa.com.br>";
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${userToken}` } });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
+async function ehEquipeAtiva(uid: string) {
+  const r = await fetch(`${URL_}/rest/v1/perfis?id=eq.${uid}&select=papel,ativo`, { headers: svcHeaders });
+  const rows = await r.json();
+  const p = rows && rows[0];
+  return !!(p && p.ativo);
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method" }, 405);
+
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.replace(/^Bearer\s+/i, "");
+  const u = await quemChamou(token);
+  if (!u) return j({ erro: "não autenticado" }, 401);
+  if (!(await ehEquipeAtiva(u.id))) return j({ erro: "usuário inativo" }, 403);
+
+  let body: any;
+  try { body = await req.json(); } catch { return j({ erro: "bad body" }, 400); }
+
+  const email = String(body.email || "").trim();
+  const assunto = String(body.assunto || "").trim();
+  const corpo = String(body.corpo || "").trim();
+  const leadWhatsapp = body.lead_whatsapp ? String(body.lead_whatsapp).replace(/\D/g, "") : null;
+  if (!email || !assunto || !corpo) return j({ erro: "email, assunto e corpo obrigatórios" }, 400);
+
+  // corpo vem em texto puro do textarea do CRM — vira HTML simples (parágrafo por linha em branco)
+  const html = corpo.split(/\n{2,}/).map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
+
+  const resendResp = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { authorization: `Bearer ${RESEND_API_KEY}`, "content-type": "application/json" },
+    body: JSON.stringify({ from: FROM, to: [email], subject: assunto, html, text: corpo }),
+  });
+  const resendBody = await resendResp.json();
+  if (!resendResp.ok) return j({ erro: resendBody.message || "falha ao enviar" }, 502);
+
+  await fetch(`${URL_}/rest/v1/emails_enviados`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "return=minimal" },
+    body: JSON.stringify([{
+      lead_whatsapp: leadWhatsapp, destinatario: email, assunto, corpo,
+      resend_id: resendBody.id || null, status: "sent", enviado_por: u.id, raw: resendBody,
+    }]),
+  });
+
+  return j({ ok: true, resend_id: resendBody.id });
+});
+```
+
+**Deploy.** Mantém **"Verify JWT with legacy secret" LIGADO** (o CRM manda
+o JWT do usuário logado, igual o `whatsapp-send`/`equipe-admin`).
+
+**Secrets** (Edge Functions → Secrets):
+- `RESEND_API_KEY` — Resend → **API Keys** → **Create API Key** (permissão
+  "Sending access" já basta, não precisa "Full access").
+
+### 21.3. O que o `Ads/crm.html` faz
+
+- Botão ✉️ no card (só aparece se o lead tiver e-mail) abre um modal com
+  campos **Assunto** e **Mensagem**.
+- Enviar chama `email-send`, que dispara pelo Resend e grava o log em
+  `emails_enviados`.
+- Sem thread de e-mail no CRM (diferente do WhatsApp) — é disparo avulso,
+  não conversa. Se um dia precisar de histórico visível por lead, dá pra
+  listar `emails_enviados` na mesma view do card.
+
+### 21.4. Conferir
+
+- Resend → **Logs** (ou **Emails**) → deve aparecer o envio com status
+  "delivered" (pode levar alguns segundos).
+- Supabase → **Table Editor → emails_enviados** → linha gravada com
+  `resend_id` preenchido.
+- Se o botão der erro "usuário inativo" ou 401: confere se o usuário
+  logado tem linha ativa em `perfis` (mesma checagem do `whatsapp-send`).
