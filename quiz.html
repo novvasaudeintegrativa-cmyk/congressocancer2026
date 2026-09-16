@@ -452,7 +452,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     $(nivel === 'iniciante' ? 'r-leg-ini' : nivel === 'intermediario' ? 'r-leg-int' : 'r-leg-avc').classList.add('on');
 
     var utmLote = 'utm_source=quiz&utm_medium=organico&utm_campaign=lote1&utm_content=' + n.utm;
-    $('r-cta-lote').href = 'index.html#lotes?' + utmLote;
+    $('r-cta-lote').href = 'index.html?' + utmLote + '#lotes';
     $('r-cta-lote').addEventListener('click', function(){ sendEvent('InitiateCheckout', { content_name:'Quiz CTA Lote' }); });
 
     var msg = encodeURIComponent('Oi! Fiz o quiz do Congresso e meu nível foi "' + n.selo.replace('Nível: ','') + '". Meu nome é ' + nome + ', quero saber mais sobre o Lote 1!');
