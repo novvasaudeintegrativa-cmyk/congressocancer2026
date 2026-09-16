@@ -806,11 +806,8 @@ juntos pra o painel mostrar dado de verdade.
 ### 11.2. Links de rastreamento por vendedor/canal (já prontos)
 
 ```
-Gisele:
-https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=gisele&utm_medium=vendedora&utm_campaign=gisele
-
-Juliana:
-https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=juliana&utm_medium=vendedora&utm_campaign=juliana
+Time Comercial (Gisele/Juliana):
+https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=time-comercial&utm_medium=vendedora&utm_campaign=time-comercial
 
 Podcast (Fernando Beteti):
 https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=podcast&utm_medium=fernando-beteti&utm_campaign=podcast-fernando-beteti
