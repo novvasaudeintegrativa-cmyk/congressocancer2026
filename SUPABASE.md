@@ -3015,10 +3015,28 @@ const SVC_KEY          = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const WA_TOKEN         = Deno.env.get("WHATSAPP_PERMANENT_TOKEN")!;
 const PHONE_NUMBER_ID  = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
 const ANTHROPIC_KEY    = Deno.env.get("ANTHROPIC_API_KEY")!;
-const VAPID_PUBLIC_KEY  = Deno.env.get("VAPID_PUBLIC_KEY")!;
-const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY")!;
+const VAPID_PUBLIC_KEY  = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
+const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
 
-webpush.setVapidDetails("mailto:novvasaudeintegrativa@gmail.com", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+// Push e so um "extra" (aviso no celular) — se as chaves VAPID nao
+// estiverem cadastradas como secret ou forem invalidas, so desativa o
+// push; NUNCA deixa isso derrubar a funcao inteira. webpush.setVapidDetails
+// lanca erro SINCRONO na inicializacao do modulo (fora de qualquer
+// try/catch de request), o que travava a funcao inteira com
+// "WORKER_ERROR: Function exited due to an error" em TODA chamada —
+// inclusive receber mensagem e a Cris responder, nada relacionado a
+// push. Corrigido 16/09/2026.
+let pushHabilitado = false;
+try {
+  if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+    webpush.setVapidDetails("mailto:novvasaudeintegrativa@gmail.com", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+    pushHabilitado = true;
+  } else {
+    console.error("push desativado: faltam os secrets VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY");
+  }
+} catch (e) {
+  console.error("push desativado: setVapidDetails falhou:", e);
+}
 
 const svcHeaders = { apikey: SVC_KEY, authorization: `Bearer ${SVC_KEY}`, "content-type": "application/json" };
 
@@ -3173,6 +3191,7 @@ async function baixarEArmazenarMidia(mediaId: string, mimeType: string): Promise
 }
 
 async function notificarPush(titulo: string, corpo: string, url: string) {
+  if (!pushHabilitado) return;
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/push_subscriptions?select=id,endpoint,p256dh,auth`, { headers: svcHeaders });
     const subs = r.ok ? await r.json() : [];
