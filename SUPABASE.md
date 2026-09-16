@@ -3290,6 +3290,7 @@ Deno.serve(async (req) => {
   try { payload = JSON.parse(bodyText); } catch { return new Response("bad json", { status: 400 }); }
 
   const linhas: Record<string, unknown>[] = [];
+  const statusUpdates: { id: string; status: string }[] = [];
   const numerosRecebidos = new Set<string>();
   for (const entry of payload.entry ?? []) {
     for (const ch of entry.changes ?? []) {
@@ -3317,14 +3318,10 @@ Deno.serve(async (req) => {
           "https://congressocancer.novvasaudeintegrativa.com.br/Ads/crm.html",
         );
       }
+      // Atualizacoes de status (sent/delivered/read/failed) NAO entram em
+      // `linhas` — ver correcao abaixo (16/09/2026).
       for (const s of v.statuses ?? []) {
-        linhas.push({
-          wa_message_id: s.id,
-          lead_whatsapp: s.recipient_id,
-          direcao: "enviada",
-          status: s.status ?? null,
-          wa_timestamp: s.timestamp ? new Date(Number(s.timestamp) * 1000).toISOString() : null,
-        });
+        if (s.id && s.status) statusUpdates.push({ id: s.id, status: s.status });
       }
     }
   }
@@ -3338,6 +3335,25 @@ Deno.serve(async (req) => {
     if (!resp.ok) console.error("insert mensagens:", resp.status, await resp.text());
   }
 
+  // PATCH em vez de upsert em lote: uma atualizacao de status
+  // (sent/delivered/read) so leva wa_message_id + status. Se ela fosse
+  // misturada num upsert em lote junto com linhas que TEM `texto` (uma
+  // mensagem recebida de outro numero, por exemplo), o Postgrest monta
+  // um UNICO INSERT...ON CONFLICT DO UPDATE cobrindo a uniao de colunas
+  // do lote inteiro — e a linha de status, que nao manda `texto`, acaba
+  // regravando esse campo como NULL na mensagem que ja tinha o texto
+  // certo (apagando o conteudo real que a Cris mandou, so na nossa
+  // copia salva — a mensagem de verdade ja tinha ido pro WhatsApp da
+  // pessoa antes disso). PATCH so mexe na coluna que a gente realmente
+  // manda, sem tocar em `texto`.
+  for (const s of statusUpdates) {
+    await fetch(`${SUPABASE_URL}/rest/v1/mensagens?wa_message_id=eq.${encodeURIComponent(s.id)}`, {
+      method: "PATCH",
+      headers: { ...svcHeaders, prefer: "return=minimal" },
+      body: JSON.stringify({ status: s.status }),
+    }).catch((e) => console.error("status update:", s.id, e));
+  }
+
   for (const numero of numerosRecebidos) {
     try { await deixarCrisResponder(numero); }
     catch (e) { console.error("cris:", numero, e); }
@@ -3346,6 +3362,16 @@ Deno.serve(async (req) => {
   return new Response("ok", { status: 200 });
 });
 ```
+
+> **Correção (16/09/2026) — mensagem da Cris aparecendo "(sem texto)" no
+> CRM.** Confirmação de entrega/leitura ("delivered"/"read") chegava
+> misturada num upsert em lote com mensagens que têm `texto`, e o
+> Postgrest sobrescrevia o `texto` já salvo com `NULL` (a mensagem de
+> verdade já tinha sido entregue no WhatsApp da pessoa — só a nossa
+> cópia salva no banco que ficava em branco). Corrigido separando
+> atualização de status (`PATCH`, só a coluna `status`) do insert de
+> mensagens novas (`POST` upsert, como antes). Precisa **redeploy do
+> `whatsapp-webhook`** com o código acima pra parar de acontecer.
 
 ## 19. Apagar usuário de teste — "Database error deleting user"
 
