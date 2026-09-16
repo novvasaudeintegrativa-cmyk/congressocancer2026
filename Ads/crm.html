@@ -1461,10 +1461,10 @@
   }
 
   // ---------- CTA de opt-in WhatsApp no corpo do e-mail ----------
-  var LINK_OPTIN_WHATSAPP = 'https://wa.me/5511934873737?text=Quero%20receber%20novidades%20do%20Congresso%20C%C3%A2ncer%202026%20por%20WhatsApp';
+  var LINK_OPTIN_WHATSAPP = 'https://wa.me/5511934873737?text=Quero%20receber%20novidades%20do%20Congresso%20C%C3%A2ncer%202026%20pelo%20WhatsApp%20da%20Novva%20Sa%C3%BAde%20Integrativa';
   $('cp-optin-cta').addEventListener('click', function(){
     var atual = $('cp-corpo').value;
-    var linha = 'Quer receber novidades também pelo WhatsApp? Clica aqui e manda a mensagem que já vem pronta: ' + LINK_OPTIN_WHATSAPP;
+    var linha = 'Quer ficar por dentro das novidades do Congresso Câncer também pelo WhatsApp? Clique no link abaixo e envie a mensagem que já vem pronta — ao enviá-la, você autoriza a Novva Saúde Integrativa a te mandar comunicações e novidades do Congresso Câncer por WhatsApp. É rapidinho, e você pode parar de receber quando quiser:\n' + LINK_OPTIN_WHATSAPP;
     $('cp-corpo').value = atual.trim() ? (atual.replace(/\n+$/, '') + '\n\n' + linha) : linha;
   });
 
