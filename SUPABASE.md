@@ -3777,3 +3777,312 @@ o JWT do usuário logado, igual o `whatsapp-send`/`equipe-admin`).
   `resend_id` preenchido.
 - Se o botão der erro "usuário inativo" ou 401: confere se o usuário
   logado tem linha ativa em `perfis` (mesma checagem do `whatsapp-send`).
+
+## 22. CRM — Campanhas de e-mail pra listas antigas (compradores VIP/Lote 1-3)
+
+Diferente do §21 (e-mail avulso pra 1 lead direto do card), isso é **disparo
+em massa pra uma lista importada** — ex.: compradores de edições anteriores
+do congresso, exportados da Eduzz em CSV/Excel. **Só o Gestor** cria/dispara
+campanhas (vendedor não vê essa seção).
+
+**Decisões (16/09/2026):**
+- **Sem agendamento automático** — o Gestor entra no CRM e clica em "Enviar
+  próximo lote" quando quiser. Nada dispara sozinho.
+- **Lote de até 100 por clique** — é a recomendação do Resend pra domínio
+  novo (esquenta a reputação aos poucos em vez de estourar tudo de uma vez).
+  Clicando várias vezes em dias diferentes, a lista inteira vai sendo
+  enviada aos poucos.
+- **Importação por CSV** — Gestor sobe um arquivo com colunas `nome`,
+  `email`, `lote` (aceita `,` ou `;` como separador, cabeçalho
+  case-insensitive) exportado do Excel/Eduzz.
+- **Personalização simples** — se o assunto ou corpo tiver `{{nome}}`, é
+  substituído pelo nome do contato na hora do envio.
+
+### 22.1. SQL — rodar uma vez no SQL Editor
+
+```sql
+create table if not exists public.campanhas_email (
+  id          bigint generated always as identity primary key,
+  criado_em   timestamptz not null default now(),
+  criado_por  uuid references auth.users(id),
+  nome        text not null,
+  assunto     text not null,
+  corpo       text not null
+);
+alter table public.campanhas_email enable row level security;
+
+drop policy if exists "gestor ve campanhas" on public.campanhas_email;
+create policy "gestor ve campanhas" on public.campanhas_email
+  for select to authenticated using (public.eh_gestor());
+
+drop policy if exists "gestor cria campanhas" on public.campanhas_email;
+create policy "gestor cria campanhas" on public.campanhas_email
+  for insert to authenticated with check (public.eh_gestor());
+
+drop policy if exists "gestor apaga campanhas" on public.campanhas_email;
+create policy "gestor apaga campanhas" on public.campanhas_email
+  for delete to authenticated using (public.eh_gestor());
+
+revoke update on public.campanhas_email from authenticated;
+
+create table if not exists public.campanha_contatos (
+  id           bigint generated always as identity primary key,
+  campanha_id  bigint not null references public.campanhas_email(id) on delete cascade,
+  nome         text,
+  email        text not null,
+  lote         text,
+  status       text not null default 'pendente' check (status in ('pendente','enviado','falhou')),
+  enviado_em   timestamptz,
+  resend_id    text,
+  erro         text
+);
+create index if not exists campanha_contatos_campanha_idx on public.campanha_contatos (campanha_id, status);
+alter table public.campanha_contatos enable row level security;
+
+drop policy if exists "gestor ve contatos" on public.campanha_contatos;
+create policy "gestor ve contatos" on public.campanha_contatos
+  for select to authenticated using (public.eh_gestor());
+
+drop policy if exists "gestor importa contatos" on public.campanha_contatos;
+create policy "gestor importa contatos" on public.campanha_contatos
+  for insert to authenticated with check (public.eh_gestor());
+
+drop policy if exists "gestor apaga contatos" on public.campanha_contatos;
+create policy "gestor apaga contatos" on public.campanha_contatos
+  for delete to authenticated using (public.eh_gestor());
+
+-- status só muda pela Edge Function (service role) — ninguém faz UPDATE direto
+revoke update on public.campanha_contatos from authenticated;
+
+-- resumo por campanha (total/pendentes/enviados/falhas), pronto pro painel
+create or replace view public.campanhas_resumo with (security_invoker = true) as
+select
+  c.id, c.criado_em, c.nome, c.assunto, c.corpo,
+  count(k.id) as total,
+  count(k.id) filter (where k.status = 'pendente') as pendentes,
+  count(k.id) filter (where k.status = 'enviado')  as enviados,
+  count(k.id) filter (where k.status = 'falhou')   as falhas
+from public.campanhas_email c
+left join public.campanha_contatos k on k.campanha_id = c.id
+group by c.id
+order by c.criado_em desc;
+
+grant select on public.campanhas_resumo to authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+### 22.2. Edge Function `campanha-email-lote`
+
+Supabase → **Edge Functions** → **Deploy a new function** → nome
+**`campanha-email-lote`** → editor → apaga tudo e cola:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const URL_    = Deno.env.get("SUPABASE_URL")!;
+const ANON    = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SVC     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
+const FROM = "Novva Saúde Integrativa <contato@novvasaudeintegrativa.com.br>";
+const LOTE_MAX = 100;
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${userToken}` } });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
+async function ehGestor(uid: string) {
+  const r = await fetch(`${URL_}/rest/v1/perfis?id=eq.${uid}&select=papel,ativo`, { headers: svcHeaders });
+  const rows = await r.json();
+  const p = rows && rows[0];
+  return !!(p && p.ativo && p.papel === "gestor");
+}
+
+function preencher(txt: string, nome: string) {
+  return String(txt || "").replace(/\{\{nome\}\}/g, nome || "");
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method" }, 405);
+
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.replace(/^Bearer\s+/i, "");
+  const u = await quemChamou(token);
+  if (!u) return j({ erro: "não autenticado" }, 401);
+  if (!(await ehGestor(u.id))) return j({ erro: "só o gestor pode disparar campanhas" }, 403);
+
+  let body: any;
+  try { body = await req.json(); } catch { return j({ erro: "bad body" }, 400); }
+  const campanhaId = Number(body.campanha_id);
+  const lote = Math.min(Number(body.lote) || LOTE_MAX, LOTE_MAX);
+  if (!campanhaId) return j({ erro: "campanha_id obrigatório" }, 400);
+
+  const campResp = await fetch(`${URL_}/rest/v1/campanhas_email?id=eq.${campanhaId}&select=assunto,corpo`, { headers: svcHeaders });
+  const campRows = await campResp.json();
+  const camp = campRows && campRows[0];
+  if (!camp) return j({ erro: "campanha não encontrada" }, 404);
+
+  const pendResp = await fetch(
+    `${URL_}/rest/v1/campanha_contatos?campanha_id=eq.${campanhaId}&status=eq.pendente&select=id,nome,email&order=id.asc&limit=${lote}`,
+    { headers: svcHeaders }
+  );
+  const pendentes = await pendResp.json();
+
+  let enviados = 0, falhas = 0;
+  for (const c of pendentes) {
+    const assunto = preencher(camp.assunto, c.nome);
+    const corpoTxt = preencher(camp.corpo, c.nome);
+    const html = corpoTxt.split(/\n{2,}/).map((p: string) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
+    try {
+      const r = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { authorization: `Bearer ${RESEND_API_KEY}`, "content-type": "application/json" },
+        body: JSON.stringify({ from: FROM, to: [c.email], subject: assunto, html, text: corpoTxt }),
+      });
+      const rb = await r.json();
+      if (!r.ok) throw new Error(rb.message || "falha resend");
+      await fetch(`${URL_}/rest/v1/campanha_contatos?id=eq.${c.id}`, {
+        method: "PATCH", headers: { ...svcHeaders, prefer: "return=minimal" },
+        body: JSON.stringify({ status: "enviado", enviado_em: new Date().toISOString(), resend_id: rb.id || null }),
+      });
+      enviados++;
+    } catch (e) {
+      await fetch(`${URL_}/rest/v1/campanha_contatos?id=eq.${c.id}`, {
+        method: "PATCH", headers: { ...svcHeaders, prefer: "return=minimal" },
+        body: JSON.stringify({ status: "falhou", erro: String(e) }),
+      });
+      falhas++;
+    }
+  }
+
+  return j({ ok: true, enviados, falhas, tentativas: pendentes.length });
+});
+```
+
+**Deploy.** Mantém **"Verify JWT with legacy secret" LIGADO** (mesmo padrão
+do `email-send`/`whatsapp-send`) — não precisa de secret novo, reusa o
+`RESEND_API_KEY` já configurado no §21.2.
+
+### 22.3. Edge Function `gerar-texto-campanha` (botão "✨ Gerar com IA")
+
+Reusa o secret `ANTHROPIC_API_KEY` que já existe no projeto (mesmo usado
+pela Cris, §16) — não precisa criar de novo. Gestor descreve em 1 frase o
+que o e-mail deve dizer, a IA devolve assunto + corpo já no tom da marca
+(persona em `docs/persona.md`), prontos pra revisar antes de criar a
+campanha.
+
+Supabase → **Edge Functions** → **Deploy a new function** → nome
+**`gerar-texto-campanha`** → editor → apaga tudo e cola:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const URL_    = Deno.env.get("SUPABASE_URL")!;
+const ANON    = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SVC     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const SYSTEM = `Você escreve e-mails de campanha pro Congresso Câncer 2026, evento de 2 dias em São Paulo sobre práticas integrativas oncológicas.
+
+Público-alvo: médico(a)/dentista/farmacêutico(a)/enfermeiro(a)/fisioterapeuta/terapeuta que atende ou quer atender pacientes oncológicos. Dores: insegurança pra responder sobre terapia complementar, sensação de estagnação técnica, medo de responsabilização ética/legal. Desejos: ampliar repertório técnico, ganhar autoridade e networking com nomes de peso da área, encontrar comunidade de pares.
+
+Essas listas são de PESSOAS QUE JÁ COMPRARAM em edições anteriores do congresso — trate como reengajamento/reconexão com quem já conhece o evento, não como primeiro contato frio.
+
+Regras:
+- Tom brasileiro, caloroso, direto, sem exagero de urgência falsa.
+- Pode (e deve) usar {{nome}} no assunto ou no corpo pra personalizar — o sistema substitui pelo nome de cada contato na hora do envio.
+- Não invente data, preço, lote ou palestrante — se precisar citar algo assim, deixe um placeholder claro tipo [DATA] ou [LINK] pro Gestor completar antes de mandar.
+- Corpo em texto simples, parágrafos curtos (o sistema converte quebra de linha dupla em parágrafo).
+- Responda SOMENTE com um JSON válido, sem markdown, no formato exato: {"assunto": "...", "corpo": "..."}`;
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method" }, 405);
+
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.replace(/^Bearer\s+/i, "");
+  const r1 = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${token}` } });
+  if (!r1.ok) return j({ erro: "não autenticado" }, 401);
+  const u = await r1.json();
+  if (!u || !u.id) return j({ erro: "não autenticado" }, 401);
+  const rp = await fetch(`${URL_}/rest/v1/perfis?id=eq.${u.id}&select=papel,ativo`, { headers: svcHeaders });
+  const perfis = await rp.json();
+  const meu = perfis && perfis[0];
+  if (!meu || !meu.ativo || meu.papel !== "gestor") return j({ erro: "só o gestor pode gerar texto" }, 403);
+
+  let body: any;
+  try { body = await req.json(); } catch { return j({ erro: "bad body" }, 400); }
+  const brief = String(body.brief || "").trim();
+  if (!brief) return j({ erro: "descreva o que o e-mail deve dizer" }, 400);
+
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: "claude-sonnet-5", max_tokens: 800, system: SYSTEM,
+      messages: [{ role: "user", content: brief }],
+    }),
+  });
+  if (!resp.ok) return j({ erro: "falha ao gerar texto (" + resp.status + ")" }, 502);
+  const data = await resp.json();
+  const texto = (data.content || []).map((b: any) => b.text || "").join("");
+  let parsed: any;
+  try { parsed = JSON.parse(texto); } catch { return j({ erro: "IA respondeu em formato inesperado, tenta de novo" }, 502); }
+  if (!parsed.assunto || !parsed.corpo) return j({ erro: "IA não retornou assunto/corpo" }, 502);
+
+  return j({ ok: true, assunto: parsed.assunto, corpo: parsed.corpo });
+});
+```
+
+**Deploy.** Mantém **"Verify JWT with legacy secret" LIGADO**.
+
+### 22.4. O que o `Ads/crm.html` faz
+
+Seção **"Campanhas"** no fim da página, **só visível pro Gestor**:
+
+- Campo "Descreva o que o e-mail deve dizer" + botão **✨ Gerar com IA**,
+  que chama `gerar-texto-campanha` e preenche Assunto/Corpo — o Gestor
+  revisa/edita antes de criar a campanha (a IA nunca dispara nada sozinha).
+- Formulário: nome da campanha, assunto, corpo (aceita `{{nome}}`) e um
+  arquivo CSV (`nome,email,lote`) — ao criar, insere a campanha e importa
+  todos os contatos como `pendente`. **Um único assunto/corpo por
+  campanha** — o CSV pode misturar Lote 1, 2, 3 e VIP juntos, todo mundo
+  recebe o mesmo e-mail (a coluna `lote` fica só pra referência/relatório).
+- Lista de campanhas com contagem (total / pendentes / enviados / falhas)
+  vinda de `campanhas_resumo`.
+- Botão **"Enviar próximo lote"** em cada campanha, chama
+  `campanha-email-lote` (até 100 pendentes por clique) e atualiza a
+  contagem.
+
+### 22.5. Conferir
+
+- Supabase → **Table Editor → campanhas_email / campanha_contatos** →
+  depois de importar o CSV, os contatos devem aparecer com
+  `status = 'pendente'`.
+- Depois de clicar "Enviar próximo lote": linhas viram `enviado` (com
+  `resend_id`) ou `falhou` (com `erro` preenchido — confere o texto do erro,
+  geralmente é e-mail inválido no CSV).
+- Resend → **Logs** deve mostrar os envios um a um.
