@@ -4046,7 +4046,11 @@ Deno.serve(async (req) => {
       messages: [{ role: "user", content: brief }],
     }),
   });
-  if (!resp.ok) return j({ erro: "falha ao gerar texto (" + resp.status + ")" }, 502);
+  if (!resp.ok) {
+    const errBody = await resp.text();
+    console.error("anthropic error", resp.status, errBody);
+    return j({ erro: "falha ao gerar texto (" + resp.status + "): " + errBody.slice(0, 300) }, 502);
+  }
   const data = await resp.json();
   const texto = (data.content || []).map((b: any) => b.text || "").join("");
   let parsed: any;
@@ -4086,3 +4090,149 @@ Seção **"Campanhas"** no fim da página, **só visível pro Gestor**:
   `resend_id`) ou `falhou` (com `erro` preenchido — confere o texto do erro,
   geralmente é e-mail inválido no CSV).
 - Resend → **Logs** deve mostrar os envios um a um.
+
+## 23. Medidor de gasto de IA (Cris + Campanhas)
+
+**Por quê (16/09/2026):** a conta da Anthropic ficou sem crédito
+(-US$ 0,01) sem ninguém perceber, e isso quebra silenciosamente **dois**
+recursos que usam a mesma `ANTHROPIC_API_KEY`: a Cris respondendo no
+WhatsApp (§16) e o "Gerar com IA" das campanhas (§22.3). Recarga automática
+na Anthropic resolve o "ficar sem crédito do nada", mas o Gestor pediu
+**precisão** de quanto cada coisa gasta — não estimativa, e sim o custo
+real calculado a partir dos tokens que cada chamada devolve
+(`usage.input_tokens`/`usage.output_tokens` na resposta da Anthropic).
+
+**Preço usado no cálculo (Claude Haiku 4.5, modelo usado nas duas
+funções):** US$ 1,00 por milhão de tokens de entrada, US$ 5,00 por milhão
+de tokens de saída.
+
+### 23.1. SQL — rodar uma vez no SQL Editor
+
+```sql
+create table if not exists public.ia_uso (
+  id             bigint generated always as identity primary key,
+  criado_em      timestamptz not null default now(),
+  origem         text not null check (origem in ('cris_whatsapp','campanha_ia')),
+  modelo         text not null,
+  tokens_entrada int not null default 0,
+  tokens_saida   int not null default 0,
+  custo_usd      numeric(10,4) not null default 0
+);
+create index if not exists ia_uso_criado_idx on public.ia_uso (criado_em);
+alter table public.ia_uso enable row level security;
+
+drop policy if exists "gestor ve ia uso" on public.ia_uso;
+create policy "gestor ve ia uso" on public.ia_uso
+  for select to authenticated using (public.eh_gestor());
+
+-- ninguém escreve por aqui a não ser as Edge Functions (service role)
+revoke insert, update, delete on public.ia_uso from anon, authenticated;
+
+-- resumo por mês/origem, pronto pro painel
+create or replace view public.ia_uso_resumo with (security_invoker = true) as
+select
+  to_char(criado_em, 'YYYY-MM') as mes,
+  origem,
+  count(*) as chamadas,
+  sum(tokens_entrada) as tokens_entrada,
+  sum(tokens_saida) as tokens_saida,
+  sum(custo_usd) as custo_usd
+from public.ia_uso
+group by 1, 2
+order by 1 desc, 2;
+
+grant select on public.ia_uso_resumo to authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+### 23.2. Atualizar `gerar-texto-campanha` (loga cada geração)
+
+No editor da função (Edge Functions → gerar-texto-campanha), troca o final
+da função — de `const data = await resp.json();` até o final — por isso
+(adiciona o log de uso antes do `return`):
+
+```ts
+  const data = await resp.json();
+  const texto = (data.content || []).map((b: any) => b.text || "").join("");
+  let parsed: any;
+  try { parsed = JSON.parse(texto); } catch { return j({ erro: "IA respondeu em formato inesperado, tenta de novo" }, 502); }
+  if (!parsed.assunto || !parsed.corpo) return j({ erro: "IA não retornou assunto/corpo" }, 502);
+
+  try {
+    const u2 = data.usage || {};
+    const custo = ((u2.input_tokens || 0) / 1e6) * 1.0 + ((u2.output_tokens || 0) / 1e6) * 5.0;
+    await fetch(`${URL_}/rest/v1/ia_uso`, {
+      method: "POST", headers: { ...svcHeaders, prefer: "return=minimal" },
+      body: JSON.stringify([{ origem: "campanha_ia", modelo: "claude-haiku-4-5-20251001", tokens_entrada: u2.input_tokens || 0, tokens_saida: u2.output_tokens || 0, custo_usd: custo }]),
+    });
+  } catch (e) { console.error("log ia_uso:", e); }
+
+  return j({ ok: true, assunto: parsed.assunto, corpo: parsed.corpo });
+});
+```
+
+**Deploy.**
+
+### 23.3. Atualizar `whatsapp-webhook` (loga cada resposta da Cris)
+
+**Não repaste a função inteira** — é grande e já quebrou 2x por edição
+manual (ver histórico no §14.4/§18.4). São só 3 adições pequenas e
+pontuais no editor da função (Edge Functions → whatsapp-webhook):
+
+**1.** Logo abaixo da linha `const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;`, adiciona:
+
+```ts
+const HAIKU_INPUT_USD_PER_M = 1.0;
+const HAIKU_OUTPUT_USD_PER_M = 5.0;
+```
+
+**2.** Logo abaixo da linha `const svcHeaders = { apikey: SVC_KEY, authorization: ... };`, adiciona essa função nova:
+
+```ts
+async function logarUsoIA(usage: { input_tokens?: number; output_tokens?: number } | undefined) {
+  try {
+    const tokensIn = usage?.input_tokens ?? 0;
+    const tokensOut = usage?.output_tokens ?? 0;
+    const custo = (tokensIn / 1e6) * HAIKU_INPUT_USD_PER_M + (tokensOut / 1e6) * HAIKU_OUTPUT_USD_PER_M;
+    await fetch(`${SUPABASE_URL}/rest/v1/ia_uso`, {
+      method: "POST",
+      headers: { ...svcHeaders, prefer: "return=minimal" },
+      body: JSON.stringify([{ origem: "cris_whatsapp", modelo: "claude-haiku-4-5-20251001", tokens_entrada: tokensIn, tokens_saida: tokensOut, custo_usd: custo }]),
+    });
+  } catch (e) { console.error("log ia_uso:", e); }
+}
+```
+
+**3.** Dentro de `crisResponde()`, logo depois da linha
+`const data = await resp.json();` (a que já existe, dentro dessa função,
+depois do `fetch` pra Anthropic), adiciona uma linha:
+
+```ts
+  const data = await resp.json();
+  await logarUsoIA(data.usage);
+```
+
+(a linha `await logarUsoIA(data.usage);` é a única linha nova ali — o
+resto do `crisResponde()` continua igual.)
+
+**Deploy.**
+
+### 23.4. O que o `Ads/crm.html` mostra
+
+No topo da seção "Campanhas", uma linha com o gasto de IA do mês atual
+(Cris + Campanhas somados, e quebrado por origem), lida de
+`ia_uso_resumo`. Só o Gestor vê.
+
+### 23.5. Conferir
+
+- Manda uma mensagem de teste pro WhatsApp do congresso (Cris deve
+  responder) e clica em "Gerar com IA" numa campanha — depois olha
+  **Table Editor → ia_uso**: devem aparecer linhas novas com
+  `tokens_entrada`/`tokens_saida`/`custo_usd` preenchidos (não zerados).
+- O total mostrado no CRM deve bater com a soma dessas linhas do mês
+  atual.
+- Isso é uma estimativa **nossa**, calculada localmente pelo preço do
+  Haiku 4.5 — não é o saldo oficial da conta Anthropic (esse só aparece
+  no console.anthropic.com). Serve pra acompanhar tendência e detectar
+  gasto fora do normal, não substitui olhar o console de vez em quando.

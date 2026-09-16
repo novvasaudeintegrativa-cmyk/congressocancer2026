@@ -385,6 +385,14 @@
     </form>
   </div>
 
+  <div id="view-custo-ia" hidden>
+    <div class="sec-crm"><span>Custo de IA</span></div>
+    <div class="aviso">Estimativa calculada a partir dos tokens reais de cada chamada (Cris no WhatsApp + Gerar com IA nas campanhas), pelo preço do Claude Haiku 4.5. Não é o saldo oficial da conta Anthropic — isso só aparece no console.anthropic.com.</div>
+    <div class="campanhas-tabela-wrap">
+      <table class="campanhas-tabela"><tbody id="custo-ia-lista"></tbody></table>
+    </div>
+  </div>
+
   <p class="foot"><button type="button" id="btn-notif" class="btn-atualizar">🔔 Ativar notificações neste aparelho</button></p>
 
   <p class="foot">CRM Novva · Fase 1 — <a href="novva-ads.html">voltar ao painel</a></p>
@@ -594,6 +602,7 @@
       if (estado.ehGestor) {
         $('view-equipe').hidden = false; carregarEquipe();
         $('view-campanhas').hidden = false; carregarCampanhas();
+        $('view-custo-ia').hidden = false; carregarCustoIA();
         if (user.email) $('cp-teste-email').value = user.email;
       }
       return carregarPipeline();
@@ -1405,6 +1414,34 @@
     };
     leitor.readAsText(arquivo, 'utf-8');
   });
+
+  // ---------- custo de IA (Cris + campanhas, só gestor) ----------
+  function carregarCustoIA(){
+    return apiGet('ia_uso_resumo?select=*').then(renderCustoIA).catch(function(err){
+      $('custo-ia-lista').innerHTML = '<tr><td style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>';
+    });
+  }
+
+  function renderCustoIA(rows){
+    rows = rows || [];
+    var mesAtual = new Date().toISOString().slice(0, 7);
+    var nomeOrigem = { cris_whatsapp: 'Cris (WhatsApp)', campanha_ia: 'Campanhas (Gerar com IA)' };
+    var totalMesAtual = rows.filter(function(r){ return r.mes === mesAtual; })
+      .reduce(function(s, r){ return s + Number(r.custo_usd || 0); }, 0);
+
+    var linhaTotal = '<tr><td><div class="cp-nome">Total ' + esc(mesAtual) + '</div></td><td></td>' +
+      '<td style="text-align:right"><b>US$ ' + totalMesAtual.toFixed(2) + '</b></td></tr>';
+
+    var linhas = rows.map(function(r){
+      return '<tr>' +
+        '<td>' + esc(r.mes) + ' · ' + esc(nomeOrigem[r.origem] || r.origem) + '</td>' +
+        '<td class="cp-cont">' + r.chamadas + ' chamadas · ' + r.tokens_entrada + ' in / ' + r.tokens_saida + ' out tokens</td>' +
+        '<td style="text-align:right">US$ ' + Number(r.custo_usd || 0).toFixed(4) + '</td>' +
+      '</tr>';
+    }).join('');
+
+    $('custo-ia-lista').innerHTML = linhaTotal + (linhas || '<tr><td colspan="3">Nenhum uso registrado ainda.</td></tr>');
+  }
 
   // sessão salva pelo supabase-js — lida direto do localStorage (getSession() pode travar)
   function sessaoLocal(){
