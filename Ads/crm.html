@@ -955,7 +955,6 @@
       '</div>' +
       (badges ? '<div class="badges">' + badges + '</div>' : '') +
       '<div class="linha-acao acoes-rapidas">' +
-        '<a class="icon-btn wa" href="https://wa.me/' + wpp + '" target="_blank" rel="noopener" title="Abrir no WhatsApp">' + ICON_WA + '</a>' +
         (l.email ? '<button type="button" class="icon-btn btn-email" data-email="' + esc(l.email) + '" data-nome="' + esc(l.nome || '') + '" data-wpp="' + esc(wpp) + '" title="Enviar e-mail">' + ic('mail', 12) + '</button>' : '') +
         (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="Ver conversa no CRM">' + ic('message-circle', 12) + '</button>') +
         (l.campanha_whatsapp_nome ? '<span class="icon-btn meta" title="Veio da campanha Meta: ' + esc(l.campanha_whatsapp_nome) + '">' + ic('megaphone', 12) + '</span>' : '') +
