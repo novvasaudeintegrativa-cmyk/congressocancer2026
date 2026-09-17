@@ -3002,7 +3002,7 @@ await notificarPush(
 Código completo do `whatsapp-webhook` com tudo isso já embutido, pronto
 pra colar, está em **§18.4**.
 
-### 18.4. Edge Function `whatsapp-webhook` (versão completa, com push)
+### 18.4. Edge Function `whatsapp-webhook` (versão completa, com push + custo de IA + opt-in WhatsApp)
 
 ```ts
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -3015,6 +3015,8 @@ const SVC_KEY          = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const WA_TOKEN         = Deno.env.get("WHATSAPP_PERMANENT_TOKEN")!;
 const PHONE_NUMBER_ID  = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
 const ANTHROPIC_KEY    = Deno.env.get("ANTHROPIC_API_KEY")!;
+const HAIKU_INPUT_USD_PER_M = 1.0;
+const HAIKU_OUTPUT_USD_PER_M = 5.0;
 const VAPID_PUBLIC_KEY  = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
 const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
 
@@ -3039,6 +3041,36 @@ try {
 }
 
 const svcHeaders = { apikey: SVC_KEY, authorization: `Bearer ${SVC_KEY}`, "content-type": "application/json" };
+
+async function logarUsoIA(usage: { input_tokens?: number; output_tokens?: number } | undefined) {
+  try {
+    const tokensIn = usage?.input_tokens ?? 0;
+    const tokensOut = usage?.output_tokens ?? 0;
+    const custo = (tokensIn / 1e6) * HAIKU_INPUT_USD_PER_M + (tokensOut / 1e6) * HAIKU_OUTPUT_USD_PER_M;
+    await fetch(`${SUPABASE_URL}/rest/v1/ia_uso`, {
+      method: "POST",
+      headers: { ...svcHeaders, prefer: "return=minimal" },
+      body: JSON.stringify([{ origem: "cris_whatsapp", modelo: "claude-haiku-4-5-20251001", tokens_entrada: tokensIn, tokens_saida: tokensOut, custo_usd: custo }]),
+    });
+  } catch (e) { console.error("log ia_uso:", e); }
+}
+
+const FRASE_OPTIN_WHATSAPP = "quero receber novidades do congresso câncer 2026 por whatsapp";
+function normalizarTexto(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+}
+async function registrarOptinWhatsapp(numero: string, texto: string | null) {
+  if (!texto) return;
+  const norm = normalizarTexto(texto);
+  if (!norm.includes("novidades") || !norm.includes("congresso") || !norm.includes("whatsapp")) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/whatsapp_marketing_optin?on_conflict=whatsapp`, {
+      method: "POST",
+      headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify([{ whatsapp: numero, origem: "email_campanha", texto_recebido: texto }]),
+    });
+  } catch (e) { console.error("optin whatsapp:", e); }
+}
 
 const CRIS_INSTRUCOES = `Você é a Cris, da equipe do Congresso Câncer 2026 (congresso de práticas integrativas oncológicas, 2 dias em São Paulo). Sua função é criar uma conexão inicial calorosa com o lead e levar ele pra nossa página oficial — é lá que tem a apresentação completa (inclusive vídeo), que já responde as dúvidas mais comuns e foi feita pra converter. O site é: https://congressocancer.novvasaudeintegrativa.com.br
 
@@ -4156,7 +4188,13 @@ da função — de `const data = await resp.json();` até o final — por isso
   const data = await resp.json();
   const texto = (data.content || []).map((b: any) => b.text || "").join("");
   let parsed: any;
-  try { parsed = JSON.parse(texto); } catch { return j({ erro: "IA respondeu em formato inesperado, tenta de novo" }, 502); }
+  try {
+    // às vezes o modelo embrulha em ```json ... ``` mesmo pedindo só JSON —
+    // tira a cerca de markdown e pega só o trecho entre { } antes de parsear
+    const limpo = texto.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+    const match = limpo.match(/\{[\s\S]*\}/);
+    parsed = JSON.parse(match ? match[0] : limpo);
+  } catch { return j({ erro: "IA respondeu em formato inesperado, tenta de novo" }, 502); }
   if (!parsed.assunto || !parsed.corpo) return j({ erro: "IA não retornou assunto/corpo" }, 502);
 
   try {
@@ -4167,6 +4205,13 @@ da função — de `const data = await resp.json();` até o final — por isso
       body: JSON.stringify([{ origem: "campanha_ia", modelo: "claude-haiku-4-5-20251001", tokens_entrada: u2.input_tokens || 0, tokens_saida: u2.output_tokens || 0, custo_usd: custo }]),
     });
   } catch (e) { console.error("log ia_uso:", e); }
+
+  try {
+    await fetch(`${URL_}/rest/v1/campanha_ia_geracoes`, {
+      method: "POST", headers: { ...svcHeaders, prefer: "return=minimal" },
+      body: JSON.stringify([{ criado_por: u.id, brief, assunto: parsed.assunto, corpo: parsed.corpo }]),
+    });
+  } catch (e) { console.error("log geracao ia:", e); }
 
   return j({ ok: true, assunto: parsed.assunto, corpo: parsed.corpo });
 });

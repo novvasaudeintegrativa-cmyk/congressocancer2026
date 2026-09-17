@@ -385,6 +385,11 @@
       <button type="submit" id="cp-criar-btn">Criar campanha e importar contatos</button>
       <div class="cp-msg" id="cp-msg"></div>
     </form>
+
+    <div class="sec-crm" style="margin-top:24px;"><span>Textos já gerados por IA</span></div>
+    <div class="campanhas-tabela-wrap">
+      <table class="campanhas-tabela"><tbody id="geracoes-ia-lista"></tbody></table>
+    </div>
   </div>
 
   <div id="view-custo-ia" hidden>
@@ -617,7 +622,7 @@
       carregarQuiz();
       if (estado.ehGestor) {
         $('view-equipe').hidden = false; carregarEquipe();
-        $('view-campanhas').hidden = false; carregarCampanhas();
+        $('view-campanhas').hidden = false; carregarCampanhas(); carregarGeracoesIA();
         $('view-custo-ia').hidden = false; carregarCustoIA();
         $('view-optin-whatsapp').hidden = false; carregarOptinWhatsapp();
         if (user.email) $('cp-teste-email').value = user.email;
@@ -1284,6 +1289,37 @@
     });
   }
 
+  var geracoesIA = [];
+
+  function carregarGeracoesIA(){
+    return apiGet('campanha_ia_geracoes?select=id,criado_em,brief,assunto,corpo&order=criado_em.desc&limit=50')
+      .then(function(rows){ geracoesIA = rows || []; renderGeracoesIA(); })
+      .catch(function(err){
+        $('geracoes-ia-lista').innerHTML = '<tr><td style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>';
+      });
+  }
+
+  function renderGeracoesIA(){
+    $('geracoes-ia-lista').innerHTML = geracoesIA.map(function(g){
+      return '<tr>' +
+        '<td><div class="cp-nome">' + esc(g.assunto) + '</div><div class="cp-assunto">' + esc(g.brief) + '</div></td>' +
+        '<td class="cp-cont">' + fmtQuando(g.criado_em) + '</td>' +
+        '<td style="text-align:right"><button type="button" class="cp-enviar geracao-usar" data-id="' + g.id + '">Usar</button></td>' +
+      '</tr>';
+    }).join('') || '<tr><td>Nenhum texto gerado ainda.</td></tr>';
+
+    $('geracoes-ia-lista').querySelectorAll('.geracao-usar').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var g = geracoesIA.find(function(r){ return String(r.id) === btn.dataset.id; });
+        if (!g) return;
+        $('cp-brief').value = g.brief;
+        $('cp-assunto').value = g.assunto;
+        $('cp-corpo').value = g.corpo;
+        $('cp-nome').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  }
+
   function renderCampanhas(rows){
     rows = rows || [];
     $('campanhas-lista').innerHTML = rows.map(function(c){
@@ -1349,6 +1385,7 @@
       $('cp-corpo').value = res.corpo || '';
       $('cp-msg').style.color = 'var(--verde)';
       $('cp-msg').textContent = 'Rascunho gerado — revise antes de criar a campanha.';
+      carregarGeracoesIA();
     }).catch(function(err){
       $('cp-msg').style.color = 'var(--bordo-vivo)';
       $('cp-msg').textContent = 'Erro ao gerar: ' + err.message;
