@@ -422,6 +422,14 @@
           <label for="cw-nome">Nome da campanha (só pra identificar)</label>
           <input type="text" id="cw-nome" placeholder="ex: Reengajamento WhatsApp 2026" required>
 
+          <label for="cw-categoria">Categoria do template</label>
+          <select id="cw-categoria">
+            <option value="marketing">Marketing — promocional/convite (exige opt-in específico)</option>
+            <option value="utility">Utility — atualização de algo que a pessoa já iniciou (ex: lembrete pra quem já se inscreveu)</option>
+            <option value="authentication">Authentication — código de verificação (gerado pela Meta, sem texto customizado)</option>
+          </select>
+          <div class="dica" id="cw-categoria-dica">Precisa vir da lista "Opt-in WhatsApp" — não use a base geral de clientes/leads pra Marketing.</div>
+
           <label for="cw-brief">Descreva o que a mensagem deve dizer</label>
           <input type="text" id="cw-brief" placeholder="ex: convidar quem já autorizou a garantir vaga na 4ª edição">
           <button type="button" id="cw-gerar-ia">✨ Gerar rascunho com IA</button>
@@ -1629,7 +1637,7 @@
     rows = rows || [];
     $('campanhas-wa-lista').innerHTML = rows.map(function(c){
       return '<tr>' +
-        '<td><div class="cp-nome">' + esc(c.nome) + '</div><div class="cp-assunto">template: ' + esc(c.template_nome) + ' (' + esc(c.idioma) + ')</div></td>' +
+        '<td><div class="cp-nome">' + esc(c.nome) + ' <span class="badge origem" style="font-size:9px;">' + esc(c.categoria || 'marketing') + '</span></div><div class="cp-assunto">template: ' + esc(c.template_nome) + ' (' + esc(c.idioma) + ')</div></td>' +
         '<td class="cp-cont"><b>' + c.enviados + '</b> enviados · ' + c.pendentes + ' pendentes' +
           (c.falhas ? ' · <span class="cp-falhas">' + c.falhas + ' falhas</span>' : '') + ' · ' + c.total + ' total</td>' +
         '<td style="text-align:right"><button type="button" class="cp-enviar wa-enviar" data-id="' + c.id + '"' + (c.pendentes ? '' : ' disabled') + '>' +
@@ -1664,11 +1672,11 @@
     }); });
   }
 
-  function campanhaWhatsappGerarTexto(brief){
+  function campanhaWhatsappGerarTexto(brief, categoria){
     return fetch(SUPABASE_URL + '/functions/v1/gerar-texto-whatsapp', {
       method: 'POST',
       headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ brief: brief })
+      body: JSON.stringify({ brief: brief, categoria: categoria })
     }).then(function(r){ return r.text().then(function(t){
       var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
       if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
@@ -1676,8 +1684,25 @@
     }); });
   }
 
+  var DICAS_CATEGORIA_WA = {
+    marketing: 'Precisa vir da lista "Opt-in WhatsApp" — não use a base geral de clientes/leads pra Marketing.',
+    utility: 'Só pra quem já tem uma relação ativa com aquilo (ex: já se inscreveu no evento) — não é pra reengajamento/convite frio.',
+    authentication: 'Código de verificação é gerado automaticamente pela Meta — não precisa (e não dá) pra escrever texto customizado aqui.'
+  };
+
+  $('cw-categoria').addEventListener('change', function(){
+    var cat = this.value;
+    $('cw-categoria-dica').textContent = DICAS_CATEGORIA_WA[cat] || '';
+    var ehAuth = cat === 'authentication';
+    $('cw-brief').disabled = ehAuth;
+    $('cw-gerar-ia').disabled = ehAuth;
+    $('cw-rascunho').disabled = ehAuth;
+    if (ehAuth) $('cw-rascunho').value = '';
+  });
+
   $('cw-gerar-ia').addEventListener('click', function(){
     var brief = $('cw-brief').value.trim();
+    var categoria = $('cw-categoria').value;
     if (!brief){
       $('cw-msg').style.color = 'var(--bordo-vivo)';
       $('cw-msg').textContent = 'Descreve o que a mensagem deve dizer antes de gerar.';
@@ -1685,7 +1710,7 @@
     }
     var btn = this; btn.disabled = true; btn.textContent = 'Gerando…';
     $('cw-msg').style.color = 'var(--soft)'; $('cw-msg').textContent = '';
-    campanhaWhatsappGerarTexto(brief).then(function(res){
+    campanhaWhatsappGerarTexto(brief, categoria).then(function(res){
       $('cw-rascunho').value = res.corpo || '';
       $('cw-msg').style.color = 'var(--verde)';
       $('cw-msg').textContent = 'Rascunho gerado — copie pro WhatsApp Manager e submeta pra aprovação antes de criar a campanha aqui.';
@@ -1698,6 +1723,7 @@
   $('form-campanha-whatsapp').addEventListener('submit', function(e){
     e.preventDefault();
     var nome = $('cw-nome').value.trim();
+    var categoria = $('cw-categoria').value;
     var templateNome = $('cw-template').value.trim();
     var idioma = $('cw-idioma').value.trim() || 'pt_BR';
     var variavelNome = $('cw-variavel-nome').checked;
@@ -1716,7 +1742,7 @@
         btn.disabled = false; btn.textContent = 'Criar campanha e importar contatos';
         return;
       }
-      apiPost('campanhas_whatsapp', { nome: nome, template_nome: templateNome, idioma: idioma, variavel_nome: variavelNome, criado_por: estado.eu.id }, { Prefer: 'return=representation' })
+      apiPost('campanhas_whatsapp', { nome: nome, categoria: categoria, template_nome: templateNome, idioma: idioma, variavel_nome: variavelNome, criado_por: estado.eu.id }, { Prefer: 'return=representation' })
         .then(function(rows){
           var campanha = rows && rows[0];
           if (!campanha) throw new Error('não criou a campanha');
