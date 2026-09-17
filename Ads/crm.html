@@ -370,6 +370,8 @@
       <label for="cp-corpo">Corpo do e-mail</label>
       <textarea id="cp-corpo" placeholder="pode usar {{nome}} pra personalizar" required></textarea>
       <div class="dica">{{nome}} no assunto ou no corpo é trocado pelo nome de cada contato na hora do envio.</div>
+      <button type="button" id="cp-salvar-edicao" disabled>💾 Salvar edição no histórico</button>
+      <div class="dica">Fica ativo depois de gerar ou clicar em "Usar" num texto do histórico — edita à vontade e clica aqui pra atualizar aquele mesmo registro, sem criar um novo.</div>
       <button type="button" id="cp-optin-cta">📱 Inserir CTA de opt-in WhatsApp</button>
       <div class="dica">Adiciona no fim do texto um link pronto pra quem quiser também receber novidades por WhatsApp — quem clicar e mandar a mensagem fica registrado como "optou" (ver seção "Opt-in WhatsApp" mais abaixo).</div>
 
@@ -658,6 +660,22 @@
     dbg('apiPost ' + pathq);
     return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { method:'POST', headers: apiHeaders(extra), body: JSON.stringify(body) })
       .then(function(r){ dbg('apiPost ' + pathq + ' -> HTTP ' + r.status); return r.text().then(function(t){
+        if (!r.ok) throw new Error((t && t.slice(0,200)) || ('HTTP ' + r.status));
+        return t ? JSON.parse(t) : null;
+      }); });
+  }
+  function apiPatch(pathq, body, extra){
+    dbg('apiPatch ' + pathq);
+    return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { method:'PATCH', headers: apiHeaders(extra), body: JSON.stringify(body) })
+      .then(function(r){ dbg('apiPatch ' + pathq + ' -> HTTP ' + r.status); return r.text().then(function(t){
+        if (!r.ok) throw new Error((t && t.slice(0,200)) || ('HTTP ' + r.status));
+        return t ? JSON.parse(t) : null;
+      }); });
+  }
+  function apiDelete(pathq, extra){
+    dbg('apiDelete ' + pathq);
+    return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { method:'DELETE', headers: apiHeaders(extra) })
+      .then(function(r){ dbg('apiDelete ' + pathq + ' -> HTTP ' + r.status); return r.text().then(function(t){
         if (!r.ok) throw new Error((t && t.slice(0,200)) || ('HTTP ' + r.status));
         return t ? JSON.parse(t) : null;
       }); });
@@ -1290,6 +1308,12 @@
   }
 
   var geracoesIA = [];
+  var geracaoAtualId = null;
+
+  function marcarGeracaoAtual(id){
+    geracaoAtualId = id || null;
+    $('cp-salvar-edicao').disabled = !geracaoAtualId;
+  }
 
   function carregarGeracoesIA(){
     return apiGet('campanha_ia_geracoes?select=id,criado_em,brief,assunto,corpo&order=criado_em.desc&limit=50')
@@ -1304,7 +1328,10 @@
       return '<tr>' +
         '<td><div class="cp-nome">' + esc(g.assunto) + '</div><div class="cp-assunto">' + esc(g.brief) + '</div></td>' +
         '<td class="cp-cont">' + fmtQuando(g.criado_em) + '</td>' +
-        '<td style="text-align:right"><button type="button" class="cp-enviar geracao-usar" data-id="' + g.id + '">Usar</button></td>' +
+        '<td style="text-align:right;white-space:nowrap">' +
+          '<button type="button" class="cp-enviar geracao-usar" data-id="' + g.id + '">Usar</button> ' +
+          '<button type="button" class="cp-enviar geracao-apagar" data-id="' + g.id + '" style="background:#fff;color:var(--bordo-vivo);border:1px solid var(--linha);">Apagar</button>' +
+        '</td>' +
       '</tr>';
     }).join('') || '<tr><td>Nenhum texto gerado ainda.</td></tr>';
 
@@ -1315,7 +1342,23 @@
         $('cp-brief').value = g.brief;
         $('cp-assunto').value = g.assunto;
         $('cp-corpo').value = g.corpo;
+        marcarGeracaoAtual(g.id);
         $('cp-nome').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    $('geracoes-ia-lista').querySelectorAll('.geracao-apagar').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if (!confirm('Apagar esse texto do histórico? Não dá pra desfazer.')) return;
+        var id = btn.dataset.id;
+        btn.disabled = true;
+        apiDelete('campanha_ia_geracoes?id=eq.' + id).then(function(){
+          if (String(geracaoAtualId) === String(id)) marcarGeracaoAtual(null);
+          return carregarGeracoesIA();
+        }).catch(function(err){
+          alert('Erro ao apagar: ' + err.message);
+          btn.disabled = false;
+        });
       });
     });
   }
@@ -1385,7 +1428,9 @@
       $('cp-corpo').value = res.corpo || '';
       $('cp-msg').style.color = 'var(--verde)';
       $('cp-msg').textContent = 'Rascunho gerado — revise antes de criar a campanha.';
-      carregarGeracoesIA();
+      carregarGeracoesIA().then(function(){
+        if (geracoesIA[0]) marcarGeracaoAtual(geracoesIA[0].id);
+      });
     }).catch(function(err){
       $('cp-msg').style.color = 'var(--bordo-vivo)';
       $('cp-msg').textContent = 'Erro ao gerar: ' + err.message;
@@ -1499,6 +1544,26 @@
 
   // ---------- CTA de opt-in WhatsApp no corpo do e-mail ----------
   var LINK_OPTIN_WHATSAPP = 'https://wa.me/5511934873737?text=Quero%20receber%20novidades%20do%20Congresso%20C%C3%A2ncer%202026%20pelo%20WhatsApp%20da%20Novva%20Sa%C3%BAde%20Integrativa';
+  $('cp-salvar-edicao').addEventListener('click', function(){
+    if (!geracaoAtualId) return;
+    var assunto = $('cp-assunto').value.trim();
+    var corpo = $('cp-corpo').value.trim();
+    var brief = $('cp-brief').value.trim();
+    if (!assunto || !corpo) return;
+    var btn = this; btn.disabled = true; btn.textContent = 'Salvando…';
+    apiPatch('campanha_ia_geracoes?id=eq.' + geracaoAtualId, { brief: brief, assunto: assunto, corpo: corpo })
+      .then(function(){
+        $('cp-msg').style.color = 'var(--verde)';
+        $('cp-msg').textContent = 'Edição salva no histórico.';
+        return carregarGeracoesIA();
+      })
+      .catch(function(err){
+        $('cp-msg').style.color = 'var(--bordo-vivo)';
+        $('cp-msg').textContent = 'Erro ao salvar: ' + err.message;
+      })
+      .finally(function(){ btn.disabled = false; btn.textContent = '💾 Salvar edição no histórico'; });
+  });
+
   $('cp-optin-cta').addEventListener('click', function(){
     var atual = $('cp-corpo').value;
     var linha = 'Quer ficar por dentro das novidades do Congresso Câncer também pelo WhatsApp? Clique no link abaixo e envie a mensagem que já vem pronta — ao enviá-la, você autoriza a Novva Saúde Integrativa a te mandar comunicações e novidades do Congresso Câncer por WhatsApp. É rapidinho, e você pode parar de receber quando quiser:\n' + LINK_OPTIN_WHATSAPP;
