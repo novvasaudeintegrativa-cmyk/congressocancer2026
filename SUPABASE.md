@@ -4775,3 +4775,84 @@ notify pgrst, 'reload schema';
 traço promocional (senão a Meta reclassifica o template inteiro pra
 Marketing); **Authentication** retorna erro — esse tipo de template é
 gerado automaticamente pela Meta, sem texto customizado.
+
+### 25.7. Sinalizar no Kanban quem respondeu vindo de campanha WhatsApp
+
+**Por quê (17/09/2026):** já sabemos quem recebeu cada campanha
+(`campanha_whatsapp_contatos`) — quando essa pessoa responde, dá pra
+cruzar o número e marcar isso no `lead_status`, mostrando um selo no
+card do Kanban.
+
+```sql
+alter table public.lead_status
+  add column if not exists campanha_whatsapp_id bigint references public.campanhas_whatsapp(id);
+
+create or replace function public.rpc_crm_pipeline()
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(row_to_json(t) order by t.captado_em desc nulls last), '[]'::json)
+  from (
+    select
+      s.whatsapp,
+      l.nome, l.email, l.profissao, l.nivel, l.pontuacao,
+      l.utm_source, l.utm_campaign,
+      coalesce(s.criado_em, l.captado_em) as captado_em,
+      coalesce(s.etapa, 'novo') as etapa,
+      s.nota, coalesce(s.urgente, false) as urgente, s.atribuido_a,
+      pa.nome as atribuido_nome,
+      s.atualizado_em,
+      cw.nome as campanha_whatsapp_nome,
+      (select max(
+         case e.event
+           when 'VideoComplete' then 100
+           when 'VideoProgress' then (e.props->>'percent')::int
+           when 'VideoPlay' then 0
+           else null
+         end)
+       from public.events e
+       where e.visitor_id = l.visitor_id
+         and lower(coalesce(e.props->>'placement','')) = 'vsl'
+         and e.event in ('VideoPlay','VideoProgress','VideoComplete')
+      ) as vsl_progress
+    from public.lead_status s
+    left join public.crm_leads l on public.wa_norm(l.whatsapp) = public.wa_norm(s.whatsapp)
+    left join public.perfis pa on pa.id = s.atribuido_a
+    left join public.campanhas_whatsapp cw on cw.id = s.campanha_whatsapp_id
+    where exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+  ) t;
+$$;
+
+notify pgrst, 'reload schema';
+```
+
+No `whatsapp-webhook`, dentro de `CRIS_INSTRUCOES` (ver §18.4/§24.2),
+adiciona a função (logo abaixo de `registrarOptinWhatsapp`):
+
+```ts
+async function marcarOrigemCampanha(numero: string) {
+  try {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/campanha_whatsapp_contatos?numero=eq.${numero}&status=eq.enviado&select=campanha_id&order=enviado_em.desc&limit=1`,
+      { headers: svcHeaders },
+    );
+    const rows = await r.json();
+    const campanhaId = rows && rows[0] && rows[0].campanha_id;
+    if (!campanhaId) return;
+    await fetch(`${SUPABASE_URL}/rest/v1/lead_status?on_conflict=whatsapp`, {
+      method: "POST",
+      headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify([{ whatsapp: numero, campanha_whatsapp_id: campanhaId }]),
+    });
+  } catch (e) { console.error("origem campanha:", e); }
+}
+```
+
+E no loop principal (`Deno.serve`), logo abaixo de
+`await registrarOptinWhatsapp(m.from, texto);`:
+
+```ts
+        await marcarOrigemCampanha(m.from);
+```
+
+No `Ads/crm.html`, o card do lead ganha um selo azul **"📣 [nome da
+campanha]"** (classe `.badge.campanha-wa`) quando `l.campanha_whatsapp_nome`
+vem preenchido — ao lado dos selos de nível/VSL/origem já existentes.
