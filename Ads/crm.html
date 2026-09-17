@@ -73,7 +73,7 @@
 
   .card{background:#fbfaf8;border:1px solid var(--linha);border-radius:10px;padding:8px 9px;margin-bottom:6px;}
   .card-head{display:flex;align-items:center;gap:7px;}
-  .avatar{width:24px;height:24px;min-width:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;line-height:1;flex-shrink:0;}
+  .avatar{width:24px;height:24px;min-width:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--tit);font-weight:800;font-size:11px;line-height:1;flex-shrink:0;}
   .card.urg{border-color:var(--bordo-vivo);box-shadow:0 0 0 1px var(--bordo-vivo) inset;}
   .card-head .info{min-width:0;flex:1;}
   .card .nome{font-family:var(--tit);font-weight:800;font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -111,6 +111,7 @@
   .vazio-col{font-size:11px;color:var(--faint);text-align:center;padding:14px 4px;}
   .btn-ver-mais{width:100%;font-family:var(--tit);font-weight:700;font-size:10.5px;letter-spacing:.02em;text-transform:uppercase;background:#fff;border:1px dashed var(--linha);color:var(--soft);padding:7px;border-radius:8px;cursor:pointer;margin-top:2px;}
   .btn-ver-mais:hover{border-color:var(--bordo);color:var(--bordo);}
+  .dot-urgente{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--bordo-vivo);vertical-align:middle;}
 
   .aviso{background:#faf1f0;border:1px dashed var(--bordo-vivo);border-radius:12px;padding:12px 15px;font-size:12.5px;color:var(--bordo);margin-bottom:14px;}
   .foot{text-align:center;color:var(--faint);font-size:11px;margin-top:20px;}
@@ -342,7 +343,7 @@
         <option value="avancado">Avançado</option>
       </select>
       <input type="search" id="q-busca" placeholder="buscar por nome…">
-      <button type="button" id="q-exportar" class="btn-atualizar">⬇ Exportar CSV</button>
+      <button type="button" id="q-exportar" class="btn-atualizar">Exportar CSV</button>
     </div>
     <div class="quiz-tabela-wrap">
       <table class="quiz-tabela">
@@ -387,7 +388,7 @@
 
           <label for="cp-brief">Descreva o que o e-mail deve dizer</label>
           <input type="text" id="cp-brief" placeholder="ex: convidar quem comprou em 2025 a garantir vaga na edição 2026 com condição especial de quem já é da casa">
-          <button type="button" id="cp-gerar-ia">✨ Gerar com IA</button>
+          <button type="button" id="cp-gerar-ia">Gerar com IA</button>
 
           <label for="cp-assunto">Assunto</label>
           <input type="text" id="cp-assunto" required>
@@ -395,14 +396,14 @@
           <label for="cp-corpo">Corpo do e-mail</label>
           <textarea id="cp-corpo" placeholder="pode usar {{nome}} pra personalizar" required></textarea>
           <div class="dica">{{nome}} no assunto ou no corpo é trocado pelo nome de cada contato na hora do envio.</div>
-          <button type="button" id="cp-salvar-edicao" disabled>💾 Salvar edição no histórico</button>
+          <button type="button" id="cp-salvar-edicao" disabled>Salvar edição no histórico</button>
           <div class="dica">Fica ativo depois de gerar ou clicar em "Usar" num texto do histórico — edita à vontade e clica aqui pra atualizar aquele mesmo registro, sem criar um novo.</div>
-          <button type="button" id="cp-optin-cta">📱 Inserir CTA de opt-in WhatsApp</button>
+          <button type="button" id="cp-optin-cta">Inserir CTA de opt-in WhatsApp</button>
           <div class="dica">Adiciona no fim do texto um link pronto pra quem quiser também receber novidades por WhatsApp — quem clicar e mandar a mensagem fica registrado como "optou" (ver "Opt-in WhatsApp" ao lado).</div>
 
           <label for="cp-teste-email">E-mail de teste (manda o assunto/corpo atual pra conferir antes de criar a campanha)</label>
           <input type="email" id="cp-teste-email" placeholder="seu-email@novvasaudeintegrativa.com.br">
-          <button type="button" id="cp-teste-btn">📨 Enviar teste</button>
+          <button type="button" id="cp-teste-btn">Enviar teste</button>
           <div class="cp-msg" id="cp-teste-msg"></div>
 
           <label for="cp-arquivo">Lista de contatos (CSV com colunas nome, email, lote)</label>
@@ -443,13 +444,13 @@
 
           <label for="cw-brief">Descreva o que a mensagem deve dizer</label>
           <input type="text" id="cw-brief" placeholder="ex: convidar quem já autorizou a garantir vaga na 4ª edição">
-          <button type="button" id="cw-gerar-ia">✨ Gerar rascunho com IA</button>
+          <button type="button" id="cw-gerar-ia">Gerar rascunho com IA</button>
 
           <label for="cw-rascunho">Rascunho (copie isso pro campo de corpo do template no WhatsApp Manager)</label>
           <textarea id="cw-rascunho" placeholder="use {{1}} pro nome do contato"></textarea>
           <div class="dica">Depois de aprovado no WhatsApp Manager, volta aqui e preenche os campos abaixo com o nome exato do template.</div>
 
-          <label for="cw-template-select">Escolher template (carregado direto da Meta) <button type="button" id="cw-template-atualizar" class="btn-atualizar" style="margin-left:6px;">🔄 Atualizar lista</button></label>
+          <label for="cw-template-select">Escolher template (carregado direto da Meta) <button type="button" id="cw-template-atualizar" class="btn-atualizar" style="margin-left:6px;">Atualizar lista</button></label>
           <select id="cw-template-select">
             <option value="">— clique em "Atualizar lista" —</option>
           </select>
@@ -466,7 +467,7 @@
           <label for="cw-teste-numero">Número de teste (manda o template atual, com o nome do template já aprovado acima)</label>
           <input type="text" id="cw-teste-numero" placeholder="ex: 5511999999999 (com DDI e DDD)">
           <input type="text" id="cw-teste-nome" placeholder="nome pra usar no {{1}} do teste (ex: seu nome)">
-          <button type="button" id="cw-teste-btn">📨 Enviar teste</button>
+          <button type="button" id="cw-teste-btn">Enviar teste</button>
           <div class="cp-msg" id="cw-teste-msg"></div>
 
           <label for="cw-arquivo">Lista de contatos (CSV com colunas numero, nome, lote)</label>
@@ -482,7 +483,7 @@
         <div class="sec-crm"><span>Opt-in WhatsApp</span><span class="cont" id="optin-cont"></span></div>
         <div class="aviso">Gente que clicou no CTA de opt-in do e-mail e mandou a mensagem pelo WhatsApp — só quem está aqui pode entrar numa campanha de marketing por WhatsApp.</div>
         <div class="filtros">
-          <button type="button" id="optin-exportar" class="btn-atualizar">⬇ Exportar CSV</button>
+          <button type="button" id="optin-exportar" class="btn-atualizar">Exportar CSV</button>
         </div>
         <div class="quiz-tabela-wrap">
           <table class="quiz-tabela">
@@ -493,7 +494,7 @@
       </div>
 
       <div id="view-qualidade-whatsapp" hidden style="margin-top:26px;">
-        <div class="sec-crm"><span>Qualidade do WhatsApp</span><button type="button" id="qw-checar" class="btn-atualizar">🔍 Checar agora</button></div>
+        <div class="sec-crm"><span>Qualidade do WhatsApp</span><button type="button" id="qw-checar" class="btn-atualizar">Checar agora</button></div>
         <div class="aviso">Monitora a nota de qualidade do número que a Cris usa (a mesma dos vendedores) — cai antes de virar restrição/banimento. Não é estimativa nossa, vem direto da Meta.</div>
         <div id="qw-atual" class="qw-atual">Nenhuma checagem ainda — clica em "Checar agora".</div>
         <div class="campanhas-tabela-wrap">
@@ -511,7 +512,7 @@
     </div>
   </div>
 
-  <p class="foot"><button type="button" id="btn-notif" class="btn-atualizar">🔔 Ativar notificações neste aparelho</button></p>
+  <p class="foot"><button type="button" id="btn-notif" class="btn-atualizar">Ativar notificações neste aparelho</button></p>
 
   <p class="foot">CRM Novva · Fase 1 — <a href="novva-ads.html">voltar ao painel</a></p>
 </div>
@@ -544,6 +545,53 @@
   var VAPID_PUBLIC = 'BGEEfwa8xAK4IW_Gfx7M6fuoo-F6ykcpIaw7tehbgfbgKEdQoeuaYv7bRzhYH6XYYU-_V0zZRE7i9sPWmG6Ubf0';
 
   var $ = function(id){ return document.getElementById(id); };
+
+  // ---------- ícones (Lucide, inline SVG — sem emoji, sem CDN) ----------
+  var ICONES_SVG = {
+    mail: '<path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/>',
+    'message-circle': '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>',
+    megaphone: '<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>',
+    'edit-3': '<path d="M13 21h8"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>',
+    'user-plus': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    paperclip: '<path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/>',
+    user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    bell: '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
+    download: '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
+    'refresh-cw': '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+    sparkles: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
+    send: '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+    save: '<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/>',
+    search: '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
+    smartphone: '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
+    film: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/>',
+    cpu: '<path d="M12 20v2"/><path d="M12 2v2"/><path d="M17 20v2"/><path d="M17 2v2"/><path d="M2 12h2"/><path d="M2 17h2"/><path d="M2 7h2"/><path d="M20 12h2"/><path d="M20 17h2"/><path d="M20 7h2"/><path d="M7 20v2"/><path d="M7 2v2"/><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/>',
+    'alert-circle': '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'
+  };
+  function ic(nome, tam){
+    tam = tam || 14;
+    return '<svg width="' + tam + '" height="' + tam + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0">' + (ICONES_SVG[nome] || '') + '</svg>';
+  }
+
+  // botões estáticos que já existem no HTML — troca o texto com emoji pelo ícone
+  [
+    ['q-exportar', 'download', 'Exportar CSV'],
+    ['cp-gerar-ia', 'sparkles', 'Gerar com IA'],
+    ['cp-salvar-edicao', 'save', 'Salvar edição no histórico'],
+    ['cp-optin-cta', 'smartphone', 'Inserir CTA de opt-in WhatsApp'],
+    ['cp-teste-btn', 'send', 'Enviar teste'],
+    ['cw-gerar-ia', 'sparkles', 'Gerar rascunho com IA'],
+    ['cw-template-atualizar', 'refresh-cw', 'Atualizar lista'],
+    ['cw-teste-btn', 'send', 'Enviar teste'],
+    ['optin-exportar', 'download', 'Exportar CSV'],
+    ['qw-checar', 'search', 'Checar agora'],
+    ['btn-notif', 'bell', 'Ativar notificações neste aparelho']
+  ].forEach(function(x){
+    var el = $(x[0]);
+    if (el) el.innerHTML = ic(x[1]) + ' ' + x[2];
+  });
 
   function dbg(m){ try { console.log('[crm]', m); } catch(e){} }
   window.addEventListener('unhandledrejection', function(ev){
@@ -883,7 +931,7 @@
     var vslBadge = '';
     if (l.vsl_progress != null){
       var vslTxt = l.vsl_progress >= 100 ? 'VSL assistida' : (l.vsl_progress <= 0 ? 'VSL iniciada' : 'VSL ' + l.vsl_progress + '%');
-      vslBadge = '<span class="badge vsl" title="Progresso assistido da VSL">🎬 ' + vslTxt + '</span>';
+      vslBadge = '<span class="badge vsl" title="Progresso assistido da VSL">' + ic('film', 10) + ' ' + vslTxt + '</span>';
     }
     var badges = nivelBadge + vslBadge + tempoRespostaBadge(l) + (origem ? '<span class="badge origem">' + esc(origem) + '</span>' : '');
     var ICON_WA = '<svg class="ic-wa" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm0 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 012.41 5.82c0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.4-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.188 8.188 0 01-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23zm-4.55 4.72c-.15 0-.4.06-.6.29-.21.23-.8.78-.8 1.91s.82 2.22.94 2.37c.11.15 1.6 2.57 3.97 3.5 1.96.77 2.36.62 2.78.58.42-.04 1.36-.55 1.55-1.09.19-.53.19-.99.14-1.09-.06-.1-.21-.15-.44-.27-.23-.11-1.36-.67-1.57-.75-.21-.08-.36-.11-.51.12-.15.23-.59.75-.72.9-.13.15-.26.17-.49.06-.23-.12-.96-.35-1.83-1.13-.68-.6-1.13-1.35-1.27-1.58-.13-.23-.01-.35.1-.47.11-.11.23-.27.35-.4.11-.13.15-.23.23-.38.08-.15.04-.29-.02-.4-.06-.11-.51-1.24-.71-1.7-.19-.45-.38-.39-.51-.4h-.44z"/></svg>';
@@ -891,9 +939,9 @@
     // ícone de responsável: muda de acordo com o estado (sem dono / é você / é outra pessoa)
     var respIcon;
     if (!l.atribuido_a){
-      respIcon = '<button type="button" class="icon-btn resp-icon sem-dono" data-w="' + esc(l.whatsapp || '') + '" title="Sem responsável — clique pra assumir">🙋</button>';
+      respIcon = '<button type="button" class="icon-btn resp-icon sem-dono" data-w="' + esc(l.whatsapp || '') + '" title="Sem responsável — clique pra assumir">' + ic('user-plus', 12) + '</button>';
     } else if (l.atribuido_a === estado.eu.id){
-      respIcon = '<button type="button" class="icon-btn resp-icon meu" data-w="' + esc(l.whatsapp || '') + '" title="Responsável: você">✅</button>';
+      respIcon = '<button type="button" class="icon-btn resp-icon meu" data-w="' + esc(l.whatsapp || '') + '" title="Responsável: você">' + ic('check', 12) + '</button>';
     } else {
       var inicial = (l.atribuido_nome || '?').trim().charAt(0).toUpperCase();
       respIcon = '<button type="button" class="icon-btn resp-icon outro" data-w="' + esc(l.whatsapp || '') + '" title="Responsável: ' + esc(l.atribuido_nome || '?') + '">' + inicial + '</button>';
@@ -908,10 +956,10 @@
       (badges ? '<div class="badges">' + badges + '</div>' : '') +
       '<div class="linha-acao acoes-rapidas">' +
         '<a class="icon-btn wa" href="https://wa.me/' + wpp + '" target="_blank" rel="noopener" title="Abrir no WhatsApp">' + ICON_WA + '</a>' +
-        (l.email ? '<button type="button" class="icon-btn btn-email" data-email="' + esc(l.email) + '" data-nome="' + esc(l.nome || '') + '" data-wpp="' + esc(wpp) + '" title="Enviar e-mail">✉️</button>' : '') +
-        (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="Ver conversa no CRM">💬</button>') +
-        (l.campanha_whatsapp_nome ? '<span class="icon-btn meta" title="Veio da campanha Meta: ' + esc(l.campanha_whatsapp_nome) + '">📣</span>' : '') +
-        (triar ? '' : '<button type="button" class="icon-btn btn-nota' + (l.nota ? ' tem-nota' : '') + '" title="' + (l.nota ? esc(l.nota) : 'Adicionar anotação') + '">📝</button>') +
+        (l.email ? '<button type="button" class="icon-btn btn-email" data-email="' + esc(l.email) + '" data-nome="' + esc(l.nome || '') + '" data-wpp="' + esc(wpp) + '" title="Enviar e-mail">' + ic('mail', 12) + '</button>' : '') +
+        (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="Ver conversa no CRM">' + ic('message-circle', 12) + '</button>') +
+        (l.campanha_whatsapp_nome ? '<span class="icon-btn meta" title="Veio da campanha Meta: ' + esc(l.campanha_whatsapp_nome) + '">' + ic('megaphone', 12) + '</span>' : '') +
+        (triar ? '' : '<button type="button" class="icon-btn btn-nota' + (l.nota ? ' tem-nota' : '') + '" title="' + (l.nota ? esc(l.nota) : 'Adicionar anotação') + '">' + ic('edit-3', 12) + '</button>') +
         (triar ? '' : respIcon) +
       '</div>' +
       (triar ? '' : '<textarea class="nota" placeholder="anotação…" hidden>' + esc(l.nota || '') + '</textarea>') +
@@ -1003,17 +1051,11 @@
     for (var i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
     return AVATAR_CORES[h % AVATAR_CORES.length];
   }
-  var NOMES_MASCULINOS_TERMINADOS_EM_A = ['luca','joshua','saulo','elisha','nikita','ilya','anda'];
-  function generoPorNome(nome){
-    var primeiro = nome.trim().split(/\s+/)[0].toLowerCase();
-    if (NOMES_MASCULINOS_TERMINADOS_EM_A.indexOf(primeiro) !== -1) return 'm';
-    return /a$/.test(primeiro) ? 'f' : 'm';
-  }
   function avatarHtml(nome, wpp){
     var seed = wpp || nome || '?';
     var cor = avatarCor(seed);
-    var emoji = nome ? (generoPorNome(nome) === 'f' ? '👩' : '👨') : '👤';
-    return '<div class="avatar" style="background:' + cor + '">' + emoji + '</div>';
+    var inicial = nome ? esc(nome.trim().charAt(0).toUpperCase()) : ic('user', 13);
+    return '<div class="avatar" style="background:' + cor + '">' + inicial + '</div>';
   }
   function fmtQuando(iso){
     if (!iso) return '';
@@ -1036,11 +1078,11 @@
     if (l.respondido_em){
       var ms = new Date(l.respondido_em) - new Date(l.ultima_recebida_em);
       if (ms < 0) return '';
-      return '<span class="badge tempo-ok" title="Tempo até a última resposta">⏱ respondido em ' + fmtDuracao(ms) + '</span>';
+      return '<span class="badge tempo-ok" title="Tempo até a última resposta">' + ic('clock', 9) + ' respondido em ' + fmtDuracao(ms) + '</span>';
     }
     var msEspera = Date.now() - new Date(l.ultima_recebida_em).getTime();
     var classe = msEspera > 60 * 60 * 1000 ? 'tempo-urgente' : 'tempo-espera';
-    return '<span class="badge ' + classe + '" title="Aguardando resposta">⏱ aguardando há ' + fmtDuracao(msEspera) + '</span>';
+    return '<span class="badge ' + classe + '" title="Aguardando resposta">' + ic('clock', 9) + ' aguardando há ' + fmtDuracao(msEspera) + '</span>';
   }
 
   var urgentesConversa = {};
@@ -1085,7 +1127,7 @@
       return '<div class="inbox-item' + (n===conversaAtual?' on':'') + '" data-n="' + n + '">' +
         avatarHtml(null, n) +
         '<div class="inbox-item-corpo">' +
-          '<div class="num">' + (urgentesConversa[n] ? '🔴 ' : '') + '+' + esc(n) + '</div>' +
+          '<div class="num">' + (urgentesConversa[n] ? '<span class="dot-urgente" title="Urgente"></span> ' : '') + '+' + esc(n) + '</div>' +
           '<div class="prev">' + (u.direcao==='enviada' ? (u.enviado_por ? 'Você: ' : 'Cris: ') : '') + esc(prev) + '</div>' +
           '<div class="qnd">' + fmtQuando(u.criado_em) + ' · ' + arr.length + ' msg</div>' +
         '</div>' +
@@ -1124,7 +1166,7 @@
                 ? '<a href="' + esc(m.midia_url) + '" target="_blank" rel="noopener"><img class="bolha-img" src="' + esc(m.midia_url) + '" alt="imagem"></a>' + (m.texto ? '<div class="bolha-legenda">' + esc(m.texto) + '</div>' : '')
                 : (m.tipo === 'audio'
                     ? '<audio controls src="' + esc(m.midia_url) + '"></audio>'
-                    : '<a href="' + esc(m.midia_url) + '" target="_blank" rel="noopener">📎 abrir ' + esc(m.tipo || 'arquivo') + '</a>'))
+                    : '<a href="' + esc(m.midia_url) + '" target="_blank" rel="noopener">' + ic('paperclip') + ' abrir ' + esc(m.tipo || 'arquivo') + '</a>'))
             : esc(m.texto || '(' + (m.tipo || 'sem texto') + ')');
           return '<div class="bolha ' + (m.direcao==='enviada'?'env':'rec') + '">' +
             quem +
@@ -1193,8 +1235,8 @@
     if (!el) return;
     el.classList.toggle('humano', !ativa);
     el.innerHTML = ativa
-      ? '🤖 <b>Cris (IA) está respondendo essa conversa</b> — responda aqui embaixo pra assumir'
-      : '👤 <b>Você está no controle dessa conversa</b> <button type="button" id="btn-devolver">🤖 Devolver pra Cris</button>';
+      ? ic('cpu') + ' <b>Cris (IA) está respondendo essa conversa</b> — responda aqui embaixo pra assumir'
+      : ic('user') + ' <b>Você está no controle dessa conversa</b> <button type="button" id="btn-devolver">' + ic('cpu') + ' Devolver pra Cris</button>';
     var d = $('btn-devolver');
     if (d) d.addEventListener('click', function(){
       d.disabled = true;
@@ -1584,7 +1626,7 @@
     }).catch(function(err){
       $('cp-msg').style.color = 'var(--bordo-vivo)';
       $('cp-msg').textContent = 'Erro ao gerar: ' + err.message;
-    }).finally(function(){ btn.disabled = false; btn.textContent = '✨ Gerar com IA'; });
+    }).finally(function(){ btn.disabled = false; btn.innerHTML = ic('sparkles') + ' Gerar com IA'; });
   });
 
   $('cp-teste-btn').addEventListener('click', function(){
@@ -1612,7 +1654,7 @@
     }).catch(function(err){
       $('cp-teste-msg').style.color = 'var(--bordo-vivo)';
       $('cp-teste-msg').textContent = 'Erro: ' + err.message;
-    }).finally(function(){ btn.disabled = false; btn.textContent = '📨 Enviar teste'; });
+    }).finally(function(){ btn.disabled = false; btn.innerHTML = ic('send') + ' Enviar teste'; });
   });
 
   $('form-campanha').addEventListener('submit', function(e){
@@ -1752,7 +1794,7 @@
   function carregarTemplatesWhatsapp(){
     var sel = $('cw-template-select');
     var btn = $('cw-template-atualizar');
-    if (btn){ btn.disabled = true; btn.textContent = '🔄 Carregando…'; }
+    if (btn){ btn.disabled = true; btn.innerHTML = ic('refresh-cw') + ' Carregando…'; }
     sel.innerHTML = '<option value="">— carregando… —</option>';
     return fetch(SUPABASE_URL + '/functions/v1/whatsapp-templates-listar', {
       method: 'POST',
@@ -1764,7 +1806,7 @@
       return data;
     }); }).then(function(res){
       templatesWhatsapp = res.templates || [];
-      var rotulo = { APPROVED: '✅', PENDING: '⏳', REJECTED: '❌' };
+      var rotulo = { APPROVED: 'Aprovado', PENDING: 'Pendente', REJECTED: 'Rejeitado' };
       sel.innerHTML = '<option value="">— selecione —</option>' + templatesWhatsapp.map(function(t, i){
         return '<option value="' + i + '"' + (t.status !== 'APPROVED' ? ' disabled' : '') + '>' +
           (rotulo[t.status] || t.status) + ' ' + esc(t.nome) + ' (' + esc(t.categoria) + ', ' + esc(t.idioma) + ')</option>';
@@ -1774,7 +1816,7 @@
       sel.innerHTML = '<option value="">Erro ao carregar — digite manualmente abaixo</option>';
       console.error('templates whatsapp:', err);
     }).finally(function(){
-      if (btn){ btn.disabled = false; btn.textContent = '🔄 Atualizar lista'; }
+      if (btn){ btn.disabled = false; btn.innerHTML = ic('refresh-cw') + ' Atualizar lista'; }
     });
   }
 
@@ -1839,7 +1881,7 @@
     }).catch(function(err){
       $('cw-teste-msg').style.color = 'var(--bordo-vivo)';
       $('cw-teste-msg').textContent = 'Erro: ' + err.message;
-    }).finally(function(){ btn.disabled = false; btn.textContent = '📨 Enviar teste'; });
+    }).finally(function(){ btn.disabled = false; btn.innerHTML = ic('send') + ' Enviar teste'; });
   });
 
   var DICAS_CATEGORIA_WA = {
@@ -1875,7 +1917,7 @@
     }).catch(function(err){
       $('cw-msg').style.color = 'var(--bordo-vivo)';
       $('cw-msg').textContent = 'Erro ao gerar: ' + err.message;
-    }).finally(function(){ btn.disabled = false; btn.textContent = '✨ Gerar rascunho com IA'; });
+    }).finally(function(){ btn.disabled = false; btn.innerHTML = ic('sparkles') + ' Gerar rascunho com IA'; });
   });
 
   $('form-campanha-whatsapp').addEventListener('submit', function(e){
@@ -1979,7 +2021,7 @@
         $('cp-msg').style.color = 'var(--bordo-vivo)';
         $('cp-msg').textContent = 'Erro ao salvar: ' + err.message;
       })
-      .finally(function(){ btn.disabled = false; btn.textContent = '💾 Salvar edição no histórico'; });
+      .finally(function(){ btn.disabled = false; btn.innerHTML = ic('save') + ' Salvar edição no histórico'; });
   });
 
   $('cp-optin-cta').addEventListener('click', function(){
@@ -2076,7 +2118,7 @@
       return carregarQualidadeWhatsapp();
     }).catch(function(err){
       alert('Erro ao checar: ' + err.message);
-    }).finally(function(){ btn.disabled = false; btn.textContent = '🔍 Checar agora'; });
+    }).finally(function(){ btn.disabled = false; btn.innerHTML = ic('search') + ' Checar agora'; });
   });
 
   // sessão salva pelo supabase-js — lida direto do localStorage (getSession() pode travar)
@@ -2132,7 +2174,7 @@
           auth: json.keys.auth,
         }], { Prefer: 'resolution=merge-duplicates,return=minimal' });
       }).then(function(){
-        alert('Notificações ativadas neste aparelho! 🔔');
+        alert('Notificações ativadas neste aparelho!');
       }).catch(function(err){
         alert('Não deu pra ativar: ' + err.message);
       });
