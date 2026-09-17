@@ -4856,3 +4856,90 @@ E no loop principal (`Deno.serve`), logo abaixo de
 No `Ads/crm.html`, o card do lead ganha um selo azul **"📣 [nome da
 campanha]"** (classe `.badge.campanha-wa`) quando `l.campanha_whatsapp_nome`
 vem preenchido — ao lado dos selos de nível/VSL/origem já existentes.
+
+### 25.8. Edge Function `whatsapp-template-teste` (testar antes de criar a campanha)
+
+Mesma ideia do "Enviar teste" do e-mail (§21) — manda o template pra um
+número de teste usando os campos **atuais do formulário** (não precisa
+salvar a campanha antes).
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const URL_    = Deno.env.get("SUPABASE_URL")!;
+const ANON    = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SVC     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const WA_TOKEN        = Deno.env.get("WHATSAPP_PERMANENT_TOKEN")!;
+const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${userToken}` } });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
+async function ehGestor(uid: string) {
+  const r = await fetch(`${URL_}/rest/v1/perfis?id=eq.${uid}&select=papel,ativo`, { headers: svcHeaders });
+  const rows = await r.json();
+  const p = rows && rows[0];
+  return !!(p && p.ativo && p.papel === "gestor");
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method" }, 405);
+
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.replace(/^Bearer\s+/i, "");
+  const u = await quemChamou(token);
+  if (!u) return j({ erro: "não autenticado" }, 401);
+  if (!(await ehGestor(u.id))) return j({ erro: "só o gestor pode testar template" }, 403);
+
+  let body: any;
+  try { body = await req.json(); } catch { return j({ erro: "bad body" }, 400); }
+  const numero = String(body.numero || "").replace(/\D/g, "");
+  const templateNome = String(body.template_nome || "").trim();
+  const idioma = String(body.idioma || "pt_BR").trim();
+  const variavelNome = !!body.variavel_nome;
+  const nomeTeste = String(body.nome_teste || "").trim();
+  if (!numero || !templateNome) return j({ erro: "número e nome do template são obrigatórios" }, 400);
+
+  const components = variavelNome
+    ? [{ type: "body", parameters: [{ type: "text", text: nomeTeste || "Teste" }] }]
+    : [];
+
+  const r = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${WA_TOKEN}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      to: numero,
+      type: "template",
+      template: { name: templateNome, language: { code: idioma }, components },
+    }),
+  });
+  const rb = await r.json();
+  if (!r.ok) return j({ erro: rb.error?.message || "falha ao enviar" }, 502);
+
+  return j({ ok: true, wa_message_id: rb.messages?.[0]?.id ?? null });
+});
+```
+
+**Deploy.** Mantém **"Verify JWT with legacy secret" LIGADO**. Reusa
+`WHATSAPP_PERMANENT_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID` já existentes, sem
+secret nova.
+
+No `Ads/crm.html`: campos "Número de teste" + "nome pra usar no {{1}}"
+e botão **📨 Enviar teste**, logo depois do checkbox de variável no
+formulário de campanha WhatsApp — manda o template já aprovado (nome +
+idioma preenchidos no formulário) pro número informado.
