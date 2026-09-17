@@ -4943,3 +4943,80 @@ No `Ads/crm.html`: campos "Número de teste" + "nome pra usar no {{1}}"
 e botão **📨 Enviar teste**, logo depois do checkbox de variável no
 formulário de campanha WhatsApp — manda o template já aprovado (nome +
 idioma preenchidos no formulário) pro número informado.
+
+## 26. CRM — tempo de resposta no card do lead (Kanban)
+
+**Por quê (17/09/2026):** dá visibilidade de quão rápido a equipe (ou a
+Cris) está respondendo cada lead, direto no card, sem precisar abrir a
+conversa.
+
+```sql
+create or replace function public.rpc_crm_pipeline()
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(row_to_json(t) order by t.captado_em desc nulls last), '[]'::json)
+  from (
+    select
+      s.whatsapp,
+      l.nome, l.email, l.profissao, l.nivel, l.pontuacao,
+      l.utm_source, l.utm_campaign,
+      coalesce(s.criado_em, l.captado_em) as captado_em,
+      coalesce(s.etapa, 'novo') as etapa,
+      s.nota, coalesce(s.urgente, false) as urgente, s.atribuido_a,
+      pa.nome as atribuido_nome,
+      s.atualizado_em,
+      cw.nome as campanha_whatsapp_nome,
+      (select max(
+         case e.event
+           when 'VideoComplete' then 100
+           when 'VideoProgress' then (e.props->>'percent')::int
+           when 'VideoPlay' then 0
+           else null
+         end)
+       from public.events e
+       where e.visitor_id = l.visitor_id
+         and lower(coalesce(e.props->>'placement','')) = 'vsl'
+         and e.event in ('VideoPlay','VideoProgress','VideoComplete')
+      ) as vsl_progress,
+      (
+        select coalesce(m.wa_timestamp, m.criado_em)
+        from public.mensagens m
+        where public.wa_norm(m.lead_whatsapp) = public.wa_norm(s.whatsapp) and m.direcao = 'recebida'
+        order by coalesce(m.wa_timestamp, m.criado_em) desc
+        limit 1
+      ) as ultima_recebida_em,
+      (
+        select min(coalesce(m.wa_timestamp, m.criado_em))
+        from public.mensagens m
+        where public.wa_norm(m.lead_whatsapp) = public.wa_norm(s.whatsapp)
+          and m.direcao = 'enviada'
+          and coalesce(m.wa_timestamp, m.criado_em) >= (
+            select coalesce(m2.wa_timestamp, m2.criado_em)
+            from public.mensagens m2
+            where public.wa_norm(m2.lead_whatsapp) = public.wa_norm(s.whatsapp) and m2.direcao = 'recebida'
+            order by coalesce(m2.wa_timestamp, m2.criado_em) desc
+            limit 1
+          )
+      ) as respondido_em
+    from public.lead_status s
+    left join public.crm_leads l on public.wa_norm(l.whatsapp) = public.wa_norm(s.whatsapp)
+    left join public.perfis pa on pa.id = s.atribuido_a
+    left join public.campanhas_whatsapp cw on cw.id = s.campanha_whatsapp_id
+    where exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+  ) t;
+$$;
+
+notify pgrst, 'reload schema';
+```
+
+No `Ads/crm.html`, o card ganha um selo a mais:
+
+- **Verde** "⏱ respondido em Xmin/h" — quando já tem uma mensagem
+  `enviada` depois da última `recebida`. O tempo é a diferença entre as
+  duas.
+- **Amarelo** "⏱ aguardando há Xmin/h" — quando a última mensagem do
+  lead ainda não teve resposta, e faz menos de 1h.
+- **Vermelho** "⏱ aguardando há Xh/d" — mesma situação, mas já passou
+  de 1h esperando.
+
+Calculado com `fmtDuracao()`/`tempoRespostaBadge()` novos no JS, usando
+os campos `ultima_recebida_em`/`respondido_em` que a RPC devolve.
