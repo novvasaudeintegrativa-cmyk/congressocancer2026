@@ -101,13 +101,13 @@
   .icon-btn.wa:hover{background:var(--verde);color:#fff;}
   .icon-btn:hover{filter:brightness(.94);}
   .icon-btn.sm{width:18px;height:18px;font-size:9.5px;}
-  .card .nota-toggle{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:10.5px;color:var(--soft);cursor:pointer;min-width:0;}
-  .card .nota-toggle .txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
-  .card .nota-toggle .txt:empty::before{content:"+ anotação";color:var(--faint);font-style:italic;}
   .card .nota{width:100%;margin-top:5px;font-family:var(--corpo);font-size:11px;padding:5px 7px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--ink);resize:vertical;min-height:34px;}
-  .card .resp{font-size:9.5px;color:var(--faint);margin-top:4px;display:flex;align-items:center;gap:5px;}
-  .resp-nome{font-family:var(--tit);font-weight:800;font-size:10.5px;color:var(--bordo);}
-  .btn-assumir-resp{font-family:var(--tit);font-weight:800;font-size:9.5px;text-transform:uppercase;background:none;border:0;color:var(--bordo);text-decoration:underline;cursor:pointer;padding:0;}
+  .icon-btn.meta{background:rgba(47,111,158,.14);color:var(--azul);cursor:default;}
+  .icon-btn.btn-nota.tem-nota{background:rgba(201,139,31,.18);color:var(--dourado);}
+  .icon-btn.resp-icon.sem-dono{background:rgba(201,139,31,.16);color:var(--dourado);}
+  .icon-btn.resp-icon.meu{background:rgba(31,138,76,.14);color:var(--verde);}
+  .icon-btn.resp-icon.outro{background:#efe8e4;color:var(--soft);font-family:var(--tit);font-weight:800;font-size:10px;}
+  .card .sel-resp{width:100%;margin-top:5px;}
   .vazio-col{font-size:11px;color:var(--faint);text-align:center;padding:14px 4px;}
   .btn-ver-mais{width:100%;font-family:var(--tit);font-weight:700;font-size:10.5px;letter-spacing:.02em;text-transform:uppercase;background:#fff;border:1px dashed var(--linha);color:var(--soft);padding:7px;border-radius:8px;cursor:pointer;margin-top:2px;}
   .btn-ver-mais:hover{border-color:var(--bordo);color:var(--bordo);}
@@ -885,11 +885,19 @@
       var vslTxt = l.vsl_progress >= 100 ? 'VSL assistida' : (l.vsl_progress <= 0 ? 'VSL iniciada' : 'VSL ' + l.vsl_progress + '%');
       vslBadge = '<span class="badge vsl" title="Progresso assistido da VSL">🎬 ' + vslTxt + '</span>';
     }
-    var campanhaWaBadge = l.campanha_whatsapp_nome
-      ? '<span class="badge campanha-wa" title="Respondeu depois de receber esta campanha por WhatsApp">📣 ' + esc(l.campanha_whatsapp_nome) + '</span>'
-      : '';
-    var badges = nivelBadge + vslBadge + campanhaWaBadge + tempoRespostaBadge(l) + (origem ? '<span class="badge origem">' + esc(origem) + '</span>' : '');
+    var badges = nivelBadge + vslBadge + tempoRespostaBadge(l) + (origem ? '<span class="badge origem">' + esc(origem) + '</span>' : '');
     var ICON_WA = '<svg class="ic-wa" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm0 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 012.41 5.82c0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.4-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.188 8.188 0 01-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23zm-4.55 4.72c-.15 0-.4.06-.6.29-.21.23-.8.78-.8 1.91s.82 2.22.94 2.37c.11.15 1.6 2.57 3.97 3.5 1.96.77 2.36.62 2.78.58.42-.04 1.36-.55 1.55-1.09.19-.53.19-.99.14-1.09-.06-.1-.21-.15-.44-.27-.23-.11-1.36-.67-1.57-.75-.21-.08-.36-.11-.51.12-.15.23-.59.75-.72.9-.13.15-.26.17-.49.06-.23-.12-.96-.35-1.83-1.13-.68-.6-1.13-1.35-1.27-1.58-.13-.23-.01-.35.1-.47.11-.11.23-.27.35-.4.11-.13.15-.23.23-.38.08-.15.04-.29-.02-.4-.06-.11-.51-1.24-.71-1.7-.19-.45-.38-.39-.51-.4h-.44z"/></svg>';
+
+    // ícone de responsável: muda de acordo com o estado (sem dono / é você / é outra pessoa)
+    var respIcon;
+    if (!l.atribuido_a){
+      respIcon = '<button type="button" class="icon-btn resp-icon sem-dono" data-w="' + esc(l.whatsapp || '') + '" title="Sem responsável — clique pra assumir">🙋</button>';
+    } else if (l.atribuido_a === estado.eu.id){
+      respIcon = '<button type="button" class="icon-btn resp-icon meu" data-w="' + esc(l.whatsapp || '') + '" title="Responsável: você">✅</button>';
+    } else {
+      var inicial = (l.atribuido_nome || '?').trim().charAt(0).toUpperCase();
+      respIcon = '<button type="button" class="icon-btn resp-icon outro" data-w="' + esc(l.whatsapp || '') + '" title="Responsável: ' + esc(l.atribuido_nome || '?') + '">' + inicial + '</button>';
+    }
 
     c.innerHTML =
       '<div class="card-head">' + avatarHtml(l.nome, wpp) +
@@ -902,53 +910,44 @@
         '<a class="icon-btn wa" href="https://wa.me/' + wpp + '" target="_blank" rel="noopener" title="Abrir no WhatsApp">' + ICON_WA + '</a>' +
         (l.email ? '<button type="button" class="icon-btn btn-email" data-email="' + esc(l.email) + '" data-nome="' + esc(l.nome || '') + '" data-wpp="' + esc(wpp) + '" title="Enviar e-mail">✉️</button>' : '') +
         (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="Ver conversa no CRM">💬</button>') +
+        (l.campanha_whatsapp_nome ? '<span class="icon-btn meta" title="Veio da campanha Meta: ' + esc(l.campanha_whatsapp_nome) + '">📣</span>' : '') +
+        (triar ? '' : '<button type="button" class="icon-btn btn-nota' + (l.nota ? ' tem-nota' : '') + '" title="' + (l.nota ? esc(l.nota) : 'Adicionar anotação') + '">📝</button>') +
+        (triar ? '' : respIcon) +
       '</div>' +
-      '<div class="linha-acao">' +
-        (triar ? '' : '<select class="sel-etapa"></select>') +
-        (estado.ehGestor ? '<select class="sel-resp"></select>' : '') +
-      '</div>' +
-      (triar ? '' :
-        '<div class="nota-toggle"><span class="ic">📝</span><span class="txt">' + esc(l.nota || '') + '</span></div>' +
-        '<textarea class="nota" placeholder="anotação…" hidden>' + (l.nota || '') + '</textarea>') +
-      (triar ? '' :
-        (estado.ehGestor
-          ? (l.atribuido_a !== estado.eu.id ? '<div class="resp"><button type="button" class="btn-assumir-resp" data-w="' + esc(l.whatsapp || '') + '">assumir</button></div>' : '')
-          : '<div class="resp">' +
-              (l.atribuido_nome ? 'resp: <span class="resp-nome">' + esc(l.atribuido_nome) + '</span>' : 'sem responsável') +
-              (l.atribuido_a !== estado.eu.id ? ' <button type="button" class="btn-assumir-resp" data-w="' + esc(l.whatsapp || '') + '">assumir</button>' : '') +
-            '</div>'
-        ));
+      (triar ? '' : '<textarea class="nota" placeholder="anotação…" hidden>' + esc(l.nota || '') + '</textarea>') +
+      (estado.ehGestor && !triar ? '<select class="sel-resp" hidden></select>' : '');
 
-    // etapa
-    if (!triar){
-      var selE = c.querySelector('.sel-etapa');
-      ETAPAS.forEach(function(e){
-        var o = document.createElement('option');
-        o.value = e.id; o.textContent = e.rot;
-        if (e.id === l.etapa) o.selected = true;
-        selE.appendChild(o);
-      });
-      selE.addEventListener('change', function(){ upsertLead(l.whatsapp, { etapa: this.value }); });
-    }
-
-    // responsável (gestor)
+    // responsável (gestor pode reatribuir clicando no ícone; vendedor só assume se estiver livre)
     if (estado.ehGestor){
       var selR = c.querySelector('.sel-resp');
-      var o0 = document.createElement('option');
-      o0.value = ''; o0.textContent = triar ? 'escolher vendedor…' : 'sem responsável';
-      selR.appendChild(o0);
-      estado.vendedores.forEach(function(v){
-        var o = document.createElement('option');
-        o.value = v.id; o.textContent = v.nome + (v.papel === 'gestor' ? ' (gestor)' : '');
-        if (v.id === l.atribuido_a) o.selected = true;
-        selR.appendChild(o);
-      });
-      selR.addEventListener('change', function(){
-        var patch = { atribuido_a: this.value || null };
-        if (triar && this.value) patch.etapa = 'novo';
-        upsertLead(l.whatsapp, patch);
-      });
+      if (selR){
+        var o0 = document.createElement('option');
+        o0.value = ''; o0.textContent = 'sem responsável';
+        selR.appendChild(o0);
+        estado.vendedores.forEach(function(v){
+          var o = document.createElement('option');
+          o.value = v.id; o.textContent = v.nome + (v.papel === 'gestor' ? ' (gestor)' : '');
+          if (v.id === l.atribuido_a) o.selected = true;
+          selR.appendChild(o);
+        });
+        selR.addEventListener('change', function(){
+          upsertLead(l.whatsapp, { atribuido_a: this.value || null });
+        });
+        selR.addEventListener('blur', function(){ selR.hidden = true; });
+      }
     }
+    var respBtn = c.querySelector('.resp-icon');
+    if (respBtn) respBtn.addEventListener('click', function(){
+      if (estado.ehGestor){
+        var sel = c.querySelector('.sel-resp');
+        if (sel){ sel.hidden = false; sel.focus(); }
+        return;
+      }
+      if (!l.atribuido_a){
+        respBtn.disabled = true;
+        upsertLead(l.whatsapp, { atribuido_a: estado.eu.id }).catch(function(){ respBtn.disabled = false; });
+      }
+    });
 
     // ver conversa (pula pra seção Conversas e abre a thread desse número)
     var verConv = c.querySelector('.btn-ver-conversa');
@@ -964,26 +963,20 @@
       abrirModalEmail(this.dataset.email, this.dataset.nome, this.dataset.wpp);
     });
 
-    // assumir responsabilidade (informativo — sem trava, todo mundo pode ajudar)
-    var assumirResp = c.querySelector('.btn-assumir-resp');
-    if (assumirResp) assumirResp.addEventListener('click', function(){
-      assumirResp.disabled = true;
-      upsertLead(l.whatsapp, { atribuido_a: estado.eu.id }).catch(function(){ assumirResp.disabled = false; });
-    });
-
-    // nota (colapsada por padrão — clica pra abrir, salva ao sair do campo)
+    // nota (ícone abre o campo, salva e fecha ao sair)
     var nota = c.querySelector('.nota');
-    var notaToggle = c.querySelector('.nota-toggle');
-    if (notaToggle && nota) notaToggle.addEventListener('click', function(){
-      notaToggle.hidden = true;
-      nota.hidden = false;
-      nota.focus();
+    var btnNota = c.querySelector('.btn-nota');
+    if (btnNota && nota) btnNota.addEventListener('click', function(){
+      nota.hidden = !nota.hidden;
+      if (!nota.hidden) nota.focus();
     });
     if (nota) nota.addEventListener('blur', function(){
       var novo = this.value.trim();
-      notaToggle.querySelector('.txt').textContent = novo;
       nota.hidden = true;
-      notaToggle.hidden = false;
+      if (btnNota){
+        btnNota.classList.toggle('tem-nota', !!novo);
+        btnNota.title = novo || 'Adicionar anotação';
+      }
       if (novo !== (l.nota || '')) upsertLead(l.whatsapp, { nota: novo || null });
     });
 
