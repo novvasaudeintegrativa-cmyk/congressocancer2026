@@ -202,6 +202,14 @@
   .form-campanha button:disabled{opacity:.5;cursor:default;}
   .cp-msg{font-size:12px;color:var(--soft);margin-top:10px;}
 
+  /* ---- qualidade whatsapp ---- */
+  .qw-atual{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--soft);}
+  .qw-badge{font-family:var(--tit);font-weight:800;font-size:12px;letter-spacing:.03em;text-transform:uppercase;padding:6px 14px;border-radius:999px;}
+  .qw-badge.green{background:rgba(31,138,76,.14);color:var(--verde);}
+  .qw-badge.yellow{background:rgba(201,139,31,.16);color:var(--dourado);}
+  .qw-badge.red{background:rgba(185,45,61,.14);color:var(--bordo-vivo);}
+  .qw-badge.na{background:#efe8e4;color:var(--soft);}
+
   /* ---- modificar senha ---- */
   #painel-senha{margin-bottom:16px;}
   .form-senha{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:12px 14px;}
@@ -399,6 +407,15 @@
     <div class="aviso">Estimativa calculada a partir dos tokens reais de cada chamada (Cris no WhatsApp + Gerar com IA nas campanhas), pelo preço do Claude Haiku 4.5. Não é o saldo oficial da conta Anthropic — isso só aparece no console.anthropic.com.</div>
     <div class="campanhas-tabela-wrap">
       <table class="campanhas-tabela"><tbody id="custo-ia-lista"></tbody></table>
+    </div>
+  </div>
+
+  <div id="view-qualidade-whatsapp" hidden>
+    <div class="sec-crm"><span>Qualidade do WhatsApp</span><button type="button" id="qw-checar" class="btn-atualizar">🔍 Checar agora</button></div>
+    <div class="aviso">Monitora a nota de qualidade do número que a Cris usa (a mesma dos vendedores) — cai antes de virar restrição/banimento. Não é estimativa nossa, vem direto da Meta.</div>
+    <div id="qw-atual" class="qw-atual">Nenhuma checagem ainda — clica em "Checar agora".</div>
+    <div class="campanhas-tabela-wrap">
+      <table class="campanhas-tabela"><tbody id="qw-historico"></tbody></table>
     </div>
   </div>
 
@@ -627,6 +644,7 @@
         $('view-campanhas').hidden = false; carregarCampanhas(); carregarGeracoesIA();
         $('view-custo-ia').hidden = false; carregarCustoIA();
         $('view-optin-whatsapp').hidden = false; carregarOptinWhatsapp();
+        $('view-qualidade-whatsapp').hidden = false; carregarQualidadeWhatsapp();
         if (user.email) $('cp-teste-email').value = user.email;
       }
       return carregarPipeline();
@@ -1600,6 +1618,65 @@
     a.href = url; a.download = 'optin-whatsapp-congresso-cancer-' + new Date().toISOString().slice(0, 10) + '.csv';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  });
+
+  // ---------- qualidade do número WhatsApp (só gestor) ----------
+  function classeQualidade(q){
+    q = String(q || '').toUpperCase();
+    if (q === 'GREEN') return 'green';
+    if (q === 'YELLOW') return 'yellow';
+    if (q === 'RED') return 'red';
+    return 'na';
+  }
+  function rotuloQualidade(q){
+    var mapa = { GREEN: 'Verde — boa', YELLOW: 'Amarela — atenção', RED: 'Vermelha — risco alto' };
+    return mapa[String(q || '').toUpperCase()] || (q || 'Sem dado');
+  }
+
+  function carregarQualidadeWhatsapp(){
+    return apiGet('whatsapp_qualidade?select=id,criado_em,quality_rating,messaging_limit&order=criado_em.desc&limit=30')
+      .then(renderQualidadeWhatsapp)
+      .catch(function(err){
+        $('qw-historico').innerHTML = '<tr><td style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>';
+      });
+  }
+
+  function renderQualidadeWhatsapp(rows){
+    rows = rows || [];
+    if (rows.length){
+      var atual = rows[0];
+      $('qw-atual').innerHTML =
+        '<span class="qw-badge ' + classeQualidade(atual.quality_rating) + '">' + esc(rotuloQualidade(atual.quality_rating)) + '</span>' +
+        '<span>Limite de mensagens: <b>' + esc(atual.messaging_limit || 'não informado') + '</b></span>' +
+        '<span>Última checagem: ' + fmtQuando(atual.criado_em) + '</span>';
+    } else {
+      $('qw-atual').textContent = 'Nenhuma checagem ainda — clica em "Checar agora".';
+    }
+
+    $('qw-historico').innerHTML = rows.map(function(r){
+      return '<tr>' +
+        '<td><span class="qw-badge ' + classeQualidade(r.quality_rating) + '">' + esc(rotuloQualidade(r.quality_rating)) + '</span></td>' +
+        '<td class="cp-cont">' + esc(r.messaging_limit || '—') + '</td>' +
+        '<td style="text-align:right">' + fmtQuando(r.criado_em) + '</td>' +
+      '</tr>';
+    }).join('') || '<tr><td>Sem histórico ainda.</td></tr>';
+  }
+
+  $('qw-checar').addEventListener('click', function(){
+    var btn = this; btn.disabled = true; btn.textContent = 'Checando…';
+    fetch(SUPABASE_URL + '/functions/v1/whatsapp-quality-check', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    }).then(function(r){ return r.text().then(function(t){
+      var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
+      if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
+      return data;
+    }); }).then(function(){
+      return carregarQualidadeWhatsapp();
+    }).catch(function(err){
+      alert('Erro ao checar: ' + err.message);
+    }).finally(function(){ btn.disabled = false; btn.textContent = '🔍 Checar agora'; });
   });
 
   // sessão salva pelo supabase-js — lida direto do localStorage (getSession() pode travar)
