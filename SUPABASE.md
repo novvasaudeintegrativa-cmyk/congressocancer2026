@@ -5248,7 +5248,7 @@ const ANON    = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SVC     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const WA_TOKEN        = Deno.env.get("WHATSAPP_PERMANENT_TOKEN")!;
 const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
-const AUTO_TOKEN      = Deno.env.get("CAMPANHA_AUTO_TOKEN") ?? "";
+const AUTO_TOKEN      = (Deno.env.get("CAMPANHA_AUTO_TOKEN") ?? "").trim();
 const LOTE_MAX = 50;
 
 const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
@@ -5459,3 +5459,11 @@ select cron.alter_job(
 - O botão "Enviar próximo lote" no CRM continua funcionando a qualquer
   hora (path do gestor autenticado, sem o guard de horário) — útil pra
   destravar manualmente ou mandar um lote avulso fora da janela.
+
+**Pegadinha confirmada (17/09/2026):** colar o valor do secret
+`CAMPANHA_AUTO_TOKEN` pela caixa "Edit secret" do painel deixou 1
+caractere a mais salvo (65 em vez de 64 — provavelmente quebra de linha
+do paste), o que fazia o token nunca bater mesmo com os dois lados
+"iguais" visualmente. Corrigido lendo o secret com `.trim()` no código
+em vez de depender do valor salvo estar exato. Diagnosticado logando só
+o **tamanho** das duas strings (nunca o valor) nos Logs da função.
