@@ -442,7 +442,13 @@
           <textarea id="cw-rascunho" placeholder="use {{1}} pro nome do contato"></textarea>
           <div class="dica">Depois de aprovado no WhatsApp Manager, volta aqui e preenche os campos abaixo com o nome exato do template.</div>
 
-          <label for="cw-template">Nome do template (exatamente como cadastrado e APROVADO no WhatsApp Manager)</label>
+          <label for="cw-template-select">Escolher template (carregado direto da Meta) <button type="button" id="cw-template-atualizar" class="btn-atualizar" style="margin-left:6px;">🔄 Atualizar lista</button></label>
+          <select id="cw-template-select">
+            <option value="">— clique em "Atualizar lista" —</option>
+          </select>
+          <div class="dica" id="cw-template-preview"></div>
+
+          <label for="cw-template">Nome do template (preenchido ao escolher acima, ou digite manualmente)</label>
           <input type="text" id="cw-template" placeholder="ex: reengajamento_congresso_2026" required>
 
           <label for="cw-idioma">Idioma do template</label>
@@ -707,7 +713,7 @@
       if (estado.ehGestor) {
         $('view-equipe').hidden = false; carregarEquipe();
         $('view-campanhas').hidden = false; carregarCampanhas(); carregarGeracoesIA();
-        $('view-campanhas-whatsapp').hidden = false; carregarCampanhasWhatsapp();
+        $('view-campanhas-whatsapp').hidden = false; carregarCampanhasWhatsapp(); carregarTemplatesWhatsapp();
         $('view-custo-ia').hidden = false; carregarCustoIA();
         $('view-optin-whatsapp').hidden = false; carregarOptinWhatsapp();
         $('view-qualidade-whatsapp').hidden = false; carregarQualidadeWhatsapp();
@@ -1704,6 +1710,47 @@
       return data;
     }); });
   }
+
+  var templatesWhatsapp = [];
+  function carregarTemplatesWhatsapp(){
+    var sel = $('cw-template-select');
+    var btn = $('cw-template-atualizar');
+    if (btn){ btn.disabled = true; btn.textContent = '🔄 Carregando…'; }
+    sel.innerHTML = '<option value="">— carregando… —</option>';
+    return fetch(SUPABASE_URL + '/functions/v1/whatsapp-templates-listar', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    }).then(function(r){ return r.text().then(function(t){
+      var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
+      if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
+      return data;
+    }); }).then(function(res){
+      templatesWhatsapp = res.templates || [];
+      var rotulo = { APPROVED: '✅', PENDING: '⏳', REJECTED: '❌' };
+      sel.innerHTML = '<option value="">— selecione —</option>' + templatesWhatsapp.map(function(t, i){
+        return '<option value="' + i + '"' + (t.status !== 'APPROVED' ? ' disabled' : '') + '>' +
+          (rotulo[t.status] || t.status) + ' ' + esc(t.nome) + ' (' + esc(t.categoria) + ', ' + esc(t.idioma) + ')</option>';
+      }).join('');
+      if (!templatesWhatsapp.length) sel.innerHTML = '<option value="">Nenhum template encontrado na Meta</option>';
+    }).catch(function(err){
+      sel.innerHTML = '<option value="">Erro ao carregar — digite manualmente abaixo</option>';
+      console.error('templates whatsapp:', err);
+    }).finally(function(){
+      if (btn){ btn.disabled = false; btn.textContent = '🔄 Atualizar lista'; }
+    });
+  }
+
+  $('cw-template-select').addEventListener('change', function(){
+    var t = templatesWhatsapp[Number(this.value)];
+    $('cw-template-preview').textContent = t ? t.preview : '';
+    if (!t) return;
+    $('cw-template').value = t.nome;
+    $('cw-idioma').value = t.idioma;
+    $('cw-variavel-nome').checked = t.variavel_nome;
+  });
+
+  $('cw-template-atualizar').addEventListener('click', carregarTemplatesWhatsapp);
 
   function campanhaWhatsappGerarTexto(brief, categoria){
     return fetch(SUPABASE_URL + '/functions/v1/gerar-texto-whatsapp', {
