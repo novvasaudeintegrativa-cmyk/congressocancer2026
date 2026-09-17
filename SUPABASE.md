@@ -4398,3 +4398,320 @@ igual, só ganhou uma linha acima.)
 - Confere **Table Editor → whatsapp_marketing_optin** → deve aparecer uma
   linha nova.
 - Confere no CRM, seção "Opt-in WhatsApp", se a contagem aumentou.
+
+## 25. Campanhas de marketing por WhatsApp (template aprovado)
+
+**Pré-requisito que não dá pra pular:** WhatsApp só aceita mensagem
+business-iniciada fora da janela de 24h se for um **template aprovado pela
+Meta**. O CRM não cria nem aprova template — isso é feito manualmente em
+**business.facebook.com → WhatsApp Manager → Modelos de mensagem**,
+categoria **Marketing**. O que o CRM faz: ajuda a *rascunhar* o texto (IA),
+guarda a lista de contatos, e dispara usando o **nome exato** do template
+depois de aprovado.
+
+**Só use contatos de `whatsapp_marketing_optin` (§24)** — a base geral
+(Eduzz, quiz) não tem o opt-in específico exigido pra Marketing (ver
+discussão de compliance em 16-17/09/2026: risco real de banimento do
+mesmo número que a Cris usa).
+
+### 25.1. SQL — rodar uma vez no SQL Editor
+
+```sql
+create table if not exists public.campanhas_whatsapp (
+  id             bigint generated always as identity primary key,
+  criado_em      timestamptz not null default now(),
+  criado_por     uuid references auth.users(id),
+  nome           text not null,
+  template_nome  text not null,
+  idioma         text not null default 'pt_BR',
+  variavel_nome  boolean not null default true
+);
+alter table public.campanhas_whatsapp enable row level security;
+
+drop policy if exists "gestor ve campanhas whatsapp" on public.campanhas_whatsapp;
+create policy "gestor ve campanhas whatsapp" on public.campanhas_whatsapp
+  for select to authenticated using (public.eh_gestor());
+drop policy if exists "gestor cria campanhas whatsapp" on public.campanhas_whatsapp;
+create policy "gestor cria campanhas whatsapp" on public.campanhas_whatsapp
+  for insert to authenticated with check (public.eh_gestor());
+drop policy if exists "gestor apaga campanhas whatsapp" on public.campanhas_whatsapp;
+create policy "gestor apaga campanhas whatsapp" on public.campanhas_whatsapp
+  for delete to authenticated using (public.eh_gestor());
+
+grant select, insert, delete on public.campanhas_whatsapp to authenticated;
+revoke update on public.campanhas_whatsapp from authenticated;
+
+create table if not exists public.campanha_whatsapp_contatos (
+  id            bigint generated always as identity primary key,
+  campanha_id   bigint not null references public.campanhas_whatsapp(id) on delete cascade,
+  numero        text not null,
+  nome          text,
+  lote          text,
+  status        text not null default 'pendente' check (status in ('pendente','enviado','falhou')),
+  enviado_em    timestamptz,
+  wa_message_id text,
+  erro          text
+);
+create index if not exists campanha_wa_contatos_campanha_idx on public.campanha_whatsapp_contatos (campanha_id, status);
+alter table public.campanha_whatsapp_contatos enable row level security;
+
+drop policy if exists "gestor ve contatos whatsapp" on public.campanha_whatsapp_contatos;
+create policy "gestor ve contatos whatsapp" on public.campanha_whatsapp_contatos
+  for select to authenticated using (public.eh_gestor());
+drop policy if exists "gestor importa contatos whatsapp" on public.campanha_whatsapp_contatos;
+create policy "gestor importa contatos whatsapp" on public.campanha_whatsapp_contatos
+  for insert to authenticated with check (public.eh_gestor());
+drop policy if exists "gestor apaga contatos whatsapp" on public.campanha_whatsapp_contatos;
+create policy "gestor apaga contatos whatsapp" on public.campanha_whatsapp_contatos
+  for delete to authenticated using (public.eh_gestor());
+
+grant select, insert, delete on public.campanha_whatsapp_contatos to authenticated;
+revoke update on public.campanha_whatsapp_contatos from authenticated;
+
+create or replace view public.campanhas_whatsapp_resumo with (security_invoker = true) as
+select
+  c.id, c.criado_em, c.nome, c.template_nome, c.idioma,
+  count(k.id) as total,
+  count(k.id) filter (where k.status = 'pendente') as pendentes,
+  count(k.id) filter (where k.status = 'enviado')  as enviados,
+  count(k.id) filter (where k.status = 'falhou')   as falhas
+from public.campanhas_whatsapp c
+left join public.campanha_whatsapp_contatos k on k.campanha_id = c.id
+group by c.id
+order by c.criado_em desc;
+
+grant select on public.campanhas_whatsapp_resumo to authenticated;
+
+alter table public.ia_uso drop constraint if exists ia_uso_origem_check;
+alter table public.ia_uso add constraint ia_uso_origem_check
+  check (origem in ('cris_whatsapp','campanha_ia','campanha_ia_whatsapp'));
+
+notify pgrst, 'reload schema';
+```
+
+> **Pegadinha (16/09/2026):** ao criar a tabela já **revogamos**
+> insert/update/delete do papel `authenticated` por hábito (padrão usado
+> em outras tabelas) e isso quebrou o apagar até virem os `grant`
+> explícitos junto com a policy — RLS sozinha não basta, precisa do
+> `grant` na tabela também. Por isso aqui já vem com `grant` desde o
+> início.
+
+### 25.2. Edge Function `gerar-texto-whatsapp` (rascunha o template, não envia nada)
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const URL_    = Deno.env.get("SUPABASE_URL")!;
+const ANON    = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SVC     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ANTHROPIC_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const SYSTEM = `Você escreve o RASCUNHO de um template de mensagem categoria MARKETING do WhatsApp Business Platform (Meta), pro Congresso Câncer 2026 (evento de práticas integrativas oncológicas, São Paulo — público B2B: profissional de saúde, não paciente).
+
+Regras obrigatórias de um template WhatsApp categoria Marketing (reduzem risco de rejeição pela Meta, mas não garantem aprovação — a revisão final é sempre da Meta):
+- Texto simples, sem markdown, sem emoji em excesso (no máximo 1-2), sem CAIXA ALTA, sem excesso de pontuação/exclamação (nada de "!!!" ou "GRÁTIS").
+- Pode usar exatamente UMA variável, escrita como {{1}}, representando o nome da pessoa. NÃO comece nem termine a mensagem com {{1}} — use em algum ponto no meio/natural do texto (ex: "Oi, {{1}}! ..."). Não crie outras variáveis.
+- Não inclua links/URLs no corpo do texto — links em template viram botão separado, configurado depois no WhatsApp Manager, não texto corrido. Se precisar referenciar, deixe [LINK] como placeholder.
+- Até 1024 caracteres, de preferência bem mais curto (3-5 linhas).
+- É pra reengajar quem JÁ comprou em edição anterior E JÁ autorizou receber esse tipo de mensagem — trate como reconexão com quem conhece o evento, não como contato frio nem venda agressiva.
+- Não invente data, preço ou link — se precisar citar algo assim, deixe [LINK] ou [DATA] como placeholder pro Gestor completar depois de aprovado.
+- Evite linguagem que pareça fazer promessa/alegação de saúde (é evento B2B de capacitação profissional, não produto de saúde pro consumidor final).
+- Tom brasileiro, caloroso, direto, sem urgência falsa.
+- Responda SOMENTE com um JSON válido, sem markdown, no formato exato: {"corpo": "..."}`;
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method" }, 405);
+
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.replace(/^Bearer\s+/i, "");
+  const r1 = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${token}` } });
+  if (!r1.ok) return j({ erro: "não autenticado" }, 401);
+  const u = await r1.json();
+  if (!u || !u.id) return j({ erro: "não autenticado" }, 401);
+  const rp = await fetch(`${URL_}/rest/v1/perfis?id=eq.${u.id}&select=papel,ativo`, { headers: svcHeaders });
+  const perfis = await rp.json();
+  const meu = perfis && perfis[0];
+  if (!meu || !meu.ativo || meu.papel !== "gestor") return j({ erro: "só o gestor pode gerar texto" }, 403);
+
+  let body: any;
+  try { body = await req.json(); } catch { return j({ erro: "bad body" }, 400); }
+  const brief = String(body.brief || "").trim();
+  if (!brief) return j({ erro: "descreva o que a mensagem deve dizer" }, 400);
+
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001", max_tokens: 400, system: SYSTEM,
+      messages: [{ role: "user", content: brief }],
+    }),
+  });
+  if (!resp.ok) {
+    const errBody = await resp.text();
+    console.error("anthropic error", resp.status, errBody);
+    return j({ erro: "falha ao gerar texto (" + resp.status + "): " + errBody.slice(0, 300) }, 502);
+  }
+  const data = await resp.json();
+  const texto = (data.content || []).map((b: any) => b.text || "").join("");
+  let parsed: any;
+  try {
+    const limpo = texto.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+    const match = limpo.match(/\{[\s\S]*\}/);
+    parsed = JSON.parse(match ? match[0] : limpo);
+  } catch { return j({ erro: "IA respondeu em formato inesperado, tenta de novo" }, 502); }
+  if (!parsed.corpo) return j({ erro: "IA não retornou o texto" }, 502);
+
+  try {
+    const u2 = data.usage || {};
+    const custo = ((u2.input_tokens || 0) / 1e6) * 1.0 + ((u2.output_tokens || 0) / 1e6) * 5.0;
+    await fetch(`${URL_}/rest/v1/ia_uso`, {
+      method: "POST", headers: { ...svcHeaders, prefer: "return=minimal" },
+      body: JSON.stringify([{ origem: "campanha_ia_whatsapp", modelo: "claude-haiku-4-5-20251001", tokens_entrada: u2.input_tokens || 0, tokens_saida: u2.output_tokens || 0, custo_usd: custo }]),
+    });
+  } catch (e) { console.error("log ia_uso:", e); }
+
+  return j({ ok: true, corpo: parsed.corpo });
+});
+```
+
+**Deploy.** Mantém **"Verify JWT with legacy secret" LIGADO**.
+
+### 25.3. Edge Function `campanha-whatsapp-lote` (dispara de verdade)
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const URL_    = Deno.env.get("SUPABASE_URL")!;
+const ANON    = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SVC     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const WA_TOKEN        = Deno.env.get("WHATSAPP_PERMANENT_TOKEN")!;
+const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
+const LOTE_MAX = 100;
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${userToken}` } });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
+async function ehGestor(uid: string) {
+  const r = await fetch(`${URL_}/rest/v1/perfis?id=eq.${uid}&select=papel,ativo`, { headers: svcHeaders });
+  const rows = await r.json();
+  const p = rows && rows[0];
+  return !!(p && p.ativo && p.papel === "gestor");
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method" }, 405);
+
+  const auth = req.headers.get("authorization") || "";
+  const token = auth.replace(/^Bearer\s+/i, "");
+  const u = await quemChamou(token);
+  if (!u) return j({ erro: "não autenticado" }, 401);
+  if (!(await ehGestor(u.id))) return j({ erro: "só o gestor pode disparar campanhas" }, 403);
+
+  let body: any;
+  try { body = await req.json(); } catch { return j({ erro: "bad body" }, 400); }
+  const campanhaId = Number(body.campanha_id);
+  const lote = Math.min(Number(body.lote) || LOTE_MAX, LOTE_MAX);
+  if (!campanhaId) return j({ erro: "campanha_id obrigatório" }, 400);
+
+  const campResp = await fetch(
+    `${URL_}/rest/v1/campanhas_whatsapp?id=eq.${campanhaId}&select=template_nome,idioma,variavel_nome`,
+    { headers: svcHeaders },
+  );
+  const campRows = await campResp.json();
+  const camp = campRows && campRows[0];
+  if (!camp) return j({ erro: "campanha não encontrada" }, 404);
+
+  const pendResp = await fetch(
+    `${URL_}/rest/v1/campanha_whatsapp_contatos?campanha_id=eq.${campanhaId}&status=eq.pendente&select=id,numero,nome&order=id.asc&limit=${lote}`,
+    { headers: svcHeaders },
+  );
+  const pendentes = await pendResp.json();
+
+  let enviados = 0, falhas = 0;
+  for (const c of pendentes) {
+    const components = camp.variavel_nome
+      ? [{ type: "body", parameters: [{ type: "text", text: c.nome || "" }] }]
+      : [];
+    try {
+      const r = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${WA_TOKEN}`, "content-type": "application/json" },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: c.numero,
+          type: "template",
+          template: { name: camp.template_nome, language: { code: camp.idioma }, components },
+        }),
+      });
+      const rb = await r.json();
+      if (!r.ok) throw new Error(rb.error?.message || "falha meta");
+      const waId = rb.messages?.[0]?.id ?? null;
+      await fetch(`${URL_}/rest/v1/campanha_whatsapp_contatos?id=eq.${c.id}`, {
+        method: "PATCH", headers: { ...svcHeaders, prefer: "return=minimal" },
+        body: JSON.stringify({ status: "enviado", enviado_em: new Date().toISOString(), wa_message_id: waId }),
+      });
+      enviados++;
+    } catch (e) {
+      await fetch(`${URL_}/rest/v1/campanha_whatsapp_contatos?id=eq.${c.id}`, {
+        method: "PATCH", headers: { ...svcHeaders, prefer: "return=minimal" },
+        body: JSON.stringify({ status: "falhou", erro: String(e) }),
+      });
+      falhas++;
+    }
+  }
+
+  return j({ ok: true, enviados, falhas, tentativas: pendentes.length });
+});
+```
+
+**Deploy.** Mantém **"Verify JWT with legacy secret" LIGADO**. Reusa
+`WHATSAPP_PERMANENT_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID` já existentes.
+
+### 25.4. O que o `Ads/crm.html` faz
+
+Layout em **2 colunas** (e-mail à esquerda, WhatsApp à direita — junto
+com Opt-in WhatsApp e Qualidade do WhatsApp), tudo só visível pro Gestor:
+
+- Formulário: nome, briefing + botão "Gerar rascunho com IA" (não envia
+  nada, só ajuda a escrever o texto pra colar no WhatsApp Manager),
+  campos manuais de **nome do template** e **idioma** (preenchidos só
+  depois que a Meta aprovar), checkbox se o template usa `{{1}}`, e CSV
+  (`numero`, `nome`, `lote` — número normalizado pra só dígitos).
+- Lista de campanhas com contagem (enviados/pendentes/falhas), vinda de
+  `campanhas_whatsapp_resumo`.
+- Botão "Enviar próximo lote" (até 100 por clique, mesmo padrão de
+  throttle do e-mail) chama `campanha-whatsapp-lote`.
+
+### 25.5. Conferir
+
+- Cria uma campanha de teste **só depois de ter um template real
+  aprovado** — sem isso, "Enviar próximo lote" retorna erro da Meta
+  dizendo que o template não existe/não está aprovado.
+- Depois do disparo: `campanha_whatsapp_contatos.status` deve virar
+  `enviado` (com `wa_message_id`) ou `falhou` (com `erro` — confere o
+  texto, geralmente é número inválido ou template ainda em revisão).
