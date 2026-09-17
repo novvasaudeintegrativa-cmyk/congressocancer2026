@@ -221,6 +221,11 @@
   .qw-badge.yellow{background:rgba(201,139,31,.16);color:var(--dourado);}
   .qw-badge.red{background:rgba(185,45,61,.14);color:var(--bordo-vivo);}
   .qw-badge.na{background:#efe8e4;color:var(--soft);}
+  .status-badge{font-family:var(--tit);font-weight:700;font-size:10px;letter-spacing:.03em;text-transform:uppercase;padding:4px 10px;border-radius:999px;display:inline-block;}
+  .status-badge.enviado{background:rgba(31,138,76,.14);color:var(--verde);}
+  .status-badge.pendente{background:rgba(201,139,31,.16);color:var(--dourado);}
+  .status-badge.falhou{background:rgba(185,45,61,.14);color:var(--bordo-vivo);}
+  .status-badge.pulado{background:rgba(47,111,158,.14);color:var(--azul);}
 
   /* ---- duas colunas: e-mail à esquerda, whatsapp à direita ---- */
   .campanhas-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;}
@@ -430,6 +435,28 @@
           <table class="campanhas-tabela"><tbody id="campanhas-wa-lista"></tbody></table>
         </div>
 
+        <div id="wa-historico-painel" hidden style="margin-bottom:20px;">
+          <div class="sec-crm"><span id="wa-historico-titulo">Histórico de envios</span></div>
+          <div class="filtros">
+            <select id="wa-historico-filtro">
+              <option value="">Todos os status</option>
+              <option value="enviado">Enviados</option>
+              <option value="pendente">Pendentes</option>
+              <option value="falhou">Falhas</option>
+              <option value="pulado">Pulados</option>
+            </select>
+            <button type="button" id="wa-historico-exportar" class="btn-atualizar">Exportar CSV</button>
+            <button type="button" id="wa-historico-fechar" class="btn-atualizar">Fechar</button>
+          </div>
+          <div class="campanhas-tabela-wrap">
+            <table class="campanhas-tabela">
+              <thead><tr><th>Número</th><th>Nome</th><th>Status</th><th style="text-align:right">Quando</th></tr></thead>
+              <tbody id="wa-historico-lista"></tbody>
+            </table>
+          </div>
+          <button type="button" id="wa-historico-mais" class="btn-atualizar" style="margin-top:10px;">Carregar mais</button>
+        </div>
+
         <form id="form-campanha-whatsapp" class="form-campanha">
           <label for="cw-nome">Nome da campanha (só pra identificar)</label>
           <input type="text" id="cw-nome" placeholder="ex: Reengajamento WhatsApp 2026" required>
@@ -588,6 +615,8 @@
     ['cw-template-atualizar', 'refresh-cw', 'Atualizar lista'],
     ['cw-teste-btn', 'send', 'Enviar teste'],
     ['optin-exportar', 'download', 'Exportar CSV'],
+    ['wa-historico-exportar', 'download', 'Exportar CSV'],
+    ['wa-historico-fechar', 'x', 'Fechar'],
     ['qw-checar', 'search', 'Checar agora'],
     ['btn-notif', 'bell', 'Ativar notificações neste aparelho']
   ].forEach(function(x){
@@ -1760,7 +1789,8 @@
         '<td class="cp-cont"><b>' + c.enviados + '</b> enviados · ' + c.pendentes + ' pendentes' +
           (c.falhas ? ' · <span class="cp-falhas">' + c.falhas + ' falhas</span>' : '') +
           (c.pulados ? ' · ' + c.pulados + ' pulados (já contatados)' : '') + ' · ' + c.total + ' total</td>' +
-        '<td style="text-align:right"><button type="button" class="cp-enviar wa-enviar" data-id="' + c.id + '"' + (c.pendentes ? '' : ' disabled') + '>' +
+        '<td style="text-align:right"><button type="button" class="icon-btn wa-historico-btn" data-id="' + c.id + '" data-nome="' + esc(c.nome) + '" title="Ver histórico de envios">' + ic('clock', 14) + '</button> ' +
+          '<button type="button" class="cp-enviar wa-enviar" data-id="' + c.id + '"' + (c.pendentes ? '' : ' disabled') + '>' +
           (c.pendentes ? 'Enviar próximo lote' : 'Concluída') + '</button></td>' +
       '</tr>';
     }).join('') || '<tr><td>Nenhuma campanha ainda.</td></tr>';
@@ -1778,7 +1808,86 @@
         });
       });
     });
+
+    $('campanhas-wa-lista').querySelectorAll('.wa-historico-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        abrirHistoricoWhatsapp(this.dataset.id, this.dataset.nome);
+      });
+    });
   }
+
+  // ---------- histórico de envios por campanha (contato a contato) ----------
+  var waHistoricoCampanhaId = null;
+  var waHistoricoLimite = 0;
+  var WA_HISTORICO_PAGINA = 100;
+
+  function abrirHistoricoWhatsapp(campanhaId, nomeCampanha){
+    waHistoricoCampanhaId = campanhaId;
+    waHistoricoLimite = WA_HISTORICO_PAGINA;
+    $('wa-historico-titulo').textContent = 'Histórico de envios — ' + nomeCampanha;
+    $('wa-historico-painel').hidden = false;
+    carregarHistoricoWhatsapp();
+    $('wa-historico-painel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function statusBadgeWhatsapp(s){
+    var mapa = { enviado: 'Enviado', pendente: 'Pendente', falhou: 'Falhou', pulado: 'Pulado' };
+    return '<span class="status-badge ' + esc(s || '') + '">' + esc(mapa[s] || s || '?') + '</span>';
+  }
+
+  function carregarHistoricoWhatsapp(){
+    if (!waHistoricoCampanhaId) return;
+    var filtro = $('wa-historico-filtro').value;
+    var q = 'campanha_whatsapp_contatos?campanha_id=eq.' + waHistoricoCampanhaId +
+      '&select=numero,nome,status,enviado_em,erro&order=enviado_em.desc.nullslast,id.desc&limit=' + waHistoricoLimite;
+    if (filtro) q += '&status=eq.' + filtro;
+    return apiGet(q).then(renderHistoricoWhatsapp).catch(function(err){
+      $('wa-historico-lista').innerHTML = '<tr><td colspan="4" style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>';
+    });
+  }
+
+  function renderHistoricoWhatsapp(rows){
+    rows = rows || [];
+    $('wa-historico-lista').innerHTML = rows.map(function(c){
+      return '<tr><td>+' + esc(c.numero) + '</td><td>' + esc(c.nome || '') + '</td>' +
+        '<td>' + statusBadgeWhatsapp(c.status) + (c.erro ? '<div class="cp-assunto" title="' + esc(c.erro) + '">' + esc(c.erro).slice(0, 60) + '</div>' : '') + '</td>' +
+        '<td style="text-align:right">' + (c.enviado_em ? fmtQuando(c.enviado_em) : '—') + '</td></tr>';
+    }).join('') || '<tr><td colspan="4">Nenhum contato encontrado.</td></tr>';
+    $('wa-historico-mais').style.display = rows.length < waHistoricoLimite ? 'none' : 'inline-block';
+  }
+
+  $('wa-historico-filtro').addEventListener('change', function(){
+    waHistoricoLimite = WA_HISTORICO_PAGINA;
+    carregarHistoricoWhatsapp();
+  });
+  $('wa-historico-mais').addEventListener('click', function(){
+    waHistoricoLimite += WA_HISTORICO_PAGINA;
+    carregarHistoricoWhatsapp();
+  });
+  $('wa-historico-fechar').addEventListener('click', function(){
+    $('wa-historico-painel').hidden = true;
+    waHistoricoCampanhaId = null;
+  });
+
+  $('wa-historico-exportar').addEventListener('click', function(){
+    if (!waHistoricoCampanhaId){ alert('Abre um histórico primeiro.'); return; }
+    var btn = this; btn.disabled = true; btn.textContent = 'Exportando…';
+    apiGet('campanha_whatsapp_contatos?campanha_id=eq.' + waHistoricoCampanhaId + '&select=numero,nome,status,enviado_em,erro&order=id.asc')
+      .then(function(rows){
+        var cols = ['numero', 'nome', 'status', 'enviado_em', 'erro'];
+        var linhas = [cols.join(';')].concat((rows || []).map(function(r){
+          return cols.map(function(c){ return csvEscape(r[c]); }).join(';');
+        }));
+        var blob = new Blob(['﻿' + linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = 'historico-whatsapp-campanha-' + waHistoricoCampanhaId + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      })
+      .catch(function(err){ alert('Erro ao exportar: ' + err.message); })
+      .finally(function(){ btn.disabled = false; btn.innerHTML = ic('download') + ' Exportar CSV'; });
+  });
 
   function campanhaWhatsappEnviarLote(campanhaId){
     return fetch(SUPABASE_URL + '/functions/v1/campanha-whatsapp-lote', {
