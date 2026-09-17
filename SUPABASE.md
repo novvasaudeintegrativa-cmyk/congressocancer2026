@@ -5467,3 +5467,23 @@ do paste), o que fazia o token nunca bater mesmo com os dois lados
 "iguais" visualmente. Corrigido lendo o secret com `.trim()` no código
 em vez de depender do valor salvo estar exato. Diagnosticado logando só
 o **tamanho** das duas strings (nunca o valor) nos Logs da função.
+
+### 28.6. CRM — histórico de envios por campanha (contato a contato)
+
+Botão de relógio (ícone `clock`, reaproveitado do badge de tempo de
+resposta) do lado do "Enviar próximo lote", em cada linha da tabela de
+campanhas WhatsApp. Abre um painel (`#wa-historico-painel`) com:
+
+- filtro por status (`enviado`/`pendente`/`falhou`/`pulado`);
+- tabela número/nome/status/quando, mais recente primeiro
+  (`enviado_em.desc.nullslast,id.desc`), 100 por vez com "Carregar
+  mais" (mesmo padrão de paginação do Kanban);
+- "Exportar CSV" com a lista completa da campanha (sem limite de 100,
+  busca tudo de uma vez via `order=id.asc`).
+
+Não precisou de tabela nova nem de RLS nova — só lê
+`campanha_whatsapp_contatos` (já com policy de select pro gestor) e usa
+o `csvEscape`/padrão de export que já existia pro opt-in. Dá pra deixar
+essa tela aberta acompanhando o filtro "Enviados" enquanto o cron
+dispara os lotes automáticos de 15 em 15 minutos na janela de
+terça-quinta 13h-14h.
