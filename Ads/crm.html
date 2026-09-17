@@ -424,7 +424,7 @@
     <div class="col-campanhas">
       <div id="view-campanhas-whatsapp" hidden>
         <div class="sec-crm"><span>Campanhas WhatsApp</span></div>
-        <div class="aviso">Só funciona com um <b>template já aprovado pela Meta</b> — escolha na lista abaixo (carregada direto do WhatsApp Manager). <b>Só importe números que já autorizaram</b> (ver "Opt-in WhatsApp" abaixo) — a lista antiga da Eduzz não serve pra isso, ver §24 do SUPABASE.md.</div>
+        <div class="aviso">Só funciona com um <b>template já aprovado pela Meta</b> — escolha na lista abaixo (carregada direto do WhatsApp Manager). Campanhas <b>Marketing</b> disparam sozinhas, automaticamente, só <b>terça a quinta das 13h às 14h</b>, em lotes de até 50 — número já contatado em outra campanha de marketing nunca recebe de novo (fica marcado como "pulado"). O botão "Enviar próximo lote" continua disponível pra forçar um envio manual a qualquer hora.</div>
 
         <div class="campanhas-tabela-wrap">
           <table class="campanhas-tabela"><tbody id="campanhas-wa-lista"></tbody></table>
@@ -1758,7 +1758,8 @@
       return '<tr>' +
         '<td><div class="cp-nome">' + esc(c.nome) + ' <span class="badge origem" style="font-size:9px;">' + esc(c.categoria || 'marketing') + '</span></div><div class="cp-assunto">template: ' + esc(c.template_nome) + ' (' + esc(c.idioma) + ')</div></td>' +
         '<td class="cp-cont"><b>' + c.enviados + '</b> enviados · ' + c.pendentes + ' pendentes' +
-          (c.falhas ? ' · <span class="cp-falhas">' + c.falhas + ' falhas</span>' : '') + ' · ' + c.total + ' total</td>' +
+          (c.falhas ? ' · <span class="cp-falhas">' + c.falhas + ' falhas</span>' : '') +
+          (c.pulados ? ' · ' + c.pulados + ' pulados (já contatados)' : '') + ' · ' + c.total + ' total</td>' +
         '<td style="text-align:right"><button type="button" class="cp-enviar wa-enviar" data-id="' + c.id + '"' + (c.pendentes ? '' : ' disabled') + '>' +
           (c.pendentes ? 'Enviar próximo lote' : 'Concluída') + '</button></td>' +
       '</tr>';
