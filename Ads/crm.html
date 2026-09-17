@@ -447,6 +447,12 @@
 
           <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;font-size:13px;color:var(--ink);"><input type="checkbox" id="cw-variavel-nome" checked style="width:auto;"> O template usa {{1}} pro nome do contato</label>
 
+          <label for="cw-teste-numero">Número de teste (manda o template atual, com o nome do template já aprovado acima)</label>
+          <input type="text" id="cw-teste-numero" placeholder="ex: 5511999999999 (com DDI e DDD)">
+          <input type="text" id="cw-teste-nome" placeholder="nome pra usar no {{1}} do teste (ex: seu nome)">
+          <button type="button" id="cw-teste-btn">📨 Enviar teste</button>
+          <div class="cp-msg" id="cw-teste-msg"></div>
+
           <label for="cw-arquivo">Lista de contatos (CSV com colunas numero, nome, lote)</label>
           <input type="file" id="cw-arquivo" accept=".csv,text/csv" required>
           <div class="dica">Só use números da lista "Opt-in WhatsApp". Número em qualquer formato — o sistema limpa pra só dígitos.</div>
@@ -1687,6 +1693,45 @@
       return data;
     }); });
   }
+
+  function whatsappTemplateTeste(numero, templateNome, idioma, variavelNome, nomeTeste){
+    return fetch(SUPABASE_URL + '/functions/v1/whatsapp-template-teste', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ numero: numero, template_nome: templateNome, idioma: idioma, variavel_nome: variavelNome, nome_teste: nomeTeste })
+    }).then(function(r){ return r.text().then(function(t){
+      var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
+      if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
+      return data;
+    }); });
+  }
+
+  $('cw-teste-btn').addEventListener('click', function(){
+    var numero = $('cw-teste-numero').value.trim();
+    var templateNome = $('cw-template').value.trim();
+    var idioma = $('cw-idioma').value.trim() || 'pt_BR';
+    var variavelNome = $('cw-variavel-nome').checked;
+    var nomeTeste = $('cw-teste-nome').value.trim();
+    if (!numero){
+      $('cw-teste-msg').style.color = 'var(--bordo-vivo)';
+      $('cw-teste-msg').textContent = 'Preenche o número de teste.';
+      return;
+    }
+    if (!templateNome){
+      $('cw-teste-msg').style.color = 'var(--bordo-vivo)';
+      $('cw-teste-msg').textContent = 'Preenche o nome do template (já aprovado) antes de testar.';
+      return;
+    }
+    var btn = this; btn.disabled = true; btn.textContent = 'Enviando…';
+    $('cw-teste-msg').style.color = 'var(--soft)'; $('cw-teste-msg').textContent = '';
+    whatsappTemplateTeste(numero, templateNome, idioma, variavelNome, nomeTeste).then(function(){
+      $('cw-teste-msg').style.color = 'var(--verde)';
+      $('cw-teste-msg').textContent = 'Teste enviado pra +' + numero.replace(/\D/g, '') + '!';
+    }).catch(function(err){
+      $('cw-teste-msg').style.color = 'var(--bordo-vivo)';
+      $('cw-teste-msg').textContent = 'Erro: ' + err.message;
+    }).finally(function(){ btn.disabled = false; btn.textContent = '📨 Enviar teste'; });
+  });
 
   var DICAS_CATEGORIA_WA = {
     marketing: 'Precisa vir da lista "Opt-in WhatsApp" — não use a base geral de clientes/leads pra Marketing.',
