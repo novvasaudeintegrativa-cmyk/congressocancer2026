@@ -2569,12 +2569,12 @@ const ANTHROPIC_KEY   = Deno.env.get("ANTHROPIC_API_KEY")!;
 
 const svcHeaders = { apikey: SVC_KEY, authorization: `Bearer ${SVC_KEY}`, "content-type": "application/json" };
 
-const CRIS_INSTRUCOES = `Você é a Cris, da equipe do Congresso Câncer 2026 (congresso de práticas integrativas oncológicas, 2 dias em São Paulo). Sua função é criar uma conexão inicial calorosa com o lead e levar ele pra nossa página oficial — é lá que tem a apresentação completa (inclusive vídeo), que já responde as dúvidas mais comuns e foi feita pra converter. O site é: https://congressocancer.novvasaudeintegrativa.com.br
+const CRIS_INSTRUCOES = `Você é a Cris, da equipe do Congresso Câncer 2026 (congresso de práticas integrativas oncológicas, 2 dias em São Paulo). Sua função é criar uma conexão inicial calorosa com o lead e levar ele pra nossa página oficial — é lá que tem a apresentação completa (inclusive vídeo), que já responde as dúvidas mais comuns e foi feita pra converter. O site é: https://congressocancer.novvasaudeintegrativa.com.br/time-comercial.html
 
 Perfil de quem mais aproveita o congresso: médico(a)/dentista/farmacêutico(a)/enfermeiro(a)/fisioterapeuta/terapeuta que atende ou quer atender pacientes oncológicos e quer ampliar repertório em práticas integrativas.
 
 Regras importantes (decisão da empresa, 11/09/2026):
-- NÃO informe valores, preço de lote, datas, programação, nomes de palestrantes, certificado ou qualquer detalhe aprofundado do congresso diretamente na conversa — pra qualquer pergunta desse tipo, responda breve e sempre mande pra página: "Isso está bem explicadinho na nossa página, com todos os detalhes — dá uma olhada: https://congressocancer.novvasaudeintegrativa.com.br". Nunca cite valor em R$ na conversa, nem repita o que está no "CONTEÚDO ATUAL DO SITE" abaixo — esse conteúdo é só pra você mesma saber do que se trata o congresso, não pra repassar em detalhe.
+- NÃO informe valores, preço de lote, datas, programação, nomes de palestrantes, certificado ou qualquer detalhe aprofundado do congresso diretamente na conversa — pra qualquer pergunta desse tipo, responda breve e sempre mande pra página: "Isso está bem explicadinho na nossa página, com todos os detalhes — dá uma olhada: https://congressocancer.novvasaudeintegrativa.com.br/time-comercial.html". Nunca cite valor em R$ na conversa, nem repita o que está no "CONTEÚDO ATUAL DO SITE" abaixo — esse conteúdo é só pra você mesma saber do que se trata o congresso, não pra repassar em detalhe.
 - Pode confirmar o básico/geral sem detalhar (ex: "sim, é sobre práticas integrativas em oncologia", "é em São Paulo, 2 dias"), mas sempre fechando com o convite pra ver tudo na página.
 - Se souber quem é o lead (seção "QUEM É ESSE CONTATO"), trate com familiaridade e chame pelo nome.
 - Não empurre a venda de forma agressiva nem finja urgência falsa — só reforce com naturalidade que vale a pena conferir a página agora.
@@ -3002,7 +3002,7 @@ await notificarPush(
 Código completo do `whatsapp-webhook` com tudo isso já embutido, pronto
 pra colar, está em **§18.4**.
 
-### 18.4. Edge Function `whatsapp-webhook` (versão completa, com push + custo de IA + opt-in WhatsApp)
+### 18.4. Edge Function `whatsapp-webhook` (versão completa e atual — atualizada em 17/09/2026 com marcação de origem de campanha e link `time-comercial.html`; substitui os trechos avulsos de §23.3, §24.2 e §25.7)
 
 ```ts
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -3072,12 +3072,29 @@ async function registrarOptinWhatsapp(numero: string, texto: string | null) {
   } catch (e) { console.error("optin whatsapp:", e); }
 }
 
-const CRIS_INSTRUCOES = `Você é a Cris, da equipe do Congresso Câncer 2026 (congresso de práticas integrativas oncológicas, 2 dias em São Paulo). Sua função é criar uma conexão inicial calorosa com o lead e levar ele pra nossa página oficial — é lá que tem a apresentação completa (inclusive vídeo), que já responde as dúvidas mais comuns e foi feita pra converter. O site é: https://congressocancer.novvasaudeintegrativa.com.br
+async function marcarOrigemCampanha(numero: string) {
+  try {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/campanha_whatsapp_contatos?numero=eq.${numero}&status=eq.enviado&select=campanha_id&order=enviado_em.desc&limit=1`,
+      { headers: svcHeaders },
+    );
+    const rows = await r.json();
+    const campanhaId = rows && rows[0] && rows[0].campanha_id;
+    if (!campanhaId) return;
+    await fetch(`${SUPABASE_URL}/rest/v1/lead_status?on_conflict=whatsapp`, {
+      method: "POST",
+      headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify([{ whatsapp: numero, campanha_whatsapp_id: campanhaId }]),
+    });
+  } catch (e) { console.error("origem campanha:", e); }
+}
+
+const CRIS_INSTRUCOES = `Você é a Cris, da equipe do Congresso Câncer 2026 (congresso de práticas integrativas oncológicas, 2 dias em São Paulo). Sua função é criar uma conexão inicial calorosa com o lead e levar ele pra nossa página oficial — é lá que tem a apresentação completa (inclusive vídeo), que já responde as dúvidas mais comuns e foi feita pra converter. O site é: https://congressocancer.novvasaudeintegrativa.com.br/time-comercial.html
 
 Perfil de quem mais aproveita o congresso: médico(a)/dentista/farmacêutico(a)/enfermeiro(a)/fisioterapeuta/terapeuta que atende ou quer atender pacientes oncológicos e quer ampliar repertório em práticas integrativas.
 
 Regras importantes (decisão da empresa, 11/09/2026):
-- NÃO informe valores, preço de lote, datas, programação, nomes de palestrantes, certificado ou qualquer detalhe aprofundado do congresso diretamente na conversa — pra qualquer pergunta desse tipo, responda breve e sempre mande pra página: "Isso está bem explicadinho na nossa página, com todos os detalhes — dá uma olhada: https://congressocancer.novvasaudeintegrativa.com.br". Nunca cite valor em R$ na conversa, nem repita o que está no "CONTEÚDO ATUAL DO SITE" abaixo — esse conteúdo é só pra você mesma saber do que se trata o congresso, não pra repassar em detalhe.
+- NÃO informe valores, preço de lote, datas, programação, nomes de palestrantes, certificado ou qualquer detalhe aprofundado do congresso diretamente na conversa — pra qualquer pergunta desse tipo, responda breve e sempre mande pra página: "Isso está bem explicadinho na nossa página, com todos os detalhes — dá uma olhada: https://congressocancer.novvasaudeintegrativa.com.br/time-comercial.html". Nunca cite valor em R$ na conversa, nem repita o que está no "CONTEÚDO ATUAL DO SITE" abaixo — esse conteúdo é só pra você mesma saber do que se trata o congresso, não pra repassar em detalhe.
 - Pode confirmar o básico/geral sem detalhar (ex: "sim, é sobre práticas integrativas em oncologia", "é em São Paulo, 2 dias"), mas sempre fechando com o convite pra ver tudo na página.
 - Se souber quem é o lead (seção "QUEM É ESSE CONTATO"), trate com familiaridade e chame pelo nome.
 - Não empurre a venda de forma agressiva nem finja urgência falsa — só reforce com naturalidade que vale a pena conferir a página agora.
@@ -3362,6 +3379,8 @@ Deno.serve(async (req) => {
           wa_timestamp: m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : null,
           raw: m,
         });
+        await registrarOptinWhatsapp(m.from, texto);
+        await marcarOrigemCampanha(m.from);
         numerosRecebidos.add(m.from);
         await notificarPush(
           "Nova mensagem no WhatsApp",
