@@ -86,6 +86,9 @@
   .badge.origem{background:#efe8e4;color:var(--soft);}
   .badge.vsl{background:rgba(31,138,76,.13);color:var(--verde);}
   .badge.campanha-wa{background:rgba(47,111,158,.14);color:var(--azul);}
+  .badge.tempo-ok{background:rgba(31,138,76,.13);color:var(--verde);}
+  .badge.tempo-espera{background:rgba(201,139,31,.16);color:var(--dourado);}
+  .badge.tempo-urgente{background:rgba(185,45,61,.14);color:var(--bordo-vivo);}
   .card .linha-acao{display:flex;gap:6px;align-items:center;margin-top:9px;flex-wrap:wrap;}
   .card select{font-family:var(--corpo);font-size:11px;padding:4px 6px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--ink);max-width:100%;}
   .card .wa{font-size:11px;font-weight:700;text-decoration:none;color:var(--verde);border:1px solid var(--verde);padding:4px 9px;border-radius:999px;white-space:nowrap;}
@@ -849,7 +852,7 @@
     var campanhaWaBadge = l.campanha_whatsapp_nome
       ? '<span class="badge campanha-wa" title="Respondeu depois de receber esta campanha por WhatsApp">📣 ' + esc(l.campanha_whatsapp_nome) + '</span>'
       : '';
-    var badges = nivelBadge + vslBadge + campanhaWaBadge + (origem ? '<span class="badge origem">' + esc(origem) + '</span>' : '');
+    var badges = nivelBadge + vslBadge + campanhaWaBadge + tempoRespostaBadge(l) + (origem ? '<span class="badge origem">' + esc(origem) + '</span>' : '');
     var ICON_WA = '<svg class="ic-wa" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm0 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 012.41 5.82c0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.4-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.188 8.188 0 01-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23zm-4.55 4.72c-.15 0-.4.06-.6.29-.21.23-.8.78-.8 1.91s.82 2.22.94 2.37c.11.15 1.6 2.57 3.97 3.5 1.96.77 2.36.62 2.78.58.42-.04 1.36-.55 1.55-1.09.19-.53.19-.99.14-1.09-.06-.1-.21-.15-.44-.27-.23-.11-1.36-.67-1.57-.75-.21-.08-.36-.11-.51.12-.15.23-.59.75-.72.9-.13.15-.26.17-.49.06-.23-.12-.96-.35-1.83-1.13-.68-.6-1.13-1.35-1.27-1.58-.13-.23-.01-.35.1-.47.11-.11.23-.27.35-.4.11-.13.15-.23.23-.38.08-.15.04-.29-.02-.4-.06-.11-.51-1.24-.71-1.7-.19-.45-.38-.39-.51-.4h-.44z"/></svg>';
 
     c.innerHTML =
@@ -975,6 +978,26 @@
     var hm = d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
     if (d.toDateString() === hoje.toDateString()) return hm;
     return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) + ' ' + hm;
+  }
+  function fmtDuracao(ms){
+    var min = Math.round(ms / 60000);
+    if (min < 1) return 'agora';
+    if (min < 60) return min + 'min';
+    var h = Math.round(min / 60);
+    if (h < 24) return h + 'h';
+    var d = Math.round(h / 24);
+    return d + 'd';
+  }
+  function tempoRespostaBadge(l){
+    if (!l.ultima_recebida_em) return '';
+    if (l.respondido_em){
+      var ms = new Date(l.respondido_em) - new Date(l.ultima_recebida_em);
+      if (ms < 0) return '';
+      return '<span class="badge tempo-ok" title="Tempo até a última resposta">⏱ respondido em ' + fmtDuracao(ms) + '</span>';
+    }
+    var msEspera = Date.now() - new Date(l.ultima_recebida_em).getTime();
+    var classe = msEspera > 60 * 60 * 1000 ? 'tempo-urgente' : 'tempo-espera';
+    return '<span class="badge ' + classe + '" title="Aguardando resposta">⏱ aguardando há ' + fmtDuracao(msEspera) + '</span>';
   }
 
   var urgentesConversa = {};
