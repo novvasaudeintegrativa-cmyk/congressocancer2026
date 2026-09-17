@@ -4514,18 +4514,27 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const SYSTEM = `Você escreve o RASCUNHO de um template de mensagem categoria MARKETING do WhatsApp Business Platform (Meta), pro Congresso Câncer 2026 (evento de práticas integrativas oncológicas, São Paulo — público B2B: profissional de saúde, não paciente).
+const BASE = `Você escreve o RASCUNHO de um template de mensagem do WhatsApp Business Platform (Meta), pro Congresso Câncer 2026 (evento de práticas integrativas oncológicas, São Paulo — público B2B: profissional de saúde, não paciente).
 
-Regras obrigatórias de um template WhatsApp categoria Marketing (reduzem risco de rejeição pela Meta, mas não garantem aprovação — a revisão final é sempre da Meta):
-- Texto simples, sem markdown, sem emoji em excesso (no máximo 1-2), sem CAIXA ALTA, sem excesso de pontuação/exclamação (nada de "!!!" ou "GRÁTIS").
-- Pode usar exatamente UMA variável, escrita como {{1}}, representando o nome da pessoa. NÃO comece nem termine a mensagem com {{1}} — use em algum ponto no meio/natural do texto (ex: "Oi, {{1}}! ..."). Não crie outras variáveis.
-- Não inclua links/URLs no corpo do texto — links em template viram botão separado, configurado depois no WhatsApp Manager, não texto corrido. Se precisar referenciar, deixe [LINK] como placeholder.
+Regras estruturais obrigatórias (reduzem risco de rejeição pela Meta, mas não garantem aprovação — a revisão final é sempre da Meta):
+- Texto simples, sem markdown, sem emoji em excesso (no máximo 1-2), sem CAIXA ALTA, sem excesso de pontuação/exclamação.
+- Pode usar exatamente UMA variável, escrita como {{1}}, representando o nome da pessoa. NÃO comece nem termine a mensagem com {{1}}. Não crie outras variáveis.
+- Não inclua links/URLs no corpo do texto — links em template viram botão separado, configurado depois no WhatsApp Manager. Se precisar referenciar, deixe [LINK] como placeholder.
 - Até 1024 caracteres, de preferência bem mais curto (3-5 linhas).
-- É pra reengajar quem JÁ comprou em edição anterior E JÁ autorizou receber esse tipo de mensagem — trate como reconexão com quem conhece o evento, não como contato frio nem venda agressiva.
 - Não invente data, preço ou link — se precisar citar algo assim, deixe [LINK] ou [DATA] como placeholder pro Gestor completar depois de aprovado.
 - Evite linguagem que pareça fazer promessa/alegação de saúde (é evento B2B de capacitação profissional, não produto de saúde pro consumidor final).
-- Tom brasileiro, caloroso, direto, sem urgência falsa.
+- Tom brasileiro, direto.
 - Responda SOMENTE com um JSON válido, sem markdown, no formato exato: {"corpo": "..."}`;
+
+const REGRAS_POR_CATEGORIA: Record<string, string> = {
+  marketing: `Categoria: MARKETING (promocional/convite).
+- É pra reengajar quem JÁ comprou em edição anterior E JÁ autorizou especificamente receber esse tipo de mensagem — trate como reconexão com quem conhece o evento, não como contato frio nem venda agressiva.
+- Tom caloroso, sem urgência falsa.`,
+  utility: `Categoria: UTILITY (atualização/transacional).
+- Regra crítica: NÃO pode ter absolutamente NENHUM tom promocional, convite pra comprar, oferta ou venda — se tiver qualquer traço promocional, a Meta reclassifica o template inteiro como Marketing e derruba o propósito dele.
+- É só pra informar algo objetivo sobre algo que a pessoa JÁ iniciou/já faz parte (ex: confirmação de inscrição, lembrete de data/horário de algo que ela já vai, atualização de status). Não convide pra comprar nem para se inscrever pela primeira vez.
+- Tom neutro, informativo, direto ao ponto.`,
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -4547,7 +4556,13 @@ Deno.serve(async (req) => {
   let body: any;
   try { body = await req.json(); } catch { return j({ erro: "bad body" }, 400); }
   const brief = String(body.brief || "").trim();
+  const categoria = String(body.categoria || "marketing").trim().toLowerCase();
   if (!brief) return j({ erro: "descreva o que a mensagem deve dizer" }, 400);
+  if (categoria === "authentication") {
+    return j({ erro: "Template de Authentication (código de verificação) é gerado automaticamente pela Meta — não tem texto customizado pra rascunhar aqui" }, 400);
+  }
+  const regras = REGRAS_POR_CATEGORIA[categoria] || REGRAS_POR_CATEGORIA.marketing;
+  const SYSTEM = `${BASE}\n\n${regras}`;
 
   const resp = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -4715,3 +4730,48 @@ com Opt-in WhatsApp e Qualidade do WhatsApp), tudo só visível pro Gestor:
 - Depois do disparo: `campanha_whatsapp_contatos.status` deve virar
   `enviado` (com `wa_message_id`) ou `falhou` (com `erro` — confere o
   texto, geralmente é número inválido ou template ainda em revisão).
+
+### 25.6. Categoria do template (Marketing/Utility/Authentication)
+
+**Por quê (17/09/2026):** o campo é educativo/checklist — a categoria de
+verdade é decidida pela Meta na aprovação do template no WhatsApp
+Manager, o CRM não manda isso pra API no envio (só referencia o nome do
+template já aprovado). Mas ajuda a não misturar lista errada com
+categoria errada, e ajusta as regras que a IA segue pra rascunhar.
+
+```sql
+alter table public.campanhas_whatsapp
+  add column if not exists categoria text not null default 'marketing'
+    check (categoria in ('marketing', 'utility', 'authentication'));
+
+drop view if exists public.campanhas_whatsapp_resumo;
+create view public.campanhas_whatsapp_resumo with (security_invoker = true) as
+select
+  c.id, c.criado_em, c.nome, c.template_nome, c.idioma, c.categoria,
+  count(k.id) as total,
+  count(k.id) filter (where k.status = 'pendente') as pendentes,
+  count(k.id) filter (where k.status = 'enviado')  as enviados,
+  count(k.id) filter (where k.status = 'falhou')   as falhas
+from public.campanhas_whatsapp c
+left join public.campanha_whatsapp_contatos k on k.campanha_id = c.id
+group by c.id
+order by c.criado_em desc;
+
+grant select on public.campanhas_whatsapp_resumo to authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+> **Pegadinha:** `CREATE OR REPLACE VIEW` não deixa inserir coluna no
+> meio da lista (só no final) — por isso precisou `DROP VIEW` + `CREATE`
+> de novo em vez de só substituir. E rodar o `ALTER TABLE` **separado**
+> do resto: se o bloco inteiro for uma transação só e uma parte falhar,
+> tudo é desfeito (foi o que aconteceu na primeira tentativa).
+
+`gerar-texto-whatsapp` (§25.2, código já atualizado acima) recebe
+`categoria` no body e usa um prompt diferente por categoria:
+**Marketing** permite tom promocional (pra quem já autorizou);
+**Utility** exige tom estritamente informativo/transacional, sem nenhum
+traço promocional (senão a Meta reclassifica o template inteiro pra
+Marketing); **Authentication** retorna erro — esse tipo de template é
+gerado automaticamente pela Meta, sem texto customizado.
