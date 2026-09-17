@@ -5020,3 +5020,112 @@ No `Ads/crm.html`, o card ganha um selo a mais:
 
 Calculado com `fmtDuracao()`/`tempoRespostaBadge()` novos no JS, usando
 os campos `ultima_recebida_em`/`respondido_em` que a RPC devolve.
+
+## 27. WhatsApp — variável nomeada (`{{nome}}`, não `{{1}}`)
+
+**Por quê (17/09/2026):** ao testar de verdade, o primeiro template já
+aprovado (`meta_convite_com_botao_01`) usa **`{{nome}}`** — variável
+**nomeada** da Meta, não a posicional `{{1}}` que o §25 original
+assumia. O formato do parâmetro que a Cloud API espera é diferente pra
+cada caso:
+
+```json
+// posicional ({{1}}) — sem parameter_name, ordem importa
+{ "type": "text", "text": "Fernando" }
+
+// nomeada ({{nome}}) — com parameter_name
+{ "type": "text", "parameter_name": "nome", "text": "Fernando" }
+```
+
+### 27.1. SQL
+
+```sql
+alter table public.campanhas_whatsapp
+  add column if not exists variavel_token text;
+```
+
+### 27.2. `whatsapp-templates-listar` (§25 — Edge Function que lista os
+templates aprovados) — detecta o nome da variável via regex em vez de
+só checar `{{1}}` literal:
+
+```ts
+  const templates = (metaBody.data || []).map((t: any) => {
+    const bodyComp = (t.components || []).find((c: any) => c.type === "BODY");
+    const bodyText = bodyComp?.text || "";
+    const match = bodyText.match(/\{\{([^}]+)\}\}/);
+    const token = match ? match[1].trim() : null;
+    return {
+      nome: t.name,
+      status: t.status,
+      categoria: String(t.category || "").toLowerCase(),
+      idioma: t.language,
+      variavel_nome: !!token,
+      variavel_token: token,
+      preview: bodyText,
+    };
+  });
+
+  return j({ ok: true, templates });
+});
+```
+
+### 27.3. `whatsapp-template-teste` (§25.8) — monta o parâmetro certo
+conforme o token recebido:
+
+```ts
+  const numero = String(body.numero || "").replace(/\D/g, "");
+  const templateNome = String(body.template_nome || "").trim();
+  const idioma = String(body.idioma || "pt_BR").trim();
+  const variavelNome = !!body.variavel_nome;
+  const variavelToken = body.variavel_token ? String(body.variavel_token).trim() : null;
+  const nomeTeste = String(body.nome_teste || "").trim();
+  if (!numero || !templateNome) return j({ erro: "número e nome do template são obrigatórios" }, 400);
+
+  const usaNamed = variavelToken && !/^\d+$/.test(variavelToken);
+  const components = variavelNome
+    ? [{ type: "body", parameters: [
+        usaNamed
+          ? { type: "text", parameter_name: variavelToken, text: nomeTeste || "Teste" }
+          : { type: "text", text: nomeTeste || "Teste" }
+      ] }]
+    : [];
+```
+
+### 27.4. `campanha-whatsapp-lote` (§25.3) — mesma lógica, por contato:
+
+```ts
+  const campResp = await fetch(
+    `${URL_}/rest/v1/campanhas_whatsapp?id=eq.${campanhaId}&select=template_nome,idioma,variavel_nome,variavel_token`,
+    { headers: svcHeaders },
+  );
+  const campRows = await campResp.json();
+  const camp = campRows && campRows[0];
+  if (!camp) return j({ erro: "campanha não encontrada" }, 404);
+
+  const usaNamed = camp.variavel_token && !/^\d+$/.test(camp.variavel_token);
+
+  const pendResp = await fetch(
+    `${URL_}/rest/v1/campanha_whatsapp_contatos?campanha_id=eq.${campanhaId}&status=eq.pendente&select=id,numero,nome&order=id.asc&limit=${lote}`,
+    { headers: svcHeaders },
+  );
+  const pendentes = await pendResp.json();
+
+  let enviados = 0, falhas = 0;
+  for (const c of pendentes) {
+    const components = camp.variavel_nome
+      ? [{ type: "body", parameters: [
+          usaNamed
+            ? { type: "text", parameter_name: camp.variavel_token, text: c.nome || "" }
+            : { type: "text", text: c.nome || "" }
+        ] }]
+      : [];
+```
+
+(o resto das duas funções continua igual ao que já estava documentado
+em §25.3/§25.8.)
+
+### 27.5. Confirmado funcionando (17/09/2026)
+
+Teste real enviado com o template `meta_convite_com_botao_01`
+(`{{nome}}`) → entregue → respondido pelo destinatário → tudo certo de
+ponta a ponta na API oficial.
