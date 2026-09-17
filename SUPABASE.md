@@ -5148,3 +5148,314 @@ em §25.3/§25.8.)
 Teste real enviado com o template `meta_convite_com_botao_01`
 (`{{nome}}`) → entregue → respondido pelo destinatário → tudo certo de
 ponta a ponta na API oficial.
+
+## 28. Disparo automático de campanhas WhatsApp (terça-quinta 13h-14h, lotes de 50, sem repetir número)
+
+**Contexto (17/09/2026):** decisão consciente do gestor de importar a
+base geral de leads da Eduzz (~3.000 números, **sem opt-in específico
+de WhatsApp**) e disparar `meta_convite_com_botao_01` (Marketing) pra
+ela mesmo assim. Isso é fora do que a Meta recomenda (Marketing exige
+opt-in por canal) e corre risco real de a nota de qualidade do número
+cair ou o número ser restringido/banido — o mesmo número que a Cris usa
+pra atender todo mundo, inclusive quem já comprou. Decisão do negócio,
+registrada aqui pra contexto futuro, não reversão automática.
+
+Pra reduzir o risco (mesmo sem eliminar), o disparo:
+- só roda automaticamente **terça a quinta, das 13h às 14h** (horário
+  de Brasília — janela de menor probabilidade de reclamação, fora do
+  horário de consulta do público-alvo);
+- manda **até 50 mensagens por lote**, em lotes de 15 em 15 minutos
+  dentro da janela (4 lotes/dia = até 200/dia, 3x/semana = até 600/semana
+  — ritmo conservador; ajustável, ver §28.4);
+- **nunca manda pro mesmo número duas vezes** numa campanha Marketing,
+  mesmo que o número apareça repetido no CSV ou em campanhas diferentes
+  (trigger no banco, não depende do CRM lembrar).
+
+### 28.1. SQL — status "pulado", trigger anti-duplicidade, view atualizada
+
+```sql
+-- permite o novo status "pulado" (número já contatado antes)
+alter table public.campanha_whatsapp_contatos
+  drop constraint if exists campanha_whatsapp_contatos_status_check;
+alter table public.campanha_whatsapp_contatos
+  add constraint campanha_whatsapp_contatos_status_check
+  check (status in ('pendente','enviado','falhou','pulado'));
+
+-- trigger: se o número já está enviado/pendente em QUALQUER campanha
+-- de categoria marketing, a nova linha entra direto como "pulado" em
+-- vez de "pendente" — funciona pra número repetido dentro do mesmo CSV
+-- e pra reimportação em campanhas diferentes.
+create or replace function public.bloquear_contato_whatsapp_duplicado()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if exists (
+    select 1
+    from public.campanha_whatsapp_contatos k
+    join public.campanhas_whatsapp c on c.id = k.campanha_id
+    where k.numero = new.numero
+      and c.categoria = 'marketing'
+      and k.status in ('enviado', 'pendente')
+  ) then
+    new.status := 'pulado';
+    new.erro := 'número já contatado (ou na fila) em outra campanha de marketing — sem repetir envio';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_bloquear_contato_whatsapp_duplicado on public.campanha_whatsapp_contatos;
+create trigger trg_bloquear_contato_whatsapp_duplicado
+  before insert on public.campanha_whatsapp_contatos
+  for each row execute function public.bloquear_contato_whatsapp_duplicado();
+
+-- view com a contagem de pulados
+drop view if exists public.campanhas_whatsapp_resumo;
+create view public.campanhas_whatsapp_resumo with (security_invoker = true) as
+select
+  c.id, c.criado_em, c.nome, c.template_nome, c.idioma, c.categoria,
+  count(k.id) as total,
+  count(k.id) filter (where k.status = 'pendente') as pendentes,
+  count(k.id) filter (where k.status = 'enviado')  as enviados,
+  count(k.id) filter (where k.status = 'falhou')   as falhas,
+  count(k.id) filter (where k.status = 'pulado')   as pulados
+from public.campanhas_whatsapp c
+left join public.campanha_whatsapp_contatos k on k.campanha_id = c.id
+group by c.id
+order by c.criado_em desc;
+
+grant select on public.campanhas_whatsapp_resumo to authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+> Roda isso **separado** do bloco abaixo (§28.3, o `cron.schedule`) —
+> mesmo motivo de sempre: se colar tudo junto numa transação só e uma
+> parte falhar, desfaz o que já tinha funcionado.
+
+### 28.2. Edge Function `campanha-whatsapp-lote` (versão com disparo automático)
+
+Editor → apaga tudo e cola:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const URL_    = Deno.env.get("SUPABASE_URL")!;
+const ANON    = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SVC     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const WA_TOKEN        = Deno.env.get("WHATSAPP_PERMANENT_TOKEN")!;
+const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
+const AUTO_TOKEN      = Deno.env.get("CAMPANHA_AUTO_TOKEN") ?? "";
+const LOTE_MAX = 50;
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-automation-token",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${userToken}` } });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
+async function ehGestor(uid: string) {
+  const r = await fetch(`${URL_}/rest/v1/perfis?id=eq.${uid}&select=papel,ativo`, { headers: svcHeaders });
+  const rows = await r.json();
+  const p = rows && rows[0];
+  return !!(p && p.ativo && p.papel === "gestor");
+}
+
+function horaBrasil(): { dow: number; hora: number } {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo", hour12: false, weekday: "short", hour: "2-digit",
+  });
+  const partes = fmt.formatToParts(new Date());
+  const hora = Number(partes.find((p) => p.type === "hour")?.value ?? "0");
+  const diaTxt = partes.find((p) => p.type === "weekday")?.value ?? "";
+  const dias: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { dow: dias[diaTxt] ?? 0, hora };
+}
+function dentroJanelaDisparo(): boolean {
+  const { dow, hora } = horaBrasil();
+  return dow >= 2 && dow <= 4 && hora === 13; // terça(2) a quinta(4), 13h-14h
+}
+
+async function campanhaAutoAlvo(): Promise<number | null> {
+  const r = await fetch(
+    `${URL_}/rest/v1/campanhas_whatsapp_resumo?categoria=eq.marketing&pendentes=gt.0&select=id&order=criado_em.asc&limit=1`,
+    { headers: svcHeaders },
+  );
+  if (!r.ok) return null;
+  const rows = await r.json();
+  return rows && rows[0] ? rows[0].id : null;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method" }, 405);
+
+  const autoHeader = req.headers.get("x-automation-token") || "";
+  const ehAutomatico = !!AUTO_TOKEN && autoHeader === AUTO_TOKEN;
+
+  let campanhaId: number | null = null;
+  let lote = LOTE_MAX;
+
+  if (ehAutomatico) {
+    if (!dentroJanelaDisparo()) {
+      return j({ ok: true, pulado: "fora da janela de disparo (terça a quinta, 13h-14h)" });
+    }
+    let body: any = {};
+    try { body = await req.json(); } catch { /* cron pode chamar sem corpo */ }
+    lote = Math.min(Number(body.lote) || LOTE_MAX, LOTE_MAX);
+    campanhaId = await campanhaAutoAlvo();
+    if (!campanhaId) return j({ ok: true, pulado: "nenhuma campanha de marketing com pendentes" });
+  } else {
+    const auth = req.headers.get("authorization") || "";
+    const token = auth.replace(/^Bearer\s+/i, "");
+    const u = await quemChamou(token);
+    if (!u) return j({ erro: "não autenticado" }, 401);
+    if (!(await ehGestor(u.id))) return j({ erro: "só o gestor pode disparar campanhas" }, 403);
+
+    let body: any;
+    try { body = await req.json(); } catch { return j({ erro: "bad body" }, 400); }
+    campanhaId = Number(body.campanha_id);
+    lote = Math.min(Number(body.lote) || LOTE_MAX, LOTE_MAX);
+    if (!campanhaId) return j({ erro: "campanha_id obrigatório" }, 400);
+  }
+
+  const campResp = await fetch(
+    `${URL_}/rest/v1/campanhas_whatsapp?id=eq.${campanhaId}&select=template_nome,idioma,variavel_nome,variavel_token`,
+    { headers: svcHeaders },
+  );
+  const campRows = await campResp.json();
+  const camp = campRows && campRows[0];
+  if (!camp) return j({ erro: "campanha não encontrada" }, 404);
+
+  const usaNamed = camp.variavel_token && !/^\d+$/.test(camp.variavel_token);
+
+  const pendResp = await fetch(
+    `${URL_}/rest/v1/campanha_whatsapp_contatos?campanha_id=eq.${campanhaId}&status=eq.pendente&select=id,numero,nome&order=id.asc&limit=${lote}`,
+    { headers: svcHeaders },
+  );
+  const pendentes = await pendResp.json();
+
+  let enviados = 0, falhas = 0;
+  for (const c of pendentes) {
+    const components = camp.variavel_nome
+      ? [{ type: "body", parameters: [
+          usaNamed
+            ? { type: "text", parameter_name: camp.variavel_token, text: c.nome || "" }
+            : { type: "text", text: c.nome || "" }
+        ] }]
+      : [];
+    try {
+      const r = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${WA_TOKEN}`, "content-type": "application/json" },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: c.numero,
+          type: "template",
+          template: { name: camp.template_nome, language: { code: camp.idioma }, components },
+        }),
+      });
+      const rb = await r.json();
+      if (!r.ok) throw new Error(rb.error?.message || "falha meta");
+      const waId = rb.messages?.[0]?.id ?? null;
+      await fetch(`${URL_}/rest/v1/campanha_whatsapp_contatos?id=eq.${c.id}`, {
+        method: "PATCH", headers: { ...svcHeaders, prefer: "return=minimal" },
+        body: JSON.stringify({ status: "enviado", enviado_em: new Date().toISOString(), wa_message_id: waId }),
+      });
+      enviados++;
+    } catch (e) {
+      await fetch(`${URL_}/rest/v1/campanha_whatsapp_contatos?id=eq.${c.id}`, {
+        method: "PATCH", headers: { ...svcHeaders, prefer: "return=minimal" },
+        body: JSON.stringify({ status: "falhou", erro: String(e) }),
+      });
+      falhas++;
+    }
+  }
+
+  return j({ ok: true, campanha_id: campanhaId, automatico: ehAutomatico, enviados, falhas, tentativas: pendentes.length });
+});
+```
+
+**Deploy — muda de "LIGADO" pra "DESLIGADO":** essa versão passou a
+fazer a própria verificação de identidade (gestor por JWT normal, ou
+token de automação pro cron) igual o `whatsapp-webhook`. Se deixar
+"Verify JWT with legacy secret" ligado, o próprio gateway do Supabase
+barra a chamada do cron **antes** dela chegar no código, porque o cron
+não manda um JWT de usuário — só o token de automação. Então:
+**Edge Functions → campanha-whatsapp-lote → Settings → desliga "Verify
+JWT with legacy secret".**
+
+**Secret novo:** Edge Functions → campanha-whatsapp-lote → Secrets →
+adiciona `CAMPANHA_AUTO_TOKEN` com um valor aleatório longo (gerado só
+pra esse fim — não é a service role key nem nada reutilizado; **não
+cole o valor real aqui no arquivo**, ele foi passado direto no chat pra
+não ficar salvo em texto puro no Git). Esse mesmo valor vai dentro do
+SQL do cron em §28.3, no lugar de `SEU_TOKEN_AQUI`.
+
+### 28.3. SQL — agenda o cron (rodar depois do deploy da função)
+
+```sql
+create extension if not exists pg_net with schema extensions;
+
+select cron.unschedule('disparo-whatsapp-marketing')
+  where exists (select 1 from cron.job where jobname = 'disparo-whatsapp-marketing');
+
+select cron.schedule(
+  'disparo-whatsapp-marketing',
+  '*/15 16 * * 2,3,4',
+  $$
+  select net.http_post(
+    url := 'https://nbhekjgbszyuuxrynzfo.supabase.co/functions/v1/campanha-whatsapp-lote',
+    headers := '{"Content-Type": "application/json", "x-automation-token": "SEU_TOKEN_AQUI"}'::jsonb,
+    body := '{"lote": 50}'::jsonb
+  );
+  $$
+);
+```
+
+`'*/15 16 * * 2,3,4'` = a cada 15 minutos, entre 16h e 16h59 **UTC**
+(igual 13h-13h59 em Brasília, já que o Brasil não tem mais horário de
+verão), nas terças/quartas/quintas (`2,3,4` = dia da semana do cron,
+domingo=0). 4 disparos por dia dentro da janela, até 50 cada = até 200
+contatos/dia, ~600/semana.
+
+### 28.4. Ajustar o ritmo (opcional)
+
+Pra ir mais rápido nos ~3.000 da Eduzz, dá pra apertar o intervalo —
+mas confere antes a **tier de mensagens** do número (business.facebook.com
+→ WhatsApp Manager → Configurações da API → limite de mensagens) pra
+não estourar o limite diário e virar falha em massa. Pra rodar a cada 5
+minutos em vez de 15 (12 lotes/dia = até 600/dia):
+
+```sql
+select cron.alter_job(
+  (select jobid from cron.job where jobname = 'disparo-whatsapp-marketing'),
+  schedule := '*/5 16 * * 2,3,4'
+);
+```
+
+### 28.5. Conferir
+
+- `select * from cron.job;` mostra o job agendado; `select * from
+  cron.job_run_details order by start_time desc limit 20;` mostra o
+  histórico de execuções (inclusive fora do horário certo, se algo
+  estiver errado).
+- Fora da janela ou sem campanha `marketing` com pendentes, a função
+  roda e responde `{"ok":true,"pulado":"..."}` sem gastar chamada da
+  Meta — não é erro, é o comportamento esperado.
+- O botão "Enviar próximo lote" no CRM continua funcionando a qualquer
+  hora (path do gestor autenticado, sem o guard de horário) — útil pra
+  destravar manualmente ou mandar um lote avulso fora da janela.
