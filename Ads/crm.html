@@ -71,15 +71,16 @@
   .col.triar > .cab b{color:var(--dourado);}
   .col > .cab .n{font-size:11px;color:var(--faint);font-weight:700;}
 
-  .card{background:#fbfaf8;border:1px solid var(--linha);border-radius:11px;padding:11px 12px;margin-bottom:9px;}
-  .card-head{display:flex;align-items:center;gap:9px;}
-  .avatar{width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;line-height:1;flex-shrink:0;}
+  .card{background:#fbfaf8;border:1px solid var(--linha);border-radius:10px;padding:8px 9px;margin-bottom:6px;}
+  .card-head{display:flex;align-items:center;gap:7px;}
+  .avatar{width:24px;height:24px;min-width:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;line-height:1;flex-shrink:0;}
   .card.urg{border-color:var(--bordo-vivo);box-shadow:0 0 0 1px var(--bordo-vivo) inset;}
-  .card .nome{font-family:var(--tit);font-weight:800;font-size:13.5px;line-height:1.2;}
-  .card .meta{font-size:11px;color:var(--soft);margin-top:3px;}
-  .card .badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;}
-  .card .quando{font-size:10px;color:var(--faint);margin-top:5px;}
-  .badge{font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 7px;border-radius:999px;}
+  .card-head .info{min-width:0;flex:1;}
+  .card .nome{font-family:var(--tit);font-weight:800;font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card .meta{font-size:10px;color:var(--soft);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card .quando{font-size:9px;color:var(--faint);white-space:nowrap;flex-shrink:0;}
+  .card .badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;}
+  .badge{font-size:8.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;padding:1.5px 6px;border-radius:999px;}
   .badge.iniciante{background:rgba(47,111,158,.13);color:var(--azul);}
   .badge.intermediario{background:rgba(201,139,31,.15);color:var(--dourado);}
   .badge.avancado{background:rgba(185,45,61,.13);color:var(--bordo-vivo);}
@@ -89,20 +90,24 @@
   .badge.tempo-ok{background:rgba(31,138,76,.13);color:var(--verde);}
   .badge.tempo-espera{background:rgba(201,139,31,.16);color:var(--dourado);}
   .badge.tempo-urgente{background:rgba(185,45,61,.14);color:var(--bordo-vivo);}
-  .card .linha-acao{display:flex;gap:6px;align-items:center;margin-top:9px;flex-wrap:wrap;}
-  .card select{font-family:var(--corpo);font-size:11px;padding:4px 6px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--ink);max-width:100%;}
+  .card .linha-acao{display:flex;gap:5px;align-items:center;margin-top:5px;flex-wrap:wrap;}
+  .card select{font-family:var(--corpo);font-size:10px;padding:3px 4px;border-radius:6px;border:1px solid var(--linha);background:#fff;color:var(--ink);max-width:100%;flex:1;min-width:0;}
   .card .wa{font-size:11px;font-weight:700;text-decoration:none;color:var(--verde);border:1px solid var(--verde);padding:4px 9px;border-radius:999px;white-space:nowrap;}
   .card .wa:hover{background:var(--verde);color:#fff;}
-  .acoes-rapidas{display:flex;align-items:center;gap:6px;}
+  .acoes-rapidas{display:flex;align-items:center;gap:5px;}
   .acoes-rapidas .spacer{flex:1;}
-  .icon-btn{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;text-decoration:none;background:#efe8e4;color:var(--soft);border:0;cursor:pointer;flex-shrink:0;}
+  .icon-btn{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;text-decoration:none;background:#efe8e4;color:var(--soft);border:0;cursor:pointer;flex-shrink:0;}
   .icon-btn.wa{background:rgba(31,138,76,.13);color:var(--verde);}
   .icon-btn.wa:hover{background:var(--verde);color:#fff;}
   .icon-btn:hover{filter:brightness(.94);}
-  .card .nota{width:100%;margin-top:8px;font-family:var(--corpo);font-size:11.5px;padding:6px 8px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--ink);resize:vertical;min-height:34px;}
-  .card .resp{font-size:10.5px;color:var(--faint);margin-top:6px;}
-  .resp-nome{font-family:var(--tit);font-weight:800;font-size:11.5px;color:var(--bordo);}
-  .btn-assumir-resp{font-family:var(--tit);font-weight:800;font-size:10px;text-transform:uppercase;background:none;border:0;color:var(--bordo);text-decoration:underline;cursor:pointer;padding:0;}
+  .icon-btn.sm{width:18px;height:18px;font-size:9.5px;}
+  .card .nota-toggle{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:10.5px;color:var(--soft);cursor:pointer;min-width:0;}
+  .card .nota-toggle .txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .card .nota-toggle .txt:empty::before{content:"+ anotação";color:var(--faint);font-style:italic;}
+  .card .nota{width:100%;margin-top:5px;font-family:var(--corpo);font-size:11px;padding:5px 7px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--ink);resize:vertical;min-height:34px;}
+  .card .resp{font-size:9.5px;color:var(--faint);margin-top:4px;display:flex;align-items:center;gap:5px;}
+  .resp-nome{font-family:var(--tit);font-weight:800;font-size:10.5px;color:var(--bordo);}
+  .btn-assumir-resp{font-family:var(--tit);font-weight:800;font-size:9.5px;text-transform:uppercase;background:none;border:0;color:var(--bordo);text-decoration:underline;cursor:pointer;padding:0;}
   .vazio-col{font-size:11px;color:var(--faint);text-align:center;padding:14px 4px;}
 
   .aviso{background:#faf1f0;border:1px dashed var(--bordo-vivo);border-radius:12px;padding:12px 15px;font-size:12.5px;color:var(--bordo);margin-bottom:14px;}
@@ -863,11 +868,11 @@
 
     c.innerHTML =
       '<div class="card-head">' + avatarHtml(l.nome, wpp) +
-        '<div><div class="nome">' + (l.nome || (wpp ? '+' + wpp : '(sem nome)')) + '</div>' +
+        '<div class="info"><div class="nome">' + (l.nome || (wpp ? '+' + wpp : '(sem nome)')) + '</div>' +
         (l.profissao ? '<div class="meta">' + esc(l.profissao) + '</div>' : '') + '</div>' +
+        (l.captado_em ? '<div class="quando" title="Desde">' + fmtQuando(l.captado_em) + '</div>' : '') +
       '</div>' +
       (badges ? '<div class="badges">' + badges + '</div>' : '') +
-      (l.captado_em ? '<div class="quando">🕐 desde ' + fmtQuando(l.captado_em) + '</div>' : '') +
       '<div class="linha-acao acoes-rapidas">' +
         '<a class="icon-btn wa" href="https://wa.me/' + wpp + '" target="_blank" rel="noopener" title="Abrir no WhatsApp">' + ICON_WA + '</a>' +
         (l.email ? '<button type="button" class="icon-btn btn-email" data-email="' + esc(l.email) + '" data-nome="' + esc(l.nome || '') + '" data-wpp="' + esc(wpp) + '" title="Enviar e-mail">✉️</button>' : '') +
@@ -877,12 +882,17 @@
         (triar ? '' : '<select class="sel-etapa"></select>') +
         (estado.ehGestor ? '<select class="sel-resp"></select>' : '') +
       '</div>' +
-      (triar ? '' : '<textarea class="nota" placeholder="anotação…">' + (l.nota || '') + '</textarea>') +
       (triar ? '' :
-        '<div class="resp">' +
-          (l.atribuido_nome ? 'responsável: <span class="resp-nome">' + esc(l.atribuido_nome) + '</span>' : 'sem responsável') +
-          (l.atribuido_a !== estado.eu.id ? ' <button type="button" class="btn-assumir-resp" data-w="' + esc(l.whatsapp || '') + '">assumir</button>' : '') +
-        '</div>');
+        '<div class="nota-toggle"><span class="ic">📝</span><span class="txt">' + esc(l.nota || '') + '</span></div>' +
+        '<textarea class="nota" placeholder="anotação…" hidden>' + (l.nota || '') + '</textarea>') +
+      (triar ? '' :
+        (estado.ehGestor
+          ? (l.atribuido_a !== estado.eu.id ? '<div class="resp"><button type="button" class="btn-assumir-resp" data-w="' + esc(l.whatsapp || '') + '">assumir</button></div>' : '')
+          : '<div class="resp">' +
+              (l.atribuido_nome ? 'resp: <span class="resp-nome">' + esc(l.atribuido_nome) + '</span>' : 'sem responsável') +
+              (l.atribuido_a !== estado.eu.id ? ' <button type="button" class="btn-assumir-resp" data-w="' + esc(l.whatsapp || '') + '">assumir</button>' : '') +
+            '</div>'
+        ));
 
     // etapa
     if (!triar){
@@ -936,10 +946,19 @@
       upsertLead(l.whatsapp, { atribuido_a: estado.eu.id }).catch(function(){ assumirResp.disabled = false; });
     });
 
-    // nota (salva ao sair do campo, se mudou)
+    // nota (colapsada por padrão — clica pra abrir, salva ao sair do campo)
     var nota = c.querySelector('.nota');
+    var notaToggle = c.querySelector('.nota-toggle');
+    if (notaToggle && nota) notaToggle.addEventListener('click', function(){
+      notaToggle.hidden = true;
+      nota.hidden = false;
+      nota.focus();
+    });
     if (nota) nota.addEventListener('blur', function(){
       var novo = this.value.trim();
+      notaToggle.querySelector('.txt').textContent = novo;
+      nota.hidden = true;
+      notaToggle.hidden = false;
       if (novo !== (l.nota || '')) upsertLead(l.whatsapp, { nota: novo || null });
     });
 
