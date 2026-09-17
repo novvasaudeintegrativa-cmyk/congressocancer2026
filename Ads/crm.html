@@ -109,6 +109,8 @@
   .resp-nome{font-family:var(--tit);font-weight:800;font-size:10.5px;color:var(--bordo);}
   .btn-assumir-resp{font-family:var(--tit);font-weight:800;font-size:9.5px;text-transform:uppercase;background:none;border:0;color:var(--bordo);text-decoration:underline;cursor:pointer;padding:0;}
   .vazio-col{font-size:11px;color:var(--faint);text-align:center;padding:14px 4px;}
+  .btn-ver-mais{width:100%;font-family:var(--tit);font-weight:700;font-size:10.5px;letter-spacing:.02em;text-transform:uppercase;background:#fff;border:1px dashed var(--linha);color:var(--soft);padding:7px;border-radius:8px;cursor:pointer;margin-top:2px;}
+  .btn-ver-mais:hover{border-color:var(--bordo);color:var(--bordo);}
 
   .aviso{background:#faf1f0;border:1px dashed var(--bordo-vivo);border-radius:12px;padding:12px 15px;font-size:12.5px;color:var(--bordo);margin-bottom:14px;}
   .foot{text-align:center;color:var(--faint);font-size:11px;margin-top:20px;}
@@ -805,6 +807,9 @@
     return true;
   }
 
+  var LIMITE_PADRAO_COLUNA = 10;
+  var limiteColuna = {}; // etapaId -> quantidade visível no momento
+
   function render(){
     var leads = estado.leads.filter(leadVisivelNoFiltro);
     $('cont').textContent = leads.length + ' lead(s)';
@@ -813,6 +818,13 @@
 
     ETAPAS.forEach(function(e){
       var doStage = leads.filter(function(l){ return l.etapa === e.id; });
+      // prioridade: quem veio de campanha do WhatsApp aparece primeiro,
+      // dentro de cada grupo mantém a ordem por mais recente (já vem assim da RPC)
+      doStage.sort(function(a, b){
+        var pa = a.campanha_whatsapp_nome ? 1 : 0;
+        var pb = b.campanha_whatsapp_nome ? 1 : 0;
+        return pb - pa;
+      });
       board.appendChild(coluna(e.rot, doStage, false, e.id));
     });
   }
@@ -827,7 +839,20 @@
       v.textContent = triar ? 'nada pra distribuir' : '—';
       col.appendChild(v);
     } else {
-      leads.forEach(function(l){ col.appendChild(cardLead(l, triar)); });
+      var limite = triar ? leads.length : (limiteColuna[etapaId] || LIMITE_PADRAO_COLUNA);
+      var visiveis = leads.slice(0, limite);
+      visiveis.forEach(function(l){ col.appendChild(cardLead(l, triar)); });
+      if (!triar && leads.length > limite){
+        var btnMais = document.createElement('button');
+        btnMais.type = 'button';
+        btnMais.className = 'btn-ver-mais';
+        btnMais.textContent = '▾ Ver mais (' + (leads.length - limite) + ')';
+        btnMais.addEventListener('click', function(){
+          limiteColuna[etapaId] = limite + LIMITE_PADRAO_COLUNA;
+          render();
+        });
+        col.appendChild(btnMais);
+      }
     }
     if (!triar && etapaId){
       col.addEventListener('dragover', function(e){ e.preventDefault(); col.classList.add('drag-over'); });
