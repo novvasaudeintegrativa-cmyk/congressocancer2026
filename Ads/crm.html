@@ -210,6 +210,10 @@
   .qw-badge.red{background:rgba(185,45,61,.14);color:var(--bordo-vivo);}
   .qw-badge.na{background:#efe8e4;color:var(--soft);}
 
+  /* ---- duas colunas: e-mail à esquerda, whatsapp à direita ---- */
+  .campanhas-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;}
+  @media (max-width:900px){ .campanhas-grid{grid-template-columns:1fr;} }
+
   /* ---- modificar senha ---- */
   #painel-senha{margin-bottom:16px;}
   .form-senha{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:12px 14px;}
@@ -356,49 +360,115 @@
     </form>
   </div>
 
-  <div id="view-campanhas" hidden>
-    <div class="sec-crm"><span>Campanhas de e-mail</span></div>
-    <div class="aviso">Disparo em massa pra listas importadas (ex: compradores de edições anteriores). Um único assunto/corpo vale pra todos os contatos da campanha — pode misturar Lote 1, 2, 3 e VIP no mesmo CSV, todo mundo recebe o mesmo texto.</div>
+  <div class="campanhas-grid">
+    <div class="col-campanhas">
+      <div id="view-campanhas" hidden>
+        <div class="sec-crm"><span>Campanhas de e-mail</span></div>
+        <div class="aviso">Disparo em massa pra listas importadas (ex: compradores de edições anteriores). Um único assunto/corpo vale pra todos os contatos da campanha — pode misturar Lote 1, 2, 3 e VIP no mesmo CSV, todo mundo recebe o mesmo texto.</div>
 
-    <div class="campanhas-tabela-wrap">
-      <table class="campanhas-tabela"><tbody id="campanhas-lista"></tbody></table>
+        <div class="campanhas-tabela-wrap">
+          <table class="campanhas-tabela"><tbody id="campanhas-lista"></tbody></table>
+        </div>
+
+        <form id="form-campanha" class="form-campanha">
+          <label for="cp-nome">Nome da campanha (só pra identificar, não vai no e-mail)</label>
+          <input type="text" id="cp-nome" placeholder="ex: Reengajamento compradores 2025" required>
+
+          <label for="cp-brief">Descreva o que o e-mail deve dizer</label>
+          <input type="text" id="cp-brief" placeholder="ex: convidar quem comprou em 2025 a garantir vaga na edição 2026 com condição especial de quem já é da casa">
+          <button type="button" id="cp-gerar-ia">✨ Gerar com IA</button>
+
+          <label for="cp-assunto">Assunto</label>
+          <input type="text" id="cp-assunto" required>
+
+          <label for="cp-corpo">Corpo do e-mail</label>
+          <textarea id="cp-corpo" placeholder="pode usar {{nome}} pra personalizar" required></textarea>
+          <div class="dica">{{nome}} no assunto ou no corpo é trocado pelo nome de cada contato na hora do envio.</div>
+          <button type="button" id="cp-salvar-edicao" disabled>💾 Salvar edição no histórico</button>
+          <div class="dica">Fica ativo depois de gerar ou clicar em "Usar" num texto do histórico — edita à vontade e clica aqui pra atualizar aquele mesmo registro, sem criar um novo.</div>
+          <button type="button" id="cp-optin-cta">📱 Inserir CTA de opt-in WhatsApp</button>
+          <div class="dica">Adiciona no fim do texto um link pronto pra quem quiser também receber novidades por WhatsApp — quem clicar e mandar a mensagem fica registrado como "optou" (ver "Opt-in WhatsApp" ao lado).</div>
+
+          <label for="cp-teste-email">E-mail de teste (manda o assunto/corpo atual pra conferir antes de criar a campanha)</label>
+          <input type="email" id="cp-teste-email" placeholder="seu-email@novvasaudeintegrativa.com.br">
+          <button type="button" id="cp-teste-btn">📨 Enviar teste</button>
+          <div class="cp-msg" id="cp-teste-msg"></div>
+
+          <label for="cp-arquivo">Lista de contatos (CSV com colunas nome, email, lote)</label>
+          <input type="file" id="cp-arquivo" accept=".csv,text/csv" required>
+          <div class="dica">Aceita , ou ; como separador. Linhas sem e-mail válido são ignoradas.</div>
+
+          <button type="submit" id="cp-criar-btn">Criar campanha e importar contatos</button>
+          <div class="cp-msg" id="cp-msg"></div>
+        </form>
+
+        <div class="sec-crm" style="margin-top:24px;"><span>Textos já gerados por IA</span></div>
+        <div class="campanhas-tabela-wrap">
+          <table class="campanhas-tabela"><tbody id="geracoes-ia-lista"></tbody></table>
+        </div>
+      </div>
     </div>
 
-    <form id="form-campanha" class="form-campanha">
-      <label for="cp-nome">Nome da campanha (só pra identificar, não vai no e-mail)</label>
-      <input type="text" id="cp-nome" placeholder="ex: Reengajamento compradores 2025" required>
+    <div class="col-campanhas">
+      <div id="view-campanhas-whatsapp" hidden>
+        <div class="sec-crm"><span>Campanhas WhatsApp</span></div>
+        <div class="aviso">Só funciona com um <b>template categoria Marketing já aprovado pela Meta</b> (crie em business.facebook.com → WhatsApp Manager → Modelos de mensagem) — a IA aqui só rascunha o texto pra você colar lá. <b>Só importe números que já autorizaram</b> (ver "Opt-in WhatsApp" abaixo) — a lista antiga da Eduzz não serve pra isso, ver §24 do SUPABASE.md.</div>
 
-      <label for="cp-brief">Descreva o que o e-mail deve dizer</label>
-      <input type="text" id="cp-brief" placeholder="ex: convidar quem comprou em 2025 a garantir vaga na edição 2026 com condição especial de quem já é da casa">
-      <button type="button" id="cp-gerar-ia">✨ Gerar com IA</button>
+        <div class="campanhas-tabela-wrap">
+          <table class="campanhas-tabela"><tbody id="campanhas-wa-lista"></tbody></table>
+        </div>
 
-      <label for="cp-assunto">Assunto</label>
-      <input type="text" id="cp-assunto" required>
+        <form id="form-campanha-whatsapp" class="form-campanha">
+          <label for="cw-nome">Nome da campanha (só pra identificar)</label>
+          <input type="text" id="cw-nome" placeholder="ex: Reengajamento WhatsApp 2026" required>
 
-      <label for="cp-corpo">Corpo do e-mail</label>
-      <textarea id="cp-corpo" placeholder="pode usar {{nome}} pra personalizar" required></textarea>
-      <div class="dica">{{nome}} no assunto ou no corpo é trocado pelo nome de cada contato na hora do envio.</div>
-      <button type="button" id="cp-salvar-edicao" disabled>💾 Salvar edição no histórico</button>
-      <div class="dica">Fica ativo depois de gerar ou clicar em "Usar" num texto do histórico — edita à vontade e clica aqui pra atualizar aquele mesmo registro, sem criar um novo.</div>
-      <button type="button" id="cp-optin-cta">📱 Inserir CTA de opt-in WhatsApp</button>
-      <div class="dica">Adiciona no fim do texto um link pronto pra quem quiser também receber novidades por WhatsApp — quem clicar e mandar a mensagem fica registrado como "optou" (ver seção "Opt-in WhatsApp" mais abaixo).</div>
+          <label for="cw-brief">Descreva o que a mensagem deve dizer</label>
+          <input type="text" id="cw-brief" placeholder="ex: convidar quem já autorizou a garantir vaga na 4ª edição">
+          <button type="button" id="cw-gerar-ia">✨ Gerar rascunho com IA</button>
 
-      <label for="cp-teste-email">E-mail de teste (manda o assunto/corpo atual pra conferir antes de criar a campanha)</label>
-      <input type="email" id="cp-teste-email" placeholder="seu-email@novvasaudeintegrativa.com.br">
-      <button type="button" id="cp-teste-btn">📨 Enviar teste</button>
-      <div class="cp-msg" id="cp-teste-msg"></div>
+          <label for="cw-rascunho">Rascunho (copie isso pro campo de corpo do template no WhatsApp Manager)</label>
+          <textarea id="cw-rascunho" placeholder="use {{1}} pro nome do contato"></textarea>
+          <div class="dica">Depois de aprovado no WhatsApp Manager, volta aqui e preenche os campos abaixo com o nome exato do template.</div>
 
-      <label for="cp-arquivo">Lista de contatos (CSV com colunas nome, email, lote)</label>
-      <input type="file" id="cp-arquivo" accept=".csv,text/csv" required>
-      <div class="dica">Aceita , ou ; como separador. Linhas sem e-mail válido são ignoradas.</div>
+          <label for="cw-template">Nome do template (exatamente como cadastrado e APROVADO no WhatsApp Manager)</label>
+          <input type="text" id="cw-template" placeholder="ex: reengajamento_congresso_2026" required>
 
-      <button type="submit" id="cp-criar-btn">Criar campanha e importar contatos</button>
-      <div class="cp-msg" id="cp-msg"></div>
-    </form>
+          <label for="cw-idioma">Idioma do template</label>
+          <input type="text" id="cw-idioma" value="pt_BR" required>
 
-    <div class="sec-crm" style="margin-top:24px;"><span>Textos já gerados por IA</span></div>
-    <div class="campanhas-tabela-wrap">
-      <table class="campanhas-tabela"><tbody id="geracoes-ia-lista"></tbody></table>
+          <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;font-size:13px;color:var(--ink);"><input type="checkbox" id="cw-variavel-nome" checked style="width:auto;"> O template usa {{1}} pro nome do contato</label>
+
+          <label for="cw-arquivo">Lista de contatos (CSV com colunas numero, nome, lote)</label>
+          <input type="file" id="cw-arquivo" accept=".csv,text/csv" required>
+          <div class="dica">Só use números da lista "Opt-in WhatsApp". Número em qualquer formato — o sistema limpa pra só dígitos.</div>
+
+          <button type="submit" id="cw-criar-btn">Criar campanha e importar contatos</button>
+          <div class="cp-msg" id="cw-msg"></div>
+        </form>
+      </div>
+
+      <div id="view-optin-whatsapp" hidden style="margin-top:26px;">
+        <div class="sec-crm"><span>Opt-in WhatsApp</span><span class="cont" id="optin-cont"></span></div>
+        <div class="aviso">Gente que clicou no CTA de opt-in do e-mail e mandou a mensagem pelo WhatsApp — só quem está aqui pode entrar numa campanha de marketing por WhatsApp.</div>
+        <div class="filtros">
+          <button type="button" id="optin-exportar" class="btn-atualizar">⬇ Exportar CSV</button>
+        </div>
+        <div class="quiz-tabela-wrap">
+          <table class="quiz-tabela">
+            <thead><tr><th>WhatsApp</th><th>Data do opt-in</th><th>Texto recebido</th></tr></thead>
+            <tbody id="optin-lista"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-qualidade-whatsapp" hidden style="margin-top:26px;">
+        <div class="sec-crm"><span>Qualidade do WhatsApp</span><button type="button" id="qw-checar" class="btn-atualizar">🔍 Checar agora</button></div>
+        <div class="aviso">Monitora a nota de qualidade do número que a Cris usa (a mesma dos vendedores) — cai antes de virar restrição/banimento. Não é estimativa nossa, vem direto da Meta.</div>
+        <div id="qw-atual" class="qw-atual">Nenhuma checagem ainda — clica em "Checar agora".</div>
+        <div class="campanhas-tabela-wrap">
+          <table class="campanhas-tabela"><tbody id="qw-historico"></tbody></table>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -407,29 +477,6 @@
     <div class="aviso">Estimativa calculada a partir dos tokens reais de cada chamada (Cris no WhatsApp + Gerar com IA nas campanhas), pelo preço do Claude Haiku 4.5. Não é o saldo oficial da conta Anthropic — isso só aparece no console.anthropic.com.</div>
     <div class="campanhas-tabela-wrap">
       <table class="campanhas-tabela"><tbody id="custo-ia-lista"></tbody></table>
-    </div>
-  </div>
-
-  <div id="view-qualidade-whatsapp" hidden>
-    <div class="sec-crm"><span>Qualidade do WhatsApp</span><button type="button" id="qw-checar" class="btn-atualizar">🔍 Checar agora</button></div>
-    <div class="aviso">Monitora a nota de qualidade do número que a Cris usa (a mesma dos vendedores) — cai antes de virar restrição/banimento. Não é estimativa nossa, vem direto da Meta.</div>
-    <div id="qw-atual" class="qw-atual">Nenhuma checagem ainda — clica em "Checar agora".</div>
-    <div class="campanhas-tabela-wrap">
-      <table class="campanhas-tabela"><tbody id="qw-historico"></tbody></table>
-    </div>
-  </div>
-
-  <div id="view-optin-whatsapp" hidden>
-    <div class="sec-crm"><span>Opt-in WhatsApp</span><span class="cont" id="optin-cont"></span></div>
-    <div class="aviso">Gente que clicou no CTA de opt-in do e-mail e mandou a mensagem pelo WhatsApp — só quem está aqui pode entrar numa futura campanha de marketing por WhatsApp (a lista antiga da Eduzz não tem esse consentimento, ver §24 do SUPABASE.md).</div>
-    <div class="filtros">
-      <button type="button" id="optin-exportar" class="btn-atualizar">⬇ Exportar CSV</button>
-    </div>
-    <div class="quiz-tabela-wrap">
-      <table class="quiz-tabela">
-        <thead><tr><th>WhatsApp</th><th>Data do opt-in</th><th>Texto recebido</th></tr></thead>
-        <tbody id="optin-lista"></tbody>
-      </table>
     </div>
   </div>
 
@@ -642,6 +689,7 @@
       if (estado.ehGestor) {
         $('view-equipe').hidden = false; carregarEquipe();
         $('view-campanhas').hidden = false; carregarCampanhas(); carregarGeracoesIA();
+        $('view-campanhas-whatsapp').hidden = false; carregarCampanhasWhatsapp();
         $('view-custo-ia').hidden = false; carregarCustoIA();
         $('view-optin-whatsapp').hidden = false; carregarOptinWhatsapp();
         $('view-qualidade-whatsapp').hidden = false; carregarQualidadeWhatsapp();
@@ -1527,6 +1575,174 @@
     leitor.onerror = function(){
       $('cp-msg').style.color = 'var(--bordo-vivo)';
       $('cp-msg').textContent = 'Erro ao ler o arquivo.';
+      btn.disabled = false; btn.textContent = 'Criar campanha e importar contatos';
+    };
+    leitor.readAsText(arquivo, 'utf-8');
+  });
+
+  // ---------- campanhas WhatsApp (template aprovado, só gestor) ----------
+  function parseCsvWhatsapp(texto){
+    var linhas = texto.split(/\r\n|\n|\r/).filter(function(l){ return l.trim() !== ''; });
+    if (!linhas.length) return [];
+    var delim = (linhas[0].split(';').length > linhas[0].split(',').length) ? ';' : ',';
+    function parseLinha(l){
+      var campos = [], atual = '', dentro = false;
+      for (var i = 0; i < l.length; i++){
+        var c = l[i];
+        if (c === '"'){
+          if (dentro && l[i+1] === '"'){ atual += '"'; i++; }
+          else dentro = !dentro;
+        } else if (c === delim && !dentro){
+          campos.push(atual); atual = '';
+        } else atual += c;
+      }
+      campos.push(atual);
+      return campos.map(function(v){ return v.trim().replace(/^"|"$/g, ''); });
+    }
+    var cab = parseLinha(linhas[0]).map(function(h){ return h.toLowerCase().trim(); });
+    var iNome = cab.indexOf('nome');
+    var iNumero = cab.indexOf('numero');
+    if (iNumero === -1) iNumero = cab.findIndex(function(h){ return h.indexOf('whatsapp') !== -1 || h.indexOf('telefone') !== -1 || h.indexOf('fone') !== -1; });
+    var iLote = cab.indexOf('lote');
+    var out = [];
+    for (var i = 1; i < linhas.length; i++){
+      var campos = parseLinha(linhas[i]);
+      var numeroBruto = iNumero > -1 ? (campos[iNumero] || '') : '';
+      var numero = numeroBruto.replace(/\D/g, '');
+      if (!numero) continue;
+      out.push({
+        numero: numero,
+        nome: iNome > -1 ? (campos[iNome] || '') : '',
+        lote: iLote > -1 ? (campos[iLote] || '') : ''
+      });
+    }
+    return out;
+  }
+
+  function carregarCampanhasWhatsapp(){
+    return apiGet('campanhas_whatsapp_resumo?select=*').then(renderCampanhasWhatsapp).catch(function(err){
+      $('campanhas-wa-lista').innerHTML = '<tr><td style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>';
+    });
+  }
+
+  function renderCampanhasWhatsapp(rows){
+    rows = rows || [];
+    $('campanhas-wa-lista').innerHTML = rows.map(function(c){
+      return '<tr>' +
+        '<td><div class="cp-nome">' + esc(c.nome) + '</div><div class="cp-assunto">template: ' + esc(c.template_nome) + ' (' + esc(c.idioma) + ')</div></td>' +
+        '<td class="cp-cont"><b>' + c.enviados + '</b> enviados · ' + c.pendentes + ' pendentes' +
+          (c.falhas ? ' · <span class="cp-falhas">' + c.falhas + ' falhas</span>' : '') + ' · ' + c.total + ' total</td>' +
+        '<td style="text-align:right"><button type="button" class="cp-enviar wa-enviar" data-id="' + c.id + '"' + (c.pendentes ? '' : ' disabled') + '>' +
+          (c.pendentes ? 'Enviar próximo lote' : 'Concluída') + '</button></td>' +
+      '</tr>';
+    }).join('') || '<tr><td>Nenhuma campanha ainda.</td></tr>';
+
+    $('campanhas-wa-lista').querySelectorAll('.wa-enviar').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = this.dataset.id;
+        this.disabled = true; this.textContent = 'Enviando…';
+        campanhaWhatsappEnviarLote(id).then(function(res){
+          alert('Lote enviado: ' + res.enviados + ' ok' + (res.falhas ? ', ' + res.falhas + ' falharam' : '') + '.');
+          return carregarCampanhasWhatsapp();
+        }).catch(function(err){
+          alert('Erro: ' + err.message);
+          carregarCampanhasWhatsapp();
+        });
+      });
+    });
+  }
+
+  function campanhaWhatsappEnviarLote(campanhaId){
+    return fetch(SUPABASE_URL + '/functions/v1/campanha-whatsapp-lote', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ campanha_id: Number(campanhaId) })
+    }).then(function(r){ return r.text().then(function(t){
+      var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
+      if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
+      return data;
+    }); });
+  }
+
+  function campanhaWhatsappGerarTexto(brief){
+    return fetch(SUPABASE_URL + '/functions/v1/gerar-texto-whatsapp', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief: brief })
+    }).then(function(r){ return r.text().then(function(t){
+      var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
+      if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
+      return data;
+    }); });
+  }
+
+  $('cw-gerar-ia').addEventListener('click', function(){
+    var brief = $('cw-brief').value.trim();
+    if (!brief){
+      $('cw-msg').style.color = 'var(--bordo-vivo)';
+      $('cw-msg').textContent = 'Descreve o que a mensagem deve dizer antes de gerar.';
+      return;
+    }
+    var btn = this; btn.disabled = true; btn.textContent = 'Gerando…';
+    $('cw-msg').style.color = 'var(--soft)'; $('cw-msg').textContent = '';
+    campanhaWhatsappGerarTexto(brief).then(function(res){
+      $('cw-rascunho').value = res.corpo || '';
+      $('cw-msg').style.color = 'var(--verde)';
+      $('cw-msg').textContent = 'Rascunho gerado — copie pro WhatsApp Manager e submeta pra aprovação antes de criar a campanha aqui.';
+    }).catch(function(err){
+      $('cw-msg').style.color = 'var(--bordo-vivo)';
+      $('cw-msg').textContent = 'Erro ao gerar: ' + err.message;
+    }).finally(function(){ btn.disabled = false; btn.textContent = '✨ Gerar rascunho com IA'; });
+  });
+
+  $('form-campanha-whatsapp').addEventListener('submit', function(e){
+    e.preventDefault();
+    var nome = $('cw-nome').value.trim();
+    var templateNome = $('cw-template').value.trim();
+    var idioma = $('cw-idioma').value.trim() || 'pt_BR';
+    var variavelNome = $('cw-variavel-nome').checked;
+    var arquivo = $('cw-arquivo').files[0];
+    if (!nome || !templateNome || !arquivo) return;
+
+    var btn = $('cw-criar-btn'); btn.disabled = true; btn.textContent = 'Importando…';
+    $('cw-msg').style.color = 'var(--soft)'; $('cw-msg').textContent = '';
+
+    var leitor = new FileReader();
+    leitor.onload = function(){
+      var contatos = parseCsvWhatsapp(String(leitor.result));
+      if (!contatos.length){
+        $('cw-msg').style.color = 'var(--bordo-vivo)';
+        $('cw-msg').textContent = 'Nenhum contato válido encontrado no CSV (precisa de coluna "numero").';
+        btn.disabled = false; btn.textContent = 'Criar campanha e importar contatos';
+        return;
+      }
+      apiPost('campanhas_whatsapp', { nome: nome, template_nome: templateNome, idioma: idioma, variavel_nome: variavelNome, criado_por: estado.eu.id }, { Prefer: 'return=representation' })
+        .then(function(rows){
+          var campanha = rows && rows[0];
+          if (!campanha) throw new Error('não criou a campanha');
+          var linhas = contatos.map(function(c){
+            return { campanha_id: campanha.id, numero: c.numero, nome: c.nome || null, lote: c.lote || null };
+          });
+          return apiPost('campanha_whatsapp_contatos', linhas);
+        })
+        .then(function(){
+          $('cw-msg').style.color = 'var(--verde)';
+          $('cw-msg').textContent = 'Campanha criada com ' + contatos.length + ' contatos!';
+          $('form-campanha-whatsapp').reset();
+          $('cw-idioma').value = 'pt_BR';
+          $('cw-variavel-nome').checked = true;
+          $('cw-rascunho').value = '';
+          return carregarCampanhasWhatsapp();
+        })
+        .catch(function(err){
+          $('cw-msg').style.color = 'var(--bordo-vivo)';
+          $('cw-msg').textContent = 'Erro: ' + err.message;
+        })
+        .finally(function(){ btn.disabled = false; btn.textContent = 'Criar campanha e importar contatos'; });
+    };
+    leitor.onerror = function(){
+      $('cw-msg').style.color = 'var(--bordo-vivo)';
+      $('cw-msg').textContent = 'Erro ao ler o arquivo.';
       btn.disabled = false; btn.textContent = 'Criar campanha e importar contatos';
     };
     leitor.readAsText(arquivo, 'utf-8');
