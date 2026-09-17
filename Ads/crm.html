@@ -424,7 +424,7 @@
     <div class="col-campanhas">
       <div id="view-campanhas-whatsapp" hidden>
         <div class="sec-crm"><span>Campanhas WhatsApp</span></div>
-        <div class="aviso">Só funciona com um <b>template categoria Marketing já aprovado pela Meta</b> (crie em business.facebook.com → WhatsApp Manager → Modelos de mensagem) — a IA aqui só rascunha o texto pra você colar lá. <b>Só importe números que já autorizaram</b> (ver "Opt-in WhatsApp" abaixo) — a lista antiga da Eduzz não serve pra isso, ver §24 do SUPABASE.md.</div>
+        <div class="aviso">Só funciona com um <b>template já aprovado pela Meta</b> — escolha na lista abaixo (carregada direto do WhatsApp Manager). <b>Só importe números que já autorizaram</b> (ver "Opt-in WhatsApp" abaixo) — a lista antiga da Eduzz não serve pra isso, ver §24 do SUPABASE.md.</div>
 
         <div class="campanhas-tabela-wrap">
           <table class="campanhas-tabela"><tbody id="campanhas-wa-lista"></tbody></table>
@@ -434,21 +434,23 @@
           <label for="cw-nome">Nome da campanha (só pra identificar)</label>
           <input type="text" id="cw-nome" placeholder="ex: Reengajamento WhatsApp 2026" required>
 
-          <label for="cw-categoria">Categoria do template</label>
-          <select id="cw-categoria">
-            <option value="marketing">Marketing — promocional/convite (exige opt-in específico)</option>
-            <option value="utility">Utility — atualização de algo que a pessoa já iniciou (ex: lembrete pra quem já se inscreveu)</option>
-            <option value="authentication">Authentication — código de verificação (gerado pela Meta, sem texto customizado)</option>
-          </select>
-          <div class="dica" id="cw-categoria-dica">Precisa vir da lista "Opt-in WhatsApp" — não use a base geral de clientes/leads pra Marketing.</div>
+          <div id="cw-secao-rascunho" hidden>
+            <label for="cw-categoria">Categoria do template</label>
+            <select id="cw-categoria">
+              <option value="marketing">Marketing — promocional/convite (exige opt-in específico)</option>
+              <option value="utility">Utility — atualização de algo que a pessoa já iniciou (ex: lembrete pra quem já se inscreveu)</option>
+              <option value="authentication">Authentication — código de verificação (gerado pela Meta, sem texto customizado)</option>
+            </select>
+            <div class="dica" id="cw-categoria-dica">Precisa vir da lista "Opt-in WhatsApp" — não use a base geral de clientes/leads pra Marketing.</div>
 
-          <label for="cw-brief">Descreva o que a mensagem deve dizer</label>
-          <input type="text" id="cw-brief" placeholder="ex: convidar quem já autorizou a garantir vaga na 4ª edição">
-          <button type="button" id="cw-gerar-ia">Gerar rascunho com IA</button>
+            <label for="cw-brief">Descreva o que a mensagem deve dizer</label>
+            <input type="text" id="cw-brief" placeholder="ex: convidar quem já autorizou a garantir vaga na 4ª edição">
+            <button type="button" id="cw-gerar-ia">Gerar rascunho com IA</button>
 
-          <label for="cw-rascunho">Rascunho (copie isso pro campo de corpo do template no WhatsApp Manager)</label>
-          <textarea id="cw-rascunho" placeholder="use {{1}} pro nome do contato"></textarea>
-          <div class="dica">Depois de aprovado no WhatsApp Manager, volta aqui e preenche os campos abaixo com o nome exato do template.</div>
+            <label for="cw-rascunho">Rascunho (copie isso pro campo de corpo do template no WhatsApp Manager)</label>
+            <textarea id="cw-rascunho" placeholder="use {{1}} pro nome do contato"></textarea>
+            <div class="dica">Depois de aprovado no WhatsApp Manager, volta aqui e preenche os campos abaixo com o nome exato do template.</div>
+          </div>
 
           <label for="cw-template-select">Escolher template (carregado direto da Meta) <button type="button" id="cw-template-atualizar" class="btn-atualizar" style="margin-left:6px;">Atualizar lista</button></label>
           <select id="cw-template-select">
@@ -1828,6 +1830,7 @@
     $('cw-template').value = t.nome;
     $('cw-idioma').value = t.idioma;
     $('cw-variavel-nome').checked = t.variavel_nome;
+    $('cw-categoria').value = (t.categoria || 'marketing').toLowerCase();
   });
 
   $('cw-template-atualizar').addEventListener('click', carregarTemplatesWhatsapp);
