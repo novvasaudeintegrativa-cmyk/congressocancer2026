@@ -20,28 +20,53 @@
   }
   *{box-sizing:border-box;}
   [hidden]{display:none!important;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--corpo);line-height:1.5;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--corpo);line-height:1.5;display:flex;min-height:100vh;}
   h1,h2{font-family:var(--tit);margin:0;}
   .ico{width:1em;height:1em;display:block;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
   .ico.play{fill:#fff;stroke:#fff;stroke-width:1.5;}
+  .ico2{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 
+  .content-area{flex:1;min-width:0;}
   .wrap{max-width:1200px;margin:0 auto;padding:22px 20px 48px;}
 
-  /* ---- Top bar ---- */
-  .topbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin-bottom:14px;}
-  .brand{display:flex;align-items:center;gap:11px;margin-right:auto;}
-  .brand .mark{width:32px;height:32px;border-radius:9px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;}
-  .brand h1{font-size:17px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;}
-  .brand .sub{font-size:11px;color:var(--soft);margin-top:2px;}
+  /* ---- Sidebar (navegação entre Tráfego/Quiz internos e CRM/Financeiro externos) ---- */
+  .sidebar{
+    width:196px;flex:none;background:#fff;border-right:1px solid var(--linha);
+    display:flex;flex-direction:column;gap:22px;padding:20px 14px;
+    position:sticky;top:0;align-self:flex-start;height:100vh;overflow-y:auto;
+  }
+  .sidebar-brand{display:flex;align-items:center;gap:10px;}
+  .mark{width:32px;height:32px;border-radius:9px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;}
+  .sidebar-brand h1{font-size:14px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;}
 
-  /* nav principal: as duas fontes de dados, bem separadas */
-  .tabs-principal{display:flex;gap:6px;flex-wrap:wrap;}
-  .tabs-principal button{
-    font-family:var(--tit);font-weight:800;font-size:12px;letter-spacing:.02em;
-    padding:9px 16px;border-radius:999px;cursor:pointer;
-    background:#fff;border:1.5px solid var(--linha);color:var(--soft);
+  /* ---- Top bar (título da seção ativa, dentro do conteúdo) — mesmo padrão visual do
+     cabeçalho "marca" usado dentro do crm.html/financeiro.html (mark + subtítulo em destaque;
+     sem repetir "Novva ADS", que já aparece fixo no menu lateral) ---- */
+  .topbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px;}
+  .topbar .sub{font-size:16px;font-weight:800;color:var(--ink);}
+
+  /* nav principal: fica na sidebar */
+  .tabs-principal{display:flex;flex-direction:column;gap:5px;}
+  .tabs-principal button, .tabs-principal a{
+    font-family:var(--tit);font-weight:800;font-size:12.5px;letter-spacing:.02em;
+    padding:10px 12px;border-radius:10px;cursor:pointer;width:100%;
+    background:transparent;border:1.5px solid transparent;color:var(--soft);
+    text-decoration:none;display:flex;align-items:center;gap:10px;text-align:left;
   }
   .tabs-principal button.on{background:var(--bordo);border-color:var(--bordo);color:#fff;}
+  .tabs-principal button:not(.on):hover, .tabs-principal a:hover{background:var(--track);color:var(--ink);}
+  .sidebar .reload{margin-top:auto;}
+
+  @media (max-width:820px){
+    body{flex-direction:column;}
+    .sidebar{
+      position:static;width:auto;height:auto;flex-direction:row;align-items:center;
+      border-right:none;border-bottom:1px solid var(--linha);overflow-x:auto;
+    }
+    .tabs-principal{flex-direction:row;}
+    .tabs-principal button span, .tabs-principal a span{display:none;}
+    .sidebar .reload{margin-top:0;margin-left:auto;}
+  }
 
   .subbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:16px;}
   .periods{display:flex;gap:5px;flex-wrap:wrap;margin-right:auto;}
@@ -160,7 +185,6 @@
   .copiar:disabled{opacity:.6;cursor:default;}
 
   /* ---- CRM (preview) ---- */
-  .tabs-principal button[data-tab="crm"]{display:inline-flex;align-items:baseline;gap:4px;}
   .equipe-grid{display:grid;grid-template-columns:1fr;gap:12px;}
   @media (min-width:760px){ .equipe-grid{grid-template-columns:repeat(4,1fr);} }
   .pessoa-card{border:1px solid var(--linha);border-radius:14px;padding:14px 15px;background:#fbfaf8;}
@@ -312,237 +336,50 @@
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <symbol id="i-mark" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>
   <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+  <symbol id="i-trend" viewBox="0 0 24 24"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></symbol>
+  <symbol id="i-quiz" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-dollar" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
 </defs></svg>
 
-<div class="wrap">
-
-  <div class="topbar">
-    <div class="brand">
-      <span class="mark"><svg class="ico" style="width:17px;height:17px"><use href="#i-mark"/></svg></span>
-      <div>
-        <h1>Novva ADS</h1>
-        <div class="sub" id="sub-titulo">Tráfego & Conversão · site do Congresso</div>
-      </div>
-    </div>
-    <div class="tabs-principal" id="tabs-principal">
-      <button type="button" data-tab="trafego" class="on">Tráfego &amp; Conversão</button>
-      <button type="button" data-tab="quiz">Quiz · Raio-X Profissional</button>
-      <button type="button" data-tab="crm">CRM <span style="opacity:.7;font-weight:600;">(em breve)</span></button>
-    </div>
-    <button type="button" class="reload" id="reload" aria-label="Atualizar"><svg class="ico" style="width:15px;height:15px"><use href="#i-refresh"/></svg></button>
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <span class="mark"><svg class="ico" style="width:17px;height:17px"><use href="#i-mark"/></svg></span>
+    <h1>Novva ADS</h1>
   </div>
-
-  <div class="subbar" id="subbar-trafego">
-    <div class="periods" id="periods">
-      <button type="button" data-p="hoje" class="on">Hoje</button>
-      <button type="button" data-p="7">7d</button>
-      <button type="button" data-p="14">14d</button>
-      <button type="button" data-p="30">30d</button>
-      <button type="button" data-p="45">45d</button>
-      <button type="button" data-p="60">60d</button>
-      <button type="button" data-p="90">90d</button>
-    </div>
-    <button type="button" class="rt" id="rt"><span class="dot"></span>Tempo real</button>
+  <div class="tabs-principal" id="tabs-principal">
+    <button type="button" data-tab="crm"><svg class="ico2"><use href="#i-users"/></svg><span>CRM</span></button>
+    <button type="button" data-tab="trafego" class="on"><svg class="ico2"><use href="#i-trend"/></svg><span>Tráfego</span></button>
+    <button type="button" data-tab="financeiro"><svg class="ico2"><use href="#i-dollar"/></svg><span>Financeiro</span></button>
+    <button type="button" data-tab="quiz"><svg class="ico2"><use href="#i-quiz"/></svg><span>Quiz</span></button>
   </div>
+  <button type="button" class="reload" id="reload" aria-label="Atualizar"><svg class="ico" style="width:15px;height:15px"><use href="#i-refresh"/></svg></button>
+</nav>
 
-  <!-- ================= PAINEL 1: TRÁFEGO & CONVERSÃO (site) ================= -->
+<div class="content-area"><div class="wrap">
+
+  <!-- ================= PAINEL 1: TRÁFEGO & CONVERSÃO (iframe: trafego.html) ================= -->
   <div id="painel-trafego">
-
-    <div class="toprow">
-      <div class="hero">
-        <div class="lbl" id="hero-lbl">Visitantes · hoje</div>
-        <div class="big" id="hero-num">—</div>
-        <div class="delta" id="hero-delta"></div>
-      </div>
-      <div class="kpis" id="kpis"></div>
-    </div>
-
-    <section id="sec-spark">
-      <span class="sec"><span class="bar"></span><b>Page views</b> <small>por dia</small></span>
-      <div class="spark-wrap"><canvas id="spark"></canvas></div>
+    <section style="padding:0;overflow:hidden;">
+      <iframe id="trafego-iframe" title="Tráfego Novva" scrolling="auto" style="width:100%;height:640px;min-height:640px;border:0;display:block;"></iframe>
     </section>
-
-    <div class="cols">
-      <section id="sec-vsl">
-        <span class="sec"><span class="bar"></span><b>VSL</b> <small>· retenção</small> <small id="vsl-total"></small></span>
-        <div class="funil" id="vsl"></div>
-      </section>
-      <section id="sec-mapa">
-        <div class="sec-head">
-          <span class="sec"><span class="bar"></span><b>Localização</b> <small>· mapa</small></span>
-          <span class="hint">pontos maiores = acessos mais recentes</span>
-        </div>
-        <div id="mapa"></div>
-        <div class="scroll-x" id="geo" style="margin-top:14px"></div>
-      </section>
-      <section id="sec-funil">
-        <span class="sec"><span class="bar"></span><b>Funil</b> <small>· profundidade da página</small></span>
-        <div class="funil" id="funil"></div>
-      </section>
-      <section id="sec-camp">
-        <span class="sec"><span class="bar"></span><b>Campanhas</b> <small>· UTM</small></span>
-        <div class="scroll-x"><table id="camp"></table></div>
-      </section>
-      <section id="sec-hora">
-        <div class="sec-head">
-          <span class="sec"><span class="bar"></span><b>Eventos</b> <small>por hora do dia</small></span>
-          <span class="hint">eventos somados por faixa de hora</span>
-        </div>
-        <canvas id="hora" height="80"></canvas>
-      </section>
-    </div>
-
-    <section id="sec-roi">
-      <div class="sec-head" style="margin-bottom:16px;">
-        <span class="sec"><span class="bar"></span><b>ROI</b></span>
-        <span class="hint">lançamento manual até a conta de anúncios ser conectada · <a href="#" id="link-gerenciar-inv" style="color:inherit;text-decoration:underline;">gerenciar lançamentos</a></span>
-      </div>
-
-      <div id="links-rastreamento" style="border:1px dashed var(--linha);border-radius:12px;padding:12px 16px;margin-bottom:18px;">
-        <div style="font-family:var(--tit);font-weight:800;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--soft);margin-bottom:8px;">Links de rastreamento por vendedor/canal</div>
-        <div id="lista-links-rastreamento" style="display:flex;flex-direction:column;gap:6px;"></div>
-      </div>
-
-      <div class="duas-col">
-        <div>
-          <div class="kpis" id="roi-kpis" style="grid-template-columns:1fr 1fr;margin-bottom:16px;"></div>
-          <div class="scroll-x">
-            <table>
-              <thead><tr><th>Produto (Lote)</th><th class="n">Qtd</th><th class="n">Total</th></tr></thead>
-              <tbody id="tabela-vendas"></tbody>
-            </table>
-          </div>
-          <div class="scroll-x" style="margin-top:18px;">
-            <table>
-              <thead><tr><th>Canal / vendedor</th><th class="n">Qtd</th><th class="n">Total</th></tr></thead>
-              <tbody id="tabela-vendas-canal"></tbody>
-            </table>
-          </div>
-        </div>
-        <form id="form-investimento">
-          <label for="inv-data">Data</label>
-          <input type="date" id="inv-data" required>
-          <label for="inv-canal">Canal (opcional)</label>
-          <input type="text" id="inv-canal" placeholder="ex: meta_ads, google_ads">
-          <label for="inv-desc">Descrição (opcional)</label>
-          <input type="text" id="inv-desc" placeholder="ex: campanha lote 1">
-          <label for="inv-valor">Valor investido (R$)</label>
-          <input type="number" id="inv-valor" step="0.01" min="0" required>
-          <button type="submit" class="btn-roi" id="btn-lancar">Lançar investimento</button>
-          <div class="vazio" id="inv-msg" style="margin-top:8px;text-align:left;padding:0;"></div>
-        </form>
-      </div>
-      <div id="gerenciar-inv" hidden style="margin-top:18px;border-top:1px solid var(--linha);padding-top:16px;">
-        <div class="scroll-x">
-          <table>
-            <thead><tr><th>Data</th><th>Canal</th><th>Descrição</th><th class="n">Valor</th><th></th></tr></thead>
-            <tbody id="tabela-gerenciar-inv"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <div class="sec-head" style="margin-bottom:16px;">
-        <span class="sec"><span class="bar"></span><b>Configuração</b> <small>pendente nesta aba</small></span>
-        <span class="hint">marque conforme for fazendo — fica salvo neste navegador</span>
-      </div>
-      <div id="passos-trafego"></div>
-      <div class="passos-progresso"><i id="passos-trafego-barra" style="width:0%"></i></div>
-      <div class="passos-progresso-lbl" id="passos-trafego-lbl"></div>
-    </section>
-
-    <p class="foot" id="foot">carregando…</p>
   </div>
 
-  <!-- ================= PAINEL 2: QUIZ · RAIO-X PROFISSIONAL ================= -->
+  <!-- ================= PAINEL 2: QUIZ · RAIO-X PROFISSIONAL (iframe: quiz-raiox.html) ================= -->
   <div id="painel-quiz" hidden>
-
-    <div class="aviso" id="q-aviso">Carregando dados do quiz…</div>
-
-    <div class="toprow">
-      <div class="hero">
-        <div class="lbl">Contatos captados</div>
-        <div class="big" id="q-hero-num">—</div>
-        <div class="delta" id="q-hero-delta"></div>
-      </div>
-      <div class="kpis" id="q-kpis"></div>
-    </div>
-
-    <section>
-      <div class="sec-head" style="margin-bottom:16px;">
-        <span class="sec"><span class="bar"></span><b>Temperatura</b> <small>do lead</small></span>
-        <span class="hint">quem abordar primeiro</span>
-      </div>
-      <div class="temp-grid">
-        <div class="temp-card frio">
-          <div class="l">Frio</div>
-          <div class="n" id="t-frio">0<span class="pct" id="t-frio-pct"></span></div>
-          <div class="acao">Deu contato mas não terminou. Manda um lembrete curto convidando a terminar o Raio-X.</div>
-        </div>
-        <div class="temp-card morno">
-          <div class="l">Morno</div>
-          <div class="n" id="t-morno">0<span class="pct" id="t-morno-pct"></span></div>
-          <div class="acao">Terminou e viu o resultado, mas não clicou em nada. Reforça o resultado dele + urgência do lote.</div>
-        </div>
-        <div class="temp-card quente">
-          <div class="l">Quente</div>
-          <div class="n" id="t-quente">0<span class="pct" id="t-quente-pct"></span></div>
-          <div class="acao">Clicou pra garantir vaga ou falar no WhatsApp. Aborda pessoalmente hoje — prioridade máxima.</div>
-        </div>
-      </div>
+    <section style="padding:0;overflow:hidden;">
+      <iframe id="quiz-iframe" title="Quiz Raio-X Novva" scrolling="auto" style="width:100%;height:640px;min-height:640px;border:0;display:block;"></iframe>
     </section>
-
-    <div class="duas-col">
-      <section>
-        <span class="sec"><span class="bar"></span><b>Nível</b> <small>de repertório</small></span>
-        <div id="bloco-nivel"></div>
-      </section>
-      <section>
-        <span class="sec"><span class="bar"></span><b>Canais</b> <small>que mais captam</small></span>
-        <div class="scroll-x">
-          <table>
-            <thead><tr><th>utm_source</th><th class="n">Leads</th></tr></thead>
-            <tbody id="tabela-canal"></tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-
-    <section>
-      <div class="sec-head" style="margin-bottom:16px;">
-        <span class="sec"><span class="bar"></span><b>Qualitativo</b> <small>· resposta por pergunta</small></span>
-        <span class="hint">só entre quem completou o quiz</span>
-      </div>
-      <div id="bloco-perguntas"></div>
-    </section>
-
-    <section>
-      <span class="sec"><span class="bar"></span><b>Profissões</b></span>
-      <div class="scroll-x">
-        <table>
-          <thead><tr><th>Profissão</th><th class="n">Leads</th></tr></thead>
-          <tbody id="tabela-profissao"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section>
-      <div class="sec-head" style="margin-bottom:16px;">
-        <span class="sec"><span class="bar"></span><b>Configuração</b> <small>pendente nesta aba</small></span>
-        <span class="hint">marque conforme for fazendo — fica salvo neste navegador</span>
-      </div>
-      <div id="passos-quiz"></div>
-      <div class="passos-progresso"><i id="passos-quiz-barra" style="width:0%"></i></div>
-      <div class="passos-progresso-lbl" id="passos-quiz-lbl"></div>
-    </section>
-
-    <p class="foot">Sem PII aqui — nome/WhatsApp continuam só no Table Editor do Supabase (<code>quiz_leads</code>).</p>
   </div>
 
-  <!-- ================= PAINEL 3: CRM (preview) ================= -->
+  <!-- ================= PAINEL 3: CRM ================= -->
   <div id="painel-crm" hidden>
 
+    <section style="padding:0;overflow:hidden;">
+      <iframe id="crm-iframe" title="CRM Novva" scrolling="auto" style="width:100%;height:640px;min-height:640px;border:0;display:block;"></iframe>
+    </section>
+
+    <div hidden>
     <div class="aviso">
       <b>Preview do pipeline.</b> Login da equipe e conexão real de WhatsApp ainda não existem (Fases 1 e 2 do plano) —
       os cartões de lead abaixo são <b>exemplo</b>, pra mostrar o formato final. Nome/WhatsApp/status de conexão da
@@ -580,10 +417,18 @@
       <div class="passos-progresso"><i id="passos-progresso-barra" style="width:0%"></i></div>
       <div class="passos-progresso-lbl" id="passos-progresso-lbl"></div>
     </section>
+    </div>
 
   </div>
 
-</div>
+  <!-- ================= PAINEL 4: FINANCEIRO ================= -->
+  <div id="painel-financeiro" hidden>
+    <section style="padding:0;overflow:hidden;">
+      <iframe id="financeiro-iframe" title="Financeiro Novva" scrolling="auto" style="width:100%;height:640px;min-height:640px;border:0;display:block;"></iframe>
+    </section>
+  </div>
+
+</div></div>
 
 <div class="modal-overlay" id="modal-conversa" hidden>
   <div class="modal-conversa">
@@ -622,19 +467,21 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
 <script>
 (function(){
   // ===== CONFIG (mesmos valores do index.html) =====
   var SUPABASE_URL = 'https://nbhekjgbszyuuxrynzfo.supabase.co';
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iaGVramdic3p5dXV4cnluemZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzM0MDUsImV4cCI6MjA5MjMwOTQwNX0.d8f346ONCOHjr__C8RLmSJOFW0kZfqFkCGHmotwxiXc';  // anon (legacy) — publica por design
   // ================================================
+  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   var $ = function(id){ return document.getElementById(id); };
   var fmt = function(n){ return (n==null?0:n).toLocaleString('pt-BR'); };
   var pct = function(n,base){ return base ? Math.round(n/base*100)+'%' : '—'; };
   var ymd = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 
-  var state = { period:'hoje', rt:false, timer:null, chartS:null, chartH:null, map:null, mapLayer:null, tab:'trafego', quizCarregado:false };
+  var state = { tab:'trafego', carregado:{} };
 
   var LABEL = { hoje:'hoje', '7':'últimos 7 dias', '14':'últimos 14 dias', '30':'últimos 30 dias',
                 '45':'últimos 45 dias', '60':'últimos 60 dias', '90':'últimos 90 dias' };
@@ -646,489 +493,6 @@
       .then(function(r){ if(!r.ok) throw new Error(fn + ' → ' + r.status); return r.json(); });
   }
 
-  // ============================================================
-  // PAINEL 1 — Tráfego & Conversão (site)
-  // ============================================================
-  function range(){
-    var to = new Date(); to.setHours(0,0,0,0);
-    var from = new Date(to);
-    if (state.period !== 'hoje') from.setDate(from.getDate() - (parseInt(state.period,10) - 1));
-    return { d_from: ymd(from), d_to: ymd(to) };
-  }
-
-  function step(titulo, valor, base, semPct){
-    var w = base ? Math.max(2, valor/base*100) : 0;
-    return '<div class="step"><div class="row"><span>' + titulo + '</span>' +
-      '<span><b>' + fmt(valor) + '</b>' + (semPct ? '' : '<span class="pct">' + pct(valor, base) + '</span>') + '</span></div>' +
-      '<div class="tk"><i style="width:' + w + '%"></i></div></div>';
-  }
-
-  function renderKpis(k){
-    var items = [['Page view',k.pageviews],['Initiate checkout',k.checkouts],['Contact',k.whatsapp],['Video view',k.video_plays]];
-    $('kpis').innerHTML = items.map(function(it){
-      return '<div class="kpi"><div class="l">' + it[0] + '</div><div class="n">' + fmt(it[1]) +
-             '</div><div class="s">' + LABEL[state.period] + '</div></div>';
-    }).join('');
-  }
-
-  function renderFunil(rows, base){
-    var by = {}; (rows||[]).forEach(function(r){ by[r.percent] = r.total; });
-    var h = '<div class="funil-base"><span>Page view</span><b>' + fmt(base||0) + '</b></div>';
-    [25,50,75,90].forEach(function(p){ h += step('Scroll ' + p + '%', by[p]||0, base||0); });
-    $('funil').innerHTML = h;
-  }
-
-  function renderVsl(v){
-    if (!v || !v.plays){
-      $('vsl').innerHTML = '<p class="vazio">Sem plays da VSL no período.</p>';
-      $('vsl-total').textContent = '';
-      return;
-    }
-    $('vsl-total').textContent = '· ' + fmt(v.plays) + ' visualizaç' + (v.plays === 1 ? 'ão' : 'ões') + ' no período';
-    $('vsl').innerHTML =
-      step('Progress 25%', v.p25, v.plays) +
-      step('Progress 50%', v.p50, v.plays) +
-      step('Progress 75%', v.p75, v.plays) +
-      step('Progress 95%', v.p95, v.plays) +
-      step('Video complete', v.completes, v.plays);
-  }
-
-  function renderCamp(rows){
-    if (!rows || !rows.length){
-      $('camp').innerHTML = '<tbody><tr><td class="vazio" style="border:0;">Sem tráfego com <code>?utm_*</code> no período. Aparece quando as campanhas começarem.</td></tr></tbody>';
-      return;
-    }
-    var head = '<thead><tr><th>Campanha</th><th>Origem</th><th class="n">Sessões</th><th class="n">Initiate checkout</th></tr></thead>';
-    var body = rows.map(function(r){
-      var org = [r.source, r.medium].filter(function(x){ return x; }).join(' · ') || '—';
-      return '<tr><td>' + (r.campaign||'(sem campaign)') + '</td><td style="color:var(--soft)">' + org +
-             '</td><td class="n">' + fmt(r.sessoes) + '</td><td class="n">' + fmt(r.checkouts) + '</td></tr>';
-    }).join('');
-    $('camp').innerHTML = head + '<tbody>' + body + '</tbody>';
-  }
-
-  function renderGeo(rows){
-    var real = (rows||[]).filter(function(r){ return r.local && r.local !== '(sem local)'; });
-    if (!real.length){
-      $('geo').innerHTML = '<p class="vazio">Sem dados de localização no período.</p>';
-      return;
-    }
-    var head = '<thead><tr><th>Local</th><th class="n">Sessões</th><th class="n">Initiate checkout</th><th class="n">Contact</th></tr></thead>';
-    var body = real.slice(0, 12).map(function(r){
-      var conv = r.sessoes ? ((r.checkouts || 0) / r.sessoes * 100) : 0;
-      var forte = conv >= 2;
-      return '<tr' + (forte ? ' style="background:#faf1f0"' : '') + '><td>' + r.local +
-             '</td><td class="n">' + fmt(r.sessoes) +
-             '</td><td class="n">' + fmt(r.checkouts || 0) +
-             '</td><td class="n">' + fmt(r.whatsapp || 0) + '</td></tr>';
-    }).join('');
-    $('geo').innerHTML = '<table>' + head + '<tbody>' + body + '</tbody></table>';
-  }
-
-  function renderSpark(rows){
-    var r = rows || [];
-    var data = {
-      labels: r.map(function(x){ return x.dia.slice(8,10) + '/' + x.dia.slice(5,7); }),
-      datasets: [{ data: r.map(function(x){ return x.total; }),
-        borderColor:'#8a222e', backgroundColor:'rgba(138,34,46,.07)', fill:true,
-        tension:.35, pointRadius:0, borderWidth:2 }]
-    };
-    var opts = { responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ display:false } },
-      scales:{ x:{ ticks:{ color:'#afa59d', maxTicksLimit:8, maxRotation:0 }, grid:{ display:false } },
-               y:{ beginAtZero:true, ticks:{ color:'#afa59d', precision:0, maxTicksLimit:4 }, grid:{ color:'#f1eae3' } } } };
-    if (state.chartS) state.chartS.destroy();
-    state.chartS = new Chart($('spark'), { type:'line', data:data, options:opts });
-  }
-
-  function renderMapa(points){
-    if (typeof L === 'undefined') return;
-    if (!state.map){
-      state.map = L.map('mapa', { attributionControl:false, scrollWheelZoom:false })
-        .setView([-14.5, -52], 4);
-      L.tileLayer('https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-        { maxZoom:16 }).addTo(state.map);
-      state.mapLayer = L.layerGroup().addTo(state.map);
-    }
-    state.mapLayer.clearLayers();
-    var pts = (points || []).filter(function(p){ return p.lat != null && p.lon != null; });
-    pts.forEach(function(p, i){
-      var recente = i < 8;
-      L.circleMarker([p.lat, p.lon], {
-        radius: recente ? 8 : 4,
-        color: '#8a222e', weight: recente ? 2 : 1,
-        fillColor: '#b92d3d', fillOpacity: recente ? 0.55 : 0.28
-      }).addTo(state.mapLayer)
-        .bindTooltip((p.city || '(cidade?)') + (p.region ? ' · ' + p.region : ''), { direction:'top' });
-    });
-    if (pts.length){
-      try { state.map.fitBounds(L.latLngBounds(pts.map(function(p){ return [p.lat, p.lon]; })).pad(0.3)); }
-      catch(e){}
-    }
-    setTimeout(function(){ state.map.invalidateSize(); }, 50);
-  }
-
-  function renderHora(rows){
-    var by = {}; (rows||[]).forEach(function(r){ by[r.hora] = r.total; });
-    var labels = [], vals = [];
-    for (var h = 0; h < 24; h++){ labels.push(String(h).padStart(2,'0')); vals.push(by[h] || 0); }
-    var opts = { responsive:true, maintainAspectRatio:true,
-      plugins:{ legend:{ display:false } },
-      scales:{ x:{ ticks:{ color:'#afa59d', maxRotation:0, autoSkip:false,
-                     callback:function(v,i){ return (i%6===0||i===23) ? this.getLabelForValue(v) : ''; } },
-                   grid:{ display:false } },
-               y:{ beginAtZero:true, ticks:{ color:'#afa59d', precision:0, maxTicksLimit:4 }, grid:{ color:'#f1eae3' } } } };
-    var data = { labels:labels, datasets:[{ data:vals, backgroundColor:'#8a222e', borderRadius:3, categoryPercentage:.82, barPercentage:1 }] };
-    if (state.chartH) state.chartH.destroy();
-    state.chartH = new Chart($('hora'), { type:'bar', data:data, options:opts });
-  }
-
-  var fmtMoeda = function(n){ return (n==null?0:n).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); };
-
-  function renderROI(d){
-    var investido = d.total_investido || 0;
-    var vendas = d.total_vendas || 0;
-    var roi = investido > 0 ? ((vendas - investido) / investido * 100) : null;
-    var roiTxt = roi == null ? '—' : (roi >= 0 ? '+' : '') + Math.round(roi) + '%';
-    var itens = [
-      ['Investido', fmtMoeda(investido), ''],
-      ['Vendas', fmtMoeda(vendas), fmt(d.qtd_vendas||0) + ' venda(s)'],
-      ['Retorno (ROI)', roiTxt, roi == null ? 'sem investimento lançado' : (roi >= 0 ? 'positivo' : 'negativo')]
-    ];
-    $('roi-kpis').innerHTML = itens.map(function(it, i){
-      var cls = i === 2 ? (roi == null ? '' : (roi >= 0 ? ' bom' : ' ruim')) : '';
-      return '<div class="kpi' + cls + '"><div class="l">' + it[0] + '</div><div class="n">' + it[1] + '</div><div class="s">' + it[2] + '</div></div>';
-    }).join('');
-
-    var produtos = d.por_produto || [];
-    if (!produtos.length){
-      $('tabela-vendas').innerHTML = '<tr><td colspan="3" class="vazio">Sem venda registrada ainda — assim que a primeira "Fatura paga" chegar da Eduzz, aparece aqui automaticamente.</td></tr>';
-    } else {
-      $('tabela-vendas').innerHTML = produtos.map(function(p){
-        return '<tr><td>' + p.produto + '</td><td class="n">' + fmt(p.qtd) + '</td><td class="n">' + fmtMoeda(p.total) + '</td></tr>';
-      }).join('');
-    }
-
-    var canais = d.por_canal || [];
-    if (!canais.length){
-      $('tabela-vendas-canal').innerHTML = '<tr><td colspan="3" class="vazio">Sem venda com link de vendedor/canal rastreado ainda.</td></tr>';
-    } else {
-      $('tabela-vendas-canal').innerHTML = canais.map(function(c){
-        var rot = c.canal + (c.origem ? ' <span style="color:var(--faint);font-weight:400;">· ' + c.origem + '</span>' : '');
-        return '<tr><td>' + rot + '</td><td class="n">' + fmt(c.qtd) + '</td><td class="n">' + fmtMoeda(c.total) + '</td></tr>';
-      }).join('');
-    }
-  }
-
-  var LINKS_RASTREAMENTO = [
-    { nome: 'Time Comercial (Gisele/Juliana)', url: 'https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=time-comercial&utm_medium=vendedora&utm_campaign=time-comercial' },
-    { nome: 'Podcast (Fernando Beteti)', url: 'https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=podcast&utm_medium=fernando-beteti&utm_campaign=podcast-fernando-beteti' }
-  ];
-  function renderLinksRastreamento(){
-    var el = $('lista-links-rastreamento');
-    if (!el) return;
-    el.innerHTML = LINKS_RASTREAMENTO.map(function(l, i){
-      return '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
-        '<span style="font-weight:700;font-size:12.5px;min-width:150px;">' + l.nome + '</span>' +
-        '<code style="flex:1;min-width:200px;font-size:11px;color:var(--soft);background:var(--track);padding:4px 8px;border-radius:6px;overflow-wrap:anywhere;">' + l.url + '</code>' +
-        '<button type="button" class="btn-mini copiar-link" data-i="' + i + '" style="font-family:var(--tit);font-weight:700;font-size:10.5px;text-transform:uppercase;background:var(--card);border:1px solid var(--linha);color:var(--soft);padding:5px 11px;border-radius:999px;cursor:pointer;white-space:nowrap;">Copiar</button>' +
-        '</div>';
-    }).join('');
-    el.querySelectorAll('.copiar-link').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var l = LINKS_RASTREAMENTO[Number(btn.dataset.i)];
-        navigator.clipboard.writeText(l.url).then(function(){
-          var t = btn.textContent; btn.textContent = 'Copiado!';
-          setTimeout(function(){ btn.textContent = t; }, 1500);
-        }).catch(function(){});
-      });
-    });
-  }
-  renderLinksRastreamento();
-
-  function carregarROI(){
-    return rpc('rpc_roi', {}).then(renderROI).catch(function(e){
-      $('roi-kpis').innerHTML = '<div class="kpi"><div class="l">ROI</div><div class="n" style="font-size:13px;color:var(--soft)">erro: ' + e.message + '</div><div class="s">rodou a seção 11 do SUPABASE.md?</div></div>';
-      $('tabela-vendas').innerHTML = '';
-    });
-  }
-
-  $('inv-data').value = ymd(new Date());
-  $('form-investimento').addEventListener('submit', function(e){
-    e.preventDefault();
-    var valor = parseFloat($('inv-valor').value);
-    if (!valor || valor <= 0) return;
-    var row = {
-      data: $('inv-data').value,
-      canal: $('inv-canal').value.trim() || null,
-      descricao: $('inv-desc').value.trim() || null,
-      valor: valor
-    };
-    var btn = $('btn-lancar');
-    btn.disabled = true; btn.textContent = 'Lançando…';
-    $('inv-msg').textContent = '';
-    fetch(SUPABASE_URL + '/rest/v1/investimentos', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', apikey:SUPABASE_KEY, Authorization:'Bearer '+SUPABASE_KEY, Prefer:'return=minimal' },
-      body: JSON.stringify(row)
-    }).then(function(r){
-      if (!r.ok) throw new Error('status ' + r.status);
-      $('inv-msg').textContent = 'Lançado!';
-      $('inv-canal').value = ''; $('inv-desc').value = ''; $('inv-valor').value = '';
-      carregarROI();
-    }).catch(function(err){
-      $('inv-msg').textContent = 'Não deu pra lançar (' + err.message + ').';
-    }).finally(function(){
-      btn.disabled = false; btn.textContent = 'Lançar investimento';
-    });
-  });
-
-  // ---- gerenciar lançamentos de investimento (editar/apagar, protegido por token) ----
-  var INV_ADMIN_URL = SUPABASE_URL + '/functions/v1/investimentos-admin';
-  var invRowsCache = {};
-
-  function invToken(){
-    try { return localStorage.getItem('novva-inv-token') || ''; } catch(e){ return ''; }
-  }
-  function pedirInvToken(){
-    var t = prompt('Senha pra gerenciar lançamentos (peça pro responsável se não tiver):');
-    if (t) { try { localStorage.setItem('novva-inv-token', t.trim()); } catch(e){} }
-    return t ? t.trim() : '';
-  }
-  function invFetch(action, extra){
-    var body = Object.assign({ action: action, token: invToken() }, extra || {});
-    var h = { 'Content-Type':'application/json', apikey: SUPABASE_KEY, Authorization:'Bearer '+SUPABASE_KEY };
-    return fetch(INV_ADMIN_URL, { method:'POST', headers:h, body: JSON.stringify(body) })
-      .then(function(r){
-        if (r.status === 401) { try{ localStorage.removeItem('novva-inv-token'); }catch(e){} throw new Error('senha incorreta'); }
-        if (!r.ok) return r.text().then(function(t){ throw new Error(t || ('status ' + r.status)); });
-        var ct = r.headers.get('content-type') || '';
-        return ct.indexOf('application/json') !== -1 ? r.json() : r.text();
-      });
-  }
-
-  function linhaGerenciarInv(r){
-    return '<tr data-id="' + r.id + '">' +
-      '<td>' + r.data + '</td>' +
-      '<td>' + (r.canal || '') + '</td>' +
-      '<td>' + (r.descricao || '') + '</td>' +
-      '<td class="n">' + fmtMoeda(r.valor) + '</td>' +
-      '<td style="white-space:nowrap;">' +
-        '<button type="button" class="copiar btn-editar-inv">Editar</button> ' +
-        '<button type="button" class="copiar btn-apagar-inv" style="color:var(--bordo-vivo);border-color:var(--bordo-vivo);">Apagar</button>' +
-      '</td></tr>';
-  }
-  function linhaEdicaoInv(r){
-    return '<tr data-id="' + r.id + '" class="editando">' +
-      '<td><input type="date" data-e="data" value="' + r.data + '" style="width:130px;"></td>' +
-      '<td><input type="text" data-e="canal" value="' + (r.canal || '') + '" style="width:100%;"></td>' +
-      '<td><input type="text" data-e="descricao" value="' + (r.descricao || '') + '" style="width:100%;"></td>' +
-      '<td><input type="number" step="0.01" min="0" data-e="valor" value="' + r.valor + '" style="width:100px;"></td>' +
-      '<td style="white-space:nowrap;">' +
-        '<button type="button" class="copiar ok btn-salvar-inv">Salvar</button> ' +
-        '<button type="button" class="copiar btn-cancelar-inv">Cancelar</button>' +
-      '</td></tr>';
-  }
-
-  function renderGerenciarInv(rows){
-    invRowsCache = {};
-    rows.forEach(function(r){ invRowsCache[r.id] = r; });
-    $('tabela-gerenciar-inv').innerHTML = rows.length
-      ? rows.map(linhaGerenciarInv).join('')
-      : '<tr><td colspan="5" class="vazio">Nenhum lançamento ainda.</td></tr>';
-  }
-
-  function carregarGerenciarInv(){
-    $('tabela-gerenciar-inv').innerHTML = '<tr><td colspan="5" class="vazio">Carregando…</td></tr>';
-    invFetch('list').then(function(rows){ renderGerenciarInv(Array.isArray(rows) ? rows : []); })
-      .catch(function(err){ $('tabela-gerenciar-inv').innerHTML = '<tr><td colspan="5" class="vazio">Erro: ' + err.message + '</td></tr>'; });
-  }
-
-  $('link-gerenciar-inv').addEventListener('click', function(e){
-    e.preventDefault();
-    var painel = $('gerenciar-inv');
-    if (!painel.hidden) { painel.hidden = true; return; }
-    if (!invToken() && !pedirInvToken()) return;
-    painel.hidden = false;
-    carregarGerenciarInv();
-  });
-
-  $('tabela-gerenciar-inv').addEventListener('click', function(e){
-    var tr = e.target.closest('tr[data-id]');
-    if (!tr) return;
-    var id = tr.dataset.id;
-    var r = invRowsCache[id];
-
-    if (e.target.classList.contains('btn-apagar-inv')){
-      if (!confirm('Apagar esse lançamento (' + fmtMoeda(r.valor) + ', ' + r.data + ')?')) return;
-      invFetch('delete', { id: id }).then(function(){ carregarROI(); carregarGerenciarInv(); })
-        .catch(function(err){ alert('Não deu pra apagar: ' + err.message); });
-      return;
-    }
-    if (e.target.classList.contains('btn-editar-inv')){
-      tr.outerHTML = linhaEdicaoInv(r);
-      return;
-    }
-    if (e.target.classList.contains('btn-cancelar-inv')){
-      tr.outerHTML = linhaGerenciarInv(r);
-      return;
-    }
-    if (e.target.classList.contains('btn-salvar-inv')){
-      var patch = {
-        id: id,
-        data: tr.querySelector('[data-e=data]').value,
-        canal: tr.querySelector('[data-e=canal]').value.trim() || null,
-        descricao: tr.querySelector('[data-e=descricao]').value.trim() || null,
-        valor: parseFloat(tr.querySelector('[data-e=valor]').value)
-      };
-      if (!patch.valor || patch.valor <= 0) { alert('Valor precisa ser maior que zero.'); return; }
-      e.target.disabled = true; e.target.textContent = 'Salvando…';
-      invFetch('update', patch).then(function(){ carregarROI(); carregarGerenciarInv(); })
-        .catch(function(err){ alert('Não deu pra salvar: ' + err.message); e.target.disabled = false; e.target.textContent = 'Salvar'; });
-      return;
-    }
-  });
-
-  function loadTrafego(){
-    $('foot').textContent = 'atualizando…';
-    $('hero-lbl').textContent = 'Visitantes · ' + LABEL[state.period];
-    carregarROI();
-    return rpc('rpc_dashboard', range()).then(function(res){
-      var d = Array.isArray(res) ? res[0] : res;
-      var k = d.kpis || {};
-      $('hero-num').textContent = fmt(k.visitantes);
-      $('hero-delta').textContent = k.sessoes ? fmt(k.sessoes) + ' sessões · ' + fmt(k.pageviews) + ' page views' : '';
-      renderKpis(k);
-      renderSpark(d.pv_daily);
-      renderFunil(d.funnel, k.pageviews);
-      renderVsl(d.vsl);
-      renderCamp(d.campaigns);
-      renderGeo(d.geo);
-      renderMapa(d.geo_points);
-      renderHora(d.by_hour);
-      $('foot').textContent = 'atualizado ' + new Date().toLocaleTimeString('pt-BR') + ' · exibindo: ' + LABEL[state.period]
-        + (state.rt ? ' · tempo real' : '');
-    }).catch(function(e){
-      $('foot').innerHTML = '<span class="erro">erro: ' + e.message + ' — rodou o bloco RPC do SUPABASE.md no Supabase?</span>';
-    });
-  }
-
-  function applyRealtime(){
-    if (state.timer){ clearInterval(state.timer); state.timer = null; }
-    if (state.rt) state.timer = setInterval(loadTrafego, 20000);
-  }
-
-  $('periods').addEventListener('click', function(e){
-    var b = e.target.closest('button'); if (!b) return;
-    Array.prototype.forEach.call(this.children, function(c){ c.classList.toggle('on', c === b); });
-    state.period = b.dataset.p;
-    loadTrafego();
-  });
-  $('rt').addEventListener('click', function(){
-    state.rt = !state.rt;
-    this.classList.toggle('on', state.rt);
-    if (state.rt){
-      state.period = 'hoje';
-      Array.prototype.forEach.call($('periods').children, function(c){ c.classList.toggle('on', c.dataset.p === 'hoje'); });
-    }
-    applyRealtime();
-    loadTrafego();
-  });
-
-  // ============================================================
-  // PAINEL 2 — Quiz · Raio-X Profissional (leads)
-  // ============================================================
-  var PERGUNTAS = [
-    { texto:'Segurança ao responder sobre terapia complementar', opcoes:['Fico inseguro(a) / prefiro não opinar','Resposta genérica, sem base técnica','Respondo com segurança e limites éticos'] },
-    { texto:'Atualização recente em oncologia integrativa', opcoes:['Não estuda o tema há tempos','Só conteúdo esporádico (redes sociais)','Curso, congresso ou pós específica'] },
-    { texto:'Clareza sobre limites éticos/legais', opcoes:['Receio de errar','Depende do caso','Bem claro pra mim'] },
-    { texto:'Rede de contatos em oncologia integrativa', opcoes:['Não tenho nenhuma','Alguns contatos soltos','Rede ativa de colegas/referências'] },
-    { texto:'Indicaria congresso/especialista a um colega?', opcoes:['Não saberia responder','Citaria algo genérico','Indicaria nomes e eventos específicos'] }
-  ];
-
-  function barraHTML(label, valor, total){
-    var p = pct(valor, total).replace('%','') === '—' ? 0 : (total ? Math.round(valor/total*100) : 0);
-    return '<div class="barra-item"><div class="barra-cab"><b>' + label + '</b><span>' + fmt(valor) + ' · ' + p + '%</span></div>' +
-      '<div class="barra-trilho"><i style="width:' + p + '%"></i></div></div>';
-  }
-
-  function renderQNivel(d){
-    var total = d.total_completos || 0;
-    var niveis = [
-      ['Iniciante', d.por_nivel.iniciante || 0],
-      ['Intermediário', d.por_nivel.intermediario || 0],
-      ['Avançado', d.por_nivel.avancado || 0]
-    ];
-    if (!total){ $('bloco-nivel').innerHTML = '<div class="vazio">Ainda sem quiz completo pra mostrar.</div>'; return; }
-    $('bloco-nivel').innerHTML = niveis.map(function(n){ return barraHTML(n[0], n[1], total); }).join('');
-  }
-
-  function renderQTemperatura(d){
-    var total = d.total_contatos || 0;
-    var t = d.temperatura || { frio:0, morno:0, quente:0 };
-    ['frio','morno','quente'].forEach(function(k){
-      var el = $('t-' + k);
-      el.firstChild.textContent = t[k] || 0;
-      $('t-' + k + '-pct').textContent = total ? ' (' + Math.round((t[k]||0)/total*100) + '%)' : '';
-    });
-  }
-
-  function renderQTabela(id, linhas, campo){
-    var tbody = $(id);
-    if (!linhas || !linhas.length){ tbody.innerHTML = '<tr><td colspan="2" class="vazio">Sem dados ainda.</td></tr>'; return; }
-    tbody.innerHTML = linhas.map(function(l){
-      return '<tr><td>' + l[campo] + '</td><td class="n">' + fmt(l.total) + '</td></tr>';
-    }).join('');
-  }
-
-  function renderQPerguntas(d){
-    var lista = d.por_pergunta || [];
-    if (!lista.length){ $('bloco-perguntas').innerHTML = '<div class="vazio">Ainda sem respostas suficientes pra mostrar o qualitativo.</div>'; return; }
-    $('bloco-perguntas').innerHTML = lista.map(function(row){
-      var p = PERGUNTAS[row.pergunta - 1];
-      if (!p) return '';
-      var total = (row.opcao_a||0) + (row.opcao_b||0) + (row.opcao_c||0);
-      var letras = ['A','B','C'], valores = [row.opcao_a||0, row.opcao_b||0, row.opcao_c||0];
-      var linhas = p.opcoes.map(function(txt, i){
-        var pc = total ? Math.round(valores[i]/total*100) : 0;
-        return '<div class="opcao-linha"><span class="letra">' + letras[i] + '</span><span>' + txt + '</span>' +
-          '<span class="pct">' + pc + '%</span></div>' +
-          '<div class="opcao-linha" style="grid-column:2/4;margin-top:-4px;margin-bottom:8px;"><div class="trilho" style="grid-column:1/-1"><i style="width:' + pc + '%"></i></div></div>';
-      }).join('');
-      return '<div class="pergunta-card"><div class="txt">' + row.pergunta + '. ' + p.texto + '</div>' + linhas + '</div>';
-    }).join('');
-  }
-
-  function loadQuiz(){
-    renderPassosQuiz();
-    $('q-aviso').classList.remove('ok');
-    $('q-aviso').textContent = 'Carregando dados do quiz…';
-    return rpc('rpc_quiz_dashboard', {}).then(function(d){
-      $('q-aviso').classList.add('ok');
-      $('q-hero-num').textContent = fmt(d.total_contatos || 0);
-      var taxa = pct(d.total_completos || 0, d.total_contatos || 0);
-      $('q-hero-delta').textContent = fmt(d.total_completos || 0) + ' terminaram o quiz · taxa de conclusão ' + taxa;
-      var niveis = d.por_nivel || {};
-      var top = Object.keys(niveis).sort(function(a,b){ return (niveis[b]||0)-(niveis[a]||0); })[0];
-      var topLabel = { iniciante:'Iniciante', intermediario:'Intermediário', avancado:'Avançado' }[top] || '—';
-      var topCanal = (d.por_canal && d.por_canal[0]) ? d.por_canal[0].canal : '—';
-      $('q-kpis').innerHTML = [
-        ['Terminaram o quiz', fmt(d.total_completos||0), 'taxa: ' + taxa],
-        ['Nível mais comum', (niveis[top]||0) > 0 ? topLabel : '—', 'entre quem completou'],
-        ['Canal que mais traz lead', topCanal, 'utm_source']
-      ].map(function(it){
-        return '<div class="kpi"><div class="l">' + it[0] + '</div><div class="n" style="font-size:20px">' + it[1] + '</div><div class="s">' + it[2] + '</div></div>';
-      }).join('');
-      renderQTemperatura(d);
-      renderQNivel(d);
-      renderQTabela('tabela-canal', d.por_canal, 'canal');
-      renderQTabela('tabela-profissao', d.por_profissao, 'profissao');
-      renderQPerguntas(d);
-    }).catch(function(err){
-      $('q-aviso').classList.remove('ok');
-      $('q-aviso').textContent = 'Não consegui carregar (' + err.message + '). Confira se a função rpc_quiz_dashboard já foi criada no Supabase (SUPABASE.md, seção 9).';
-    });
-  }
 
   // ============================================================
   // PAINEL 3 — CRM (preview, sem login/backend ainda)
@@ -1489,24 +853,7 @@
   $('tour-prox').addEventListener('click', function(){ tourIdx++; tourMostrar(tourIdx); });
   $('tour-pular').addEventListener('click', function(){ tourFechar(true); });
 
-  // ---- checklist genérico (reusado nas 3 abas) ----
-  var PASSOS_TRAFEGO = [
-    { t:'Rodar SQL da tabela events + views agregadas', d:'SUPABASE.md, seção 2 — coletor de analytics do site.', padrao:true },
-    { t:'Deploy da Edge Function collect (geo por IP)', d:'SUPABASE.md, seção 7 — resolve país/estado/cidade de cada acesso.', padrao:true },
-    { t:'Rodar SQL de investimentos / vendas / rpc_roi', d:'SUPABASE.md, seção 11 — habilita o card de ROI acima.', padrao:true },
-    { t:'Deploy da Edge Function eduzz-webhook', d:'SUPABASE.md, seção 11 — recebe a notificação de venda da Eduzz e grava na tabela vendas.', padrao:true },
-    { t:'Configurar o postback na Eduzz', d:'Evento "Fatura paga" (myeduzz.invoice_paid) apontando pra eduzz-webhook — testado e confirmado, vendas caem automaticamente na tabela vendas.', padrao:true },
-    { t:'(Opcional) Anexar UTM/visitor_id ao link de checkout', d:'Hoje o clique é rastreado, mas o link em si sai limpo pra Eduzz — sem isso não dá pra saber de qual canal veio cada venda.', padrao:false },
-    { t:'Autorizar a conta de Meta Ads', d:'Desbloqueia trazer o "investido" automaticamente em vez de lançar manual no formulário do ROI.', padrao:false }
-  ];
-
-  var PASSOS_QUIZ = [
-    { t:'Rodar SQL da tabela quiz_leads', d:'SUPABASE.md, seção 8 — onde o quiz grava cada lead.', padrao:true },
-    { t:'Rodar SQL da função rpc_quiz_dashboard', d:'SUPABASE.md, seção 9 — alimenta os números desta aba.', padrao:true },
-    { t:'Trocar DEMO_MODE para false no quiz.html', d:'Enquanto estiver true, nenhuma resposta é salva de verdade — o quiz só mostra o resultado na hora, sem gravar lead.', padrao:false },
-    { t:'Divulgar o link do quiz nos canais planejados', d:'Bio do Instagram, stories, palestrantes, grupos, lista de WhatsApp — docs/estrategia-marketing-congresso-cancer-2026.md.', padrao:false }
-  ];
-
+  // ---- checklist genérico (reusado no CRM-preview legado) ----
   var PASSOS_META = [
     { t:'Decidir número único da equipe', d:'Recomendado: 1 número compartilhado, com atribuição por vendedor dentro do próprio CRM (já é assim no pipeline acima) — mais barato e rápido de aprovar do que um número por pessoa.' },
     { t:'Criar Portfólio Empresarial na Meta', d:'business.facebook.com → menu superior esquerdo → Criar portfólio empresarial.' },
@@ -1553,46 +900,73 @@
   }
 
   function renderPassos(){ renderChecklist(PASSOS_META, 'crm-passos-meta', 'passos-meta', 'passos-progresso-barra', 'passos-progresso-lbl'); }
-  function renderPassosTrafego(){ renderChecklist(PASSOS_TRAFEGO, 'trafego-passos', 'passos-trafego', 'passos-trafego-barra', 'passos-trafego-lbl'); }
-  function renderPassosQuiz(){ renderChecklist(PASSOS_QUIZ, 'quiz-passos', 'passos-quiz', 'passos-quiz-barra', 'passos-quiz-lbl'); }
 
   // ============================================================
-  // Nav principal (troca de painel) + reload
+  // Nav principal (troca de painel, todas as 4 abas são iframes) + reload
   // ============================================================
-  var TITULOS = {
-    trafego: 'Tráfego & Conversão · site do Congresso',
-    quiz: 'Quiz · Raio-X Profissional em Oncologia Integrativa',
-    crm: 'CRM · pipeline de vendas (preview)'
-  };
+  var IFRAMES = { trafego:'trafego-iframe', quiz:'quiz-iframe', crm:'crm-iframe', financeiro:'financeiro-iframe' };
+  var ARQUIVOS = { trafego:'trafego.html', quiz:'quiz-raiox.html', crm:'crm.html', financeiro:'financeiro.html' };
+
+  function ativarPainel(tab){
+    state.tab = tab;
+    ['trafego','quiz','crm','financeiro'].forEach(function(t){ $('painel-' + t).hidden = t !== tab; });
+    if (!state.carregado[tab]){
+      state.carregado[tab] = true;
+      $(IFRAMES[tab]).src = ARQUIVOS[tab];
+    }
+  }
 
   $('tabs-principal').addEventListener('click', function(e){
     var b = e.target.closest('button'); if (!b) return;
     Array.prototype.forEach.call(this.children, function(c){ c.classList.toggle('on', c === b); });
-    state.tab = b.dataset.tab;
-    $('painel-trafego').hidden = state.tab !== 'trafego';
-    $('painel-quiz').hidden = state.tab !== 'quiz';
-    $('painel-crm').hidden = state.tab !== 'crm';
-    $('subbar-trafego').hidden = state.tab !== 'trafego';
-    $('sub-titulo').textContent = TITULOS[state.tab];
-    if (state.tab === 'quiz' && !state.quizCarregado){ state.quizCarregado = true; loadQuiz(); }
-    if (state.tab === 'crm' && !state.crmCarregado){
-      state.crmCarregado = true;
-      renderFila(); renderEquipe(); renderPipeline(); renderPassos();
-      var jaViu = false;
-      try { jaViu = !!localStorage.getItem('crm-tour-visto'); } catch(e){}
-      if (!jaViu) setTimeout(tourIniciar, 400);
-    }
+    ativarPainel(b.dataset.tab);
+  });
+
+  // ---- iframes sem barra de rolagem própria: cada página avisa a própria altura via
+  // postMessage (funciona também testando local em file://, ao contrário de ler
+  // contentDocument direto, que o navegador bloqueia entre arquivos file:// diferentes).
+  window.addEventListener('message', function(e){
+    var d = e.data;
+    if (!d || d.fonte !== 'novva-iframe' || !d.altura) return;
+    Object.keys(IFRAMES).forEach(function(t){
+      var f = $(IFRAMES[t]);
+      if (f && f.contentWindow === e.source) f.style.height = Math.max(300, d.altura) + 'px';
+    });
   });
 
   $('reload').addEventListener('click', function(){
     $(this).disabled = true;
-    var p = state.tab === 'trafego' ? loadTrafego() : state.tab === 'quiz' ? loadQuiz() : null;
-    if (!p){ garantirFilaViva(); renderEquipe(); renderPipeline(); renderPassos(); }
-    Promise.resolve(p).finally(function(){ $('reload').disabled = false; });
+    var f = $(IFRAMES[state.tab]);
+    if (f && f.src) f.contentWindow.location.reload();
+    setTimeout(function(){ $('reload').disabled = false; }, 400);
   });
 
-  loadTrafego();
-  renderPassosTrafego();
+  // ---- vendedor só vê CRM e Tráfego; Financeiro/Quiz ficam só pro gestor ----
+  // (checa a sessão do Supabase Auth que já existe no navegador, a mesma do crm.html/
+  // financeiro.html — se a pessoa nunca logou em nenhum dos dois ainda, deixa tudo
+  // visível; a própria página escondida barra pelo login mesmo assim.)
+  function ajustarAbasPorPapel(){
+    sb.auth.getSession().then(function(r){
+      var sess = r && r.data && r.data.session;
+      if (!sess) return;
+      return fetch(SUPABASE_URL + '/rest/v1/perfis?select=papel&id=eq.' + sess.user.id, {
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + sess.access_token }
+      }).then(function(r2){ return r2.ok ? r2.json() : []; }).then(function(rows){
+        var papel = rows && rows[0] && rows[0].papel;
+        if (!papel || papel === 'gestor') return;
+        ['financeiro','quiz'].forEach(function(t){
+          var btn = document.querySelector('#tabs-principal [data-tab="' + t + '"]');
+          if (btn) btn.hidden = true;
+        });
+        if (state.tab === 'financeiro' || state.tab === 'quiz'){
+          document.querySelector('#tabs-principal [data-tab="crm"]').click();
+        }
+      });
+    }).catch(function(){});
+  }
+
+  ativarPainel('trafego');
+  ajustarAbasPorPapel();
   reiniciarFilaSimulacao(); // zera a fila a cada carregamento da página
   setInterval(garantirFilaViva, 60000); // dali em diante, 1 tick = 1 min, ritmo real
 })();

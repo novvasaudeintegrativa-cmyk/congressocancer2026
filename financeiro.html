@@ -41,9 +41,8 @@
   #app{padding:16px 18px 40px;max-width:1180px;margin:0 auto;}
   .topbar{display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap;margin-bottom:16px;}
   .brand{display:flex;align-items:center;gap:10px;margin-right:auto;}
-  .brand .mark{width:30px;height:30px;border-radius:8px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--tit);font-weight:800;font-size:13px;}
-  .brand h1{font-size:15px;font-weight:800;letter-spacing:.03em;}
-  .brand .sub{font-size:11px;color:var(--soft);}
+  .brand .mark{width:32px;height:32px;border-radius:9px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;}
+  .brand .sub{font-size:16px;font-weight:800;color:var(--ink);}
   .eu{font-size:12px;color:var(--soft);}
   .eu b{color:var(--ink);}
   .btn-mini{font-family:var(--tit);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:7px 13px;border-radius:999px;cursor:pointer;}
@@ -163,11 +162,8 @@
 <div id="app" hidden>
   <div class="topbar">
     <div class="brand">
-      <span class="mark">$</span>
-      <div>
-        <h1>Novva Controle Financeiro</h1>
-        <div class="sub">receitas e despesas do Congresso · só gestor</div>
-      </div>
+      <span class="mark"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span>
+      <div class="sub">Financeiro · receitas e despesas do Congresso</div>
     </div>
     <span class="eu" id="eu"></span>
     <button type="button" class="btn-mini" id="btn-modificar-senha">Modificar senha</button>
@@ -846,6 +842,20 @@
     });
   }
 })();
+</script>
+<script>
+  // avisa o "pai" (novva-ads.html) a própria altura, quando embutido num iframe
+  if (window.parent && window.parent !== window){
+    (function(){
+      function altura(){ return Math.max(document.documentElement.scrollHeight, document.body.scrollHeight); }
+      function enviar(){ window.parent.postMessage({ fonte:'novva-iframe', altura: altura() }, '*'); }
+      enviar();
+      window.addEventListener('load', enviar);
+      window.addEventListener('resize', enviar);
+      [300, 800, 1500, 3000].forEach(function(ms){ setTimeout(enviar, ms); });
+      if (window.ResizeObserver) new ResizeObserver(enviar).observe(document.documentElement);
+    })();
+  }
 </script>
 </body>
 </html>

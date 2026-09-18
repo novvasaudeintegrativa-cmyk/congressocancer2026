@@ -1,11 +1,12 @@
-# Coletor de eventos — Supabase + Ads/novva-ads.html
+# Coletor de eventos — Supabase + novva-ads.html
 
 O site manda cada evento para **dois lugares**: o Meta Pixel e um banco próprio
-(Supabase). O `Ads/novva-ads.html` lê esse banco e mostra os
-números — é um painel único com duas abas: **Tráfego & Conversão** (site) e
-**Quiz · Raio-X Profissional** (leads do `quiz.html`). Ferramentas internas
-(`.md`, dashboards, mockups) ficam todas na pasta `Ads/`; `index.html` e
-`quiz.html` continuam na raiz porque têm URL pública já divulgada.
+(Supabase). O `novva-ads.html` lê esse banco e mostra os
+números — é a "página mãe" com um menu lateral de 4 abas (CRM, Tráfego,
+Financeiro, Quiz), cada uma carregando `crm.html`/`trafego.html`/`financeiro.html`/
+`quiz-raiox.html` (leads do `quiz.html`) dentro de um `<iframe>`. Todas essas
+ferramentas internas ficam soltas na raiz do site, sem link na navegação
+pública — acesso só por quem tem a URL, igual `index.html` e `quiz.html`.
 
 Arquivos deste `.md` **não** vão para o FTP (o deploy exclui `*.md`) — é só
 referência de setup.
@@ -373,7 +374,7 @@ problema, desde que o SQL acima tenha sido rodado como está.
 Em **dois arquivos**, no bloco de config no topo do `<script>`:
 
 - `index.html` → `var ANALYTICS = { url: 'https://xxxx.supabase.co/rest/v1/events', key: 'eyJ...' }`
-- `Ads/novva-ads.html` → `var SUPABASE_URL = 'https://xxxx.supabase.co'` e `var SUPABASE_KEY = 'eyJ...'`
+- `trafego.html` → `var SUPABASE_URL = 'https://xxxx.supabase.co'` e `var SUPABASE_KEY = 'eyJ...'`
 
 Commit + push → o deploy FTP publica os dois.
 
@@ -381,7 +382,7 @@ Commit + push → o deploy FTP publica os dois.
 
 - Abrir o site, aba **Network** → deve haver `POST .../rest/v1/events` com status **201**.
 - Supabase → **Table Editor → events** → linhas aparecendo.
-- Abrir `https://SEU-DOMINIO/Ads/novva-ads.html` → números carregando.
+- Abrir `https://SEU-DOMINIO/novva-ads.html` → números carregando.
 
 ## 6. Pendências / cuidados
 
@@ -389,10 +390,9 @@ Commit + push → o deploy FTP publica os dois.
   (ex.: apagar linhas com mais de 12–18 meses via job agendado); não guardamos IP.
 - **Bots**: o endpoint aceita INSERT anônimo — se aparecer spam, criar uma Edge
   Function com segredo + rate limit, ou filtrar por `ua` nas queries.
-- **`Ads/novva-ads.html` é público** no domínio (a pasta `Ads/` não
-  bloqueia acesso por si só). Só mostra agregados (sem PII), mas convém
-  renomear pra algo não óbvio (ex.: `Ads/painel-7k2x.html`) e/ou proteger por
-  `.htaccess` na TurboCloud.
+- **`novva-ads.html` é público** no domínio (não tem pasta protegendo). Só
+  mostra agregados (sem PII), mas convém renomear pra algo não óbvio (ex.:
+  `painel-7k2x.html`) e/ou proteger por `.htaccess` na TurboCloud.
 - **Dashboard mais robusto** depois: Metabase (free) ou Grafana Cloud (free)
   conectados na connection string Postgres do Supabase.
 
@@ -581,7 +581,7 @@ vazar WhatsApp/e-mail. Pra ver os leads:
   senha/login (Supabase Auth) — hoje não existe autenticação no site, então
   esse painel ainda não foi criado.
 
-## 9. Painel do quiz (aba "Quiz · Raio-X Profissional" do `Ads/novva-ads.html`)
+## 9. Painel do quiz ("Quiz · Raio-X Profissional", `quiz-raiox.html`)
 
 Painel agregado (sem PII) que lê `quiz_leads` cruzado com `events` só pra
 classificar a **temperatura** de cada lead — nome/WhatsApp nunca saem daqui,
@@ -1009,14 +1009,14 @@ Adicione o secret **`INVESTIMENTOS_ADMIN_TOKEN`** (Edge Functions →
 Secrets) com um valor aleatório — é a senha que o painel vai pedir pra
 liberar editar/apagar.
 
-O painel (`Ads/novva-ads.html`, seção ROI) tem um link "Gerenciar
+O painel (`trafego.html`, seção ROI) tem um link "Gerenciar
 lançamentos" que pede esse token uma vez (fica salvo só nesse
 navegador) e mostra a lista com editar/apagar inline.
 
 ## 13. CRM — Fase 1 (login de equipe + pipeline de leads reais)
 
 Substitui a Kommo pra **gestão de leads** (não pra conversa de WhatsApp —
-isso é Fase 2, depende da API do Meta). Tela nova `Ads/crm.html` atrás de
+isso é Fase 2, depende da API do Meta). Tela nova `crm.html` atrás de
 login: cada vendedor vê a carteira dele, gestor vê e distribui tudo.
 
 **Conceito de "lead" aqui:** uma **pessoa** (identificada pelo WhatsApp),
@@ -1131,7 +1131,7 @@ create policy "equipe lê quiz_leads" on public.quiz_leads
 
 grant select on public.crm_leads to authenticated;
 
--- ---------- RPC: pipeline pronto pro Ads/crm.html ----------
+-- ---------- RPC: pipeline pronto pro crm.html ----------
 -- security definer, mas o 1º filtro exige que quem chama seja membro ativo
 -- da equipe (senão retorna vazio) — sem isso, o "or urgente" deixaria
 -- qualquer não-logado ler PII de lead urgente.
@@ -1193,7 +1193,7 @@ notify pgrst, 'reload schema';
   interno na 1ª chamada `.from()` pós-login -> o `crm.html` lê dados por
   `fetch` REST direto com o token, usa supabase-js só pra auth.
 
-### 13.4. O que o `Ads/crm.html` faz
+### 13.4. O que o `crm.html` faz
 
 - Login (Supabase Auth, e-mail/senha) — sem sessão, sem acesso.
 - Pipeline Kanban por `etapa`, lido de `rpc_crm_pipeline()`.
@@ -1396,7 +1396,7 @@ No app **Novva CRM** → Etapa 2 → **Configurar webhooks**:
    `553284040133`) com `crm_leads.whatsapp` (digitado pela pessoa).
 3. **Forma de pagamento** na WABA — só pra mandar fora da janela de 24h
    (template). Resposta dentro de 24h da última mensagem do lead é grátis.
-4. **View de conversa no `Ads/crm.html`** — thread por lead + campo de
+4. **View de conversa no `crm.html`** — thread por lead + campo de
    resposta que chama a Cloud API (`POST /{phone-number-id}/messages`).
 
 **Status (11/09/2026):** passos 2 e 4 já feitos (o campo de resposta no
@@ -2149,7 +2149,7 @@ já foram cadastrados em §14.6/16 do processo de setup.
 pra qualificação (poucas linhas por resposta). Trocar por um Sonnet se um
 dia a Cris precisar ser mais sofisticada.
 
-### 16.3. `Ads/crm.html` — o que mudou
+### 16.3. `crm.html` — o que mudou
 
 - Balão de mensagem "enviada" mostra a etiqueta **"Cris"** quando
   `enviado_por` é nulo (senão é presumido "Você", ou seja, alguém da
@@ -2885,7 +2885,7 @@ Deno.serve(async (req) => {
 
 > §17.3 fica só de histórico — usa sempre esta versão (§17.5) daqui pra frente.
 
-### 17.6. `Ads/crm.html` — botão "Assumir conversa" agora reivindica o lead
+### 17.6. `crm.html` — botão "Assumir conversa" agora reivindica o lead
 
 Antes só desligava a Cris (`ia_ativa=false`); agora chama
 `rpc_assumir_lead`, que também tenta virar o `atribuido_a` — se outro
@@ -2902,7 +2902,7 @@ outro vendedor" e o botão mostra esse erro em vez de assumir silenciosamente.
 Motivação (11/09/2026): o número do WhatsApp é 100% via Cloud API (Meta),
 sem chip físico nem app instalado em celular nenhum — então não existe
 notificação nativa do WhatsApp pra receber. A solução: transformar o
-`Ads/crm.html` num **PWA** (instalável na tela inicial, Android e
+`crm.html` num **PWA** (instalável na tela inicial, Android e
 iPhone) com **push notification** de verdade, disparada pelo próprio
 `whatsapp-webhook` toda vez que chega mensagem nova.
 
@@ -3813,7 +3813,7 @@ o JWT do usuário logado, igual o `whatsapp-send`/`equipe-admin`).
 - `RESEND_API_KEY` — Resend → **API Keys** → **Create API Key** (permissão
   "Sending access" já basta, não precisa "Full access").
 
-### 21.3. O que o `Ads/crm.html` faz
+### 21.3. O que o `crm.html` faz
 
 - Botão ✉️ no card (só aparece se o lead tiver e-mail) abre um modal com
   campos **Assunto** e **Mensagem**.
@@ -4117,7 +4117,7 @@ Deno.serve(async (req) => {
 
 **Deploy.** Mantém **"Verify JWT with legacy secret" LIGADO**.
 
-### 22.4. O que o `Ads/crm.html` faz
+### 22.4. O que o `crm.html` faz
 
 Seção **"Campanhas"** no fim da página, **só visível pro Gestor**:
 
@@ -4285,7 +4285,7 @@ resto do `crisResponde()` continua igual.)
 
 **Deploy.**
 
-### 23.4. O que o `Ads/crm.html` mostra
+### 23.4. O que o `crm.html` mostra
 
 No topo da seção "Campanhas", uma linha com o gasto de IA do mês atual
 (Cris + Campanhas somados, e quebrado por origem), lida de
@@ -4403,7 +4403,7 @@ igual, só ganhou uma linha acima.)
 
 **Deploy.**
 
-### 24.3. O que o `Ads/crm.html` faz
+### 24.3. O que o `crm.html` faz
 
 - Na seção **Campanhas**, um botão **📱 Inserir CTA de opt-in WhatsApp**
   perto do corpo do e-mail — adiciona automaticamente o parágrafo com o
@@ -4729,7 +4729,7 @@ Deno.serve(async (req) => {
 **Deploy.** Mantém **"Verify JWT with legacy secret" LIGADO**. Reusa
 `WHATSAPP_PERMANENT_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID` já existentes.
 
-### 25.4. O que o `Ads/crm.html` faz
+### 25.4. O que o `crm.html` faz
 
 Layout em **2 colunas** (e-mail à esquerda, WhatsApp à direita — junto
 com Opt-in WhatsApp e Qualidade do WhatsApp), tudo só visível pro Gestor:
@@ -4875,7 +4875,7 @@ E no loop principal (`Deno.serve`), logo abaixo de
         await marcarOrigemCampanha(m.from);
 ```
 
-No `Ads/crm.html`, o card do lead ganha um selo azul **"📣 [nome da
+No `crm.html`, o card do lead ganha um selo azul **"📣 [nome da
 campanha]"** (classe `.badge.campanha-wa`) quando `l.campanha_whatsapp_nome`
 vem preenchido — ao lado dos selos de nível/VSL/origem já existentes.
 
@@ -4961,7 +4961,7 @@ Deno.serve(async (req) => {
 `WHATSAPP_PERMANENT_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID` já existentes, sem
 secret nova.
 
-No `Ads/crm.html`: campos "Número de teste" + "nome pra usar no {{1}}"
+No `crm.html`: campos "Número de teste" + "nome pra usar no {{1}}"
 e botão **📨 Enviar teste**, logo depois do checkbox de variável no
 formulário de campanha WhatsApp — manda o template já aprovado (nome +
 idioma preenchidos no formulário) pro número informado.
@@ -5030,7 +5030,7 @@ $$;
 notify pgrst, 'reload schema';
 ```
 
-No `Ads/crm.html`, o card ganha um selo a mais:
+No `crm.html`, o card ganha um selo a mais:
 
 - **Verde** "⏱ respondido em Xmin/h" — quando já tem uma mensagem
   `enviada` depois da última `recebida`. O tempo é a diferença entre as

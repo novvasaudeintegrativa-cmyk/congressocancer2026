@@ -9,15 +9,22 @@ Repositório privado do site e das ferramentas internas do congresso (20-21/nov,
 | `index.html` | Site principal do congresso (programação, palestrantes, lotes, checkout Eduzz). |
 | `quiz.html` | **Raio-X Profissional** — quiz de captação de leads, grava em `quiz_leads` no Supabase. |
 
-## Ferramentas internas (pasta `Ads/`)
+## Ferramentas internas
 
-Sem link na navegação pública — acesso só por quem tem a URL.
+Sem link na navegação pública — acesso só por quem tem a URL. Antes viviam numa pasta `Ads/`
+separada; hoje ficam soltas na raiz do site, cada uma como uma página independente (seu próprio
+HTML/CSS/JS), amarradas só pelo `novva-ads.html`, que funciona como "página mãe" e carrega as
+outras três dentro de si via `<iframe>`.
 
 | Arquivo | O que é |
 |---|---|
-| `Ads/novva-ads.html` | Painel principal: aba **Tráfego & Conversão** (analytics + ROI), aba **Quiz** (leads/temperatura/qualitativo) e aba **CRM** (preview do pipeline de vendas — ainda sem login/backend real). |
-| `Ads/novva-ads-tracking.html` | Dashboard antigo (tema escuro), mantido só como referência — foi substituído pelo `novva-ads.html`. |
-| `Ads/adscompass-mobile-mockup.html` | Mockup antigo, sem uso atual. |
+| `novva-ads.html` | Painel principal: menu lateral com 4 abas (CRM, Tráfego, Financeiro, Quiz), cada uma carregando a página correspondente num iframe. |
+| `crm.html` | Pipeline de vendas de verdade — login próprio (Supabase Auth), conversas, fila de atendimento. |
+| `financeiro.html` | Controle de receitas e despesas — mesmo login da equipe, só gestor. |
+| `trafego.html` | Analytics do site (visitantes, funil, VSL, mapa, campanhas) + card de ROI. |
+| `quiz-raiox.html` | Dashboard dos leads do quiz (temperatura, nível, qualitativo por pergunta) — não confundir com o `quiz.html` da raiz, que é o quiz público de captação. |
+| `novva-ads-tracking.html` | Dashboard antigo (tema escuro), mantido só como referência — foi substituído pelo `novva-ads.html`. |
+| `adscompass-mobile-mockup.html` | Mockup antigo, sem uso atual. |
 
 ## Outros arquivos
 

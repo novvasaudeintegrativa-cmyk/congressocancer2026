@@ -57,7 +57,7 @@ Base comum: `docs/persona.md` (persona, dores, desejos, objeções — toda mens
 
 **Continua valendo (e é de graça):**
 - Links com UTM — o site já lê e propaga `utm_source/medium/campaign/term/content`.
-- O botão `wa.me/5511934873737` — conversa manual, uma a uma (ou, quando a Fase 2 do CRM estiver pronta, via `Ads/crm.html` com Cris/IA + equipe).
+- O botão `wa.me/5511934873737` — conversa manual, uma a uma (ou, quando a Fase 2 do CRM estiver pronta, via `crm.html` com Cris/IA + equipe).
 - Posts orgânicos, stories, comentários e DMs respondidos manualmente.
 
 ### Convenção de UTM (usar sempre)

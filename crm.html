@@ -45,12 +45,12 @@
   .link-esqueci:hover{color:var(--bordo);}
 
   /* ---- app ---- */
-  #app{padding:16px 18px 40px;}
+  #app{max-width:1200px;margin:0 auto;padding:22px 20px 40px;}
+  .painel{background:var(--card);border:1px solid var(--linha);border-radius:16px;padding:18px 20px;margin-bottom:16px;}
   .topbar{display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap;margin-bottom:16px;}
   .brand{display:flex;align-items:center;gap:10px;margin-right:auto;}
-  .brand .mark{width:30px;height:30px;border-radius:8px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--tit);font-weight:800;font-size:13px;}
-  .brand h1{font-size:15px;font-weight:800;letter-spacing:.03em;}
-  .brand .sub{font-size:11px;color:var(--soft);}
+  .brand .mark{width:32px;height:32px;border-radius:9px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;}
+  .brand .sub{font-size:16px;font-weight:800;color:var(--ink);}
   .eu{font-size:12px;color:var(--soft);}
   .eu b{color:var(--ink);}
   .btn-sair{font-family:var(--tit);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:7px 13px;border-radius:999px;cursor:pointer;}
@@ -117,7 +117,6 @@
   .foot{text-align:center;color:var(--faint);font-size:11px;margin-top:20px;}
 
   /* ---- seções + inbox de conversas ---- */
-  #view-conversas{margin-top:26px;}
   .sec-crm{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;}
   .sec-crm > span:first-child{font-family:var(--tit);font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--bordo);}
   .btn-atualizar{font-family:var(--tit);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:5px 12px;border-radius:999px;cursor:pointer;}
@@ -165,7 +164,6 @@
   }
 
   /* ---- equipe ---- */
-  #view-equipe{margin-top:26px;}
   .equipe-tabela-wrap{overflow-x:auto;border:1px solid var(--linha);border-radius:12px;background:var(--card);}
   .equipe-tabela{width:100%;border-collapse:collapse;font-size:13px;}
   .equipe-tabela td{padding:10px 14px;border-top:1px solid var(--linha);vertical-align:middle;}
@@ -191,7 +189,6 @@
   .v-msg{font-size:12px;color:var(--soft);}
 
   /* ---- campanhas ---- */
-  #view-campanhas{margin-top:26px;}
   .campanhas-tabela-wrap{overflow-x:auto;border:1px solid var(--linha);border-radius:12px;background:var(--card);margin-bottom:16px;}
   .campanhas-tabela{width:100%;border-collapse:collapse;font-size:13px;}
   .campanhas-tabela td{padding:10px 14px;border-top:1px solid var(--linha);vertical-align:middle;}
@@ -289,13 +286,11 @@
 <div id="app" hidden>
   <div class="topbar">
     <div class="brand">
-      <span class="mark">CC</span>
-      <div>
-        <h1>CRM Novva</h1>
-        <div class="sub">leads do Congresso · Fase 1 (conversa no WhatsApp normal)</div>
-      </div>
+      <span class="mark"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span>
+      <div class="sub">CRM · pipeline de vendas</div>
     </div>
     <span class="eu" id="eu"></span>
+    <button type="button" class="btn-sair" id="btn-ver-como" hidden>Visualizar como Vendedor</button>
     <button type="button" class="btn-sair" id="btn-modificar-senha">Modificar senha</button>
     <button type="button" class="btn-sair" id="btn-sair">Sair</button>
   </div>
@@ -311,7 +306,7 @@
     </form>
   </div>
 
-  <div id="view-pipeline">
+  <div id="view-pipeline" class="painel">
     <div class="aviso" id="aviso-gestor" hidden>
       Você é <b>gestor</b>: vê todos os leads e distribui. Escolha o responsável no card, ou deixe em aberto pra qualquer vendedor assumir na fila (seção Conversas).
     </div>
@@ -330,7 +325,7 @@
     <div class="board" id="board"></div>
   </div>
 
-  <div id="view-conversas">
+  <div id="view-conversas" class="painel">
     <div class="sec-crm"><span>Conversas</span><button type="button" class="btn-atualizar" id="btn-atualizar-conv">Atualizar</button></div>
     <div class="inbox">
       <div class="inbox-lista" id="inbox-lista"></div>
@@ -338,31 +333,7 @@
     </div>
   </div>
 
-  <div id="view-quiz">
-    <div class="sec-crm"><span>Quiz</span><span class="cont" id="quiz-cont"></span></div>
-    <div class="filtros">
-      <select id="q-nivel">
-        <option value="">Todos os níveis</option>
-        <option value="iniciante">Iniciante</option>
-        <option value="intermediario">Intermediário</option>
-        <option value="avancado">Avançado</option>
-      </select>
-      <input type="search" id="q-busca" placeholder="buscar por nome…">
-      <button type="button" id="q-exportar" class="btn-atualizar">Exportar CSV</button>
-    </div>
-    <div class="quiz-tabela-wrap">
-      <table class="quiz-tabela">
-        <thead><tr>
-          <th><input type="checkbox" id="q-marcar-todos"></th>
-          <th>Nome</th><th>Profissão</th><th>Nível</th><th>Pontuação</th>
-          <th>WhatsApp</th><th>E-mail</th><th>Origem</th><th>Data</th>
-        </tr></thead>
-        <tbody id="quiz-lista"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div id="view-equipe" hidden>
+  <div id="view-equipe" class="painel" hidden>
     <div class="sec-crm"><span>Equipe</span></div>
     <div class="equipe-tabela-wrap"><table class="equipe-tabela"><tbody id="equipe-lista"></tbody></table></div>
     <form id="form-vendedor" class="form-vendedor">
@@ -379,7 +350,7 @@
 
   <div class="campanhas-grid">
     <div class="col-campanhas">
-      <div id="view-campanhas" hidden>
+      <div id="view-campanhas" class="painel" hidden>
         <div class="sec-crm"><span>Campanhas de e-mail</span></div>
         <div class="aviso">Disparo em massa pra listas importadas (ex: compradores de edições anteriores). Um único assunto/corpo vale pra todos os contatos da campanha — pode misturar Lote 1, 2, 3 e VIP no mesmo CSV, todo mundo recebe o mesmo texto.</div>
 
@@ -427,7 +398,7 @@
     </div>
 
     <div class="col-campanhas">
-      <div id="view-campanhas-whatsapp" hidden>
+      <div id="view-campanhas-whatsapp" class="painel" hidden>
         <div class="sec-crm"><span>Campanhas WhatsApp</span></div>
         <div class="aviso">Só funciona com um <b>template já aprovado pela Meta</b> — escolha na lista abaixo (carregada direto do WhatsApp Manager). Campanhas <b>Marketing</b> disparam sozinhas, automaticamente, só <b>terça a quinta das 13h às 14h</b>, em lotes de até 50 — número já contatado em outra campanha de marketing nunca recebe de novo (fica marcado como "pulado"). O botão "Enviar próximo lote" continua disponível pra forçar um envio manual a qualquer hora.</div>
 
@@ -508,7 +479,7 @@
         </form>
       </div>
 
-      <div id="view-optin-whatsapp" hidden style="margin-top:26px;">
+      <div id="view-optin-whatsapp" class="painel" hidden>
         <div class="sec-crm"><span>Opt-in WhatsApp</span><span class="cont" id="optin-cont"></span></div>
         <div class="aviso">Gente que clicou no CTA de opt-in do e-mail e mandou a mensagem pelo WhatsApp — só quem está aqui pode entrar numa campanha de marketing por WhatsApp.</div>
         <div class="filtros">
@@ -522,7 +493,7 @@
         </div>
       </div>
 
-      <div id="view-qualidade-whatsapp" hidden style="margin-top:26px;">
+      <div id="view-qualidade-whatsapp" class="painel" hidden>
         <div class="sec-crm"><span>Qualidade do WhatsApp</span><button type="button" id="qw-checar" class="btn-atualizar">Checar agora</button></div>
         <div class="aviso">Monitora a nota de qualidade do número que a Cris usa (a mesma dos vendedores) — cai antes de virar restrição/banimento. Não é estimativa nossa, vem direto da Meta.</div>
         <div id="qw-atual" class="qw-atual">Nenhuma checagem ainda — clica em "Checar agora".</div>
@@ -533,7 +504,7 @@
     </div>
   </div>
 
-  <div id="view-custo-ia" hidden>
+  <div id="view-custo-ia" class="painel" hidden>
     <div class="sec-crm"><span>Custo de IA</span></div>
     <div class="aviso">Estimativa calculada a partir dos tokens reais de cada chamada (Cris no WhatsApp + Gerar com IA nas campanhas), pelo preço do Claude Haiku 4.5. Não é o saldo oficial da conta Anthropic — isso só aparece no console.anthropic.com.</div>
     <div class="campanhas-tabela-wrap">
@@ -606,7 +577,6 @@
 
   // botões estáticos que já existem no HTML — troca o texto com emoji pelo ícone
   [
-    ['q-exportar', 'download', 'Exportar CSV'],
     ['cp-gerar-ia', 'sparkles', 'Gerar com IA'],
     ['cp-salvar-edicao', 'save', 'Salvar edição no histórico'],
     ['cp-optin-cta', 'smartphone', 'Inserir CTA de opt-in WhatsApp'],
@@ -637,7 +607,7 @@
   ];
   var ROT_ETAPA = {}; ETAPAS.forEach(function(e){ ROT_ETAPA[e.id] = e.rot; });
 
-  var estado = { eu:null, ehGestor:false, vendedores:[], leads:[] };
+  var estado = { eu:null, ehGestor:false, verComoVendedor:false, vendedores:[], leads:[] };
 
   // ---------- auth ----------
   function diag(msg){ $('li-erro').style.color = 'var(--soft)'; $('li-erro').textContent = msg; }
@@ -787,24 +757,23 @@
       estado.ehGestor = meu.papel === 'gestor';
       estado.vendedores = perfis.filter(function(p){ return p.ativo; });
       dbg('trocando pra tela do app');
-      $('eu').innerHTML = '<b>' + meu.nome + '</b> · ' + (estado.ehGestor ? 'gestor' : 'vendedor');
-      $('aviso-gestor').hidden = !estado.ehGestor;
       $('li-erro').textContent = '';
       $('login').hidden = true;
       $('app').hidden = false;
       dbg('app visível, carregando pipeline + conversas');
       carregarConversas();
       ligarRealtime();
-      carregarQuiz();
       if (estado.ehGestor) {
-        $('view-equipe').hidden = false; carregarEquipe();
-        $('view-campanhas').hidden = false; carregarCampanhas(); carregarGeracoesIA();
-        $('view-campanhas-whatsapp').hidden = false; carregarCampanhasWhatsapp(); carregarTemplatesWhatsapp();
-        $('view-custo-ia').hidden = false; carregarCustoIA();
-        $('view-optin-whatsapp').hidden = false; carregarOptinWhatsapp();
-        $('view-qualidade-whatsapp').hidden = false; carregarQualidadeWhatsapp();
+        carregarEquipe();
+        carregarCampanhas(); carregarGeracoesIA();
+        carregarCampanhasWhatsapp(); carregarTemplatesWhatsapp();
+        carregarCustoIA();
+        carregarOptinWhatsapp();
+        carregarQualidadeWhatsapp();
         if (user.email) $('cp-teste-email').value = user.email;
+        $('btn-ver-como').hidden = false;
       }
+      aplicarModoVisualizacao();
       return carregarPipeline();
     });
   }
@@ -814,6 +783,30 @@
     $('login').hidden = false;
     if (!emRecuperacao) { $('login-form').hidden = false; $('novasenha-form').hidden = true; }
   }
+
+  // gestor "de verdade" agora (ignora quando está simulando visualização de vendedor)
+  function gestorAgora(){ return estado.ehGestor && !estado.verComoVendedor; }
+
+  // ---------- "visualizar como vendedor" (só o gestor vê o botão) ----------
+  // Simulação client-side pro gestor conferir o que o Time Comercial vê — não é uma
+  // troca de permissão de verdade (os dados continuam vindo com o token do gestor).
+  function aplicarModoVisualizacao(){
+    var simulando = estado.ehGestor && estado.verComoVendedor;
+    var rotulo = simulando ? 'Time Comercial' : (estado.ehGestor ? 'gestor' : 'vendedor');
+    $('eu').innerHTML = '<b>' + esc(estado.eu.nome) + '</b> · ' + rotulo;
+    $('aviso-gestor').hidden = !estado.ehGestor || simulando;
+    if (estado.ehGestor){
+      $('btn-ver-como').textContent = simulando ? 'Voltar a visualizar como Gestor' : 'Visualizar como Vendedor';
+      ['view-equipe','view-campanhas','view-campanhas-whatsapp','view-custo-ia','view-optin-whatsapp','view-qualidade-whatsapp'].forEach(function(id){
+        $(id).hidden = simulando;
+      });
+    }
+    render();
+  }
+  $('btn-ver-como').addEventListener('click', function(){
+    estado.verComoVendedor = !estado.verComoVendedor;
+    aplicarModoVisualizacao();
+  });
 
   // ---------- API REST direta (evita o lock interno do supabase-js pós-login) ----------
   var TOKEN = null;
@@ -883,6 +876,8 @@
     var fb = $('f-busca').value.trim().toLowerCase();
     if (fn && l.nivel !== fn) return false;
     if (fb && (l.nome || '').toLowerCase().indexOf(fb) === -1) return false;
+    // simulando "ver como vendedor": só mostra o que é meu ou está livre pra assumir
+    if (estado.ehGestor && estado.verComoVendedor && l.atribuido_a && l.atribuido_a !== estado.eu.id) return false;
     return true;
   }
 
@@ -993,10 +988,10 @@
         (triar ? '' : respIcon) +
       '</div>' +
       (triar ? '' : '<textarea class="nota" placeholder="anotação…" hidden>' + esc(l.nota || '') + '</textarea>') +
-      (estado.ehGestor && !triar ? '<select class="sel-resp" hidden></select>' : '');
+      (gestorAgora() && !triar ? '<select class="sel-resp" hidden></select>' : '');
 
     // responsável (gestor pode reatribuir clicando no ícone; vendedor só assume se estiver livre)
-    if (estado.ehGestor){
+    if (gestorAgora()){
       var selR = c.querySelector('.sel-resp');
       if (selR){
         var o0 = document.createElement('option');
@@ -1016,7 +1011,7 @@
     }
     var respBtn = c.querySelector('.resp-icon');
     if (respBtn) respBtn.addEventListener('click', function(){
-      if (estado.ehGestor){
+      if (gestorAgora()){
         var sel = c.querySelector('.sel-resp');
         if (sel){ sel.hidden = false; sel.focus(); }
         return;
@@ -1274,78 +1269,10 @@
     });
   }
 
-  // ---------- Quiz (todo mundo que preencheu o formulário do site) ----------
-  var quizLeads = [];
-
-  function carregarQuiz(){
-    return apiGet('crm_leads?select=whatsapp,nome,email,profissao,nivel,pontuacao,utm_source,utm_campaign,captado_em&order=captado_em.desc')
-      .then(function(rows){ quizLeads = rows || []; renderQuiz(); })
-      .catch(function(err){ $('quiz-lista').innerHTML = '<tr><td colspan="9" style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>'; });
-  }
-
-  function quizFiltrados(){
-    var fn = $('q-nivel').value;
-    var fb = $('q-busca').value.trim().toLowerCase();
-    return quizLeads.filter(function(l){
-      if (fn && l.nivel !== fn) return false;
-      if (fb && (l.nome || '').toLowerCase().indexOf(fb) === -1) return false;
-      return true;
-    });
-  }
-
-  function renderQuiz(){
-    var leads = quizFiltrados();
-    $('quiz-cont').textContent = leads.length + ' lead(s)';
-    if (!leads.length){
-      $('quiz-lista').innerHTML = '<tr><td colspan="9" style="color:var(--faint)">Nenhum lead encontrado.</td></tr>';
-      return;
-    }
-    $('quiz-lista').innerHTML = leads.map(function(l){
-      var origem = l.utm_source ? (l.utm_source + (l.utm_campaign ? ' · ' + l.utm_campaign : '')) : '—';
-      var data = l.captado_em ? new Date(l.captado_em).toLocaleDateString('pt-BR') : '—';
-      var nivelBadge = l.nivel ? '<span class="badge ' + l.nivel + '">' + l.nivel + '</span>' : '—';
-      return '<tr>' +
-        '<td><input type="checkbox" class="q-check" data-w="' + esc(l.whatsapp || '') + '"></td>' +
-        '<td>' + esc(l.nome || '(sem nome)') + '</td>' +
-        '<td>' + esc(l.profissao || '—') + '</td>' +
-        '<td>' + nivelBadge + '</td>' +
-        '<td>' + (l.pontuacao == null ? '—' : l.pontuacao) + '</td>' +
-        '<td>' + esc(l.whatsapp || '—') + '</td>' +
-        '<td>' + esc(l.email || '—') + '</td>' +
-        '<td>' + esc(origem) + '</td>' +
-        '<td>' + data + '</td>' +
-      '</tr>';
-    }).join('');
-  }
-
-  $('q-nivel').addEventListener('change', renderQuiz);
-  $('q-busca').addEventListener('input', renderQuiz);
-  $('q-marcar-todos').addEventListener('change', function(){
-    var on = this.checked;
-    $('quiz-lista').querySelectorAll('.q-check').forEach(function(cb){ cb.checked = on; });
-  });
-
   function csvEscape(v){
     v = String(v == null ? '' : v);
     return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
   }
-
-  $('q-exportar').addEventListener('click', function(){
-    var marcados = Array.prototype.slice.call($('quiz-lista').querySelectorAll('.q-check:checked')).map(function(cb){ return cb.dataset.w; });
-    var base = quizFiltrados();
-    var leads = marcados.length ? base.filter(function(l){ return marcados.indexOf(l.whatsapp) !== -1; }) : base;
-    if (!leads.length){ alert('Nenhum lead pra exportar.'); return; }
-    var cols = ['nome','whatsapp','email','profissao','nivel','pontuacao','utm_source','utm_campaign','captado_em'];
-    var linhas = [cols.join(';')].concat(leads.map(function(l){
-      return cols.map(function(c){ return csvEscape(l[c]); }).join(';');
-    }));
-    var blob = new Blob(['﻿' + linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url; a.download = 'leads-quiz-congresso-cancer-' + new Date().toISOString().slice(0,10) + '.csv';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
 
   function whatsappEnviar(numero, texto){
     return fetch(SUPABASE_URL + '/functions/v1/whatsapp-send', {
@@ -2313,6 +2240,20 @@
     }
   }
 })();
+</script>
+<script>
+  // avisa o "pai" (novva-ads.html) a própria altura, quando embutido num iframe
+  if (window.parent && window.parent !== window){
+    (function(){
+      function altura(){ return Math.max(document.documentElement.scrollHeight, document.body.scrollHeight); }
+      function enviar(){ window.parent.postMessage({ fonte:'novva-iframe', altura: altura() }, '*'); }
+      enviar();
+      window.addEventListener('load', enviar);
+      window.addEventListener('resize', enviar);
+      [300, 800, 1500, 3000].forEach(function(ms){ setTimeout(enviar, ms); });
+      if (window.ResizeObserver) new ResizeObserver(enviar).observe(document.documentElement);
+    })();
+  }
 </script>
 </body>
 </html>
