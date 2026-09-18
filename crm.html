@@ -1094,6 +1094,17 @@
         });
         col.appendChild(btnMais);
       }
+      if (!triar && limite > LIMITE_PADRAO_COLUNA){
+        var btnMenos = document.createElement('button');
+        btnMenos.type = 'button';
+        btnMenos.className = 'btn-ver-mais';
+        btnMenos.textContent = '▴ Ver menos';
+        btnMenos.addEventListener('click', function(){
+          limiteColuna[etapaId] = LIMITE_PADRAO_COLUNA;
+          render();
+        });
+        col.appendChild(btnMenos);
+      }
     }
     if (!triar && etapaId){
       col.addEventListener('dragover', function(e){ e.preventDefault(); col.classList.add('drag-over'); });
