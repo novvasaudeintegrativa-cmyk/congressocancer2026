@@ -116,6 +116,44 @@
   .aviso{background:#faf1f0;border:1px dashed var(--bordo-vivo);border-radius:12px;padding:12px 15px;font-size:12.5px;color:var(--bordo);margin-bottom:14px;}
   .foot{text-align:center;color:var(--faint);font-size:11px;margin-top:20px;}
 
+  /* ---- auditório: mapa de cadeiras que preenche conforme as vendas ---- */
+  .auditorio-kpis{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:18px;}
+  @media (min-width:700px){ .auditorio-kpis{grid-template-columns:repeat(3,1fr);} }
+  .aud-kpi{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:14px 16px;}
+  .aud-kpi .l{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);font-weight:700;}
+  .aud-kpi .n{font-family:var(--tit);font-weight:800;font-size:26px;color:var(--ink);margin-top:5px;line-height:1;font-variant-numeric:tabular-nums;}
+  .aud-kpi .n .de{font-size:14px;font-weight:700;color:var(--faint);margin-left:2px;}
+  .aud-kpi .s{font-size:11.5px;color:var(--faint);margin-top:6px;}
+  .aud-kpi.vip{border-color:#e4c583;}
+  .aud-kpi.vip .n{color:var(--dourado);}
+  .aud-kpi.total{background:var(--bordo);border-color:var(--bordo);}
+  .aud-kpi.total .l,.aud-kpi.total .s{color:rgba(255,255,255,.75);}
+  .aud-kpi.total .n{color:#fff;}
+  .aud-kpi.total .n .de{color:rgba(255,255,255,.6);}
+
+  .auditorio-palco{text-align:center;font-family:var(--tit);font-weight:800;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--soft);background:var(--track);border-radius:999px;padding:7px;margin-bottom:16px;}
+  .auditorio-sala{display:grid;grid-template-columns:1fr 26px 1fr;align-items:start;max-width:640px;margin:0 auto;}
+  @media (min-width:600px){ .auditorio-sala{grid-template-columns:1fr 56px 1fr;} }
+  .auditorio-lado{display:flex;flex-direction:column;gap:16px;min-width:0;}
+  .auditorio-corredor{position:relative;}
+  .auditorio-corredor::after{content:'';position:absolute;top:0;bottom:0;left:50%;width:1px;background:repeating-linear-gradient(to bottom,var(--linha) 0 6px,transparent 6px 12px);transform:translateX(-50%);}
+  .auditorio-bloco{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;position:relative;z-index:1;}
+  .auditorio-geral-wrap{position:relative;-webkit-mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);}
+  .auditorio-num-fundo{position:absolute;top:-4px;font-family:var(--tit);font-weight:800;font-size:54px;line-height:1;color:var(--bordo);opacity:.1;pointer-events:none;z-index:0;user-select:none;}
+  .auditorio-lado:first-child .auditorio-num-fundo{right:2px;}
+  .auditorio-lado:last-child .auditorio-num-fundo{left:2px;}
+  .auditorio-mais{text-align:center;font-size:10.5px;color:var(--faint);margin-top:7px;font-weight:600;}
+  .seat{aspect-ratio:1/1;border-radius:3px 3px 1px 1px;background:var(--track);border:1px solid var(--linha);transition:background .4s,border-color .4s;}
+  .seat.aud-vip-seat{border-color:#e4c583;}
+  .seat.aud-vip-seat.cheio{background:var(--dourado);border-color:#a8730f;}
+  .seat.aud-geral-seat.cheio{background:var(--bordo);border-color:var(--bordo-vivo);}
+  .auditorio-legenda{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:16px;font-size:11px;color:var(--soft);}
+  .auditorio-legenda .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px;}
+  .dot.aud-vip-cheio{background:var(--dourado);}
+  .dot.aud-vip-vazio{background:var(--track);border:1px solid #e4c583;}
+  .dot.aud-geral-cheio{background:var(--bordo);}
+  .dot.aud-geral-vazio{background:var(--track);border:1px solid var(--linha);}
+
   /* ---- seções + inbox de conversas ---- */
   .sec-crm{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;}
   .sec-crm > span:first-child{font-family:var(--tit);font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--bordo);}
@@ -330,6 +368,56 @@
     <div class="inbox">
       <div class="inbox-lista" id="inbox-lista"></div>
       <div class="inbox-thread" id="inbox-thread"><div class="thread-vazio">Escolha uma conversa à esquerda</div></div>
+    </div>
+  </div>
+
+  <div id="view-auditorio" class="painel">
+    <div class="sec-crm"><span>Auditório</span><span class="cont" id="aud-atualizado"></span></div>
+
+    <div class="auditorio-kpis">
+      <div class="aud-kpi total">
+        <div class="l">Total vendido</div>
+        <div class="n" id="aud-total-n">0<span class="de">/400</span></div>
+        <div class="s" id="aud-total-restam">400 cadeiras em aberto</div>
+      </div>
+      <div class="aud-kpi vip">
+        <div class="l">VIP</div>
+        <div class="n" id="aud-vip-n">0<span class="de">/40</span></div>
+        <div class="s" id="aud-vip-restam">40 em aberto</div>
+      </div>
+      <div class="aud-kpi geral">
+        <div class="l">Lotes 1, 2 e 3</div>
+        <div class="n" id="aud-geral-n">0<span class="de">/360</span></div>
+        <div class="s" id="aud-geral-restam">360 em aberto</div>
+      </div>
+    </div>
+
+    <div class="auditorio-palco">Palco</div>
+    <div class="auditorio-sala">
+      <div class="auditorio-lado">
+        <div class="auditorio-bloco" id="auditorio-vip-esq"></div>
+        <div class="auditorio-geral-wrap">
+          <div class="auditorio-num-fundo" id="auditorio-geral-esq-num" hidden></div>
+          <div class="auditorio-bloco" id="auditorio-geral-esq"></div>
+          <div class="auditorio-mais" id="auditorio-geral-esq-mais" hidden>+ <span></span> cadeiras abaixo ▾</div>
+        </div>
+      </div>
+      <div class="auditorio-corredor"></div>
+      <div class="auditorio-lado">
+        <div class="auditorio-bloco" id="auditorio-vip-dir"></div>
+        <div class="auditorio-geral-wrap">
+          <div class="auditorio-num-fundo" id="auditorio-geral-dir-num" hidden></div>
+          <div class="auditorio-bloco" id="auditorio-geral-dir"></div>
+          <div class="auditorio-mais" id="auditorio-geral-dir-mais" hidden>+ <span></span> cadeiras abaixo ▾</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="auditorio-legenda">
+      <span><i class="dot aud-vip-cheio"></i>VIP vendido</span>
+      <span><i class="dot aud-vip-vazio"></i>VIP em aberto</span>
+      <span><i class="dot aud-geral-cheio"></i>Lote vendido</span>
+      <span><i class="dot aud-geral-vazio"></i>Lote em aberto</span>
     </div>
   </div>
 
@@ -763,6 +851,7 @@
       dbg('app visível, carregando pipeline + conversas');
       carregarConversas();
       ligarRealtime();
+      carregarAuditorio();
       if (estado.ehGestor) {
         carregarEquipe();
         carregarCampanhas(); carregarGeracoesIA();
@@ -860,6 +949,103 @@
         if (!r.ok) throw new Error((t && t.slice(0,200)) || ('HTTP ' + r.status));
         return t ? JSON.parse(t) : null;
       }); });
+  }
+
+  // ---------- auditório (mapa de cadeiras) ----------
+  // Preenche do corredor central pras pontas (a "vista privilegiada" é perto do
+  // corredor, no centro da sala). O bloco geral (360 cadeiras) não renderiza tudo de
+  // cara — só as fileiras já vendidas + uma sobra de respiro, senão vira uma parede
+  // gigante de cadeiras vazias logo no início; o resto aparece conforme vende.
+  var AUD_COLS = 10;
+  var AUD_VIP_TOTAL = 40, AUD_GERAL_TOTAL = 360;
+  var AUD_VIP_POR_LADO = AUD_VIP_TOTAL / 2, AUD_GERAL_POR_LADO = AUD_GERAL_TOTAL / 2;
+  var AUD_GERAL_SOBRA = 10; // ~1 fileira extra vazia, só pra dar ideia de que cabe mais
+  var ordemAssentos = {};
+
+  function ordemPrioridade(total, ladoDireito){
+    var ordem = [];
+    for (var j = 0; j < total; j++) ordem.push(j);
+    ordem.sort(function(a, b){
+      var colA = a % AUD_COLS, colB = b % AUD_COLS;
+      var distA = ladoDireito ? colA : (AUD_COLS - 1 - colA);
+      var distB = ladoDireito ? colB : (AUD_COLS - 1 - colB);
+      if (distA !== distB) return distA - distB;
+      return Math.floor(a / AUD_COLS) - Math.floor(b / AUD_COLS); // fileira da frente primeiro
+    });
+    return ordem;
+  }
+
+  function construirAssentos(id, total, classeExtra, ladoDireito){
+    var html = '';
+    for (var i = 0; i < total; i++) html += '<div class="seat ' + classeExtra + '"></div>';
+    $(id).innerHTML = html;
+    ordemAssentos[id] = ordemPrioridade(total, ladoDireito);
+  }
+  construirAssentos('auditorio-vip-esq', AUD_VIP_POR_LADO, 'aud-vip-seat', false);
+  construirAssentos('auditorio-vip-dir', AUD_VIP_POR_LADO, 'aud-vip-seat', true);
+
+  function pintarAssentos(id, vendidos){
+    var els = $(id).children;
+    var ordem = ordemAssentos[id] || [];
+    var preenchido = {};
+    for (var k = 0; k < vendidos && k < ordem.length; k++) preenchido[ordem[k]] = true;
+    for (var i = 0; i < els.length; i++) els[i].classList.toggle('cheio', !!preenchido[i]);
+  }
+
+  function dividirEmDoisLados(total, capacidadePorLado){
+    var esq = Math.min(Math.ceil(total / 2), capacidadePorLado);
+    var dir = Math.min(total - esq, capacidadePorLado);
+    return [esq, dir];
+  }
+
+  // reconstrói o bloco geral de um lado só com as fileiras necessárias pro que já
+  // foi vendido (+ sobra), mostra o número grande de fundo e o aviso "+N cadeiras"
+  function montarBlocoGeral(id, vendidos, ladoDireito){
+    var necessario = Math.min(AUD_GERAL_POR_LADO, vendidos + AUD_GERAL_SOBRA);
+    var linhas = Math.max(2, Math.ceil(necessario / AUD_COLS));
+    var visiveis = Math.min(AUD_GERAL_POR_LADO, linhas * AUD_COLS);
+    construirAssentos(id, visiveis, 'aud-geral-seat', ladoDireito);
+    pintarAssentos(id, vendidos);
+
+    var faltam = AUD_GERAL_POR_LADO - visiveis;
+    var elMais = $(id + '-mais');
+    elMais.hidden = faltam <= 0;
+    if (faltam > 0) elMais.querySelector('span').textContent = faltam;
+
+    var elNum = $(id + '-num');
+    elNum.hidden = vendidos <= 0;
+    if (vendidos > 0) elNum.textContent = vendidos;
+  }
+
+  function carregarAuditorio(){
+    apiPost('rpc/rpc_roi', {}).then(function(d){
+      var produtos = (d && d.por_produto) || [];
+      var vip = 0, geral = 0;
+      produtos.forEach(function(p){
+        var nome = (p.produto || '').toLowerCase();
+        if (nome.indexOf('vip') !== -1) vip += p.qtd || 0; else geral += p.qtd || 0;
+      });
+      vip = Math.min(vip, AUD_VIP_TOTAL);
+      geral = Math.min(geral, AUD_GERAL_TOTAL);
+
+      var vipLados = dividirEmDoisLados(vip, AUD_VIP_POR_LADO);
+      pintarAssentos('auditorio-vip-esq', vipLados[0]);
+      pintarAssentos('auditorio-vip-dir', vipLados[1]);
+
+      var geralLados = dividirEmDoisLados(geral, AUD_GERAL_POR_LADO);
+      montarBlocoGeral('auditorio-geral-esq', geralLados[0], false);
+      montarBlocoGeral('auditorio-geral-dir', geralLados[1], true);
+
+      $('aud-total-n').innerHTML = (vip + geral) + '<span class="de">/' + (AUD_VIP_TOTAL + AUD_GERAL_TOTAL) + '</span>';
+      $('aud-total-restam').textContent = (AUD_VIP_TOTAL + AUD_GERAL_TOTAL - vip - geral) + ' cadeiras em aberto';
+      $('aud-vip-n').innerHTML = vip + '<span class="de">/' + AUD_VIP_TOTAL + '</span>';
+      $('aud-vip-restam').textContent = (AUD_VIP_TOTAL - vip) + ' em aberto';
+      $('aud-geral-n').innerHTML = geral + '<span class="de">/' + AUD_GERAL_TOTAL + '</span>';
+      $('aud-geral-restam').textContent = (AUD_GERAL_TOTAL - geral) + ' em aberto';
+      $('aud-atualizado').textContent = 'atualizado ' + new Date().toLocaleTimeString('pt-BR');
+    }).catch(function(err){
+      $('aud-atualizado').textContent = 'erro ao carregar: ' + err.message;
+    });
   }
 
   // ---------- dados ----------
