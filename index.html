@@ -840,10 +840,11 @@
     color:var(--texto-suave);
     margin-bottom:8px;
   }
-  .podcast h2{
+  .podcast-titulo{
     font-size:clamp(2rem, 1.4rem + 2.2vw, 3.1rem);
     line-height:1.08;
-    margin-bottom:var(--space-md);
+    text-align:center;
+    margin:0 0 var(--space-xl) 0;
   }
   /* Credencial: meio-passo áureo acima do corpo (corpo × √Φ ≈ --text-body-5) */
   .podcast .podcast-credencial{
@@ -1966,16 +1967,15 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
 
   <!-- PODCAST -->
   <section class="podcast" id="podcast">
-    <div class="container podcast-grid">
-      <div>
-        <p class="podcast-kicker">Podcast na 4ª Edição do Congresso de Prevenção e Tratamento de Câncer em 2026 com</p>
-        <h2>Coordenadores da 4ª Edição do Maior Congresso de Câncer<br>Presencial da América Latina</h2>
-        <p class="podcast-credencial">Jornalista, Escritor e Produtor de Conteúdo Especializado em Saúde e Medicina Integrativa</p>
-        <p>Entrevistas exclusivas com especialistas e palestrantes do evento, trazendo insights e aprofundando temas importantes relacionados a Prevenção e Tratamento do Câncer.</p>
-        <p class="destaque-final">Não perca essa oportunidade de vivenciar momentos únicos com grandes nomes da área nos dias <span class="dourado">20 e 21 de Novembro de 2026</span>!</p>
-      </div>
-      <div class="podcast-avatar-wrap">
-        <img class="podcast-avatar" src="Imgs/CoordenadoresdoEvento.png" alt="Coordenadores do Evento">
+    <div class="container">
+      <h2 class="podcast-titulo">Coordenadores da 4ª Edição do Maior Congresso de Câncer<br>Presencial da América Latina</h2>
+      <div class="podcast-grid">
+        <div>
+          <p class="destaque-final">Não perca essa oportunidade de vivenciar momentos únicos com grandes nomes da área nos dias <span class="dourado">20 e 21 de Novembro de 2026</span>!</p>
+        </div>
+        <div class="podcast-avatar-wrap">
+          <img class="podcast-avatar" src="Imgs/CoordenadoresdoEvento.png" alt="Coordenadores do Evento">
+        </div>
       </div>
     </div>
   </section>
