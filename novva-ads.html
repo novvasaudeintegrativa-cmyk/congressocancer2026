@@ -348,8 +348,8 @@
     <h1>Novva ADS</h1>
   </div>
   <div class="tabs-principal" id="tabs-principal">
-    <button type="button" data-tab="crm"><svg class="ico2"><use href="#i-users"/></svg><span>CRM</span></button>
-    <button type="button" data-tab="trafego" class="on"><svg class="ico2"><use href="#i-trend"/></svg><span>Tráfego</span></button>
+    <button type="button" data-tab="crm" class="on"><svg class="ico2"><use href="#i-users"/></svg><span>CRM</span></button>
+    <button type="button" data-tab="trafego" hidden><svg class="ico2"><use href="#i-trend"/></svg><span>Tráfego</span></button>
     <button type="button" data-tab="financeiro" hidden><svg class="ico2"><use href="#i-dollar"/></svg><span>Financeiro</span></button>
     <button type="button" data-tab="quiz" hidden><svg class="ico2"><use href="#i-quiz"/></svg><span>Quiz</span></button>
   </div>
@@ -924,10 +924,11 @@
   // postMessage (funciona também testando local em file://, ao contrário de ler
   // contentDocument direto, que o navegador bloqueia entre arquivos file:// diferentes).
   //
-  // ---- vendedor só vê CRM e Tráfego: Financeiro/Quiz começam ESCONDIDOS (fail-closed)
+  // ---- vendedor só vê CRM: Tráfego/Financeiro/Quiz começam ESCONDIDOS (fail-closed)
   // e só aparecem quando o crm.html avisa "sou gestor" — ele é quem sabe de verdade,
   // com o login já resolvido; se ninguém avisar nada, fica escondido mesmo. O mesmo
   // aviso dispara de novo quando o gestor liga/desliga "Visualizar como Vendedor".
+  var ABAS_SO_GESTOR = ['trafego','financeiro','quiz'];
   window.addEventListener('message', function(e){
     var d = e.data;
     if (!d) return;
@@ -938,11 +939,11 @@
       });
     }
     if (d.fonte === 'novva-crm-papel'){
-      ['financeiro','quiz'].forEach(function(t){
+      ABAS_SO_GESTOR.forEach(function(t){
         var btn = document.querySelector('#tabs-principal [data-tab="' + t + '"]');
         if (btn) btn.hidden = !d.ehGestor;
       });
-      if (!d.ehGestor && (state.tab === 'financeiro' || state.tab === 'quiz')){
+      if (!d.ehGestor && ABAS_SO_GESTOR.indexOf(state.tab) !== -1){
         document.querySelector('#tabs-principal [data-tab="crm"]').click();
       }
     }
@@ -955,10 +956,7 @@
     setTimeout(function(){ $('reload').disabled = false; }, 400);
   });
 
-  ativarPainel('trafego');
-  // carrega o CRM em segundo plano (painel continua escondido) só pra descobrir o
-  // papel de quem está logado o quanto antes, mesmo que a pessoa não clique em CRM
-  if (!state.carregado.crm){ state.carregado.crm = true; $('crm-iframe').src = 'crm.html'; }
+  ativarPainel('crm'); // CRM é o único painel garantido pra todo mundo — vira o padrão
   reiniciarFilaSimulacao(); // zera a fila a cada carregamento da página
   setInterval(garantirFilaViva, 60000); // dali em diante, 1 tick = 1 min, ritmo real
 })();
