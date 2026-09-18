@@ -139,9 +139,6 @@
   .auditorio-corredor::after{content:'';position:absolute;top:0;bottom:0;left:50%;width:1px;background:repeating-linear-gradient(to bottom,var(--linha) 0 6px,transparent 6px 12px);transform:translateX(-50%);}
   .auditorio-bloco{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;position:relative;z-index:1;}
   .auditorio-geral-wrap{position:relative;-webkit-mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);}
-  .auditorio-num-fundo{position:absolute;top:-4px;font-family:var(--tit);font-weight:800;font-size:54px;line-height:1;color:var(--bordo);opacity:.1;pointer-events:none;z-index:0;user-select:none;}
-  .auditorio-lado:first-child .auditorio-num-fundo{right:2px;}
-  .auditorio-lado:last-child .auditorio-num-fundo{left:2px;}
   .auditorio-mais{text-align:center;font-size:10.5px;color:var(--faint);margin-top:7px;font-weight:600;}
   .seat{aspect-ratio:1/1;border-radius:3px 3px 1px 1px;background:var(--track);border:1px solid var(--linha);transition:background .4s,border-color .4s;}
   .seat.aud-vip-seat{border-color:#e4c583;}
@@ -180,6 +177,15 @@
   .bolha-img{max-width:220px;max-height:220px;border-radius:8px;display:block;object-fit:cover;}
   .bolha-legenda{margin-top:4px;}
   .thread-vazio{margin:auto;color:var(--faint);font-size:13px;text-align:center;padding:20px;}
+  .thread-vazio-fone{margin:auto;padding:20px;text-align:center;}
+  .exemplo-fone{max-width:230px;margin:0 auto;border:1px solid var(--linha);border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(42,35,32,.1);background:#fff;}
+  .exemplo-fone-topo{background:#008069;color:#fff;padding:9px 12px;display:flex;align-items:center;gap:8px;text-align:left;}
+  .exemplo-fone-avatar{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-family:var(--tit);font-weight:800;font-size:10px;flex:none;}
+  .exemplo-fone-nome{font-size:12px;font-weight:700;line-height:1.2;}
+  .exemplo-fone-status{font-size:9.5px;color:rgba(255,255,255,.8);}
+  .exemplo-fone-chat{background:#efeae2;padding:10px;display:flex;flex-direction:column;gap:6px;}
+  .exemplo-fone-chat .bolha{font-size:11px;max-width:88%;text-align:left;}
+  .thread-vazio-legenda{font-size:11.5px;color:var(--faint);margin-top:10px;max-width:260px;margin-left:auto;margin-right:auto;}
   .thread-nota{padding:8px 16px;font-size:11px;color:var(--dourado);background:#fbf5e8;border-top:1px solid var(--linha);}
   .thread-ia{padding:10px 16px;font-size:13px;font-weight:700;color:#7a4a00;background:#ffe8b3;border-bottom:2px solid #f0a500;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .thread-ia.humano{color:#0a5c2b;background:#d3f5df;border-bottom-color:#2fae5f;}
@@ -275,21 +281,6 @@
   .form-senha #ms-cancelar{font-family:var(--tit);font-weight:700;font-size:11px;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);border-radius:9px;padding:8px 12px;cursor:pointer;}
   .form-senha #ms-btn:disabled{opacity:.5;cursor:default;}
 
-  /* ---- modal e-mail ---- */
-  .modal-overlay{position:fixed;inset:0;background:rgba(42,35,32,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50;}
-  .modal-box{background:var(--card);border-radius:16px;padding:22px 22px 18px;width:100%;max-width:440px;}
-  .modal-box h3{font-size:16px;font-weight:800;margin-bottom:2px;}
-  .modal-box .modal-para{font-size:12.5px;color:var(--soft);margin-bottom:16px;}
-  .modal-box label{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);margin:0 0 5px;font-weight:600;}
-  .modal-box input,.modal-box textarea{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--linha);background:#fff;color:var(--ink);font-family:var(--corpo);font-size:13.5px;margin-bottom:14px;resize:vertical;}
-  .modal-box textarea{min-height:140px;}
-  .modal-acoes{display:flex;justify-content:flex-end;gap:8px;}
-  .modal-acoes button{font-family:var(--tit);font-weight:700;font-size:11.5px;text-transform:uppercase;border-radius:9px;padding:10px 16px;cursor:pointer;}
-  #em-cancelar{background:#fff;border:1px solid var(--linha);color:var(--soft);}
-  #em-enviar{background:var(--bordo);border:0;color:#fff;}
-  #em-enviar:hover{background:var(--bordo-vivo);}
-  #em-enviar:disabled{opacity:.6;cursor:default;}
-  .modal-msg{font-size:12px;color:var(--bordo-vivo);min-height:1em;margin-top:10px;}
 </style>
 </head>
 <body>
@@ -367,7 +358,7 @@
     <div class="sec-crm"><span>Conversas</span><button type="button" class="btn-atualizar" id="btn-atualizar-conv">Atualizar</button></div>
     <div class="inbox">
       <div class="inbox-lista" id="inbox-lista"></div>
-      <div class="inbox-thread" id="inbox-thread"><div class="thread-vazio">Escolha uma conversa à esquerda</div></div>
+      <div class="inbox-thread" id="inbox-thread"></div>
     </div>
   </div>
 
@@ -397,7 +388,6 @@
       <div class="auditorio-lado">
         <div class="auditorio-bloco" id="auditorio-vip-esq"></div>
         <div class="auditorio-geral-wrap">
-          <div class="auditorio-num-fundo" id="auditorio-geral-esq-num" hidden></div>
           <div class="auditorio-bloco" id="auditorio-geral-esq"></div>
           <div class="auditorio-mais" id="auditorio-geral-esq-mais" hidden>+ <span></span> cadeiras abaixo ▾</div>
         </div>
@@ -406,7 +396,6 @@
       <div class="auditorio-lado">
         <div class="auditorio-bloco" id="auditorio-vip-dir"></div>
         <div class="auditorio-geral-wrap">
-          <div class="auditorio-num-fundo" id="auditorio-geral-dir-num" hidden></div>
           <div class="auditorio-bloco" id="auditorio-geral-dir"></div>
           <div class="auditorio-mais" id="auditorio-geral-dir-mais" hidden>+ <span></span> cadeiras abaixo ▾</div>
         </div>
@@ -603,22 +592,6 @@
   <p class="foot"><button type="button" id="btn-notif" class="btn-atualizar">Ativar notificações neste aparelho</button></p>
 
   <p class="foot">CRM Novva · Fase 1 — <a href="novva-ads.html">voltar ao painel</a></p>
-</div>
-
-<div id="modal-email" class="modal-overlay" hidden>
-  <div class="modal-box">
-    <h3>Enviar e-mail</h3>
-    <div class="modal-para">para <b id="em-para"></b></div>
-    <label for="em-assunto">Assunto</label>
-    <input type="text" id="em-assunto" maxlength="200">
-    <label for="em-corpo">Mensagem</label>
-    <textarea id="em-corpo" placeholder="escreva a mensagem…"></textarea>
-    <div class="modal-acoes">
-      <button type="button" id="em-cancelar">Cancelar</button>
-      <button type="button" id="em-enviar">Enviar</button>
-    </div>
-    <div class="modal-msg" id="em-msg"></div>
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
@@ -1011,10 +984,6 @@
     var elMais = $(id + '-mais');
     elMais.hidden = faltam <= 0;
     if (faltam > 0) elMais.querySelector('span').textContent = faltam;
-
-    var elNum = $(id + '-num');
-    elNum.hidden = vendidos <= 0;
-    if (vendidos > 0) elNum.textContent = vendidos;
   }
 
   function carregarAuditorio(){
@@ -1179,7 +1148,6 @@
       '</div>' +
       (badges ? '<div class="badges">' + badges + '</div>' : '') +
       '<div class="linha-acao acoes-rapidas">' +
-        (l.email ? '<button type="button" class="icon-btn btn-email" data-email="' + esc(l.email) + '" data-nome="' + esc(l.nome || '') + '" data-wpp="' + esc(wpp) + '" title="Enviar e-mail">' + ic('mail', 12) + '</button>' : '') +
         (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="Ver conversa no CRM">' + ic('message-circle', 12) + '</button>') +
         (l.campanha_whatsapp_nome ? '<span class="icon-btn meta" title="Veio da campanha Meta: ' + esc(l.campanha_whatsapp_nome) + '">' + ic('megaphone', 12) + '</span>' : '') +
         (triar ? '' : '<button type="button" class="icon-btn btn-nota' + (l.nota ? ' tem-nota' : '') + '" title="' + (l.nota ? esc(l.nota) : 'Adicionar anotação') + '">' + ic('edit-3', 12) + '</button>') +
@@ -1228,12 +1196,6 @@
       setTimeout(function(){ renderThread(n); }, 350);
     });
 
-    // enviar e-mail (abre modal, dispara via Resend)
-    var btnEmail = c.querySelector('.btn-email');
-    if (btnEmail) btnEmail.addEventListener('click', function(){
-      abrirModalEmail(this.dataset.email, this.dataset.nome, this.dataset.wpp);
-    });
-
     // nota (ícone abre o campo, salva e fecha ao sair)
     var nota = c.querySelector('.nota');
     var btnNota = c.querySelector('.btn-nota');
@@ -1266,6 +1228,27 @@
   ];
 
   function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+
+  // exemplo de conversa (só ilustrativo) — aparece no lugar da thread até
+  // alguém escolher uma conversa de verdade na lista à esquerda
+  function exemploConversaHtml(){
+    return '<div class="thread-vazio-fone">' +
+      '<div class="exemplo-fone">' +
+        '<div class="exemplo-fone-topo">' +
+          '<span class="exemplo-fone-avatar">DR</span>' +
+          '<div><div class="exemplo-fone-nome">Dra. Exemplo</div><div class="exemplo-fone-status">online</div></div>' +
+        '</div>' +
+        '<div class="exemplo-fone-chat">' +
+          '<div class="bolha rec">Oi! Vi o anúncio do Congresso Câncer 2026, vocês dão certificado?</div>' +
+          '<div class="bolha env"><span class="quem">Cris</span>Oi! Tudo bem? 😊 Emite sim! Tá tudo explicadinho na nossa página: congressocancer.novvasaudeintegrativa.com.br</div>' +
+          '<div class="bolha rec">Perfeito, e o valor do Lote 1?</div>' +
+          '<div class="bolha env"><span class="quem">Cris</span>Isso está bem detalhado na página 👉 congressocancer.novvasaudeintegrativa.com.br</div>' +
+        '</div>' +
+      '</div>' +
+      '<p class="thread-vazio-legenda">Exemplo de como a Cris conversa — escolha uma conversa real à esquerda pra ver de verdade.</p>' +
+    '</div>';
+  }
+  $('inbox-thread').innerHTML = exemploConversaHtml();
 
   var AVATAR_CORES = ['#8a222e','#b92d3d','#2f6f9e','#1f8a4c','#c98b1f','#6b4fa0','#a0522d'];
   function avatarCor(seed){
@@ -1325,7 +1308,7 @@
         (urgentes || []).forEach(function(u){ urgentesConversa[u.whatsapp] = true; });
         renderInboxLista();
         if (conversaAtual && conversas[conversaAtual]) renderThread(conversaAtual);
-        else if (conversaAtual) { conversaAtual = null; $('inbox-thread').innerHTML = '<div class="thread-vazio">Escolha uma conversa à esquerda</div>'; }
+        else if (conversaAtual) { conversaAtual = null; $('inbox-thread').innerHTML = exemploConversaHtml(); }
       })
       .catch(function(err){
         $('inbox-lista').innerHTML = '<div class="thread-vazio">Erro: ' + esc(err.message) + '</div>';
@@ -1485,21 +1468,6 @@
   }
 
   // ---------- enviar e-mail (Resend, via Edge Function email-send) ----------
-  var emailAlvo = null;
-  function abrirModalEmail(email, nome, wpp){
-    emailAlvo = { email: email, wpp: wpp };
-    $('em-para').textContent = nome ? (nome + ' <' + email + '>') : email;
-    $('em-assunto').value = '';
-    $('em-corpo').value = '';
-    $('em-msg').textContent = '';
-    $('em-enviar').disabled = false;
-    $('modal-email').hidden = false;
-    $('em-assunto').focus();
-  }
-  function fecharModalEmail(){ $('modal-email').hidden = true; emailAlvo = null; }
-  $('em-cancelar').addEventListener('click', fecharModalEmail);
-  $('modal-email').addEventListener('click', function(e){ if (e.target === this) fecharModalEmail(); });
-
   function emailEnviar(email, assunto, corpo, wpp){
     return fetch(SUPABASE_URL + '/functions/v1/email-send', {
       method: 'POST',
@@ -1511,21 +1479,6 @@
       return data;
     }); });
   }
-
-  $('em-enviar').addEventListener('click', function(){
-    if (!emailAlvo) return;
-    var assunto = $('em-assunto').value.trim();
-    var corpo = $('em-corpo').value.trim();
-    if (!assunto || !corpo){ $('em-msg').textContent = 'Preencha assunto e mensagem.'; return; }
-    $('em-enviar').disabled = true;
-    $('em-msg').textContent = '';
-    emailEnviar(emailAlvo.email, assunto, corpo, emailAlvo.wpp).then(function(){
-      fecharModalEmail();
-    }).catch(function(err){
-      $('em-enviar').disabled = false;
-      $('em-msg').textContent = 'Erro ao enviar: ' + err.message;
-    });
-  });
 
   $('btn-atualizar-conv').addEventListener('click', carregarConversas);
 

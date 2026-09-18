@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Novva ADS</title>
+<title>Novva CRM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -29,19 +29,32 @@
   .content-area{flex:1;min-width:0;}
   .wrap{max-width:1200px;margin:0 auto;padding:22px 20px 48px;}
 
-  /* ---- Sidebar (navegação entre Tráfego/Quiz internos e CRM/Financeiro externos) ---- */
+  /* ---- Sidebar (navegação entre Tráfego/Quiz internos e CRM/Financeiro externos) ----
+     Colapsável tipo Monday: recolhida vira só ícones (64px), com o estado lembrado
+     no localStorage. Sempre pensada em ícone primeiro pra caber bem no mobile. ---- */
   .sidebar{
-    width:196px;flex:none;background:#fff;border-right:1px solid var(--linha);
-    display:flex;flex-direction:column;gap:22px;padding:20px 14px;
+    width:212px;flex:none;background:#fff;border-right:1px solid var(--linha);
+    display:flex;flex-direction:column;gap:18px;padding:20px 14px;
     position:sticky;top:0;align-self:flex-start;height:100vh;overflow-y:auto;
+    transition:width .18s ease;
   }
-  .sidebar-brand{display:flex;align-items:center;gap:10px;}
+  .sidebar.recolhida{width:64px;padding:20px 10px;}
+  .sidebar-cab{display:flex;align-items:center;gap:8px;}
+  .sidebar-brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1;overflow:hidden;}
   .mark{width:32px;height:32px;border-radius:9px;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;}
-  .sidebar-brand h1{font-size:14px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;}
+  .sidebar-brand h1{font-size:14px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
+  .sidebar.recolhida .sidebar-brand{flex:none;}
+  .sidebar.recolhida .sidebar-brand h1{display:none;}
+  .btn-recolher{width:26px;height:26px;border-radius:8px;border:1px solid var(--linha);background:#fff;color:var(--soft);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;}
+  .btn-recolher:hover{border-color:var(--bordo);color:var(--bordo);}
+  .btn-recolher svg{transition:transform .18s ease;}
+  .sidebar.recolhida .btn-recolher svg{transform:rotate(180deg);}
+  .sidebar.recolhida .sidebar-cab{justify-content:center;}
+  .sidebar.recolhida .sidebar-cab .sidebar-brand{display:none;}
 
   /* ---- Top bar (título da seção ativa, dentro do conteúdo) — mesmo padrão visual do
      cabeçalho "marca" usado dentro do crm.html/financeiro.html (mark + subtítulo em destaque;
-     sem repetir "Novva ADS", que já aparece fixo no menu lateral) ---- */
+     sem repetir "Novva CRM", que já aparece fixo no menu lateral) ---- */
   .topbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px;}
   .topbar .sub{font-size:16px;font-weight:800;color:var(--ink);}
 
@@ -57,14 +70,58 @@
   .tabs-principal button:not(.on):hover, .tabs-principal a:hover{background:var(--track);color:var(--ink);}
   .sidebar .reload{margin-top:auto;}
 
+  .link-ajuda{
+    font-family:var(--tit);font-weight:700;font-size:11.5px;letter-spacing:.02em;
+    padding:8px 12px;border-radius:10px;cursor:pointer;width:100%;
+    background:transparent;border:1.5px dashed var(--linha);color:var(--soft);
+    display:flex;align-items:center;gap:8px;text-align:left;
+  }
+  .link-ajuda:hover{background:var(--track);color:var(--bordo);border-color:var(--bordo);}
+  .link-ajuda .ico2{width:14px;height:14px;flex:none;}
+
+  /* recolhida: só ícone, centralizado, com o título de cada um no title="" (tooltip nativo) */
+  .sidebar.recolhida .tabs-principal button, .sidebar.recolhida .link-ajuda, .sidebar.recolhida .reload{
+    justify-content:center;padding:10px 0;
+  }
+  .sidebar.recolhida .tabs-principal button span, .sidebar.recolhida .link-ajuda span{display:none;}
+
+  .modal-ajuda{background:var(--card);border-radius:18px;max-width:560px;width:100%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(42,35,32,.25);}
+  .ajuda-topo{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--linha);flex:none;}
+  .ajuda-topo h2{font-family:var(--tit);font-weight:800;font-size:15px;flex:1;}
+  .ajuda-corpo{overflow-y:auto;padding:18px 20px 22px;}
+  .ajuda-sec{margin-bottom:18px;}
+  .ajuda-sec:last-child{margin-bottom:0;}
+  .ajuda-sec h3{font-family:var(--tit);font-weight:800;font-size:12.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--bordo);margin-bottom:6px;}
+  .ajuda-sec p{font-size:13px;line-height:1.55;color:var(--ink);margin:0 0 8px;}
+  .ajuda-sec p:last-child{margin-bottom:0;}
+  .ajuda-sec ul{margin:0 0 8px;padding-left:18px;font-size:13px;line-height:1.55;color:var(--ink);}
+  .ajuda-sec b{color:var(--bordo);}
+  .ajuda-gestor{background:var(--track);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--soft);}
+
+  .exemplo-card{border:1px solid var(--linha);border-radius:12px;padding:12px 14px;background:#fbfaf8;max-width:300px;margin:10px auto 0;}
+  .exemplo-cab{display:flex;align-items:center;gap:8px;}
+  .exemplo-avatar{width:26px;height:26px;border-radius:50%;background:var(--bordo);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--tit);font-weight:800;font-size:11px;flex:none;}
+  .exemplo-info{min-width:0;}
+  .exemplo-nome{font-family:var(--tit);font-weight:800;font-size:12.5px;color:var(--ink);}
+  .exemplo-meta{font-size:10.5px;color:var(--soft);}
+  .exemplo-quando{font-size:9.5px;color:var(--faint);margin-left:auto;white-space:nowrap;}
+  .exemplo-icones{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;}
+  .exemplo-ico{width:26px;height:26px;border-radius:50%;background:#efe8e4;color:var(--soft);display:flex;align-items:center;justify-content:center;margin:0 auto;}
+  .exemplo-balaos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;}
+  .balao{position:relative;background:var(--ink);color:#fff;font-size:9px;line-height:1.3;text-align:center;padding:6px 4px;border-radius:8px;}
+  .balao::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:5px solid var(--ink);}
+
   @media (max-width:820px){
     body{flex-direction:column;}
-    .sidebar{
+    .sidebar, .sidebar.recolhida{
       position:static;width:auto;height:auto;flex-direction:row;align-items:center;
-      border-right:none;border-bottom:1px solid var(--linha);overflow-x:auto;
+      border-right:none;border-bottom:1px solid var(--linha);overflow-x:auto;padding:12px 14px;
     }
+    .sidebar-cab{flex:none;}
+    .btn-recolher{display:none;}
     .tabs-principal{flex-direction:row;}
-    .tabs-principal button span, .tabs-principal a span{display:none;}
+    .tabs-principal button span, .tabs-principal a span, .link-ajuda span{display:none;}
+    .link-ajuda{width:auto;}
     .sidebar .reload{margin-top:0;margin-left:auto;}
   }
 
@@ -342,17 +399,23 @@
   <symbol id="i-dollar" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
 </defs></svg>
 
-<nav class="sidebar">
-  <div class="sidebar-brand">
-    <span class="mark"><svg class="ico" style="width:17px;height:17px"><use href="#i-mark"/></svg></span>
-    <h1>Novva ADS</h1>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-cab">
+    <div class="sidebar-brand">
+      <span class="mark"><svg class="ico" style="width:17px;height:17px"><use href="#i-mark"/></svg></span>
+      <h1>Novva CRM</h1>
+    </div>
+    <button type="button" class="btn-recolher" id="btn-recolher" aria-label="Recolher menu" title="Recolher menu">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></svg>
+    </button>
   </div>
   <div class="tabs-principal" id="tabs-principal">
-    <button type="button" data-tab="crm" class="on"><svg class="ico2"><use href="#i-users"/></svg><span>CRM</span></button>
-    <button type="button" data-tab="trafego" hidden><svg class="ico2"><use href="#i-trend"/></svg><span>Tráfego</span></button>
-    <button type="button" data-tab="financeiro" hidden><svg class="ico2"><use href="#i-dollar"/></svg><span>Financeiro</span></button>
-    <button type="button" data-tab="quiz" hidden><svg class="ico2"><use href="#i-quiz"/></svg><span>Quiz</span></button>
+    <button type="button" data-tab="crm" class="on" title="CRM"><svg class="ico2"><use href="#i-users"/></svg><span>CRM</span></button>
+    <button type="button" data-tab="trafego" hidden title="Tráfego"><svg class="ico2"><use href="#i-trend"/></svg><span>Tráfego</span></button>
+    <button type="button" data-tab="financeiro" hidden title="Financeiro"><svg class="ico2"><use href="#i-dollar"/></svg><span>Financeiro</span></button>
+    <button type="button" data-tab="quiz" hidden title="Quiz"><svg class="ico2"><use href="#i-quiz"/></svg><span>Quiz</span></button>
   </div>
+  <button type="button" class="link-ajuda" id="btn-como-usar" title="Como usar"><svg class="ico2"><use href="#i-quiz"/></svg><span>Como usar</span></button>
   <button type="button" class="reload" id="reload" aria-label="Atualizar"><svg class="ico" style="width:15px;height:15px"><use href="#i-refresh"/></svg></button>
 </nav>
 
@@ -429,6 +492,65 @@
   </div>
 
 </div></div>
+
+<div class="modal-overlay" id="modal-ajuda" hidden>
+  <div class="modal-ajuda">
+    <div class="ajuda-topo">
+      <h2>Como usar o CRM</h2>
+      <button type="button" class="modal-fechar" id="ajuda-fechar" aria-label="Fechar">×</button>
+    </div>
+    <div class="ajuda-corpo">
+      <div class="ajuda-sec">
+        <h3>Fila de conversas</h3>
+        <p>Toda conversa nova cai em <b>Conversas</b> sem responsável — é venda conjunta, quem assumir primeiro atende. Pra assumir, abra a conversa e responda, ou clique no ícone de responsável no card do lead.</p>
+      </div>
+      <div class="ajuda-sec">
+        <h3>Pipeline</h3>
+        <p>O lead passa por 4 etapas: <b>Novos → Em Atendimento → Aguardando Compra → Finalizado</b>. Arraste o card entre as colunas conforme a conversa avança.</p>
+        <p>Cada card tem botões de ação — passe o olho no exemplo abaixo pra saber o que cada um faz:</p>
+
+        <div class="exemplo-card">
+          <div class="exemplo-cab">
+            <span class="exemplo-avatar">DR</span>
+            <div class="exemplo-info">
+              <div class="exemplo-nome">Dra. Exemplo</div>
+              <div class="exemplo-meta">Enfermeira</div>
+            </div>
+            <span class="exemplo-quando">2h atrás</span>
+          </div>
+          <div class="exemplo-icones">
+            <span class="exemplo-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg></span>
+            <span class="exemplo-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 21h8"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg></span>
+            <span class="exemplo-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg></span>
+            <span class="exemplo-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg></span>
+          </div>
+          <div class="exemplo-balaos">
+            <div class="balao">Abre a conversa aqui no CRM</div>
+            <div class="balao">Anotação sobre o lead</div>
+            <div class="balao">Assumir / reatribuir</div>
+            <div class="balao">Enviar e-mail</div>
+          </div>
+        </div>
+      </div>
+      <div class="ajuda-sec">
+        <h3>Horário de atendimento da Cris (IA)</h3>
+        <div class="ia-badge" style="margin-bottom:10px;"><span class="dot"></span>Cris (IA) Atende · Seg-sex, 8h às 17h</div>
+        <ul>
+          <li><b>Seg-sex, 8h às 17h</b> (horário de Brasília): Cris manda só uma saudação curta e já fica esperando alguém do time assumir — fique de olho na fila nesse horário pra não perder o lead quente.</li>
+          <li><b>Fora desse horário</b> (noite, manhã cedo, fim de semana): Cris atende sozinha de verdade — tira dúvida sobre o congresso, fala o preço do lote em aberto e manda o link de compra, sem inventar informação e sem fechar venda por conta própria.</li>
+          <li>Só um humano desliga a Cris numa conversa (botão dentro do chat) — ela não se desliga sozinha depois de responder algumas vezes.</li>
+        </ul>
+      </div>
+      <div class="ajuda-sec">
+        <h3>Auditório</h3>
+        <p>O mapa de cadeiras é só visual — mostra quanto já vendeu de VIP e dos lotes, pra acompanhar o progresso. Não precisa mexer em nada ali.</p>
+      </div>
+      <div class="ajuda-sec">
+        <p class="ajuda-gestor">Se você é gestor: dentro do CRM tem o botão "Visualizar como Vendedor", pra conferir exatamente o que o time comercial vê.</p>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="modal-overlay" id="modal-conversa" hidden>
   <div class="modal-conversa">
@@ -954,6 +1076,21 @@
     var f = $(IFRAMES[state.tab]);
     if (f && f.src) f.contentWindow.location.reload();
     setTimeout(function(){ $('reload').disabled = false; }, 400);
+  });
+
+  function fecharAjuda(){ $('modal-ajuda').hidden = true; }
+  $('btn-como-usar').addEventListener('click', function(){ $('modal-ajuda').hidden = false; });
+  $('ajuda-fechar').addEventListener('click', fecharAjuda);
+  $('modal-ajuda').addEventListener('click', function(e){ if (e.target === this) fecharAjuda(); });
+
+  // ---- menu lateral colapsável (tipo Monday), lembra a escolha no navegador ----
+  var recolhida = false;
+  try { recolhida = localStorage.getItem('novva-sidebar-recolhida') === '1'; } catch(e){}
+  if (recolhida) $('sidebar').classList.add('recolhida');
+  $('btn-recolher').addEventListener('click', function(){
+    recolhida = !recolhida;
+    $('sidebar').classList.toggle('recolhida', recolhida);
+    try { localStorage.setItem('novva-sidebar-recolhida', recolhida ? '1' : '0'); } catch(e){}
   });
 
   ativarPainel('crm'); // CRM é o único painel garantido pra todo mundo — vira o padrão
