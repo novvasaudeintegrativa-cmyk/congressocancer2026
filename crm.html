@@ -774,6 +774,7 @@
         $('btn-ver-como').hidden = false;
       }
       aplicarModoVisualizacao();
+      avisarPapelAoPai(estado.ehGestor);
       return carregarPipeline();
     });
   }
@@ -782,6 +783,16 @@
     $('app').hidden = true;
     $('login').hidden = false;
     if (!emRecuperacao) { $('login-form').hidden = false; $('novasenha-form').hidden = true; }
+    avisarPapelAoPai(false);
+  }
+
+  // avisa o novva-ads.html (quando embutido nele via iframe) se quem logou é gestor,
+  // pra ele decidir se mostra as abas Financeiro/Quiz — por padrão ficam escondidas
+  // até essa confirmação chegar (fail-closed: sem confirmação, vendedor não vê).
+  function avisarPapelAoPai(ehGestor){
+    if (window.parent && window.parent !== window){
+      window.parent.postMessage({ fonte:'novva-crm-papel', ehGestor: !!ehGestor }, '*');
+    }
   }
 
   // gestor "de verdade" agora (ignora quando está simulando visualização de vendedor)
@@ -802,6 +813,7 @@
       });
     }
     render();
+    avisarPapelAoPai(gestorAgora());
   }
   $('btn-ver-como').addEventListener('click', function(){
     estado.verComoVendedor = !estado.verComoVendedor;

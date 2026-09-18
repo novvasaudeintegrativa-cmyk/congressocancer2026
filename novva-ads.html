@@ -350,8 +350,8 @@
   <div class="tabs-principal" id="tabs-principal">
     <button type="button" data-tab="crm"><svg class="ico2"><use href="#i-users"/></svg><span>CRM</span></button>
     <button type="button" data-tab="trafego" class="on"><svg class="ico2"><use href="#i-trend"/></svg><span>Tráfego</span></button>
-    <button type="button" data-tab="financeiro"><svg class="ico2"><use href="#i-dollar"/></svg><span>Financeiro</span></button>
-    <button type="button" data-tab="quiz"><svg class="ico2"><use href="#i-quiz"/></svg><span>Quiz</span></button>
+    <button type="button" data-tab="financeiro" hidden><svg class="ico2"><use href="#i-dollar"/></svg><span>Financeiro</span></button>
+    <button type="button" data-tab="quiz" hidden><svg class="ico2"><use href="#i-quiz"/></svg><span>Quiz</span></button>
   </div>
   <button type="button" class="reload" id="reload" aria-label="Atualizar"><svg class="ico" style="width:15px;height:15px"><use href="#i-refresh"/></svg></button>
 </nav>
@@ -467,14 +467,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
 <script>
 (function(){
   // ===== CONFIG (mesmos valores do index.html) =====
   var SUPABASE_URL = 'https://nbhekjgbszyuuxrynzfo.supabase.co';
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5iaGVramdic3p5dXV4cnluemZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzM0MDUsImV4cCI6MjA5MjMwOTQwNX0.d8f346ONCOHjr__C8RLmSJOFW0kZfqFkCGHmotwxiXc';  // anon (legacy) — publica por design
   // ================================================
-  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   var $ = function(id){ return document.getElementById(id); };
   var fmt = function(n){ return (n==null?0:n).toLocaleString('pt-BR'); };
@@ -925,13 +923,29 @@
   // ---- iframes sem barra de rolagem própria: cada página avisa a própria altura via
   // postMessage (funciona também testando local em file://, ao contrário de ler
   // contentDocument direto, que o navegador bloqueia entre arquivos file:// diferentes).
+  //
+  // ---- vendedor só vê CRM e Tráfego: Financeiro/Quiz começam ESCONDIDOS (fail-closed)
+  // e só aparecem quando o crm.html avisa "sou gestor" — ele é quem sabe de verdade,
+  // com o login já resolvido; se ninguém avisar nada, fica escondido mesmo. O mesmo
+  // aviso dispara de novo quando o gestor liga/desliga "Visualizar como Vendedor".
   window.addEventListener('message', function(e){
     var d = e.data;
-    if (!d || d.fonte !== 'novva-iframe' || !d.altura) return;
-    Object.keys(IFRAMES).forEach(function(t){
-      var f = $(IFRAMES[t]);
-      if (f && f.contentWindow === e.source) f.style.height = Math.max(300, d.altura) + 'px';
-    });
+    if (!d) return;
+    if (d.fonte === 'novva-iframe' && d.altura){
+      Object.keys(IFRAMES).forEach(function(t){
+        var f = $(IFRAMES[t]);
+        if (f && f.contentWindow === e.source) f.style.height = Math.max(300, d.altura) + 'px';
+      });
+    }
+    if (d.fonte === 'novva-crm-papel'){
+      ['financeiro','quiz'].forEach(function(t){
+        var btn = document.querySelector('#tabs-principal [data-tab="' + t + '"]');
+        if (btn) btn.hidden = !d.ehGestor;
+      });
+      if (!d.ehGestor && (state.tab === 'financeiro' || state.tab === 'quiz')){
+        document.querySelector('#tabs-principal [data-tab="crm"]').click();
+      }
+    }
   });
 
   $('reload').addEventListener('click', function(){
@@ -941,32 +955,10 @@
     setTimeout(function(){ $('reload').disabled = false; }, 400);
   });
 
-  // ---- vendedor só vê CRM e Tráfego; Financeiro/Quiz ficam só pro gestor ----
-  // (checa a sessão do Supabase Auth que já existe no navegador, a mesma do crm.html/
-  // financeiro.html — se a pessoa nunca logou em nenhum dos dois ainda, deixa tudo
-  // visível; a própria página escondida barra pelo login mesmo assim.)
-  function ajustarAbasPorPapel(){
-    sb.auth.getSession().then(function(r){
-      var sess = r && r.data && r.data.session;
-      if (!sess) return;
-      return fetch(SUPABASE_URL + '/rest/v1/perfis?select=papel&id=eq.' + sess.user.id, {
-        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + sess.access_token }
-      }).then(function(r2){ return r2.ok ? r2.json() : []; }).then(function(rows){
-        var papel = rows && rows[0] && rows[0].papel;
-        if (!papel || papel === 'gestor') return;
-        ['financeiro','quiz'].forEach(function(t){
-          var btn = document.querySelector('#tabs-principal [data-tab="' + t + '"]');
-          if (btn) btn.hidden = true;
-        });
-        if (state.tab === 'financeiro' || state.tab === 'quiz'){
-          document.querySelector('#tabs-principal [data-tab="crm"]').click();
-        }
-      });
-    }).catch(function(){});
-  }
-
   ativarPainel('trafego');
-  ajustarAbasPorPapel();
+  // carrega o CRM em segundo plano (painel continua escondido) só pra descobrir o
+  // papel de quem está logado o quanto antes, mesmo que a pessoa não clique em CRM
+  if (!state.carregado.crm){ state.carregado.crm = true; $('crm-iframe').src = 'crm.html'; }
   reiniciarFilaSimulacao(); // zera a fila a cada carregamento da página
   setInterval(garantirFilaViva, 60000); // dali em diante, 1 tick = 1 min, ritmo real
 })();
