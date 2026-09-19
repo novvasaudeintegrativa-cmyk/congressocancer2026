@@ -60,15 +60,46 @@
 
   /* nav principal: fica na sidebar */
   .tabs-principal{display:flex;flex-direction:column;gap:5px;}
-  .tabs-principal button, .tabs-principal a{
+  .tab-row{display:flex;align-items:center;gap:3px;}
+  .tabs-principal button[data-tab], .tabs-principal a{
     font-family:var(--tit);font-weight:800;font-size:12.5px;letter-spacing:.02em;
-    padding:10px 12px;border-radius:10px;cursor:pointer;width:100%;
+    padding:10px 12px;border-radius:10px;cursor:pointer;width:100%;flex:1;min-width:0;
     background:transparent;border:1.5px solid transparent;color:var(--soft);
     text-decoration:none;display:flex;align-items:center;gap:10px;text-align:left;
   }
   .tabs-principal button.on{background:var(--bordo);border-color:var(--bordo);color:#fff;}
   .tabs-principal button:not(.on):hover, .tabs-principal a:hover{background:var(--track);color:var(--ink);}
   .sidebar .reload{margin-top:auto;}
+
+  /* ---- setinha de ajuda de cada menu: abre o flyout lateral com a explicação
+     daquele item, sem precisar deixar o texto sempre visível empurrando o resto
+     da sidebar pra baixo (era assim antes, só existia ajuda fixa da aba CRM) ---- */
+  .tab-ajuda{
+    flex:none;width:26px;height:26px;border-radius:8px;cursor:pointer;
+    background:transparent;border:1.5px solid transparent;color:var(--faint);
+    display:flex;align-items:center;justify-content:center;padding:0;
+  }
+  .tab-ajuda:hover{background:var(--track);color:var(--bordo);}
+  .tab-ajuda.on{color:var(--bordo);background:var(--track);border-color:var(--linha);}
+  .tab-ajuda svg{width:12px;height:12px;flex:none;transition:transform .15s ease;}
+  .tab-ajuda.on svg{transform:rotate(90deg);}
+  .sidebar.recolhida .tab-ajuda{display:none;}
+
+  /* ---- flyout de ajuda: some por padrão, some ao lado da sidebar (não empurra
+     o conteúdo) quando alguma setinha é clicada ---- */
+  .ajuda-flyout{
+    display:none;position:absolute;top:0;left:100%;margin-left:10px;
+    width:280px;max-height:calc(100vh - 20px);overflow-y:auto;
+    background:#fff;border:1px solid var(--linha);border-radius:14px;
+    box-shadow:0 10px 30px rgba(42,35,32,.16);padding:16px 18px;z-index:30;
+  }
+  .ajuda-flyout.aberto{display:block;}
+  .ajuda-flyout-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:2px;}
+  .ajuda-flyout-tit{font-family:var(--tit);font-weight:800;font-size:12.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--bordo);}
+  .ajuda-flyout-fechar{flex:none;width:22px;height:22px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--soft);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .ajuda-flyout-fechar:hover{border-color:var(--bordo);color:var(--bordo);}
+  .ajuda-flyout-fechar svg{width:11px;height:11px;}
+  .ajuda-flyout .exemplo-card{max-width:none;}
 
   .link-ajuda{
     font-family:var(--tit);font-weight:700;font-size:11.5px;letter-spacing:.02em;
@@ -85,10 +116,6 @@
   }
   .sidebar.recolhida .tabs-principal button span, .sidebar.recolhida .link-ajuda span{display:none;}
 
-  /* preenche o espaço vazio da sidebar expandida com o lembrete da Cris + exemplo do card */
-  .sidebar-info{border-top:1px solid var(--linha);padding-top:16px;}
-  .sidebar-info .exemplo-card{max-width:none;}
-  .sidebar.recolhida .sidebar-info{display:none;}
   .sidebar-nota{font-size:11px;line-height:1.5;color:var(--soft);margin:12px 0 8px;}
   .sidebar-info-tit{font-family:var(--tit);font-weight:800;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--bordo);margin:0;display:flex;align-items:center;gap:6px;}
   .sidebar-info-tit svg{width:13px;height:13px;flex:none;}
@@ -116,17 +143,22 @@
     .sidebar-cab{flex:none;}
     .btn-recolher{display:none;}
     .tabs-principal{flex-direction:row;flex-wrap:wrap;}
+    .tab-row{width:auto;}
     .tabs-principal button span, .tabs-principal a span, .link-ajuda span{display:none;}
     .link-ajuda{width:auto;}
     .sidebar .reload{margin-top:0;margin-left:auto;}
-    /* o bloco de ajuda (Pipeline/exemplo/Auditório) desce pra uma linha própria,
-       em largura cheia, em vez de sumir — mobile também tem acesso a essa info,
-       mesmo que a sidebar tenha ficado "recolhida" de um uso anterior no desktop
-       (o botão de recolher nem aparece no mobile, então esse estado não deveria valer aqui) */
-    .sidebar-info, .sidebar.recolhida .sidebar-info{
-      display:block;flex:1 1 100%;order:10;
-      border-top:1px solid var(--linha);border-left:0;margin-top:4px;padding-top:14px;
-      max-height:min(48vh,420px);overflow-y:auto;
+    /* setinha de ajuda continua clicável no mobile mesmo se a sidebar ficou
+       "recolhida" de um uso anterior no desktop (o botão de recolher nem
+       aparece aqui, então esse estado não deveria valer no mobile) */
+    .sidebar.recolhida .tab-ajuda{display:flex;}
+    /* o flyout de ajuda desce pra uma linha própria, em largura cheia, em vez de
+       flutuar ao lado da sidebar — não tem "lado" no layout empilhado do mobile,
+       mas continua reaproveitando o mesmo container/JS, só muda o posicionamento */
+    .ajuda-flyout{
+      position:static;width:auto;max-width:none;margin-left:0;
+      border-radius:0;box-shadow:none;border:0;border-top:1px solid var(--linha);
+      flex:1 1 100%;order:10;margin-top:4px;
+      max-height:min(48vh,420px);
     }
   }
 
@@ -415,43 +447,80 @@
     </button>
   </div>
   <div class="tabs-principal" id="tabs-principal">
-    <button type="button" data-tab="crm" class="on" title="CRM"><svg class="ico2"><use href="#i-users"/></svg><span>CRM</span></button>
-    <button type="button" data-tab="trafego" hidden title="Tráfego"><svg class="ico2"><use href="#i-trend"/></svg><span>Tráfego</span></button>
-    <button type="button" data-tab="financeiro" hidden title="Financeiro"><svg class="ico2"><use href="#i-dollar"/></svg><span>Financeiro</span></button>
-    <button type="button" data-tab="quiz" hidden title="Quiz"><svg class="ico2"><use href="#i-quiz"/></svg><span>Quiz</span></button>
+    <div class="tab-row">
+      <button type="button" data-tab="crm" class="on" title="CRM"><svg class="ico2"><use href="#i-users"/></svg><span>CRM</span></button>
+      <button type="button" class="tab-ajuda" data-ajuda="crm" data-ajuda-tit="CRM" title="O que é isso?" aria-label="Ajuda sobre CRM" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+    </div>
+    <div class="tab-row">
+      <button type="button" data-tab="trafego" hidden title="Tráfego"><svg class="ico2"><use href="#i-trend"/></svg><span>Tráfego</span></button>
+      <button type="button" class="tab-ajuda" data-ajuda="trafego" data-ajuda-tit="Tráfego" hidden title="O que é isso?" aria-label="Ajuda sobre Tráfego" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+    </div>
+    <div class="tab-row">
+      <button type="button" data-tab="financeiro" hidden title="Financeiro"><svg class="ico2"><use href="#i-dollar"/></svg><span>Financeiro</span></button>
+      <button type="button" class="tab-ajuda" data-ajuda="financeiro" data-ajuda-tit="Financeiro" hidden title="O que é isso?" aria-label="Ajuda sobre Financeiro" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+    </div>
+    <div class="tab-row">
+      <button type="button" data-tab="quiz" hidden title="Quiz"><svg class="ico2"><use href="#i-quiz"/></svg><span>Quiz</span></button>
+      <button type="button" class="tab-ajuda" data-ajuda="quiz" data-ajuda-tit="Quiz" hidden title="O que é isso?" aria-label="Ajuda sobre Quiz" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+    </div>
   </div>
-  <div class="sidebar-info">
-    <h4 class="sidebar-info-tit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>Pipeline</h4>
-    <p class="sidebar-nota">O lead passa por 4 etapas: <b>Novos → Em Atendimento → Aguardando Compra → Finalizado</b>. Arraste o card entre as colunas conforme a conversa avança.</p>
 
-    <h4 class="sidebar-info-tit" style="margin-top:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 9 5 12 1.8-5.2L21 14Z"/><path d="M7.2 2.2 8 5.1"/><path d="m5.1 8-2.9-.8"/><path d="M14 4.1 12 6"/><path d="m6 12-1.9 2"/></svg>Botões de ações do Card</h4>
-    <p class="sidebar-nota">Veja o exemplo abaixo pra saber o que cada um faz:</p>
-    <div class="exemplo-card">
-      <div class="exemplo-cab">
-        <span class="exemplo-avatar">DR</span>
-        <div class="exemplo-info">
-          <div class="exemplo-nome">Dra. Exemplo</div>
-          <div class="exemplo-meta">Enfermeira</div>
-        </div>
-      </div>
-      <div class="exemplo-icones exemplo-3col">
-        <span class="exemplo-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg></span>
-        <span class="exemplo-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 21h8"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg></span>
-        <span class="exemplo-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg></span>
-      </div>
-      <div class="exemplo-balaos exemplo-3col">
-        <div class="balao">Conversa</div>
-        <div class="balao">Anotação</div>
-        <div class="balao">Assumir</div>
-      </div>
+  <!-- ---- flyout de ajuda: abre ao lado da sidebar (setinha de cada aba), com o
+       texto explicativo daquele menu específico — antes ficava tudo fixo abaixo do
+       menu, só sobre CRM; agora cada aba tem a sua e só aparece quando pedida ---- -->
+  <div class="ajuda-flyout" id="ajuda-flyout">
+    <div class="ajuda-flyout-cab">
+      <span class="ajuda-flyout-tit" id="ajuda-flyout-tit">CRM</span>
+      <button type="button" class="ajuda-flyout-fechar" id="ajuda-flyout-fechar" aria-label="Fechar ajuda">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
     </div>
 
-    <h4 class="sidebar-info-tit" style="margin-top:16px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/></svg>Auditório</h4>
-    <p class="sidebar-nota">O mapa de cadeiras é só visual — mostra quanto já vendeu de VIP e dos lotes, pra acompanhar o progresso. Não precisa mexer em nada ali.</p>
-    <button type="button" class="link-ajuda" id="btn-ir-auditorio">
-      <svg class="ico2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/></svg>
-      <span>Ver Auditório →</span>
-    </button>
+    <div class="ajuda-conteudo" data-ajuda-conteudo="crm" hidden>
+      <h4 class="sidebar-info-tit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>Pipeline</h4>
+      <p class="sidebar-nota">O lead passa por 4 etapas: <b>Novos → Em Atendimento → Aguardando Compra → Finalizado</b>. Arraste o card entre as colunas conforme a conversa avança.</p>
+
+      <h4 class="sidebar-info-tit" style="margin-top:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 9 5 12 1.8-5.2L21 14Z"/><path d="M7.2 2.2 8 5.1"/><path d="m5.1 8-2.9-.8"/><path d="M14 4.1 12 6"/><path d="m6 12-1.9 2"/></svg>Botões de ações do Card</h4>
+      <p class="sidebar-nota">Veja o exemplo abaixo pra saber o que cada um faz:</p>
+      <div class="exemplo-card">
+        <div class="exemplo-cab">
+          <span class="exemplo-avatar">DR</span>
+          <div class="exemplo-info">
+            <div class="exemplo-nome">Dra. Exemplo</div>
+            <div class="exemplo-meta">Enfermeira</div>
+          </div>
+        </div>
+        <div class="exemplo-icones exemplo-3col">
+          <span class="exemplo-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg></span>
+          <span class="exemplo-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 21h8"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg></span>
+          <span class="exemplo-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg></span>
+        </div>
+        <div class="exemplo-balaos exemplo-3col">
+          <div class="balao">Conversa</div>
+          <div class="balao">Anotação</div>
+          <div class="balao">Assumir</div>
+        </div>
+      </div>
+
+      <h4 class="sidebar-info-tit" style="margin-top:16px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/></svg>Auditório</h4>
+      <p class="sidebar-nota">O mapa de cadeiras é só visual — mostra quanto já vendeu de VIP e dos lotes, pra acompanhar o progresso. Não precisa mexer em nada ali.</p>
+      <button type="button" class="link-ajuda" id="btn-ir-auditorio">
+        <svg class="ico2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/></svg>
+        <span>Ver Auditório →</span>
+      </button>
+    </div>
+
+    <div class="ajuda-conteudo" data-ajuda-conteudo="trafego" hidden>
+      <p class="sidebar-nota">Esse painel mostra quem visitou o site, de onde veio (UTM/canal) e até onde foi (funil, VSL, mapa de acessos) — e deixa você lançar o investimento em anúncios pra calcular o ROI comparando com as vendas por canal.</p>
+    </div>
+
+    <div class="ajuda-conteudo" data-ajuda-conteudo="financeiro" hidden>
+      <p class="sidebar-nota">Controle financeiro do Congresso: quanto entrou (expositores, investimento do sócio) e quanto saiu (despesas por grupo e por mês), com o saldo geral. Acesso restrito ao gestor.</p>
+    </div>
+
+    <div class="ajuda-conteudo" data-ajuda-conteudo="quiz" hidden>
+      <p class="sidebar-nota">É o quiz Raio-X que os visitantes respondem pra descobrir o nível deles em oncologia integrativa. Aqui você vê os leads captados, separados por temperatura (frio/morno/quente) pra saber quem abordar primeiro, e a lista completa com contato pra fazer follow-up.</p>
+    </div>
   </div>
 
   <button type="button" class="reload" id="reload" aria-label="Atualizar"><svg class="ico" style="width:15px;height:15px"><use href="#i-refresh"/></svg></button>
@@ -1015,10 +1084,41 @@
     }
   }
 
+  // ---- flyout de ajuda: uma setinha por aba, abre/fecha o mesmo painel lateral
+  // trocando só o conteúdo mostrado (data-ajuda-conteudo) ----
+  function fecharAjuda(){
+    $('ajuda-flyout').classList.remove('aberto');
+    document.querySelectorAll('.tab-ajuda').forEach(function(el){
+      el.classList.remove('on'); el.setAttribute('aria-expanded', 'false');
+    });
+  }
+  function abrirAjuda(btn){
+    var tab = btn.dataset.ajuda;
+    $('ajuda-flyout').querySelectorAll('.ajuda-conteudo').forEach(function(el){
+      el.hidden = el.dataset.ajudaConteudo !== tab;
+    });
+    document.querySelectorAll('.tab-ajuda').forEach(function(el){
+      var ativo = el === btn;
+      el.classList.toggle('on', ativo);
+      el.setAttribute('aria-expanded', ativo ? 'true' : 'false');
+    });
+    $('ajuda-flyout-tit').textContent = btn.dataset.ajudaTit || '';
+    $('ajuda-flyout').classList.add('aberto');
+  }
+  $('ajuda-flyout-fechar').addEventListener('click', fecharAjuda);
+
   $('tabs-principal').addEventListener('click', function(e){
-    var b = e.target.closest('button'); if (!b) return;
-    Array.prototype.forEach.call(this.children, function(c){ c.classList.toggle('on', c === b); });
+    var a = e.target.closest('.tab-ajuda');
+    if (a){
+      var jaAberta = a.classList.contains('on');
+      fecharAjuda();
+      if (!jaAberta) abrirAjuda(a);
+      return;
+    }
+    var b = e.target.closest('button[data-tab]'); if (!b) return;
+    this.querySelectorAll('button[data-tab]').forEach(function(c){ c.classList.toggle('on', c === b); });
     ativarPainel(b.dataset.tab);
+    fecharAjuda();
   });
 
   // ---- iframes sem barra de rolagem própria: cada página avisa a própria altura via
@@ -1029,7 +1129,9 @@
   // e só aparecem quando o crm.html avisa "sou gestor" — ele é quem sabe de verdade,
   // com o login já resolvido; se ninguém avisar nada, fica escondido mesmo. O mesmo
   // aviso dispara de novo quando o gestor liga/desliga "Visualizar como Vendedor".
-  var ABAS_SO_GESTOR = ['trafego','financeiro','quiz'];
+  // Financeiro/Quiz removidos temporariamente da lista (ficam escondidos mesmo pro
+  // gestor) — tirar daqui pra reativar quando quiser voltar com eles.
+  var ABAS_SO_GESTOR = ['trafego'];
   window.addEventListener('message', function(e){
     var d = e.data;
     if (!d) return;
@@ -1074,6 +1176,7 @@
     recolhida = !recolhida;
     $('sidebar').classList.toggle('recolhida', recolhida);
     try { localStorage.setItem('novva-sidebar-recolhida', recolhida ? '1' : '0'); } catch(e){}
+    fecharAjuda();
   });
 
   ativarPainel('crm'); // CRM é o único painel garantido pra todo mundo — vira o padrão
