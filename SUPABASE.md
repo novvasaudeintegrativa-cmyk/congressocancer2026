@@ -5840,16 +5840,22 @@ https://nbhekjgbszyuuxrynzfo.supabase.co/functions/v1/instagram-webhook
    **`comments`** (não precisa `messages` nem os outros, só usamos
    esse).
 
-### 30.5. Pendências (registradas, não fazem parte desta fase)
+### 30.5. Feito (19/09/2026)
+
+- Webhook verificado e assinatura do campo `comments` ativada — testado
+  de ponta a ponta (comentário real caiu na tabela `instagram_comentarios`).
+- Tela **"Comentários do Instagram"** no `crm.html` (`view-instagram`,
+  sempre visível, igual Pipeline/Conversas) — lista os comentários com
+  o selinho de canal do Instagram no avatar, e responde direto pela
+  Edge Function `instagram-responder`.
+
+### 30.6. Pendências (registradas, não fazem parte desta fase)
 
 - **Renovar o token automaticamente** antes dos 60 dias vencerem (uma
   Edge Function agendada, tipo o `pg_cron`, chamando
   `GET https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=...`
   e atualizando o secret) — por enquanto é manual.
-- **Tela no `crm.html`** pra listar/responder os comentários (ainda não
-  existe — os dados já vão cair na tabela a partir do deploy do
-  webhook, só falta o front consumir). Entra como próxima etapa.
-- **Selinho de canal 'instagram'** no avatar já existe no `crm.html`
-  (ver commit do badge estilo Kommo) — é só passar `'instagram'` como
-  3º argumento de `avatarHtml()` quando renderizar um item vindo dessa
-  tabela.
+- **Unificar com o inbox do WhatsApp** (visão "tipo Kommo" com tudo
+  numa lista só) — por enquanto os comentários ficam numa seção própria,
+  separada de "Conversas", porque o modelo de dados é bem diferente
+  (comentário é preso a um post, não a uma conversa por telefone).
