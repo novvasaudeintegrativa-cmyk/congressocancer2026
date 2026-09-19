@@ -394,7 +394,7 @@
   }
   .divider{
     width:70px;height:3px;background:var(--vermelho-vivo);
-    border-radius:99px;margin:0 auto var(--space-2xl) auto;
+    border-radius:2px;margin:0 auto var(--space-2xl) auto;
   }
 
   /* PÚBLICO */
@@ -516,7 +516,7 @@
     font-size:10px;
     letter-spacing:0.06em;
     padding:4px 10px;
-    border-radius:999px;
+    border-radius:6px;
   }
   .avatar-placeholder{
     width:104px;height:104px;
@@ -590,7 +590,7 @@
     letter-spacing:0.04em;
     text-transform:uppercase;
     padding:5px 12px;
-    border-radius:999px;
+    border-radius:6px;
     cursor:pointer;
     transition:border-color .15s ease, color .15s ease;
   }
@@ -711,7 +711,7 @@
     font-size:14px;
     letter-spacing:0.02em;
     padding:11px 26px;
-    border-radius:999px;
+    border-radius:10px;
     border:1.5px solid rgba(255,255,255,0.2);
     background:transparent;
     color:var(--texto-suave);
@@ -720,6 +720,7 @@
   }
   .crono-tab:hover{border-color:var(--dourado); color:#fff;}
   .crono-tab.ativo{background:var(--vermelho-vivo); border-color:var(--vermelho-vivo); color:#fff;}
+  .crono-tab.ativo[data-dia="sexta"]{background:var(--laranja); border-color:var(--laranja);}
 
   .crono-dia{display:none; max-width:760px; margin:0 auto;}
   .crono-dia.ativo{display:block;}
@@ -782,7 +783,7 @@
     letter-spacing:0.04em;
     text-transform:uppercase;
     padding:3px 9px;
-    border-radius:999px;
+    border-radius:5px;
     margin-left:8px;
     vertical-align:middle;
     position:relative; top:-1px;
@@ -1006,7 +1007,7 @@
     text-transform:uppercase;
     letter-spacing:0.06em;
     padding:4px 12px;
-    border-radius:999px;
+    border-radius:6px;
     margin-bottom:var(--space-sm);
   }
   .card-lote .status-lote.aberto{
@@ -1311,7 +1312,7 @@
     background:var(--vermelho-vivo);
     border:none;
     padding:8px 16px;
-    border-radius:14px;
+    border-radius:8px;
     font-family:var(--fonte-titulo);
     font-weight:700;
     font-size:var(--text-label);
@@ -1565,7 +1566,7 @@
     color:#fff;
     background:var(--verde);
     padding:3px 9px;
-    border-radius:999px;
+    border-radius:6px;
   }
   .rest-card p{
     color:var(--texto-suave);
