@@ -395,8 +395,8 @@
     <div class="auditorio-kpis">
       <div class="aud-kpi total">
         <div class="l">Total vendido</div>
-        <div class="n" id="aud-total-n">0<span class="de">/400</span></div>
-        <div class="s" id="aud-total-restam">400 cadeiras em aberto</div>
+        <div class="n" id="aud-total-n">0<span class="de">/500</span></div>
+        <div class="s" id="aud-total-restam">500 cadeiras em aberto</div>
       </div>
       <div class="aud-kpi vip">
         <div class="l">VIP</div>
@@ -405,8 +405,8 @@
       </div>
       <div class="aud-kpi geral">
         <div class="l">Lotes 1, 2 e 3</div>
-        <div class="n" id="aud-geral-n">0<span class="de">/360</span></div>
-        <div class="s" id="aud-geral-restam">360 em aberto</div>
+        <div class="n" id="aud-geral-n">0<span class="de">/460</span></div>
+        <div class="s" id="aud-geral-restam">460 em aberto</div>
       </div>
     </div>
 
@@ -953,11 +953,11 @@
 
   // ---------- auditório (mapa de cadeiras) ----------
   // Preenche do corredor central pras pontas (a "vista privilegiada" é perto do
-  // corredor, no centro da sala). O bloco geral (360 cadeiras) não renderiza tudo de
+  // corredor, no centro da sala). O bloco geral (460 cadeiras) não renderiza tudo de
   // cara — só as fileiras já vendidas + uma sobra de respiro, senão vira uma parede
   // gigante de cadeiras vazias logo no início; o resto aparece conforme vende.
   var AUD_COLS = 10;
-  var AUD_VIP_TOTAL = 40, AUD_GERAL_TOTAL = 360;
+  var AUD_VIP_TOTAL = 40, AUD_GERAL_TOTAL = 460;
   var AUD_VIP_POR_LADO = AUD_VIP_TOTAL / 2, AUD_GERAL_POR_LADO = AUD_GERAL_TOTAL / 2;
   var AUD_GERAL_SOBRA = 10; // ~1 fileira extra vazia, só pra dar ideia de que cabe mais
   var ordemAssentos = {};
