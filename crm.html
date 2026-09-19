@@ -1402,6 +1402,15 @@
       '</div>';
     }).join('');
 
+    function virarLeadInstagram(item){
+      var igId = item.dataset.igId, username = item.dataset.username;
+      if (!igId) return Promise.resolve();
+      return upsertLead('ig:' + igId, { nome_whatsapp: '@' + (username || 'instagram'), canal: 'instagram' })
+        .then(function(){
+          return apiPatch('instagram_comentarios?comment_id=eq.' + encodeURIComponent(item.dataset.id), { virou_lead: true }, { Prefer: 'return=minimal' });
+        });
+    }
+
     $('ig-lista').querySelectorAll('.ig-item').forEach(function(item){
       var btnResp = item.querySelector('.ig-responder-btn');
       if (btnResp){
@@ -1410,23 +1419,21 @@
           var texto = input.value.trim();
           if (!texto) return;
           btnResp.disabled = true; btnResp.textContent = 'Enviando…';
-          instagramResponder(item.dataset.id, texto).then(function(){
-            carregarComentariosInstagram();
-          }).catch(function(err){
-            alert('Não deu pra responder: ' + err.message);
-            btnResp.disabled = false; btnResp.textContent = 'Responder';
-          });
+          instagramResponder(item.dataset.id, texto)
+            // responder já demonstra interesse em levar a conversa adiante — vira lead sozinho
+            .then(function(){ return virarLeadInstagram(item); })
+            .then(function(){ carregarComentariosInstagram(); })
+            .catch(function(err){
+              alert('Não deu pra responder: ' + err.message);
+              btnResp.disabled = false; btnResp.textContent = 'Responder';
+            });
         });
       }
       var btnLead = item.querySelector('.ig-virar-lead-btn');
       if (btnLead) btnLead.addEventListener('click', function(){
-        var igId = item.dataset.igId, username = item.dataset.username;
-        if (!igId){ alert('Esse comentário não tem um autor identificável.'); return; }
+        if (!item.dataset.igId){ alert('Esse comentário não tem um autor identificável.'); return; }
         btnLead.disabled = true; btnLead.textContent = 'Criando…';
-        upsertLead('ig:' + igId, { nome_whatsapp: '@' + (username || 'instagram'), canal: 'instagram' })
-          .then(function(){
-            return apiPatch('instagram_comentarios?comment_id=eq.' + encodeURIComponent(item.dataset.id), { virou_lead: true }, { Prefer: 'return=minimal' });
-          })
+        virarLeadInstagram(item)
           .then(function(){ carregarComentariosInstagram(); })
           .catch(function(){ btnLead.disabled = false; btnLead.textContent = 'Virar lead'; });
       });
