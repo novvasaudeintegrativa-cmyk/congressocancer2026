@@ -185,6 +185,8 @@
   .exemplo-fone-status{font-size:9.5px;color:rgba(255,255,255,.8);}
   .exemplo-fone-chat{background:#efeae2;padding:10px;display:flex;flex-direction:column;gap:6px;}
   .exemplo-fone-chat .bolha{font-size:11px;max-width:88%;text-align:left;}
+  .exemplo-fone-ia{padding:6px 10px;font-size:10px;gap:6px;border-bottom-width:1px;flex-wrap:nowrap;white-space:nowrap;}
+  .exemplo-fone-ia button{font-size:9px!important;padding:4px 8px!important;border-radius:7px!important;opacity:.6;}
   .thread-vazio-legenda{font-size:11.5px;color:var(--faint);margin-top:10px;max-width:260px;margin-left:auto;margin-right:auto;}
   .thread-nota{padding:8px 16px;font-size:11px;color:var(--dourado);background:#fbf5e8;border-top:1px solid var(--linha);}
   .thread-ia{padding:10px 16px;font-size:13px;font-weight:700;color:#7a4a00;background:#ffe8b3;border-bottom:2px solid #f0a500;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
@@ -192,6 +194,15 @@
   .thread-ia button{font-family:var(--tit);font-weight:800;font-size:12.5px;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:10px;padding:8px 16px;cursor:pointer;}
   .thread-ia.humano button{background:#2fae5f;animation:none;}
   .thread-ia button:disabled{opacity:.5;cursor:default;animation:none;}
+  .ia-destaque{background:#faf1f0;border:1px solid rgba(138,34,46,.2);border-radius:12px;padding:14px 16px;margin-bottom:16px;text-align:left;}
+  .ia-destaque-tit-linha{display:flex;align-items:baseline;gap:9px;}
+  .ia-item-tit{font-family:var(--tit);font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--bordo);}
+  .ia-item-sub{font-size:11px;color:var(--soft);}
+  .ia-detalhe{margin:8px 0 0;padding-left:16px;font-size:11px;line-height:1.5;color:var(--soft);}
+  .ia-detalhe li{max-width:640px;}
+  .ia-detalhe li{margin-bottom:6px;}
+  .ia-detalhe li:last-child{margin-bottom:0;}
+  .ia-detalhe b{color:var(--ink);}
   .thread-rapidas{padding:8px 12px 0;display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid var(--linha);}
   .btn-rapida{font-family:var(--corpo);font-size:11.5px;background:#fff;color:var(--ink);border:1px solid var(--linha);border-radius:14px;padding:5px 10px;cursor:pointer;}
   .btn-rapida:hover{background:#f2ede9;}
@@ -358,7 +369,20 @@
   </div>
 
   <div id="view-conversas" class="painel">
+    <div class="ia-destaque">
+      <div class="ia-destaque-tit-linha">
+        <span class="ia-item-tit">Cris (IA)</span>
+        <span class="ia-item-sub">Seg-sex, 8h às 17h</span>
+      </div>
+      <ul class="ia-detalhe">
+        <li><b>Seg-sex, 8h às 17h</b> (horário de Brasília): Cris manda só uma saudação curta e já fica esperando alguém do time assumir — fique de olho na fila nesse horário pra não perder o lead quente.</li>
+        <li><b>Fora desse horário</b> (noite, manhã cedo, fim de semana): Cris atende sozinha de verdade — tira dúvida sobre o congresso, fala o preço do lote em aberto e manda o link de compra, sem inventar informação e sem fechar venda por conta própria.</li>
+        <li>Só um humano desliga a Cris numa conversa (botão dentro do chat) — ela não se desliga sozinha depois de responder algumas vezes.</li>
+      </ul>
+    </div>
+
     <div class="sec-crm"><span>Conversas</span><button type="button" class="btn-atualizar" id="btn-atualizar-conv">Atualizar</button></div>
+
     <div class="inbox">
       <div class="inbox-lista" id="inbox-lista"></div>
       <div class="inbox-thread" id="inbox-thread"></div>
@@ -1261,6 +1285,7 @@
           '<span class="exemplo-fone-avatar">DR</span>' +
           '<div><div class="exemplo-fone-nome">Dra. Exemplo</div><div class="exemplo-fone-status">online</div></div>' +
         '</div>' +
+        '<div class="thread-ia exemplo-fone-ia">' + ic('cpu', 12) + ' <b>Cris (IA) respondendo</b> <button type="button" disabled>Assumir</button></div>' +
         '<div class="exemplo-fone-chat">' +
           '<div class="bolha rec">Oi! Vi o anúncio do Congresso Câncer 2026, vocês dão certificado?</div>' +
           '<div class="bolha env"><span class="quem">Cris</span>Oi! Tudo bem? 😊 Emite sim! Tá tudo explicadinho na nossa página: congressocancer.novvasaudeintegrativa.com.br</div>' +
