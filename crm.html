@@ -59,6 +59,9 @@
   .filtros{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
   .filtros select,.filtros input{font-family:var(--corpo);font-size:12.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--linha);background:#fff;color:var(--ink);}
   .filtros .cont{font-size:11.5px;color:var(--faint);margin-left:auto;}
+  .busca-wrap{position:relative;}
+  .busca-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint);pointer-events:none;}
+  .busca-wrap input{padding-left:30px;}
 
   .board{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start;}
   .col{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:10px;min-width:230px;max-width:260px;flex:0 0 auto;}
@@ -356,13 +359,10 @@
 
     <div class="sec-crm"><span>Pipeline</span><span class="cont" id="cont"></span></div>
     <div class="filtros">
-      <select id="f-nivel">
-        <option value="">Todos os níveis</option>
-        <option value="iniciante">Iniciante</option>
-        <option value="intermediario">Intermediário</option>
-        <option value="avancado">Avançado</option>
-      </select>
-      <input type="search" id="f-busca" placeholder="buscar por nome…">
+      <div class="busca-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        <input type="search" id="f-busca" placeholder="buscar por nome…">
+      </div>
     </div>
 
     <div class="board" id="board"></div>
@@ -1066,9 +1066,7 @@
 
   // ---------- render ----------
   function leadVisivelNoFiltro(l){
-    var fn = $('f-nivel').value;
     var fb = $('f-busca').value.trim().toLowerCase();
-    if (fn && l.nivel !== fn) return false;
     if (fb && (l.nome || '').toLowerCase().indexOf(fb) === -1) return false;
     // simulando "ver como vendedor": só mostra o que é meu ou está livre pra assumir
     if (estado.ehGestor && estado.verComoVendedor && l.atribuido_a && l.atribuido_a !== estado.eu.id) return false;
@@ -1254,7 +1252,6 @@
     return c;
   }
 
-  $('f-nivel').addEventListener('change', render);
   $('f-busca').addEventListener('input', render);
 
   // ---------- conversas (inbox WhatsApp — só leitura por enquanto) ----------
