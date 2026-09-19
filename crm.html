@@ -608,14 +608,6 @@
     </div>
   </div>
 
-  <div id="view-custo-ia" class="painel" hidden>
-    <div class="sec-crm"><span>Custo de IA</span></div>
-    <div class="aviso">Estimativa calculada a partir dos tokens reais de cada chamada (Cris no WhatsApp + Gerar com IA nas campanhas), pelo preço do Claude Haiku 4.5. Não é o saldo oficial da conta Anthropic — isso só aparece no console.anthropic.com.</div>
-    <div class="campanhas-tabela-wrap">
-      <table class="campanhas-tabela"><tbody id="custo-ia-lista"></tbody></table>
-    </div>
-  </div>
-
   <p class="foot"><button type="button" id="btn-notif" class="btn-atualizar">Ativar notificações neste aparelho</button></p>
 
   <p class="foot">CRM Novva · Fase 1 — <a href="novva-crm.html">voltar ao painel</a></p>
@@ -857,7 +849,6 @@
         carregarEquipe();
         carregarCampanhas(); carregarGeracoesIA();
         carregarCampanhasWhatsapp(); carregarTemplatesWhatsapp();
-        carregarCustoIA();
         carregarOptinWhatsapp();
         carregarQualidadeWhatsapp();
         if (user.email) $('cp-teste-email').value = user.email;
@@ -906,7 +897,7 @@
     $('aviso-gestor').hidden = !estado.ehGestor || simulando;
     if (estado.ehGestor){
       $('btn-ver-como').textContent = simulando ? 'Voltar a visualizar como Gestor' : 'Visualizar como Vendedor';
-      ['view-equipe','view-campanhas','view-campanhas-whatsapp','view-custo-ia','view-optin-whatsapp','view-qualidade-whatsapp'].forEach(function(id){
+      ['view-equipe','view-campanhas','view-campanhas-whatsapp','view-optin-whatsapp','view-qualidade-whatsapp'].forEach(function(id){
         $(id).hidden = simulando;
       });
     }
@@ -2233,33 +2224,6 @@
   });
 
   // ---------- custo de IA (Cris + campanhas, só gestor) ----------
-  function carregarCustoIA(){
-    return apiGet('ia_uso_resumo?select=*').then(renderCustoIA).catch(function(err){
-      $('custo-ia-lista').innerHTML = '<tr><td style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>';
-    });
-  }
-
-  function renderCustoIA(rows){
-    rows = rows || [];
-    var mesAtual = new Date().toISOString().slice(0, 7);
-    var nomeOrigem = { cris_whatsapp: 'Cris (WhatsApp)', campanha_ia: 'Campanhas (Gerar com IA)' };
-    var totalMesAtual = rows.filter(function(r){ return r.mes === mesAtual; })
-      .reduce(function(s, r){ return s + Number(r.custo_usd || 0); }, 0);
-
-    var linhaTotal = '<tr><td><div class="cp-nome">Total ' + esc(mesAtual) + '</div></td><td></td>' +
-      '<td style="text-align:right"><b>US$ ' + totalMesAtual.toFixed(2) + '</b></td></tr>';
-
-    var linhas = rows.map(function(r){
-      return '<tr>' +
-        '<td>' + esc(r.mes) + ' · ' + esc(nomeOrigem[r.origem] || r.origem) + '</td>' +
-        '<td class="cp-cont">' + r.chamadas + ' chamadas · ' + r.tokens_entrada + ' in / ' + r.tokens_saida + ' out tokens</td>' +
-        '<td style="text-align:right">US$ ' + Number(r.custo_usd || 0).toFixed(4) + '</td>' +
-      '</tr>';
-    }).join('');
-
-    $('custo-ia-lista').innerHTML = linhaTotal + (linhas || '<tr><td colspan="3">Nenhum uso registrado ainda.</td></tr>');
-  }
-
   // ---------- CTA de opt-in WhatsApp no corpo do e-mail ----------
   var LINK_OPTIN_WHATSAPP = 'https://wa.me/5511934873737?text=Quero%20receber%20novidades%20do%20Congresso%20C%C3%A2ncer%202026%20pelo%20WhatsApp%20da%20Novva%20Sa%C3%BAde%20Integrativa';
   $('cp-salvar-edicao').addEventListener('click', function(){

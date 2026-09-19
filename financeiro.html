@@ -101,6 +101,7 @@
   .del{font-family:var(--tit);font-weight:700;font-size:10.5px;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:4px 9px;border-radius:999px;cursor:pointer;}
   .del:hover{border-color:var(--bordo-vivo);color:var(--bordo-vivo);}
   .vazio{color:var(--faint);font-size:12px;text-align:center;padding:16px 4px;}
+  .aviso{background:#fbf5e8;border:1px dashed var(--dourado);border-radius:12px;padding:12px 16px;font-size:12.5px;color:var(--dourado);margin-bottom:16px;}
   tr.total-row td{font-weight:800;font-family:var(--tit);border-top:2px solid var(--linha);color:var(--ink);}
   .col-status select, .col-valor input{font-family:var(--corpo);font-size:12.5px;padding:5px 7px;border-radius:7px;border:1px solid var(--linha);}
   .edit{font-family:var(--tit);font-weight:700;font-size:10.5px;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:4px 9px;border-radius:999px;cursor:pointer;}
@@ -288,6 +289,17 @@
       </div>
     </section>
 
+    <section>
+      <div class="sec"><span class="t"><span class="bar"></span>Custo de IA</span><span class="hint">Cris no WhatsApp + Gerar com IA nas campanhas</span></div>
+      <div class="aviso">Estimativa calculada a partir dos tokens reais de cada chamada, pelo preço do Claude Haiku 4.5. Não é o saldo oficial da conta Anthropic — isso só aparece no console.anthropic.com.</div>
+      <div class="scroll-x">
+        <table>
+          <thead><tr><th>Mês / origem</th><th>Uso</th><th class="n">Custo</th></tr></thead>
+          <tbody id="custo-ia-lista"><tr><td class="vazio" colspan="3">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
     <p class="foot">Novva Controle Financeiro — <a href="novva-crm.html">voltar ao painel</a> · <a href="crm.html">CRM</a></p>
   </div>
 </div>
@@ -472,6 +484,7 @@
     renderReceitas(estado.receitas);
     renderDespesas(estado.despesas);
     renderResumoLocal();
+    $('custo-ia-lista').innerHTML = '<tr><td class="vazio" colspan="3">Modo exemplo — sem dado real de uso de IA aqui.</td></tr>';
   }
   function renderResumoLocal(){
     var receitas = estado.receitas, despesas = estado.despesas;
@@ -836,9 +849,35 @@
     }).join('');
   }
 
+  function carregarCustoIA(){
+    return apiGet('ia_uso_resumo?select=*').then(renderCustoIA).catch(function(err){
+      $('custo-ia-lista').innerHTML = '<tr><td class="vazio" colspan="3" style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>';
+    });
+  }
+
+  function renderCustoIA(rows){
+    rows = rows || [];
+    var mesAtual = new Date().toISOString().slice(0, 7);
+    var nomeOrigem = { cris_whatsapp: 'Cris (WhatsApp)', campanha_ia: 'Campanhas (Gerar com IA)' };
+    var totalMesAtual = rows.filter(function(r){ return r.mes === mesAtual; })
+      .reduce(function(s, r){ return s + Number(r.custo_usd || 0); }, 0);
+
+    var linhaTotal = '<tr class="total-row"><td>Total ' + esc(mesAtual) + '</td><td></td><td class="n">US$ ' + totalMesAtual.toFixed(2) + '</td></tr>';
+
+    var linhas = rows.map(function(r){
+      return '<tr>' +
+        '<td>' + esc(r.mes) + ' · ' + esc(nomeOrigem[r.origem] || r.origem) + '</td>' +
+        '<td>' + r.chamadas + ' chamadas · ' + r.tokens_entrada + ' in / ' + r.tokens_saida + ' out tokens</td>' +
+        '<td class="n">US$ ' + Number(r.custo_usd || 0).toFixed(4) + '</td>' +
+      '</tr>';
+    }).join('');
+
+    $('custo-ia-lista').innerHTML = linhaTotal + (linhas || '<tr><td class="vazio" colspan="3">Nenhum uso registrado ainda.</td></tr>');
+  }
+
   function carregarTudo(){
     return carregarCategorias().then(function(){
-      return Promise.all([carregarReceitas(), carregarDespesas(), carregarResumo()]);
+      return Promise.all([carregarReceitas(), carregarDespesas(), carregarResumo(), carregarCustoIA()]);
     });
   }
 })();
