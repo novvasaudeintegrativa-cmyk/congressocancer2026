@@ -5855,7 +5855,110 @@ https://nbhekjgbszyuuxrynzfo.supabase.co/functions/v1/instagram-webhook
   Edge Function agendada, tipo o `pg_cron`, chamando
   `GET https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=...`
   e atualizando o secret) — por enquanto é manual.
-- **Unificar com o inbox do WhatsApp** (visão "tipo Kommo" com tudo
-  numa lista só) — por enquanto os comentários ficam numa seção própria,
-  separada de "Conversas", porque o modelo de dados é bem diferente
-  (comentário é preso a um post, não a uma conversa por telefone).
+- ~~Unificar com o inbox do WhatsApp~~ — resolvido de outro jeito, ver §31.
+
+## 31. CRM — Instagram: botão "Virar lead" (comentário entra no Pipeline)
+
+**Contexto (19/09/2026):** a seção "Comentários do Instagram" (§30)
+ficou meio solta, sem relação com o resto do fluxo de vendas. Em vez de
+unificar de verdade os dois inboxes (mexeria na estrutura toda do
+Pipeline, que é organizada por número de WhatsApp), a solução foi um
+botão **"Virar lead"** em cada comentário: um clique cria uma linha
+normal em `lead_status`, usando uma chave sintética (`ig:<id do
+autor>`) no lugar do telefone, com `canal='instagram'`. Esse lead
+passa a aparecer no Kanban normalmente, misturado com os de WhatsApp,
+com o selinho do Instagram no avatar — sem precisar mexer em nenhuma
+política de RLS nem no RPC existente além de expor o campo `canal`.
+
+### 31.1. SQL
+
+```sql
+alter table public.lead_status
+  add column if not exists canal text not null default 'whatsapp';
+
+alter table public.instagram_comentarios
+  add column if not exists virou_lead boolean not null default false;
+
+create or replace function public.rpc_crm_pipeline()
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(row_to_json(t) order by t.captado_em desc nulls last), '[]'::json)
+  from (
+    select
+      s.whatsapp,
+      coalesce(l.nome, s.nome_whatsapp) as nome,
+      coalesce(s.canal, 'whatsapp') as canal,
+      l.email, l.profissao, l.nivel, l.pontuacao,
+      l.utm_source, l.utm_campaign,
+      coalesce(s.criado_em, l.captado_em) as captado_em,
+      coalesce(s.etapa, 'novo') as etapa,
+      s.nota, coalesce(s.urgente, false) as urgente, s.atribuido_a,
+      pa.nome as atribuido_nome,
+      s.atualizado_em,
+      cw.nome as campanha_whatsapp_nome,
+      (select max(
+         case e.event
+           when 'VideoComplete' then 100
+           when 'VideoProgress' then (e.props->>'percent')::int
+           when 'VideoPlay' then 0
+           else null
+         end)
+       from public.events e
+       where e.visitor_id = l.visitor_id
+         and lower(coalesce(e.props->>'placement','')) = 'vsl'
+         and e.event in ('VideoPlay','VideoProgress','VideoComplete')
+      ) as vsl_progress,
+      (
+        select coalesce(m.wa_timestamp, m.criado_em)
+        from public.mensagens m
+        where public.wa_norm(m.lead_whatsapp) = public.wa_norm(s.whatsapp) and m.direcao = 'recebida'
+        order by coalesce(m.wa_timestamp, m.criado_em) desc
+        limit 1
+      ) as ultima_recebida_em,
+      (
+        select min(coalesce(m.wa_timestamp, m.criado_em))
+        from public.mensagens m
+        where public.wa_norm(m.lead_whatsapp) = public.wa_norm(s.whatsapp)
+          and m.direcao = 'enviada'
+          and coalesce(m.wa_timestamp, m.criado_em) >= (
+            select coalesce(m2.wa_timestamp, m2.criado_em)
+            from public.mensagens m2
+            where public.wa_norm(m2.lead_whatsapp) = public.wa_norm(s.whatsapp) and m2.direcao = 'recebida'
+            order by coalesce(m2.wa_timestamp, m2.criado_em) desc
+            limit 1
+          )
+      ) as respondido_em
+    from public.lead_status s
+    left join public.crm_leads l on public.wa_norm(l.whatsapp) = public.wa_norm(s.whatsapp)
+    left join public.perfis pa on pa.id = s.atribuido_a
+    left join public.campanhas_whatsapp cw on cw.id = s.campanha_whatsapp_id
+    where exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+  ) t;
+$$;
+
+notify pgrst, 'reload schema';
+```
+
+A única mudança real em relação à versão do §29 é a linha
+`coalesce(s.canal, 'whatsapp') as canal` — resto idêntico, colado
+inteiro só pra não precisar comparar linha a linha.
+
+### 31.2. Front (`crm.html`) — já feito
+
+- `avatarHtml(l.nome, wpp, l.canal)` no card do Kanban — mostra o
+  selinho certo (WhatsApp ou Instagram) conforme a origem do lead.
+- Botão "Ver conversa" do card, quando `canal === 'instagram'`, rola
+  pra seção de Comentários em vez de tentar abrir uma thread de
+  WhatsApp que não existe.
+- Botão **"Virar lead"** em cada comentário (§30) — cria a linha em
+  `lead_status` com `whatsapp = 'ig:' + autor_ig_id`, `canal =
+  'instagram'`, `nome_whatsapp = '@usuário'`, e marca
+  `instagram_comentarios.virou_lead = true` (o botão vira um selo
+  "No Pipeline" depois de clicado, pra não duplicar).
+
+### 31.3. Rodar
+
+1. SQL do §31.1 no SQL Editor.
+2. Testar: na seção "Comentários do Instagram", clica em "Virar lead"
+   num comentário → o card deve sumir da lista de "pendente" (vira
+   selo) → rola até o Pipeline → o card novo deve aparecer em
+   "Novos", com `@usuário` como nome e o selinho do Instagram.

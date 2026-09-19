@@ -234,6 +234,9 @@
   .ig-item-nome{font-family:var(--tit);font-weight:800;font-size:12.5px;color:var(--ink);}
   .ig-item-quando{font-size:10.5px;color:var(--faint);}
   .ig-badge-ok{flex:none;display:flex;align-items:center;gap:4px;font-family:var(--tit);font-weight:700;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--verde);background:rgba(31,138,76,.12);padding:3px 8px;border-radius:999px;}
+  .ig-virar-lead-btn{flex:none;font-family:var(--tit);font-weight:700;font-size:10.5px;letter-spacing:.02em;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:5px 10px;border-radius:8px;cursor:pointer;}
+  .ig-virar-lead-btn:hover{border-color:var(--bordo);color:var(--bordo);}
+  .ig-virar-lead-btn:disabled{opacity:.6;cursor:default;}
   .ig-item-texto{font-size:13px;color:var(--ink);margin:8px 0 0;padding-left:32px;}
   .ig-resposta-caixa{display:flex;gap:8px;margin-top:10px;padding-left:32px;}
   .ig-resposta-caixa input{flex:1;border:1px solid var(--linha);border-radius:9px;padding:8px 10px;font-family:var(--corpo);font-size:13px;color:var(--ink);background:#fff;}
@@ -1213,14 +1216,14 @@
     }
 
     c.innerHTML =
-      '<div class="card-head">' + avatarHtml(l.nome, wpp) +
+      '<div class="card-head">' + avatarHtml(l.nome, wpp, l.canal) +
         '<div class="info"><div class="nome">' + (l.nome || (wpp ? '+' + wpp : '(sem nome)')) + '</div>' +
         (l.profissao ? '<div class="meta">' + esc(l.profissao) + '</div>' : '') + '</div>' +
         (l.captado_em ? '<div class="quando" title="Desde">' + fmtQuando(l.captado_em) + '</div>' : '') +
       '</div>' +
       (badges ? '<div class="badges">' + badges + '</div>' : '') +
       '<div class="linha-acao acoes-rapidas">' +
-        (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="Ver conversa no CRM">' + ic('message-circle', 12) + '</button>') +
+        (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="' + (l.canal === 'instagram' ? 'Ver comentário no Instagram' : 'Ver conversa no CRM') + '">' + ic('message-circle', 12) + '</button>') +
         (l.campanha_whatsapp_nome ? '<span class="icon-btn meta" title="Veio da campanha Meta: ' + esc(l.campanha_whatsapp_nome) + '">' + ic('megaphone', 12) + '</span>' : '') +
         (triar ? '' : '<button type="button" class="icon-btn btn-nota' + (l.nota ? ' tem-nota' : '') + '" title="' + (l.nota ? esc(l.nota) : 'Adicionar anotação') + '">' + ic('edit-3', 12) + '</button>') +
         (triar ? '' : respIcon) +
@@ -1263,6 +1266,10 @@
     // ver conversa (pula pra seção Conversas e abre a thread desse número)
     var verConv = c.querySelector('.btn-ver-conversa');
     if (verConv) verConv.addEventListener('click', function(){
+      if (l.canal === 'instagram'){
+        $('view-instagram').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
       var n = this.dataset.w;
       $('view-conversas').scrollIntoView({ behavior: 'smooth', block: 'start' });
       setTimeout(function(){ renderThread(n); }, 350);
@@ -1371,7 +1378,7 @@
     rows = rows || [];
     if (!rows.length){ $('ig-lista').innerHTML = '<div class="vazio-col">Nenhum comentário ainda.</div>'; return; }
     $('ig-lista').innerHTML = rows.map(function(c){
-      return '<div class="ig-item" data-id="' + esc(c.comment_id) + '">' +
+      return '<div class="ig-item" data-id="' + esc(c.comment_id) + '" data-ig-id="' + esc(c.autor_ig_id || '') + '" data-username="' + esc(c.autor_username || '') + '">' +
         '<div class="ig-item-cab">' +
           avatarHtml(c.autor_username, c.autor_ig_id, 'instagram') +
           '<div class="ig-item-info">' +
@@ -1379,6 +1386,10 @@
             '<div class="ig-item-quando">' + fmtQuando(c.criado_em) + '</div>' +
           '</div>' +
           (c.respondido ? '<span class="ig-badge-ok">' + ic('check', 11) + ' Respondido</span>' : '') +
+          (c.virou_lead
+            ? '<span class="ig-badge-ok">' + ic('check', 11) + ' No Pipeline</span>'
+            : '<button type="button" class="ig-virar-lead-btn" title="Cria um card desse comentário no Pipeline, junto com os leads de WhatsApp">Virar lead</button>'
+          ) +
         '</div>' +
         '<div class="ig-item-texto">' + esc(c.texto || '') + '</div>' +
         (c.respondido
@@ -1392,19 +1403,32 @@
     }).join('');
 
     $('ig-lista').querySelectorAll('.ig-item').forEach(function(item){
-      var btn = item.querySelector('.ig-responder-btn');
-      if (!btn) return;
-      var input = item.querySelector('.ig-resposta-input');
-      btn.addEventListener('click', function(){
-        var texto = input.value.trim();
-        if (!texto) return;
-        btn.disabled = true; btn.textContent = 'Enviando…';
-        instagramResponder(item.dataset.id, texto).then(function(){
-          carregarComentariosInstagram();
-        }).catch(function(err){
-          alert('Não deu pra responder: ' + err.message);
-          btn.disabled = false; btn.textContent = 'Responder';
+      var btnResp = item.querySelector('.ig-responder-btn');
+      if (btnResp){
+        var input = item.querySelector('.ig-resposta-input');
+        btnResp.addEventListener('click', function(){
+          var texto = input.value.trim();
+          if (!texto) return;
+          btnResp.disabled = true; btnResp.textContent = 'Enviando…';
+          instagramResponder(item.dataset.id, texto).then(function(){
+            carregarComentariosInstagram();
+          }).catch(function(err){
+            alert('Não deu pra responder: ' + err.message);
+            btnResp.disabled = false; btnResp.textContent = 'Responder';
+          });
         });
+      }
+      var btnLead = item.querySelector('.ig-virar-lead-btn');
+      if (btnLead) btnLead.addEventListener('click', function(){
+        var igId = item.dataset.igId, username = item.dataset.username;
+        if (!igId){ alert('Esse comentário não tem um autor identificável.'); return; }
+        btnLead.disabled = true; btnLead.textContent = 'Criando…';
+        upsertLead('ig:' + igId, { nome_whatsapp: '@' + (username || 'instagram'), canal: 'instagram' })
+          .then(function(){
+            return apiPatch('instagram_comentarios?comment_id=eq.' + encodeURIComponent(item.dataset.id), { virou_lead: true }, { Prefer: 'return=minimal' });
+          })
+          .then(function(){ carregarComentariosInstagram(); })
+          .catch(function(){ btnLead.disabled = false; btnLead.textContent = 'Virar lead'; });
       });
     });
   }
