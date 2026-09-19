@@ -5628,3 +5628,228 @@ padronização do painel (18/09/2026). Trocar por:
 3. Testar mandando uma mensagem de um número que nunca fez o quiz —
    o card dele no Kanban deve aparecer com o nome do WhatsApp em vez
    do telefone puro na próxima vez que a lista recarregar.
+
+## 30. CRM — Fase 3 (Instagram: comentários, unificados no inbox estilo Kommo)
+
+**Estado do lado da Meta (19/09/2026):** produto "Instagram" (API do
+Instagram com login do Instagram) adicionado ao App **Novva CRM**
+(ID `1081100977750031`), mesmo App do WhatsApp. Conta conectada:
+**@novvasaudeintegrativa**, Instagram Business Account ID
+`17841450059322732`, vinculada à Página do Facebook **Novva Saúde
+Integrativa** (Page ID `105980348524400`). Token de acesso gerado e
+salvo no secret `INSTAGRAM_ACCESS_TOKEN`.
+
+> **Atenção — token de 60 dias, não permanente:** diferente do token
+> de Usuário do Sistema usado no WhatsApp (que não expira), o token
+> gerado pelo fluxo "Instagram Login" dura ~60 dias e precisa ser
+> renovado antes de vencer (endpoint `GET /refresh_access_token`).
+> Ainda não implementamos a renovação automática — fica registrado
+> como pendência (ver §30.5). Enquanto isso, é só gerar um novo token
+> manualmente pela mesma tela se ele expirar (o CRM avisa sozinho
+> quando uma chamada falhar por token inválido — ver `instagram-webhook`
+> e `instagram-responder` abaixo).
+
+Esta fase só recebe comentários (grava em `instagram_comentarios`) e
+permite responder pelo CRM. Não mexe em DM nem em publicar conteúdo —
+a permissão pedida foi só `instagram_business_manage_comments` (+
+`instagram_business_basic`, obrigatória).
+
+### 30.1. SQL — tabela `instagram_comentarios`
+
+```sql
+create table if not exists public.instagram_comentarios (
+  id              bigint generated always as identity primary key,
+  criado_em       timestamptz not null default now(),
+  comment_id      text unique not null,      -- id do comentário no Instagram, usado pra dedupe
+  media_id        text,                      -- id do post onde o comentário foi feito
+  autor_ig_id     text,                      -- id (IGSID) de quem comentou
+  autor_username  text,                      -- @usuário, quando disponível
+  texto           text,
+  respondido      boolean not null default false,
+  resposta_texto  text,
+  respondido_em   timestamptz,
+  respondido_por  uuid references auth.users(id),
+  raw             jsonb not null default '{}'::jsonb
+);
+create index if not exists instagram_comentarios_media_idx
+  on public.instagram_comentarios (media_id, criado_em);
+alter table public.instagram_comentarios enable row level security;
+
+-- só quem loga e está ativo vê os comentários
+drop policy if exists "equipe vê comentários instagram" on public.instagram_comentarios;
+create policy "equipe vê comentários instagram" on public.instagram_comentarios
+  for select to authenticated
+  using (exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo));
+
+-- marcar como respondido é a única escrita que a equipe faz direto
+-- (a inserção do comentário em si só a Edge Function faz, com service role)
+drop policy if exists "equipe marca resposta instagram" on public.instagram_comentarios;
+create policy "equipe marca resposta instagram" on public.instagram_comentarios
+  for update to authenticated
+  using (exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo));
+
+revoke insert, delete on public.instagram_comentarios from anon, authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+### 30.2. Edge Function `instagram-webhook` (recebe os comentários)
+
+Supabase → **Edge Functions** → **Deploy a new function** → nome
+**`instagram-webhook`** → editor → apaga tudo e cola:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const VERIFY_TOKEN  = Deno.env.get("INSTAGRAM_VERIFY_TOKEN")?.trim();
+const SUPABASE_URL   = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+Deno.serve(async (req) => {
+  const url = new URL(req.url);
+
+  // verificação do webhook (a Meta faz um GET quando você salva a URL)
+  if (req.method === "GET") {
+    const mode = url.searchParams.get("hub.mode");
+    const token = url.searchParams.get("hub.verify_token");
+    const challenge = url.searchParams.get("hub.challenge");
+    if (mode === "subscribe" && token === VERIFY_TOKEN && challenge) {
+      return new Response(challenge, { status: 200 });
+    }
+    return new Response("forbidden", { status: 403 });
+  }
+
+  if (req.method !== "POST") return new Response("method not allowed", { status: 405 });
+
+  const body = await req.json().catch(() => null);
+  const entradas = body?.entry || [];
+
+  for (const entrada of entradas) {
+    const changes = entrada.changes || [];
+    for (const change of changes) {
+      if (change.field !== "comments") continue;
+      const v = change.value || {};
+      const row = {
+        comment_id: v.id,
+        media_id: v.media?.id || null,
+        autor_ig_id: v.from?.id || null,
+        autor_username: v.from?.username || null,
+        texto: v.text || null,
+        raw: v,
+      };
+      if (!row.comment_id) continue;
+      await fetch(`${SUPABASE_URL}/rest/v1/instagram_comentarios?on_conflict=comment_id`, {
+        method: "POST",
+        headers: {
+          apikey: SERVICE_ROLE,
+          authorization: `Bearer ${SERVICE_ROLE}`,
+          "content-type": "application/json",
+          prefer: "resolution=merge-duplicates,return=minimal",
+        },
+        body: JSON.stringify([row]),
+      });
+    }
+  }
+
+  return new Response("EVENT_RECEIVED", { status: 200 });
+});
+```
+
+**Secrets dessa function** (Edge Functions → `instagram-webhook` → Secrets):
+- `INSTAGRAM_VERIFY_TOKEN` — invente uma string qualquer (ex: um UUID),
+  só precisa bater com o que você vai colar no painel da Meta no §30.4.
+- `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já existem por padrão em
+  toda Edge Function do projeto (não precisa criar).
+
+### 30.3. Edge Function `instagram-responder` (responde comentário pelo CRM)
+
+Supabase → **Edge Functions** → **Deploy a new function** → nome
+**`instagram-responder`** → editor → apaga tudo e cola:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+const IG_TOKEN      = Deno.env.get("INSTAGRAM_ACCESS_TOKEN")?.trim();
+const SUPABASE_URL   = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+Deno.serve(async (req) => {
+  if (req.method !== "POST") return new Response("method not allowed", { status: 405 });
+
+  // exige login (mesmo padrão dos outros *-admin: token do usuário no header)
+  const auth = req.headers.get("authorization") || "";
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE, {
+    global: { headers: { authorization: auth } },
+  });
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return new Response(JSON.stringify({ erro: "não autenticado" }), { status: 401 });
+
+  const { comment_id, texto } = await req.json().catch(() => ({}));
+  if (!comment_id || !texto) {
+    return new Response(JSON.stringify({ erro: "comment_id e texto obrigatórios" }), { status: 400 });
+  }
+
+  const r = await fetch(`https://graph.instagram.com/v23.0/${comment_id}/replies`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${IG_TOKEN}`, "content-type": "application/json" },
+    body: JSON.stringify({ message: texto }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) return new Response(JSON.stringify({ erro: j }), { status: 500 });
+
+  const svcHeaders = {
+    apikey: SERVICE_ROLE, authorization: `Bearer ${SERVICE_ROLE}`,
+    "content-type": "application/json", prefer: "return=minimal",
+  };
+  await fetch(`${SUPABASE_URL}/rest/v1/instagram_comentarios?comment_id=eq.${comment_id}`, {
+    method: "PATCH",
+    headers: svcHeaders,
+    body: JSON.stringify({
+      respondido: true, resposta_texto: texto,
+      respondido_em: new Date().toISOString(), respondido_por: user.id,
+    }),
+  });
+
+  return new Response(JSON.stringify({ ok: true, id: j.id }), { status: 200 });
+});
+```
+
+**Secret dessa function**: `INSTAGRAM_ACCESS_TOKEN` (o mesmo token já
+salvo no §anterior — copia o valor pra cá também, cada Edge Function
+tem seus próprios secrets).
+
+### 30.4. Configurar o webhook no painel da Meta
+
+Depois de fazer o **Deploy** do `instagram-webhook` (§30.2), o Supabase
+te dá uma URL pública do tipo:
+```
+https://nbhekjgbszyuuxrynzfo.supabase.co/functions/v1/instagram-webhook
+```
+
+1. Volta em **developers.facebook.com/apps/1081100977750031** → Casos
+   de uso → Instagram → Personalizar → seção **"3. Configurar webhooks"**.
+2. **URL de callback**: cola a URL acima.
+3. **Verificar token**: cola o mesmo valor que você colocou no secret
+   `INSTAGRAM_VERIFY_TOKEN` (§30.2).
+4. Clica em **"Verificar e salvar"** — se dar erro, confere se o Deploy
+   da function terminou e se o `INSTAGRAM_VERIFY_TOKEN` bate certinho
+   dos dois lados.
+5. Depois de verificado, tem que **assinar o campo `comments`** — deve
+   aparecer uma lista de campos pra marcar (webhook fields), marca
+   **`comments`** (não precisa `messages` nem os outros, só usamos
+   esse).
+
+### 30.5. Pendências (registradas, não fazem parte desta fase)
+
+- **Renovar o token automaticamente** antes dos 60 dias vencerem (uma
+  Edge Function agendada, tipo o `pg_cron`, chamando
+  `GET https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=...`
+  e atualizando o secret) — por enquanto é manual.
+- **Tela no `crm.html`** pra listar/responder os comentários (ainda não
+  existe — os dados já vão cair na tabela a partir do deploy do
+  webhook, só falta o front consumir). Entra como próxima etapa.
+- **Selinho de canal 'instagram'** no avatar já existe no `crm.html`
+  (ver commit do badge estilo Kommo) — é só passar `'instagram'` como
+  3º argumento de `avatarHtml()` quando renderizar um item vindo dessa
+  tabela.
