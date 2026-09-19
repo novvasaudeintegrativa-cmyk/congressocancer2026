@@ -219,6 +219,9 @@
   .equipe-tabela .e-inativo{opacity:.5;}
   .equipe-tabela .e-acao{font-family:var(--tit);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:5px 11px;border-radius:999px;cursor:pointer;}
   .equipe-tabela .e-acao:hover{border-color:var(--bordo);color:var(--bordo);}
+  .e-online-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--faint);margin-right:6px;vertical-align:1px;flex:none;}
+  .e-online-dot.on{background:var(--verde);box-shadow:0 0 0 3px rgba(31,138,76,.15);}
+  .e-nome-linha{display:flex;align-items:center;}
 
   .quiz-tabela-wrap{overflow-x:auto;border:1px solid var(--linha);border-radius:12px;background:var(--card);}
   .quiz-tabela{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap;}
@@ -591,7 +594,7 @@
 
   <p class="foot"><button type="button" id="btn-notif" class="btn-atualizar">Ativar notificações neste aparelho</button></p>
 
-  <p class="foot">CRM Novva · Fase 1 — <a href="novva-ads.html">voltar ao painel</a></p>
+  <p class="foot">CRM Novva · Fase 1 — <a href="novva-crm.html">voltar ao painel</a></p>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
@@ -824,6 +827,7 @@
       dbg('app visível, carregando pipeline + conversas');
       carregarConversas();
       ligarRealtime();
+      ligarPresenca();
       carregarAuditorio();
       if (estado.ehGestor) {
         carregarEquipe();
@@ -848,7 +852,7 @@
     avisarPapelAoPai(false);
   }
 
-  // avisa o novva-ads.html (quando embutido nele via iframe) se quem logou é gestor,
+  // avisa o novva-crm.html (quando embutido nele via iframe) se quem logou é gestor,
   // pra ele decidir se mostra as abas Financeiro/Quiz — por padrão ficam escondidas
   // até essa confirmação chegar (fail-closed: sem confirmação, vendedor não vê).
   function avisarPapelAoPai(ehGestor){
@@ -856,6 +860,14 @@
       window.parent.postMessage({ fonte:'novva-crm-papel', ehGestor: !!ehGestor }, '*');
     }
   }
+
+  // atalho vindo da sidebar do novva-crm.html (ex: link "Ver Auditório")
+  window.addEventListener('message', function(e){
+    var d = e.data;
+    if (!d || d.fonte !== 'novva-scroll-para' || !d.id) return;
+    var alvo = document.getElementById(d.id);
+    if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 
   // gestor "de verdade" agora (ignora quando está simulando visualização de vendedor)
   function gestorAgora(){ return estado.ehGestor && !estado.verComoVendedor; }
@@ -1524,8 +1536,27 @@
   }
 
   function carregarEquipe(){
-    return equipeAdmin('list').then(renderEquipe).catch(function(err){
+    return equipeAdmin('list').then(function(rows){
+      equipeCache = rows || [];
+      renderEquipe(equipeCache);
+    }).catch(function(err){
       $('equipe-lista').innerHTML = '<tr><td style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>';
+    });
+  }
+
+  // ---------- presença (quem está com o CRM aberto agora) ----------
+  // Supabase Realtime Presence — não precisa de tabela nem coluna nova,
+  // é efêmero: some sozinho quando a pessoa fecha a aba/perde conexão.
+  var equipeCache = [];
+  var presentes = {};
+  function ligarPresenca(){
+    var canal = sb.channel('crm-presenca', { config: { presence: { key: estado.eu.id } } });
+    canal.on('presence', { event: 'sync' }, function(){
+      presentes = canal.presenceState();
+      renderEquipe(equipeCache);
+    });
+    canal.subscribe(function(status){
+      if (status === 'SUBSCRIBED') canal.track({ nome: estado.eu.nome, desde: new Date().toISOString() });
     });
   }
 
@@ -1533,10 +1564,11 @@
     rows = rows || [];
     $('equipe-lista').innerHTML = rows.map(function(p){
       var inativo = !p.ativo;
+      var online = !!presentes[p.id];
       return '<tr class="' + (inativo ? 'e-inativo' : '') + '" data-id="' + p.id + '">' +
-        '<td><div class="e-nome">' + esc(p.nome || '(sem nome)') + '</div><div class="e-mail">' + esc(p.email || '') + '</div></td>' +
+        '<td><div class="e-nome-linha"><span class="e-online-dot' + (online ? ' on' : '') + '" title="' + (online ? 'Com o CRM aberto agora' : 'Offline') + '"></span><div class="e-nome">' + esc(p.nome || '(sem nome)') + '</div></div><div class="e-mail">' + esc(p.email || '') + '</div></td>' +
         '<td><span class="e-papel ' + (p.papel === 'gestor' ? 'gestor' : '') + '">' + p.papel + '</span></td>' +
-        '<td>' + (inativo ? 'inativo' : 'ativo') + '</td>' +
+        '<td>' + (inativo ? 'inativo' : (online ? 'online agora' : 'ativo')) + '</td>' +
         '<td style="text-align:right">' +
           (p.id === estado.eu.id ? '<span class="e-mail">você</span>'
             : '<button type="button" class="e-acao" data-ativo="' + (inativo ? '1' : '0') + '">' + (inativo ? 'Reativar' : 'Desativar') + '</button>') +
@@ -2404,7 +2436,7 @@
 })();
 </script>
 <script>
-  // avisa o "pai" (novva-ads.html) a própria altura, quando embutido num iframe
+  // avisa o "pai" (novva-crm.html) a própria altura, quando embutido num iframe
   if (window.parent && window.parent !== window){
     (function(){
       function altura(){ return Math.max(document.documentElement.scrollHeight, document.body.scrollHeight); }

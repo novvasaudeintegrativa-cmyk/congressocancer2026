@@ -211,7 +211,7 @@ Sequência sugerida pra quem responde bem: (1) mensagem de reconexão → (2) of
 ## 10. Frente B — Roadmap de tráfego pago e captação avançada
 
 ### B1 — Quiz de captação · ✅ em implementação
-Quiz próprio (`SiteCongressoCancer2026/quiz.html`, "Raio-X Profissional") grava direto no Supabase (`quiz_leads`), classifica em Iniciante/Intermediário/Avançado, com dashboard de acompanhamento em `Ads/novva-ads.html` (frio/morno/quente + qualitativo por pergunta). Ver `SUPABASE.md` seção 8-9.
+Quiz próprio (`SiteCongressoCancer2026/quiz.html`, "Raio-X Profissional") grava direto no Supabase (`quiz_leads`), classifica em Iniciante/Intermediário/Avançado, com dashboard de acompanhamento em `quiz-raiox.html` (frio/morno/quente + qualitativo por pergunta). Ver `SUPABASE.md` seção 8-9.
 
 ### B2 — Tráfego pago segmentado (Meta Ads + Google Ads)
 Agora com cronograma e criativos prontos (seções 2, 5 e 6 deste documento). Otimizar pelo evento de conversão real (`Purchase`/`InitiateCheckout`, já disparado pelo Pixel), não por clique. **Pré-requisito:** autorizar a conta de Meta Ads no conector do claude.ai (pendente) e/ou acesso à conta de Google Ads.
@@ -234,7 +234,7 @@ Artigo otimizado (ex: "Terapias complementares no câncer: o que diz a ciência"
 ## 11. Rotina semanal de acompanhamento
 
 Toda sexta-feira:
-1. Abrir `Ads/novva-ads.html`, aba **Tráfego & Conversão**: acessos, WhatsApp clicado, checkout iniciado por `utm_source`/`utm_campaign`, e o card de **ROI** (investido vs. vendas). Aba **Quiz**: leads frios/mornos/quentes + qualitativo. Aba **CRM**: fila de conversas sem vendedor.
+1. Abrir `novva-crm.html`, aba **Tráfego**: acessos, WhatsApp clicado, checkout iniciado por `utm_source`/`utm_campaign`, e o card de **ROI** (investido vs. vendas). Aba **Quiz**: leads frios/mornos/quentes + qualitativo. Aba **CRM**: fila de conversas sem vendedor.
 2. Identificar o post/canal que mais converteu — repetir/reforçar na semana seguinte.
 3. Ajustar texto de abordagem se algum canal estiver com retorno visivelmente mais baixo.
 

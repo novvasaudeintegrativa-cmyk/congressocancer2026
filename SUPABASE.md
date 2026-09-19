@@ -1,7 +1,7 @@
-# Coletor de eventos — Supabase + novva-ads.html
+# Coletor de eventos — Supabase + novva-crm.html
 
 O site manda cada evento para **dois lugares**: o Meta Pixel e um banco próprio
-(Supabase). O `novva-ads.html` lê esse banco e mostra os
+(Supabase). O `novva-crm.html` lê esse banco e mostra os
 números — é a "página mãe" com um menu lateral de 4 abas (CRM, Tráfego,
 Financeiro, Quiz), cada uma carregando `crm.html`/`trafego.html`/`financeiro.html`/
 `quiz-raiox.html` (leads do `quiz.html`) dentro de um `<iframe>`. Todas essas
@@ -231,7 +231,7 @@ grant select on public.v_kpis_30d, public.v_eventos_por_dia, public.v_eventos_po
                 public.v_campanhas, public.v_recentes
   to anon;
 
--- ========== RPC do painel (novva-ads.html) ==========
+-- ========== RPC do painel (novva-crm.html) ==========
 -- Um unico endpoint que devolve TODOS os blocos do painel para um
 -- intervalo de datas. O painel chama POST /rest/v1/rpc/rpc_dashboard
 -- com { "d_from": "YYYY-MM-DD", "d_to": "YYYY-MM-DD" } e os botoes de
@@ -382,7 +382,7 @@ Commit + push → o deploy FTP publica os dois.
 
 - Abrir o site, aba **Network** → deve haver `POST .../rest/v1/events` com status **201**.
 - Supabase → **Table Editor → events** → linhas aparecendo.
-- Abrir `https://SEU-DOMINIO/novva-ads.html` → números carregando.
+- Abrir `https://SEU-DOMINIO/novva-crm.html` → números carregando.
 
 ## 6. Pendências / cuidados
 
@@ -390,7 +390,7 @@ Commit + push → o deploy FTP publica os dois.
   (ex.: apagar linhas com mais de 12–18 meses via job agendado); não guardamos IP.
 - **Bots**: o endpoint aceita INSERT anônimo — se aparecer spam, criar uma Edge
   Function com segredo + rate limit, ou filtrar por `ua` nas queries.
-- **`novva-ads.html` é público** no domínio (não tem pasta protegendo). Só
+- **`novva-crm.html` é público** no domínio (não tem pasta protegendo). Só
   mostra agregados (sem PII), mas convém renomear pra algo não óbvio (ex.:
   `painel-7k2x.html`) e/ou proteger por `.htaccess` na TurboCloud.
 - **Dashboard mais robusto** depois: Metabase (free) ou Grafana Cloud (free)
@@ -813,7 +813,7 @@ Podcast (Fernando Beteti):
 https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=podcast&utm_medium=fernando-beteti&utm_campaign=podcast-fernando-beteti
 ```
 
-Também aparecem prontos pra copiar direto no `novva-ads.html` (seção ROI).
+Também aparecem prontos pra copiar direto no `novva-crm.html` (seção ROI).
 
 ### Edge Function `eduzz-webhook`
 
@@ -1891,7 +1891,7 @@ nulo.
 
 ## 16. CRM — Cris (IA de primeiro contato)
 
-Implementa o que já estava desenhado como simulação no `ads/novva-ads.html`
+Implementa o que já estava desenhado como simulação no `novva-crm.html`
 ("Fila da Cris") e registrado como **B5 — Chatbot de qualificação** na
 estratégia de marketing: todo lead novo é atendido primeiro pela Cris (IA),
 que faz 2-3 perguntas de qualificação, e só depois passa pra um humano —
@@ -2176,7 +2176,7 @@ não devolver sem querer uma conversa que um vendedor já está tocando.
 
 Mudança de regra: **todo vendedor ativo vê qualquer conversa que chega no
 CRM**, não só a carteira dele. Isso é o modelo "Fila da Cris" que já estava
-desenhado como simulação no `novva-ads.html` — venda conjunta, quem
+desenhado como simulação no `novva-crm.html` — venda conjunta, quem
 assumir primeiro atende. Depois que a Cris faz o primeiro contato, cabe a
 qualquer vendedor pedir pra assumir aquele lead; o primeiro que clicar
 "Assumir conversa" vira o dono, e mais ninguém rouba depois.
@@ -5490,3 +5490,141 @@ o `csvEscape`/padrão de export que já existia pro opt-in. Dá pra deixar
 essa tela aberta acompanhando o filtro "Enviados" enquanto o cron
 dispara os lotes automáticos de 15 em 15 minutos na janela de
 terça-quinta 13h-14h.
+
+## 29. Captura automática do nome via WhatsApp (perfil de contato)
+
+**Contexto (18/09/2026):** hoje `rpc_crm_pipeline()` só mostra o nome de
+quem preencheu o quiz (join com `crm_leads.nome`) — quem manda mensagem
+direto pro número do congresso sem nunca ter feito o quiz aparece no
+Kanban só com o telefone. O payload do WhatsApp Cloud API já manda o
+nome de perfil de quem escreveu (`value.contacts[].profile.name`) em
+toda mensagem recebida — hoje isso não é lido nem guardado. Esta seção
+fecha esse buraco: guarda esse nome numa coluna nova em `lead_status` e
+usa como plano B quando não tem `crm_leads.nome`.
+
+### 29.1. SQL (rodar no SQL Editor do Supabase, nessa ordem)
+
+```sql
+alter table public.lead_status
+  add column if not exists nome_whatsapp text;
+
+create or replace function public.rpc_crm_pipeline()
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(row_to_json(t) order by t.captado_em desc nulls last), '[]'::json)
+  from (
+    select
+      s.whatsapp,
+      coalesce(l.nome, s.nome_whatsapp) as nome,
+      l.email, l.profissao, l.nivel, l.pontuacao,
+      l.utm_source, l.utm_campaign,
+      coalesce(s.criado_em, l.captado_em) as captado_em,
+      coalesce(s.etapa, 'novo') as etapa,
+      s.nota, coalesce(s.urgente, false) as urgente, s.atribuido_a,
+      pa.nome as atribuido_nome,
+      s.atualizado_em,
+      cw.nome as campanha_whatsapp_nome,
+      (select max(
+         case e.event
+           when 'VideoComplete' then 100
+           when 'VideoProgress' then (e.props->>'percent')::int
+           when 'VideoPlay' then 0
+           else null
+         end)
+       from public.events e
+       where e.visitor_id = l.visitor_id
+         and lower(coalesce(e.props->>'placement','')) = 'vsl'
+         and e.event in ('VideoPlay','VideoProgress','VideoComplete')
+      ) as vsl_progress,
+      (
+        select coalesce(m.wa_timestamp, m.criado_em)
+        from public.mensagens m
+        where public.wa_norm(m.lead_whatsapp) = public.wa_norm(s.whatsapp) and m.direcao = 'recebida'
+        order by coalesce(m.wa_timestamp, m.criado_em) desc
+        limit 1
+      ) as ultima_recebida_em,
+      (
+        select min(coalesce(m.wa_timestamp, m.criado_em))
+        from public.mensagens m
+        where public.wa_norm(m.lead_whatsapp) = public.wa_norm(s.whatsapp)
+          and m.direcao = 'enviada'
+          and coalesce(m.wa_timestamp, m.criado_em) >= (
+            select coalesce(m2.wa_timestamp, m2.criado_em)
+            from public.mensagens m2
+            where public.wa_norm(m2.lead_whatsapp) = public.wa_norm(s.whatsapp) and m2.direcao = 'recebida'
+            order by coalesce(m2.wa_timestamp, m2.criado_em) desc
+            limit 1
+          )
+      ) as respondido_em
+    from public.lead_status s
+    left join public.crm_leads l on public.wa_norm(l.whatsapp) = public.wa_norm(s.whatsapp)
+    left join public.perfis pa on pa.id = s.atribuido_a
+    left join public.campanhas_whatsapp cw on cw.id = s.campanha_whatsapp_id
+    where exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+  ) t;
+$$;
+
+notify pgrst, 'reload schema';
+```
+
+A única mudança real em relação à versão anterior (§26) é
+`coalesce(l.nome, s.nome_whatsapp) as nome` no lugar de `l.nome` puro —
+o resto do RPC é igual, só reafirmando pra poder colar inteiro de uma
+vez sem precisar comparar linha a linha com a versão antiga.
+
+### 29.2. Edge Function `whatsapp-webhook` — adicionar a captura do nome
+
+Duas funções novas (cole perto de `marcarOrigemCampanha`, mesmo estilo):
+
+```ts
+async function garantirNomeWhatsapp(numero: string, nome: string | null) {
+  if (!nome) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/lead_status?on_conflict=whatsapp`, {
+      method: "POST",
+      headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify([{ whatsapp: numero, nome_whatsapp: nome }]),
+    });
+  } catch (e) { console.error("nome whatsapp:", e); }
+}
+
+function mapaContatos(v: any): Record<string, string> {
+  const mapa: Record<string, string> = {};
+  for (const c of v.contacts ?? []) {
+    if (c.wa_id && c.profile?.name) mapa[c.wa_id] = c.profile.name;
+  }
+  return mapa;
+}
+```
+
+E dentro do `for (const ch of entry.changes ?? [])`, logo depois de
+`const v = ch.value ?? {};`, monta o mapa uma vez por bloco:
+
+```ts
+const contatos = mapaContatos(v);
+```
+
+Dentro do loop `for (const m of v.messages ?? [])`, junto das outras
+chamadas (`registrarOptinWhatsapp`, `marcarOrigemCampanha`), adiciona:
+
+```ts
+await garantirNomeWhatsapp(m.from, contatos[m.from] ?? null);
+```
+
+**Bônus (corrigir enquanto mexe nesse arquivo):** a linha do
+`notificarPush` nessa mesma função ainda aponta pra
+`.../Ads/crm.html` — a pasta `Ads/` não existe mais desde a
+padronização do painel (18/09/2026). Trocar por:
+
+```ts
+"https://congressocancer.novvasaudeintegrativa.com.br/crm.html",
+```
+
+### 29.3. Depois de colar e salvar
+
+1. Rodar o SQL do §29.1 no SQL Editor (o `alter table` é seguro, não
+   apaga nada; rodar de novo não dá erro por causa do `if not exists`).
+2. Editar a Edge Function `whatsapp-webhook` no Supabase com as duas
+   mudanças do §29.2 e clicar em **Deploy**.
+3. Testar mandando uma mensagem de um número que nunca fez o quiz —
+   o card dele no Kanban deve aparecer com o nome do WhatsApp em vez
+   do telefone puro na próxima vez que a lista recarregar.

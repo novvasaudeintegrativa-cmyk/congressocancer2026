@@ -13,18 +13,18 @@ Repositório privado do site e das ferramentas internas do congresso (20-21/nov,
 
 Sem link na navegação pública — acesso só por quem tem a URL. Antes viviam numa pasta `Ads/`
 separada; hoje ficam soltas na raiz do site, cada uma como uma página independente (seu próprio
-HTML/CSS/JS), amarradas só pelo `novva-ads.html`, que funciona como "página mãe" e carrega as
-outras três dentro de si via `<iframe>`.
+HTML/CSS/JS), amarradas só pelo `novva-crm.html`, que funciona como "página mãe" e carrega as
+outras três dentro de si via `<iframe>`. O antigo `novva-ads.html` virou só um redirecionamento
+pra `novva-crm.html`, pra não quebrar favoritos/links salvos com o nome antigo.
 
 | Arquivo | O que é |
 |---|---|
-| `novva-ads.html` | Painel principal: menu lateral com 4 abas (CRM, Tráfego, Financeiro, Quiz), cada uma carregando a página correspondente num iframe. |
+| `novva-crm.html` | Painel principal: menu lateral com 4 abas (CRM, Tráfego, Financeiro, Quiz), cada uma carregando a página correspondente num iframe. |
 | `crm.html` | Pipeline de vendas de verdade — login próprio (Supabase Auth), conversas, fila de atendimento. |
 | `financeiro.html` | Controle de receitas e despesas — mesmo login da equipe, só gestor. |
 | `trafego.html` | Analytics do site (visitantes, funil, VSL, mapa, campanhas) + card de ROI. |
 | `quiz-raiox.html` | Dashboard dos leads do quiz (temperatura, nível, qualitativo por pergunta) — não confundir com o `quiz.html` da raiz, que é o quiz público de captação. |
-| `novva-ads-tracking.html` | Dashboard antigo (tema escuro), mantido só como referência — foi substituído pelo `novva-ads.html`. |
-| `adscompass-mobile-mockup.html` | Mockup antigo, sem uso atual. |
+| `novva-ads-tracking.html` | Dashboard antigo (tema escuro), mantido só como referência — foi substituído pelo `novva-crm.html`. |
 
 ## Outros arquivos
 
