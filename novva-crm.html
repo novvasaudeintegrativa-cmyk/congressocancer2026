@@ -139,8 +139,8 @@
   .exemplo-meta{font-size:10.5px;color:var(--soft);}
   .exemplo-quando{font-size:9.5px;color:var(--faint);margin-left:auto;white-space:nowrap;}
   .exemplo-icones{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;}
-  .exemplo-ico{width:26px;height:26px;border-radius:50%;background:#efe8e4;color:var(--soft);display:flex;align-items:center;justify-content:center;margin:0 auto;transition:background .25s ease,color .25s ease,transform .25s ease;}
-  .exemplo-ico.ativo{background:var(--bordo);color:#fff;transform:scale(1.15);}
+  .exemplo-ico{width:26px;height:26px;border-radius:50%;background:transparent;border:1.5px solid var(--bordo);color:var(--bordo);display:flex;align-items:center;justify-content:center;margin:0 auto;transition:background .25s ease,color .25s ease,transform .25s ease;}
+  .exemplo-ico:hover, .exemplo-ico.ativo{background:var(--bordo);color:#fff;transform:scale(1.15);}
   .exemplo-balaos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;}
   .exemplo-3col{grid-template-columns:repeat(3,1fr);}
   .exemplo-1col{grid-template-columns:1fr;}
