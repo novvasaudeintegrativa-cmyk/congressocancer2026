@@ -90,17 +90,16 @@
   .tab-ajuda.on svg{transform:rotate(90deg);}
   .sidebar.recolhida .tab-ajuda{display:none;}
 
-  /* ---- flyout de ajuda: some por padrão, some ao lado da sidebar (não empurra
-     o conteúdo) quando alguma setinha é clicada. É "position:fixed" (não absolute)
-     e vive fora da <nav class="sidebar"> de propósito: a sidebar tem overflow-y:auto,
-     e isso faz o navegador cortar o eixo X também — um filho absolute que estourasse
-     a largura da sidebar ficava invisível, mesmo abrindo de verdade. Fixed escapa
-     desse corte por não depender da sidebar como containing block. ---- */
+  /* ---- flyout de ajuda: vive DENTRO da sidebar (não é popup nem overlay) — quando
+     uma setinha é clicada, a própria sidebar cresce de largura (.ajuda-aberta) e o
+     conteúdo do flyout aparece nesse espaço novo, empurrando o resto do layout
+     (.content-area, com o iframe) pro lado — é tudo box normal, sem position:fixed,
+     sem cálculo de left/top, sem risco de estourar a tela. ---- */
+  .sidebar.ajuda-aberta{ width: 560px; }
   .ajuda-flyout{
-    display:none;position:fixed;top:0;left:274px;
-    width:280px;max-width:calc(100vw - 292px);max-height:calc(100vh - 20px);overflow-y:auto;
+    display:none;width:100%;
     background:#fff;border:1px solid var(--linha);border-radius:14px;
-    box-shadow:0 10px 30px rgba(42,35,32,.16);padding:16px 18px;z-index:30;
+    padding:16px 18px;margin-top:2px;
   }
   .ajuda-flyout.aberto{display:block;}
   .ajuda-flyout-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:2px;}
@@ -163,13 +162,14 @@
        "recolhida" de um uso anterior no desktop (o botão de recolher nem
        aparece aqui, então esse estado não deveria valer no mobile) */
     .sidebar.recolhida .tab-ajuda{display:flex;}
-    /* o flyout de ajuda vira um bloco normal em largura cheia, logo abaixo da
-       barra de menu (a <nav> fica no topo, o flyout é o próximo irmão no body,
-       que no mobile empilha em coluna) — não tem "lado" no layout empilhado */
+    /* no mobile não tem "lado" pra crescer — a sidebar vira barra horizontal,
+       então o flyout só desce como uma linha cheia própria dentro dela mesma
+       (a sidebar já é flex-wrap:row aqui, então flex:1 1 100% quebra a linha) */
+    .sidebar.ajuda-aberta{width:auto;}
     .ajuda-flyout{
-      position:static;width:auto;max-width:none;
-      border-radius:0;box-shadow:none;border:0;border-top:1px solid var(--linha);border-bottom:1px solid var(--linha);
-      max-height:min(48vh,420px);
+      flex:1 1 100%;order:10;width:auto;
+      max-height:min(48vh,420px);overflow-y:auto;
+      border-radius:12px;margin-top:8px;
     }
   }
 
@@ -476,16 +476,10 @@
     </div>
   </div>
 
-  <button type="button" class="reload" id="reload" aria-label="Atualizar"><svg class="ico" style="width:15px;height:15px"><use href="#i-refresh"/></svg></button>
-</nav>
-
-<!-- ---- flyout de ajuda: abre ao lado da sidebar (setinha de cada aba), com o
-     texto explicativo daquele menu específico — antes ficava tudo fixo abaixo do
-     menu, só sobre CRM; agora cada aba tem a sua e só aparece quando pedida.
-     Fica FORA da <nav class="sidebar"> de propósito (ver comentário do CSS
-     ".ajuda-flyout"): sendo irmã da sidebar, no mobile (body vira coluna) ela
-     também cai certinho como um bloco cheio logo abaixo do menu. ---- -->
-<div class="ajuda-flyout" id="ajuda-flyout">
+  <!-- ---- flyout de ajuda: dentro da própria sidebar (ver comentário do CSS
+       ".ajuda-flyout") — abre a explicação de cada aba fazendo a sidebar crescer
+       de largura e empurrar o resto do layout, em vez de popup por cima. ---- -->
+  <div class="ajuda-flyout" id="ajuda-flyout">
   <div class="ajuda-flyout-cab">
     <span class="ajuda-flyout-tit" id="ajuda-flyout-tit">CRM</span>
     <button type="button" class="ajuda-flyout-fechar" id="ajuda-flyout-fechar" aria-label="Fechar ajuda">
@@ -532,7 +526,14 @@
   </div>
 
   <div class="ajuda-conteudo" data-ajuda-conteudo="trafego" hidden>
-    <p class="sidebar-nota">Esse painel mostra quem visitou o site, de onde veio (UTM/canal) e até onde foi (funil, VSL, mapa de acessos) — e deixa você lançar o investimento em anúncios pra calcular o ROI comparando com as vendas por canal.</p>
+    <h4 class="sidebar-info-tit"><svg class="ico2"><use href="#i-trend"/></svg>Visão geral</h4>
+    <p class="sidebar-nota">Visitantes, page views, funil da VSL e um mapa de onde as pessoas estão acessando o site — filtra por período no topo do painel.</p>
+
+    <h4 class="sidebar-info-tit" style="margin-top:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/></svg>Campanhas &amp; links</h4>
+    <p class="sidebar-nota">A tabela de campanhas (UTM) mostra de qual canal cada visita veio. Mais abaixo tem os links prontos de rastreamento (ex: Time Comercial, Podcast) — copia e usa nas divulgações, já vem com o UTM certo.</p>
+
+    <h4 class="sidebar-info-tit" style="margin-top:14px;"><svg class="ico2"><use href="#i-dollar"/></svg>ROI</h4>
+    <p class="sidebar-nota">Lança quanto foi investido em anúncios por canal, e o painel compara automaticamente com as vendas registradas pra mostrar o retorno.</p>
   </div>
 
   <div class="ajuda-conteudo" data-ajuda-conteudo="financeiro" hidden>
@@ -542,7 +543,10 @@
   <div class="ajuda-conteudo" data-ajuda-conteudo="quiz" hidden>
     <p class="sidebar-nota">É o quiz Raio-X que os visitantes respondem pra descobrir o nível deles em oncologia integrativa. Aqui você vê os leads captados, separados por temperatura (frio/morno/quente) pra saber quem abordar primeiro, e a lista completa com contato pra fazer follow-up.</p>
   </div>
-</div>
+  </div>
+
+  <button type="button" class="reload" id="reload" aria-label="Atualizar"><svg class="ico" style="width:15px;height:15px"><use href="#i-refresh"/></svg></button>
+</nav>
 
 <div class="content-area"><div class="wrap">
 
@@ -1106,6 +1110,7 @@
   // trocando só o conteúdo mostrado (data-ajuda-conteudo) ----
   function fecharAjuda(){
     $('ajuda-flyout').classList.remove('aberto');
+    $('sidebar').classList.remove('ajuda-aberta');
     document.querySelectorAll('.tab-ajuda').forEach(function(el){
       el.classList.remove('on'); el.setAttribute('aria-expanded', 'false');
     });
@@ -1122,6 +1127,7 @@
     });
     $('ajuda-flyout-tit').textContent = btn.dataset.ajudaTit || '';
     $('ajuda-flyout').classList.add('aberto');
+    $('sidebar').classList.add('ajuda-aberta');
   }
   $('ajuda-flyout-fechar').addEventListener('click', fecharAjuda);
 
@@ -1147,9 +1153,7 @@
   // e só aparecem quando o crm.html avisa "sou gestor" — ele é quem sabe de verdade,
   // com o login já resolvido; se ninguém avisar nada, fica escondido mesmo. O mesmo
   // aviso dispara de novo quando o gestor liga/desliga "Visualizar como Vendedor".
-  // Financeiro/Quiz removidos temporariamente da lista (ficam escondidos mesmo pro
-  // gestor) — tirar daqui pra reativar quando quiser voltar com eles.
-  var ABAS_SO_GESTOR = ['trafego'];
+  var ABAS_SO_GESTOR = ['trafego', 'financeiro', 'quiz'];
   window.addEventListener('message', function(e){
     var d = e.data;
     if (!d) return;
@@ -1163,6 +1167,9 @@
       ABAS_SO_GESTOR.forEach(function(t){
         var btn = document.querySelector('#tabs-principal [data-tab="' + t + '"]');
         if (btn) btn.hidden = !d.ehGestor;
+        // a setinha de ajuda de cada aba segue o mesmo destino da aba em si
+        var seta = document.querySelector('#tabs-principal [data-ajuda="' + t + '"]');
+        if (seta) seta.hidden = !d.ehGestor;
       });
       if (!d.ehGestor && ABAS_SO_GESTOR.indexOf(state.tab) !== -1){
         document.querySelector('#tabs-principal [data-tab="crm"]').click();
