@@ -5768,10 +5768,10 @@ Supabase → **Edge Functions** → **Deploy a new function** → nome
 
 ```ts
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const IG_TOKEN      = Deno.env.get("INSTAGRAM_ACCESS_TOKEN")?.trim();
 const SUPABASE_URL   = Deno.env.get("SUPABASE_URL")!;
+const ANON_KEY         = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const CORS = {
@@ -5779,6 +5779,20 @@ const CORS = {
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+// mesmo padrão de quemChamou() usado nas outras Edge Functions *-admin do
+// projeto — chamada direta pro endpoint de auth, em vez de supabase-js
+// createClient()+auth.getUser() sem argumento (que não funciona aqui: sem
+// sessão de navegador salva, ele não tem de onde puxar o usuário e sempre
+// retorna null, mesmo com um token válido no header).
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: { apikey: ANON_KEY, authorization: `Bearer ${userToken}` },
+  });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
 
 Deno.serve(async (req) => {
   // sem isso, o navegador bloqueia a chamada ANTES dela chegar aqui (preflight
@@ -5790,10 +5804,8 @@ Deno.serve(async (req) => {
 
   // exige login (mesmo padrão dos outros *-admin: token do usuário no header)
   const auth = req.headers.get("authorization") || "";
-  const sb = createClient(SUPABASE_URL, SERVICE_ROLE, {
-    global: { headers: { authorization: auth } },
-  });
-  const { data: { user } } = await sb.auth.getUser();
+  const token = auth.replace(/^Bearer\s+/i, "");
+  const user = await quemChamou(token);
   if (!user) return j({ erro: "não autenticado" }, 401);
 
   const { comment_id, texto } = await req.json().catch(() => ({}));
