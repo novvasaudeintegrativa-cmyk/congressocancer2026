@@ -1233,6 +1233,15 @@
     var a = e.target.closest('.tab-ajuda');
     if (a){
       var jaAberta = a.classList.contains('on');
+      var tab = a.dataset.ajuda;
+      // a setinha de ajuda também troca pra aba dela — senão o flyout fala de
+      // um menu (ex: CRM) enquanto a tela de fundo mostra outro (ex: Tráfego),
+      // o que confunde. Clicar na setinha = ir pra aquele menu, com a ajuda dele.
+      var btnDaAba = this.querySelector('button[data-tab="' + tab + '"]');
+      if (btnDaAba){
+        this.querySelectorAll('button[data-tab]').forEach(function(c){ c.classList.toggle('on', c === btnDaAba); });
+        ativarPainel(tab);
+      }
       fecharAjuda();
       if (!jaAberta) abrirAjuda(a);
       return;
