@@ -859,9 +859,15 @@
     background:var(--vermelho-vivo); transform:skewX(-12deg);
   }
   .coord-cargo{
-    background:var(--vermelho); color:#fff; font-weight:700; font-style:italic;
+    color:#fff; font-weight:700; font-style:italic;
     font-size:clamp(0.46rem, 1.55cqw, 0.95rem);
-    line-height:1.4; padding:0.4em 0.7em 0.45em 0.75em; white-space:nowrap; text-align:center;
+    line-height:2.05; white-space:nowrap; text-align:center;
+  }
+  /* grifo por linha (não uma caixa única do tamanho da linha mais larga) —
+     cada <span> vira seu próprio "marca-texto", ajustado ao próprio conteúdo */
+  .coord-cargo span{
+    background:var(--vermelho); padding:0.3em 0.5em;
+    box-decoration-break:clone; -webkit-box-decoration-break:clone;
   }
   .coord-geisa{left:17%; top:67.5%;}
   .coord-fernando{left:47%; top:77.3%;}
@@ -2009,17 +2015,17 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
 
         <div class="coord-label coord-geisa">
           <div class="coord-nome">Dra. Geisa Quental</div>
-          <div class="coord-cargo">Médica [ CRM-SP 57385 ]<br>Coordenadora Científica do<br>4º Congresso de Câncer</div>
+          <div class="coord-cargo"><span>Médica [ CRM-SP 57385 ]</span><br><span>Coordenadora Científica do</span><br><span>4º Congresso de Câncer</span></div>
         </div>
 
         <div class="coord-label coord-fernando">
           <div class="coord-nome">Fernando Beteti</div>
-          <div class="coord-cargo">Jornalista / Repórter da Saúde<br>CEO da Nutrigenes</div>
+          <div class="coord-cargo"><span>Jornalista / Repórter da Saúde</span><br><span>CEO da Nutrigenes</span></div>
         </div>
 
         <div class="coord-label coord-carlos">
           <div class="coord-nome">Carlos Alberto</div>
-          <div class="coord-cargo">CEO da Novva Saúde Integrativa</div>
+          <div class="coord-cargo"><span>CEO da Novva Saúde Integrativa</span></div>
         </div>
       </div>
     </div>
