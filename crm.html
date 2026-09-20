@@ -251,10 +251,13 @@
   .ig-item-quando{font-size:10.5px;color:var(--faint);}
   .ig-badge-ok{flex:none;display:flex;align-items:center;gap:4px;font-family:var(--tit);font-weight:700;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--verde);background:rgba(31,138,76,.12);padding:3px 8px;border-radius:999px;}
   .ig-item-texto{font-size:13px;color:var(--ink);margin:8px 0 0;padding-left:32px;}
-  .ig-resposta-caixa{display:flex;gap:8px;margin-top:10px;padding-left:32px;}
-  .ig-resposta-caixa input{flex:1;border:1px solid var(--linha);border-radius:9px;padding:8px 10px;font-family:var(--corpo);font-size:13px;color:var(--ink);background:#fff;}
-  .ig-resposta-caixa button{flex:none;font-family:var(--tit);font-weight:800;font-size:11.5px;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:9px;padding:8px 14px;cursor:pointer;}
-  .ig-resposta-caixa button:disabled{opacity:.5;cursor:default;}
+  .ig-resposta-caixa{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding-left:32px;}
+  .ig-resposta-caixa textarea{width:100%;border:1px solid var(--linha);border-radius:9px;padding:8px 10px;font-family:var(--corpo);font-size:13px;color:var(--ink);background:#fff;resize:vertical;min-height:58px;}
+  .ig-resposta-acoes{display:flex;gap:8px;align-items:center;justify-content:space-between;}
+  .ig-resposta-site-btn{flex:none;font-family:var(--tit);font-weight:700;font-size:10.5px;letter-spacing:.02em;text-transform:uppercase;background:#fff;border:1px solid var(--linha);color:var(--soft);padding:8px 12px;border-radius:9px;cursor:pointer;}
+  .ig-resposta-site-btn:hover{border-color:var(--bordo);color:var(--bordo);}
+  .ig-resposta-acoes .ig-responder-btn{flex:none;font-family:var(--tit);font-weight:800;font-size:11.5px;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:9px;padding:8px 14px;cursor:pointer;}
+  .ig-resposta-acoes .ig-responder-btn:disabled{opacity:.5;cursor:default;}
   .ig-resposta-enviada{font-size:12.5px;color:var(--soft);margin-top:8px;padding-left:32px;}
 
   /* ---- equipe ---- */
@@ -1405,8 +1408,11 @@
         (c.respondido
           ? '<div class="ig-resposta-enviada"><b>Sua resposta:</b> ' + esc(c.resposta_texto || '') + '</div>'
           : '<div class="ig-resposta-caixa">' +
-              '<input type="text" class="ig-resposta-input" placeholder="Responder no Instagram…">' +
-              '<button type="button" class="ig-responder-btn">Responder</button>' +
+              '<textarea class="ig-resposta-input" placeholder="Responder no Instagram…" rows="2"></textarea>' +
+              '<div class="ig-resposta-acoes">' +
+                '<button type="button" class="ig-resposta-site-btn">+ Link do site</button>' +
+                '<button type="button" class="ig-responder-btn">Responder</button>' +
+              '</div>' +
             '</div>'
         ) +
       '</div>';
@@ -1425,6 +1431,13 @@
       var btnResp = item.querySelector('.ig-responder-btn');
       if (btnResp){
         var input = item.querySelector('.ig-resposta-input');
+        var btnSite = item.querySelector('.ig-resposta-site-btn');
+        if (btnSite) btnSite.addEventListener('click', function(){
+          var link = 'https://congressocancer.novvasaudeintegrativa.com.br/time-comercial.html';
+          var atual = input.value;
+          input.value = atual && !atual.trim().endsWith(link) ? (atual.replace(/\s+$/, '') + ' ' + link) : link;
+          input.focus();
+        });
         btnResp.addEventListener('click', function(){
           var texto = input.value.trim();
           if (!texto) return;

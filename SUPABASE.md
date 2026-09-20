@@ -5774,8 +5774,19 @@ const IG_TOKEN      = Deno.env.get("INSTAGRAM_ACCESS_TOKEN")?.trim();
 const SUPABASE_URL   = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 Deno.serve(async (req) => {
-  if (req.method !== "POST") return new Response("method not allowed", { status: 405 });
+  // sem isso, o navegador bloqueia a chamada ANTES dela chegar aqui (preflight
+  // CORS) — o fetch() no crm.html falha com "Failed to fetch", sem detalhe.
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method not allowed" }, 405);
 
   // exige login (mesmo padrão dos outros *-admin: token do usuário no header)
   const auth = req.headers.get("authorization") || "";
@@ -5783,11 +5794,11 @@ Deno.serve(async (req) => {
     global: { headers: { authorization: auth } },
   });
   const { data: { user } } = await sb.auth.getUser();
-  if (!user) return new Response(JSON.stringify({ erro: "não autenticado" }), { status: 401 });
+  if (!user) return j({ erro: "não autenticado" }, 401);
 
   const { comment_id, texto } = await req.json().catch(() => ({}));
   if (!comment_id || !texto) {
-    return new Response(JSON.stringify({ erro: "comment_id e texto obrigatórios" }), { status: 400 });
+    return j({ erro: "comment_id e texto obrigatórios" }, 400);
   }
 
   const r = await fetch(`https://graph.instagram.com/v23.0/${comment_id}/replies`, {
@@ -5795,8 +5806,8 @@ Deno.serve(async (req) => {
     headers: { authorization: `Bearer ${IG_TOKEN}`, "content-type": "application/json" },
     body: JSON.stringify({ message: texto }),
   });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) return new Response(JSON.stringify({ erro: j }), { status: 500 });
+  const resultado = await r.json().catch(() => ({}));
+  if (!r.ok) return j({ erro: resultado }, 500);
 
   const svcHeaders = {
     apikey: SERVICE_ROLE, authorization: `Bearer ${SERVICE_ROLE}`,
@@ -5811,7 +5822,7 @@ Deno.serve(async (req) => {
     }),
   });
 
-  return new Response(JSON.stringify({ ok: true, id: j.id }), { status: 200 });
+  return j({ ok: true, id: resultado.id });
 });
 ```
 
