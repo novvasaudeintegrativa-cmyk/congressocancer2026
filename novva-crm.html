@@ -196,6 +196,9 @@
       max-height:min(48vh,420px);overflow-y:auto;
       border-radius:12px;margin-top:8px;
     }
+    /* Chrome/Android dá zoom automático ao focar campo com fonte < 16px, e o
+       zoom fica "preso" cortando a tela pros lados. Força 16px só no mobile. */
+    input, select, textarea{font-size:16px!important;}
   }
 
   .subbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:16px;}

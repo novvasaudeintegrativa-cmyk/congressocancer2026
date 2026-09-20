@@ -25,7 +25,8 @@
   }
   *{box-sizing:border-box;}
   [hidden]{display:none!important;}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--corpo);line-height:1.5;}
+  html{overflow-x:hidden;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--corpo);line-height:1.5;overflow-x:hidden;}
   h1,h2,h3{font-family:var(--tit);margin:0;}
   a{color:var(--bordo);}
 
@@ -234,6 +235,12 @@
        enorme embaixo. Agora encolhe pro conteúdo e só cresce até o teto
        quando uma conversa de verdade (com várias mensagens) for aberta. */
     .inbox-thread{height:auto;min-height:280px;max-height:56vh;}
+    /* raiz do "layout deitado pro lado" no celular: o Chrome/Android dá zoom
+       automático ao focar um campo com fonte menor que 16px (evita texto
+       ilegível) — e o zoom fica "preso", cortando o resto da tela pros lados.
+       Força 16px em todo campo de formulário só no mobile, sem mexer no
+       tamanho visual no desktop. */
+    input, select, textarea{font-size:16px!important;}
   }
 
   /* ---- comentários do Instagram ---- */
