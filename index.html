@@ -824,6 +824,7 @@
     width:100%;
     max-width:975px;
     margin:0 auto;
+    container-type:inline-size;
   }
   .podcast-avatar{
     position:relative;
@@ -840,16 +841,18 @@
   @media (prefers-reduced-motion: reduce){
     .podcast-avatar{ animation:none; }
   }
-  /* ---- nome/cargo de cada coordenador, em HTML (a imagem hoje já traz esse texto
-     desenhado nela — quando trocar pra uma versão só com as fotos, essas caixas
-     substituem o texto sem precisar editar imagem de novo). Posição em % pra
-     acompanhar a imagem em qualquer tamanho de tela, incluindo mobile. ---- */
+  /* ---- nome/cargo de cada coordenador, sobreposto na foto, igual o design
+     original (que vinha desenhado na própria imagem). A 1ª tentativa usou vw
+     (relativo à tela) e ficou desproporcional, porque a imagem tem no máximo
+     975px mas a tela pode ser bem mais larga que isso. Corrigido com
+     "container-type" no wrap: cqw é relativo à LARGURA REAL da imagem, não
+     da tela — o texto escala junto com a foto em qualquer tamanho. ---- */
   .coord-label{position:absolute; z-index:2; font-family:var(--fonte-titulo); line-height:1;}
   .coord-nome{
-    display:flex; align-items:center; gap:0.4em;
+    display:flex; align-items:center; gap:0.35em;
     background:#fff; color:#171010; font-weight:800;
-    font-size:clamp(0.8rem, 0.45rem + 1.7vw, 1.9rem);
-    padding:0.32em 0.6em; white-space:nowrap;
+    font-size:clamp(0.68rem, 3cqw, 1.85rem);
+    padding:0.34em 0.6em; white-space:nowrap;
   }
   .coord-nome::before{
     content:''; flex:none; width:0.16em; align-self:stretch;
@@ -857,12 +860,12 @@
   }
   .coord-cargo{
     background:var(--vermelho); color:#fff; font-weight:700; font-style:italic;
-    font-size:clamp(0.52rem, 0.28rem + 1vw, 1.05rem);
-    line-height:1.4; padding:0.4em 0.7em 0.45em 0.75em;
+    font-size:clamp(0.46rem, 1.55cqw, 0.95rem);
+    line-height:1.4; padding:0.4em 0.7em 0.45em 0.75em; white-space:nowrap;
   }
-  .coord-geisa{left:1%; top:67%; width:33%;}
-  .coord-fernando{left:34%; top:79%; width:28%;}
-  .coord-carlos{left:66%; top:67%; width:26%;}
+  .coord-geisa{left:2%; top:67.5%;}
+  .coord-fernando{left:33%; top:77.3%;}
+  .coord-carlos{left:66%; top:67.5%;}
   .podcast-kicker{
     font-size:17px;
     font-weight:700;
