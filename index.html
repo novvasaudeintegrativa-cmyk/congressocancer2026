@@ -831,10 +831,43 @@
     width:100%;
     display:block;
     filter:drop-shadow(0 25px 50px rgba(0,0,0,0.55));
+    animation:coordFlutuar 4.5s ease-in-out infinite;
   }
+  @keyframes coordFlutuar{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(-16px); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .podcast-avatar{ animation:none; }
+  }
+  /* ---- nome/cargo de cada coordenador, em HTML (a imagem hoje já traz esse texto
+     desenhado nela — quando trocar pra uma versão só com as fotos, essas caixas
+     substituem o texto sem precisar editar imagem de novo). Posição em % pra
+     acompanhar a imagem em qualquer tamanho de tela, incluindo mobile. ---- */
+  .coord-label{position:absolute; z-index:2; font-family:var(--fonte-titulo); line-height:1;}
+  .coord-nome{
+    display:flex; align-items:center; gap:0.4em;
+    background:#fff; color:#171010; font-weight:800;
+    font-size:clamp(0.8rem, 0.45rem + 1.7vw, 1.9rem);
+    padding:0.32em 0.6em; white-space:nowrap;
+  }
+  .coord-nome::before{
+    content:''; flex:none; width:0.16em; align-self:stretch;
+    background:var(--vermelho-vivo); transform:skewX(-12deg);
+  }
+  .coord-cargo{
+    background:var(--vermelho); color:#fff; font-weight:700; font-style:italic;
+    font-size:clamp(0.52rem, 0.28rem + 1vw, 1.05rem);
+    line-height:1.4; padding:0.4em 0.7em 0.45em 0.75em;
+  }
+  .coord-geisa{left:1%; top:67%; width:33%;}
+  .coord-fernando{left:34%; top:79%; width:28%;}
+  .coord-carlos{left:66%; top:67%; width:26%;}
   .podcast-kicker{
     font-size:17px;
     font-weight:700;
+    letter-spacing:0.08em;
+    text-align:center;
     color:var(--texto-suave);
     margin-bottom:8px;
   }
@@ -1965,10 +1998,26 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
   <!-- PODCAST -->
   <section class="podcast" id="podcast">
     <div class="container">
+      <div class="podcast-kicker">QUEM COMANDA ESSA EDIÇÃO</div>
       <h2 class="podcast-titulo">Coordenadores da 4ª Edição do Maior Congresso de Câncer<br>Presencial da América Latina</h2>
-      <p class="destaque-final podcast-subheadline">Não perca essa oportunidade de vivenciar momentos únicos com grandes nomes da área nos dias <span class="dourado">20 e 21 de Novembro de 2026</span>!</p>
+      <p class="destaque-final podcast-subheadline">Uma médica coordenadora científica, um jornalista especializado em saúde e um CEO com histórico comprovado à frente da organização — a garantia de que cada detalhe dos dias <span class="dourado">20 e 21 de Novembro de 2026</span> foi pensado pra elevar de verdade a sua prática.</p>
       <div class="podcast-avatar-wrap">
         <img class="podcast-avatar" src="Imgs/CoordenadoresdoEvento.png" alt="Coordenadores do Evento">
+
+        <div class="coord-label coord-geisa">
+          <div class="coord-nome">Dra. Geisa Quental</div>
+          <div class="coord-cargo">Médica [ CRM-SP 57385 ]<br>Coordenadora Científica do<br>4º Congresso de Câncer</div>
+        </div>
+
+        <div class="coord-label coord-fernando">
+          <div class="coord-nome">Fernando Beteti</div>
+          <div class="coord-cargo">Jornalista / Repórter da Saúde<br>CEO da Nutrigenes</div>
+        </div>
+
+        <div class="coord-label coord-carlos">
+          <div class="coord-nome">Carlos Alberto</div>
+          <div class="coord-cargo">CEO da Novva Saúde Integrativa</div>
+        </div>
       </div>
     </div>
   </section>
