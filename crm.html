@@ -229,7 +229,11 @@
   @media (max-width:760px){
     .inbox{grid-template-columns:1fr;height:auto;}
     .inbox-lista{max-height:220px;border-right:0;border-bottom:1px solid var(--linha);}
-    .inbox-thread{height:62vh;}
+    /* antes era "height:62vh" fixo — com nenhuma conversa selecionada (só o
+       exemplo ilustrativo, bem menor que isso) sobrava um espaço em branco
+       enorme embaixo. Agora encolhe pro conteúdo e só cresce até o teto
+       quando uma conversa de verdade (com várias mensagens) for aberta. */
+    .inbox-thread{height:auto;min-height:280px;max-height:56vh;}
   }
 
   /* ---- comentários do Instagram ---- */
