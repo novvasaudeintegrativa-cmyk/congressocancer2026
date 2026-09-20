@@ -847,9 +847,9 @@
      975px mas a tela pode ser bem mais larga que isso. Corrigido com
      "container-type" no wrap: cqw é relativo à LARGURA REAL da imagem, não
      da tela — o texto escala junto com a foto em qualquer tamanho. ---- */
-  .coord-label{position:absolute; z-index:2; font-family:var(--fonte-titulo); line-height:1;}
+  .coord-label{position:absolute; z-index:2; font-family:var(--fonte-titulo); line-height:1; transform:translateX(-50%); text-align:center;}
   .coord-nome{
-    display:flex; align-items:center; gap:0.35em;
+    display:flex; align-items:center; justify-content:center; gap:0.35em;
     background:#fff; color:#171010; font-weight:800;
     font-size:clamp(0.68rem, 3cqw, 1.85rem);
     padding:0.34em 0.6em; white-space:nowrap;
@@ -861,11 +861,11 @@
   .coord-cargo{
     background:var(--vermelho); color:#fff; font-weight:700; font-style:italic;
     font-size:clamp(0.46rem, 1.55cqw, 0.95rem);
-    line-height:1.4; padding:0.4em 0.7em 0.45em 0.75em; white-space:nowrap;
+    line-height:1.4; padding:0.4em 0.7em 0.45em 0.75em; white-space:nowrap; text-align:center;
   }
-  .coord-geisa{left:2%; top:67.5%;}
-  .coord-fernando{left:33%; top:77.3%;}
-  .coord-carlos{left:66%; top:67.5%;}
+  .coord-geisa{left:17%; top:67.5%;}
+  .coord-fernando{left:47%; top:77.3%;}
+  .coord-carlos{left:78%; top:67.5%;}
   .podcast-kicker{
     font-size:17px;
     font-weight:700;
