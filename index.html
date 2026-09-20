@@ -819,6 +819,20 @@
     max-width:800px;
     margin:0 auto var(--space-xl) auto;
   }
+  /* aviso "vire o celular" — a foto tem 3 legendas lado a lado, apertada
+     demais na tela vertical de um celular; some por padrão, só aparece em
+     telas estreitas E em pé (quem já girou o celular não precisa mais ver) */
+  .coord-rotate-aviso{
+    display:none;
+    align-items:center; justify-content:center; gap:8px;
+    font-size:12.5px; font-weight:600; color:var(--texto-suave);
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2);
+    border-radius:10px; padding:9px 16px; margin:0 auto var(--space-lg); max-width:320px; text-align:center;
+  }
+  .coord-rotate-aviso svg{width:17px;height:17px;flex:none;}
+  @media (max-width:700px) and (orientation:portrait){
+    .coord-rotate-aviso{display:flex;}
+  }
   .podcast-avatar-wrap{
     position:relative;
     width:100%;
@@ -2010,6 +2024,12 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       <div class="podcast-kicker">QUEM COMANDA ESSA EDIÇÃO</div>
       <h2 class="podcast-titulo">Coordenadores da 4ª Edição do Maior Congresso de Câncer<br>Presencial da América Latina</h2>
       <p class="destaque-final podcast-subheadline">Uma médica coordenadora científica, um jornalista especializado em saúde e um CEO com histórico comprovado à frente da organização — a garantia de que cada detalhe dos dias <span class="dourado">20 e 21 de Novembro de 2026</span> foi pensado pra elevar de verdade a sua prática.</p>
+
+      <div class="coord-rotate-aviso">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="16" rx="2"/><path d="M12 22a8 8 0 0 0 7.75-6"/><path d="M17 18v4h4"/></svg>
+        Vire o celular na horizontal pra ver melhor os coordenadores
+      </div>
+
       <div class="podcast-avatar-wrap">
         <img class="podcast-avatar" src="Imgs/CoordenadoresdoEvento.png" alt="Coordenadores do Evento">
 
