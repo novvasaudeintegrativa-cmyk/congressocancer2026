@@ -5702,8 +5702,24 @@ Supabase → **Edge Functions** → **Deploy a new function** → nome
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const VERIFY_TOKEN  = Deno.env.get("INSTAGRAM_VERIFY_TOKEN")?.trim();
+const IG_TOKEN       = Deno.env.get("INSTAGRAM_ACCESS_TOKEN")?.trim();
 const SUPABASE_URL   = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// id da própria conta do Instagram — responder um comentário pela API
+// TAMBÉM dispara o webhook de "comments" (o reply é, ele mesmo, um novo
+// comentário), então sem esse filtro a sua própria resposta reaparecia
+// na lista como se fosse um comentário novo de outra pessoa. Busca uma
+// vez via Graph API e guarda em memória (a function fica "quente" entre
+// chamadas, então isso não bate na API a cada webhook).
+let meuIgId: string | null = null;
+async function getMeuIgId() {
+  if (meuIgId || !IG_TOKEN) return meuIgId;
+  const r = await fetch(`https://graph.instagram.com/v23.0/me?fields=id&access_token=${IG_TOKEN}`);
+  const d = await r.json().catch(() => null);
+  meuIgId = d?.id || null;
+  return meuIgId;
+}
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
@@ -5723,12 +5739,14 @@ Deno.serve(async (req) => {
 
   const body = await req.json().catch(() => null);
   const entradas = body?.entry || [];
+  const meuId = await getMeuIgId();
 
   for (const entrada of entradas) {
     const changes = entrada.changes || [];
     for (const change of changes) {
       if (change.field !== "comments") continue;
       const v = change.value || {};
+      if (meuId && v.from?.id === meuId) continue; // resposta da própria página, ignora
       const row = {
         comment_id: v.id,
         media_id: v.media?.id || null,
@@ -5758,6 +5776,9 @@ Deno.serve(async (req) => {
 **Secrets dessa function** (Edge Functions → `instagram-webhook` → Secrets):
 - `INSTAGRAM_VERIFY_TOKEN` — invente uma string qualquer (ex: um UUID),
   só precisa bater com o que você vai colar no painel da Meta no §30.4.
+- `INSTAGRAM_ACCESS_TOKEN` — o mesmo token já usado no
+  `instagram-responder` (§30.3), copia o valor pra cá também (cada Edge
+  Function tem seus próprios secrets).
 - `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já existem por padrão em
   toda Edge Function do projeto (não precisa criar).
 
@@ -5871,6 +5892,34 @@ https://nbhekjgbszyuuxrynzfo.supabase.co/functions/v1/instagram-webhook
   sempre visível, igual Pipeline/Conversas) — lista os comentários com
   o selinho de canal do Instagram no avatar, e responde direto pela
   Edge Function `instagram-responder`.
+
+### 30.5.1. Correção (21/09/2026) — suas próprias respostas apareciam na lista
+
+**Bug:** responder um comentário pela caixa do CRM fazia essa resposta
+aparecer, minutos depois, como um novo "comentário" na lista — porque
+mandar o reply pela API do Instagram também dispara o webhook de
+`comments` (o reply é, ele mesmo, um comentário novo), e a function
+gravava tudo que chegava, sem checar o autor.
+
+**Correção:** `instagram-webhook` (§30.2) agora busca o próprio ID da
+conta via Graph API (`INSTAGRAM_ACCESS_TOKEN`, precisa adicionar esse
+secret na function) e ignora qualquer evento cujo `from.id` seja o
+próprio — não grava, não aparece na lista.
+
+**Pra aplicar:** cola o código atualizado do §30.2 na function
+`instagram-webhook` no Supabase, adiciona o secret
+`INSTAGRAM_ACCESS_TOKEN` nela e faz o Deploy de novo.
+
+**Limpeza do que já ficou gravado errado:** as respostas próprias que
+já caíram na tabela como comentário aparecem com
+`autor_username = 'novvasaudeintegrativa'` (ou o handle da sua conta).
+Pra apagar as que já estão lá, roda no SQL Editor do Supabase (troca o
+handle se for diferente):
+
+```sql
+delete from public.instagram_comentarios
+where autor_username = 'novvasaudeintegrativa';
+```
 
 ### 30.6. Pendências (registradas, não fazem parte desta fase)
 
