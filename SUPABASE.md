@@ -5561,6 +5561,15 @@ select cron.schedule(
 );
 ```
 
+> **Desativado (22/09/2026):** esse cron foi desligado a pedido —
+> `select cron.unschedule('disparo-whatsapp-marketing');` — porque a
+> decisão foi disparar as campanhas de marketing só manualmente pelo
+> CRM (botão do gestor), sem envio automático terça-quinta 13h-14h. A
+> função `campanha-whatsapp-lote` continua com o caminho automático no
+> código (§28.2), mas como nada mais chama com `x-automation-token`,
+> na prática só o disparo manual funciona. Pra reativar, roda o bloco
+> `cron.schedule` acima de novo.
+
 `'*/15 16 * * 2,3,4'` = a cada 15 minutos, entre 16h e 16h59 **UTC**
 (igual 13h-13h59 em Brasília, já que o Brasil não tem mais horário de
 verão), nas terças/quartas/quintas (`2,3,4` = dia da semana do cron,
