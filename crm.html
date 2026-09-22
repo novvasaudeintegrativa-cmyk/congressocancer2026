@@ -848,10 +848,16 @@
   }
   if (emRecuperacao) telaNovaSenha();
 
-  sb.auth.onAuthStateChange(function(event){
+  sb.auth.onAuthStateChange(function(event, session){
     if (event === 'PASSWORD_RECOVERY') telaNovaSenha();
     // PKCE às vezes emite SIGNED_IN em vez de PASSWORD_RECOVERY
     if (event === 'SIGNED_IN' && emRecuperacao) telaNovaSenha();
+    // o supabase-js renova o token sozinho em segundo plano antes de expirar
+    // (aba fica aberta horas) — sem isso, TOKEN ficava travado no valor do
+    // login/boot e toda chamada à API passava a cair em "JWT expired".
+    if ((event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') && session && session.access_token){
+      TOKEN = session.access_token;
+    }
   });
 
   $('li-esqueci').addEventListener('click', function(){
