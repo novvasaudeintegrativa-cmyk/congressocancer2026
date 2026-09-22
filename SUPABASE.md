@@ -3157,10 +3157,10 @@ Perfil de quem mais aproveita o congresso: médico(a)/dentista/farmacêutico(a)/
 Regras importantes (decisão da empresa, 11/09/2026; escopo reforçado em 18/09/2026):
 - Você é EXCLUSIVAMENTE uma atendente do Congresso Câncer 2026. Só existe pra falar sobre o congresso (o que é, pra quem é, e levar a pessoa pra página). Não é terapeuta, não é médica, não dá conselho de saúde, não opina sobre tratamento, medicamento, substância, exame ou diagnóstico de ninguém — nem "só uma orientação geral".
 - Se o lead trouxer qualquer assunto fora do congresso (dúvida sobre o tratamento dele, pedido de indicação/opinião sobre medicamento ou substância — incluindo ivermectina, própolis, canabidiol ou qualquer outra —, ajuda pra comprar/importar/obter algo, diagnóstico, prognóstico, ou qualquer outro tema pessoal/médico/legal), NÃO desenvolva esse assunto: não faça lista, não dê passo a passo, não recomende "conversar com o médico sobre X" nem cite de volta as substâncias que a pessoa mencionou. NÃO diga que vai chamar alguém do time pra essa parte — a equipe é só de organizadores do evento, ninguém aqui está habilitado a orientar sobre tratamento/medicamento, então nunca prometa isso. Responda em no máximo 2 linhas, com empatia genuína e honestidade (ex: "essa parte do tratamento eu não tenho como te orientar, viu — isso é com a sua médica mesmo"), sem entrar no mérito, e traga de volta com naturalidade pro congresso (ex: comentar que lá ela vai poder trocar direto com especialistas em oncologia integrativa, que lidam com esse tipo de dúvida no dia a dia deles).
-- NÃO informe valores, preço de lote, datas, programação, nomes de palestrantes, certificado ou qualquer detalhe aprofundado do congresso diretamente na conversa — pra qualquer pergunta desse tipo, responda breve e sempre mande pra página: "Isso está bem explicadinho na nossa página, com todos os detalhes — dá uma olhada: https://congressocancer.novvasaudeintegrativa.com.br". Nunca cite valor em R$ na conversa, nem repita o que está no "CONTEÚDO ATUAL DO SITE" abaixo — esse conteúdo é só pra você mesma saber do que se trata o congresso, não pra repassar em detalhe.
+- NÃO informe valores, preço de lote, datas, programação, nomes de palestrantes, certificado ou qualquer detalhe aprofundado do congresso diretamente na conversa. Isso vale pra QUALQUER pergunta que o lead fizer — seja sobre preço, data, palestrantes, programação ou qualquer outra coisa sobre o congresso — não é uma lista fechada de tópicos: responda breve e SEMPRE mande o link da página: "Isso está bem explicadinho na nossa página, com todos os detalhes — dá uma olhada: https://congressocancer.novvasaudeintegrativa.com.br". Nunca cite valor em R$ na conversa, nem repita em detalhe o que está no "CONTEÚDO ATUAL DO SITE" abaixo — esse conteúdo é só pra você mesma saber do que se trata o congresso.
 - Sempre que passar o link da página pro lead, use exatamente https://congressocancer.novvasaudeintegrativa.com.br (sem `/time-comercial.html` no final) — esse sufixo é só um redirecionamento interno do site, não deve aparecer na conversa.
 - Se essa é a primeira mensagem que você manda nessa conversa (olhe o histórico: se não tem nenhuma mensagem sua ainda), já cumprimente, diga rapidamente do que se trata o congresso e já mande o link da página nessa mesma resposta — não espere a pessoa perguntar ou demonstrar interesse primeiro, o objetivo é levar ela pra página o quanto antes.
-- Pode confirmar o básico/geral sem detalhar (ex: "sim, é sobre práticas integrativas em oncologia", "é em São Paulo, 2 dias"), mas sempre fechando com o convite pra ver tudo na página.
+- Praticamente toda resposta sua deve incluir o link da página, não só quando a pergunta for sobre preço/data/palestrantes — mesmo que a pergunta seja sobre outra coisa qualquer relacionada ao congresso (formato, local, certificado, como funciona, etc.), feche a resposta mandando o link de novo. Pode confirmar o básico/geral sem detalhar (ex: "sim, é sobre práticas integrativas em oncologia", "é em São Paulo, 2 dias"), mas sempre reforçando o link, não só um convite vago.
 - Se souber quem é o lead (seção "QUEM É ESSE CONTATO"), trate com familiaridade e chame pelo nome.
 - Não empurre a venda de forma agressiva nem finja urgência falsa — só reforce com naturalidade que vale a pena conferir a página agora.
 - Se a pessoa pedir explicitamente pra falar com um humano (sobre assunto do congresso — inscrição, pagamento, dúvida específica): se for dentro do horário comercial (8h-17h, seg-sex), diga que já chamou alguém do time e a pessoa deve aparecer a qualquer momento; se for fora desse horário, diga que chama assim que o time abrir. Nos dois casos, continue reforçando a página enquanto isso.
@@ -3521,6 +3521,12 @@ Deno.serve(async (req) => {
 > interesse. O aviso pro time (`marcarUrgente`) continua acontecendo
 > desde a 1ª mensagem, só não trava mais a resposta de verdade. Precisa
 > **redeploy do `whatsapp-webhook`** com o código atualizado acima.
+>
+> **Reforço (21/09/2026, mesmo dia):** a regra de "manda o link" era
+> restrita a preço/data/palestrantes/programação. Generalizada pra
+> **qualquer pergunta** sobre o congresso — não é mais uma lista
+> fechada de tópicos, é o comportamento padrão da Cris em praticamente
+> toda resposta.
 
 ## 19. Apagar usuário de teste — "Database error deleting user"
 
@@ -6140,3 +6146,98 @@ inteiro só pra não precisar comparar linha a linha.
    num comentário → o card deve sumir da lista de "pendente" (vira
    selo) → rola até o Pipeline → o card novo deve aparecer em
    "Novos", com `@usuário` como nome e o selinho do Instagram.
+
+## 32. CRM — lembrete (alarme) na anotação do lead
+
+Pedido do Time Comercial: dar pra marcar um dia/hora pra voltar a falar
+com o lead, e o botão de anotação (lápis) do card piscar como alerta
+quando esse dia chegar.
+
+### 32.1. SQL
+
+```sql
+alter table public.lead_status add column if not exists lembrete_em timestamptz;
+
+create or replace function public.rpc_crm_pipeline()
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(row_to_json(t) order by t.captado_em desc nulls last), '[]'::json)
+  from (
+    select
+      s.whatsapp,
+      coalesce(l.nome, s.nome_whatsapp) as nome,
+      coalesce(s.canal, 'whatsapp') as canal,
+      l.email, l.profissao, l.nivel, l.pontuacao,
+      l.utm_source, l.utm_campaign,
+      coalesce(s.criado_em, l.captado_em) as captado_em,
+      coalesce(s.etapa, 'novo') as etapa,
+      s.nota, s.lembrete_em, coalesce(s.urgente, false) as urgente, s.atribuido_a,
+      pa.nome as atribuido_nome,
+      s.atualizado_em,
+      cw.nome as campanha_whatsapp_nome,
+      (select max(
+         case e.event
+           when 'VideoComplete' then 100
+           when 'VideoProgress' then (e.props->>'percent')::int
+           when 'VideoPlay' then 0
+           else null
+         end)
+       from public.events e
+       where e.visitor_id = l.visitor_id
+         and lower(coalesce(e.props->>'placement','')) = 'vsl'
+         and e.event in ('VideoPlay','VideoProgress','VideoComplete')
+      ) as vsl_progress,
+      (
+        select coalesce(m.wa_timestamp, m.criado_em)
+        from public.mensagens m
+        where public.wa_norm(m.lead_whatsapp) = public.wa_norm(s.whatsapp) and m.direcao = 'recebida'
+        order by coalesce(m.wa_timestamp, m.criado_em) desc
+        limit 1
+      ) as ultima_recebida_em,
+      (
+        select min(coalesce(m.wa_timestamp, m.criado_em))
+        from public.mensagens m
+        where public.wa_norm(m.lead_whatsapp) = public.wa_norm(s.whatsapp)
+          and m.direcao = 'enviada'
+          and coalesce(m.wa_timestamp, m.criado_em) >= (
+            select coalesce(m2.wa_timestamp, m2.criado_em)
+            from public.mensagens m2
+            where public.wa_norm(m2.lead_whatsapp) = public.wa_norm(s.whatsapp) and m2.direcao = 'recebida'
+            order by coalesce(m2.wa_timestamp, m2.criado_em) desc
+            limit 1
+          )
+      ) as respondido_em
+    from public.lead_status s
+    left join public.crm_leads l on public.wa_norm(l.whatsapp) = public.wa_norm(s.whatsapp)
+    left join public.perfis pa on pa.id = s.atribuido_a
+    left join public.campanhas_whatsapp cw on cw.id = s.campanha_whatsapp_id
+    where exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+  ) t;
+$$;
+
+notify pgrst, 'reload schema';
+```
+
+A única mudança real em relação à versão do §31.1 é `s.lembrete_em` no
+select e a coluna nova em `lead_status` — resto idêntico, colado
+inteiro só pra não precisar comparar linha a linha.
+
+### 32.2. Front (`crm.html`) — já feito
+
+- Botão de anotação (lápis) ganha uma bolinha vermelha no canto quando
+  o lead tem anotação (`tem-nota`) — antes só mudava a cor de fundo do
+  ícone, que passava despercebido numa lista grande de cards.
+- Campo de anotação agora abre junto com um `<input type="datetime-local">`
+  pra marcar dia/hora do lembrete, salvo em `lembrete_em`.
+- Se `lembrete_em` já venceu (é hoje ou já passou), o botão pisca
+  (classe `lembrete-alerta`, animação de opacidade) até alguém trocar a
+  data ou apagar a anotação. O tooltip do botão mostra a anotação e o
+  lembrete marcado.
+- Recalcula a cada carregamento do Pipeline — não é um alarme sonoro
+  nem notificação push, só um alerta visual no próprio card.
+
+### 32.3. Rodar
+
+1. SQL do §32.1 no SQL Editor.
+2. Testar: abre a anotação de um lead, escreve algo, marca um
+   lembrete pra hoje mesmo (qualquer horário) e sai do campo (clica
+   fora) — o botão de lápis deve começar a piscar em vermelho.
