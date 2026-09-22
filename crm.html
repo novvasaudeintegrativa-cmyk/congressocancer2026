@@ -269,6 +269,17 @@
   .ig-item-texto{font-size:13px;color:var(--ink);margin:8px 0 0;padding-left:32px;overflow-wrap:anywhere;}
   .ig-item-dispensar{flex:none;background:none;border:0;color:var(--faint);font-size:11px;cursor:pointer;padding:2px 4px;}
   .ig-item-dispensar:hover{color:var(--bordo);}
+  .ig-item-historico{flex:none;background:none;border:0;color:var(--faint);cursor:pointer;padding:2px 4px;}
+  .ig-item-historico:hover{color:var(--bordo);}
+
+  /* ---- modal de histórico de comentários do Instagram (por pessoa) ---- */
+  .ig-modal-fundo{position:fixed;inset:0;background:rgba(42,35,32,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:200;}
+  .ig-modal{background:var(--card);border-radius:16px;max-width:460px;width:100%;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;}
+  .ig-modal-cab{padding:13px 16px;border-bottom:1px solid var(--linha);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .ig-modal-cab b{font-family:var(--tit);font-size:14px;}
+  .ig-modal-fechar{flex:none;background:none;border:0;color:var(--faint);cursor:pointer;padding:4px;}
+  .ig-modal-fechar:hover{color:var(--bordo);}
+  .ig-modal-msgs{flex:1;min-height:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:#f2ede9;}
   .ig-resposta-caixa{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding-left:32px;}
   .ig-resposta-caixa textarea{width:100%;border:1px solid var(--linha);border-radius:9px;padding:8px 10px;font-family:var(--corpo);font-size:13px;color:var(--ink);background:#fff;resize:vertical;min-height:58px;}
   .ig-resposta-acoes{display:flex;gap:8px;align-items:center;justify-content:space-between;}
@@ -1456,6 +1467,7 @@
             '<div class="ig-item-quando">' + fmtQuando(c.criado_em) + '</div>' +
           '</div>' +
           (souEu ? '<span class="ig-badge-propria" title="O autor é a própria conta do Congresso — provavelmente sua resposta enviada direto no Instagram, não um comentário novo">Sua conta</span>' : '') +
+          (c.autor_ig_id ? '<button type="button" class="ig-item-historico" title="Ver histórico de comentários dessa pessoa">' + ic('message-circle', 12) + '</button>' : '') +
           '<button type="button" class="ig-item-dispensar" title="Já respondi isso fora do CRM (no app do Instagram) — tirar da lista">' + ic('x', 12) + '</button>' +
         '</div>' +
         '<div class="ig-item-texto">' + esc(c.texto || '') + '</div>' +
@@ -1491,6 +1503,10 @@
           .then(function(){ carregarComentariosInstagram(); })
           .catch(function(err){ alert('Não deu pra dispensar: ' + err.message); btnDispensar.disabled = false; });
       });
+      var btnHistorico = item.querySelector('.ig-item-historico');
+      if (btnHistorico) btnHistorico.addEventListener('click', function(){
+        abrirHistoricoInstagram(item.dataset.igId, item.dataset.username);
+      });
       var btnResp = item.querySelector('.ig-responder-btn');
       if (btnResp){
         var input = item.querySelector('.ig-resposta-input');
@@ -1518,6 +1534,51 @@
   }
   var btnAtualizarIg = $('btn-atualizar-ig');
   if (btnAtualizarIg) btnAtualizarIg.addEventListener('click', carregarComentariosInstagram);
+
+  // ---------- histórico de comentários do Instagram por pessoa (modal) ----------
+  // instagram_comentarios não é apagado quando dispensado/respondido — só sai
+  // da lista de pendentes — então dá pra remontar a conversa inteira dessa
+  // pessoa (todo comentário + resposta), igual o botão Conversa do WhatsApp.
+  function fecharHistoricoInstagram(){
+    var fundo = $('ig-modal-fundo');
+    if (fundo) fundo.remove();
+    document.removeEventListener('keydown', fecharHistoricoInstagramNaEsc);
+  }
+  function fecharHistoricoInstagramNaEsc(e){
+    if (e.key === 'Escape') fecharHistoricoInstagram();
+  }
+
+  function abrirHistoricoInstagram(igId, username){
+    if (!igId) return;
+    apiGet('instagram_comentarios?select=texto,resposta_texto,respondido,respondido_em,criado_em&autor_ig_id=eq.' + encodeURIComponent(igId) + '&order=criado_em.asc')
+      .then(function(rows){ renderHistoricoInstagram(rows || [], username); })
+      .catch(function(err){ alert('Não deu pra carregar o histórico: ' + err.message); });
+  }
+
+  function renderHistoricoInstagram(rows, username){
+    fecharHistoricoInstagram();
+    var msgsHtml = rows.map(function(c){
+      var html = '<div class="bolha rec">' + esc(c.texto || '(sem texto)') + '<span class="hora">' + fmtQuando(c.criado_em) + '</span></div>';
+      if (c.respondido && c.resposta_texto){
+        html += '<div class="bolha env">' + esc(c.resposta_texto) + '<span class="hora">' + fmtQuando(c.respondido_em || c.criado_em) + '</span></div>';
+      }
+      return html;
+    }).join('') || '<div class="thread-vazio">Nenhum histórico ainda.</div>';
+
+    var fundo = document.createElement('div');
+    fundo.id = 'ig-modal-fundo';
+    fundo.className = 'ig-modal-fundo';
+    fundo.innerHTML =
+      '<div class="ig-modal">' +
+        '<div class="ig-modal-cab"><b>@' + esc(username || 'desconhecido') + '</b><button type="button" class="ig-modal-fechar" id="ig-modal-fechar-btn">' + ic('x', 16) + '</button></div>' +
+        '<div class="ig-modal-msgs" id="ig-modal-msgs">' + msgsHtml + '</div>' +
+      '</div>';
+    document.body.appendChild(fundo);
+    $('ig-modal-msgs').scrollTop = $('ig-modal-msgs').scrollHeight;
+    $('ig-modal-fechar-btn').addEventListener('click', fecharHistoricoInstagram);
+    fundo.addEventListener('click', function(e){ if (e.target === fundo) fecharHistoricoInstagram(); });
+    document.addEventListener('keydown', fecharHistoricoInstagramNaEsc);
+  }
 
   function fmtDuracao(ms){
     var min = Math.round(ms / 60000);

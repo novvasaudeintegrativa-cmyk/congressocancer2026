@@ -143,6 +143,7 @@
   .exemplo-ico:hover, .exemplo-ico.ativo{background:var(--bordo);color:#fff;transform:scale(1.15);}
   .exemplo-balaos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;}
   .exemplo-3col{grid-template-columns:repeat(3,1fr);}
+  .exemplo-2col{grid-template-columns:repeat(2,1fr);}
   .exemplo-1col{grid-template-columns:1fr;}
   .balao{position:relative;background:var(--ink);color:#fff;font-size:9px;line-height:1.3;text-align:center;padding:6px 4px;border-radius:8px;transition:opacity .25s ease,transform .25s ease;}
   .balao::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:5px solid var(--ink);}
@@ -516,7 +517,31 @@
   </div>
 
   <div class="ajuda-conteudo" data-ajuda-conteudo="crm" hidden>
-    <h4 class="sidebar-info-tit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>Pipeline</h4>
+    <h4 class="sidebar-info-tit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.3" fill="currentColor" stroke="none"/></svg>Comentários do Instagram</h4>
+    <p class="sidebar-nota">Fica numa lista separada, acima do Pipeline — cada comentário público dos posts do @novvasaudeintegrativa aparece com uma caixa pra responder direto no Instagram, na hora. Some da lista assim que for respondido.</p>
+    <div class="exemplo-card">
+      <div class="exemplo-cab">
+        <div class="exemplo-avatar-wrap">
+          <span class="exemplo-avatar">CB</span>
+          <span class="exemplo-canal-badge" style="background:linear-gradient(45deg,#fdf497,#fd5949,#d6249f,#285AEB);"><svg viewBox="0 0 24 24" fill="#fff"><rect x="2" y="2" width="20" height="20" rx="5" fill="none" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="#fff" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1.3"/></svg></span>
+        </div>
+        <div class="exemplo-info">
+          <div class="exemplo-nome">@cristinabb42</div>
+          <div class="exemplo-meta">17/09 00:41</div>
+        </div>
+      </div>
+      <div class="exemplo-icones exemplo-2col">
+        <span class="exemplo-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg></span>
+        <span class="exemplo-ico"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></span>
+      </div>
+      <div class="exemplo-balaos exemplo-2col">
+        <div class="balao">Histórico</div>
+        <div class="balao">Dispensar</div>
+      </div>
+    </div>
+    <p class="sidebar-nota"><b>Histórico</b> mostra todos os comentários e respostas anteriores dessa mesma pessoa, num chat — igual o botão Conversa do Pipeline. <b>Dispensar</b> (o x) tira da lista quando alguém já respondeu direto pelo app do Instagram, fora do CRM.</p>
+
+    <h4 class="sidebar-info-tit" style="margin-top:16px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>Pipeline</h4>
     <p class="sidebar-nota">O lead passa por 4 etapas: <b>Novos → Em Atendimento → Aguardando Compra → Finalizado</b>. Arraste o card entre as colunas conforme a conversa avança.</p>
 
     <h4 class="sidebar-info-tit" style="margin-top:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 9 5 12 1.8-5.2L21 14Z"/><path d="M7.2 2.2 8 5.1"/><path d="m5.1 8-2.9-.8"/><path d="M14 4.1 12 6"/><path d="m6 12-1.9 2"/></svg>Botões de ações do Card</h4>
@@ -543,7 +568,7 @@
         <div class="balao">Assumir</div>
       </div>
     </div>
-    <p class="sidebar-nota">O selinho no canto do avatar mostra de onde veio o lead: <b>verde é WhatsApp</b>, <b>rosa/roxo é Instagram</b>. Um comentário do Instagram vira card aqui sozinho assim que alguém do time responde ele na aba "Comentários do Instagram" — não precisa cadastrar nada na mão.</p>
+    <p class="sidebar-nota">O selinho no canto do avatar mostra de onde veio o lead: <b>verde é WhatsApp</b>. O Pipeline é só pra WhatsApp — comentário do Instagram não vira card aqui (ver seção "Comentários do Instagram" acima).</p>
 
     <h4 class="sidebar-info-tit" style="margin-top:16px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/></svg>Auditório</h4>
     <p class="sidebar-nota">O mapa de cadeiras é só visual — mostra quanto já vendeu de VIP e dos lotes, pra acompanhar o progresso. Não precisa mexer em nada ali.</p>
