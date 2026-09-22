@@ -85,6 +85,8 @@
   .canal-badge.canal-whatsapp{background:#25D366;}
   .canal-badge.canal-instagram{background:radial-gradient(circle at 30% 110%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);}
   .card.urg{border-color:var(--bordo-vivo);box-shadow:0 0 0 1px var(--bordo-vivo) inset;}
+  @keyframes card-pulsar{0%,100%{box-shadow:0 0 0 0 rgba(185,45,61,.5);}50%{box-shadow:0 0 0 7px rgba(185,45,61,0);}}
+  .card.pendente{border-color:var(--bordo-vivo);animation:card-pulsar 1.8s ease-in-out infinite;}
   .card-head .info{min-width:0;flex:1;}
   .card .nome{font-family:var(--tit);font-weight:800;font-size:12px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .card .meta{font-size:10px;color:var(--soft);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -1260,7 +1262,7 @@
 
   function cardLead(l, triar){
     var c = document.createElement('div');
-    c.className = 'card' + (l.urgente ? ' urg' : '');
+    c.className = 'card' + (l.urgente ? ' urg' : '') + (leadPendente(l) ? ' pendente' : '');
     c.draggable = true;
     c.addEventListener('dragstart', function(e){
       e.dataTransfer.setData('text/plain', l.whatsapp);
