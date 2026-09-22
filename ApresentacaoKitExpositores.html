@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kit do Expositor — 4º Congresso de Práticas Integrativas no Tratamento e Prevenção do Câncer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@500;600;700;800&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --preto:#0a0505;
+    --bordo-escuro:#2b0b0e;
+    --bordo:#5c171e;
+    --vermelho:#8a222e;
+    --vermelho-vivo:#b92d3d;
+    --laranja:#ff6a00;
+    --laranja-escuro:#e85d00;
+    --dourado:#f2c744;
+    --verde:#1f9d55;
+    --verde-escuro:#167a42;
+    --branco:#ffffff;
+    --texto-suave:rgba(255,255,255,.78);
+    --texto-fraco:rgba(255,255,255,.55);
+    --borda-card:rgba(217,53,72,.55);
+    --card-bg:linear-gradient(180deg, rgba(139,34,46,.2), rgba(10,2,3,.55));
+    --glow:radial-gradient(circle at 50% 30%, rgba(184,45,61,.4), transparent 65%);
+    --radius:18px;
+    --fonte-titulo:'League Spartan','Baloo 2','Segoe UI',sans-serif;
+    --fonte-corpo:'Roboto','Segoe UI',sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth; overflow-x:hidden; max-width:100%;}
+  body{
+    margin:0;
+    max-width:100%;
+    overflow-x:hidden;
+    background:linear-gradient(180deg, #3C0101 0%, #170608 45%, #0a0505 100%);
+    color:var(--branco);
+    font-family:var(--fonte-corpo);
+    line-height:1.6;
+  }
+  .container{ max-width:1080px; margin:0 auto; padding:0 20px; }
+  h1,h2,h3{
+    font-family:var(--fonte-titulo);
+    font-weight:800;
+    margin:0;
+    color:var(--branco);
+    line-height:1.12;
+  }
+  .eyebrow{
+    display:block;
+    text-align:center;
+    font-family:var(--fonte-titulo);
+    font-size:.8rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--dourado);
+    font-weight:700;
+    margin-bottom:10px;
+  }
+  a{ color:var(--dourado); }
+  img{ max-width:100%; display:block; }
+
+  /* ---------- hero ---------- */
+  .hero-bar{
+    background:var(--bordo);
+    border-top:1px solid rgba(0,0,0,.35);
+    border-bottom:1px solid rgba(0,0,0,.35);
+    padding: 14px 16px;
+    text-align:center;
+  }
+  .hero-bar h1{
+    font-size:clamp(1.05rem, 2.6vw, 1.6rem);
+    letter-spacing:.02em;
+    text-transform:uppercase;
+    color:#fff;
+  }
+  .hero-photo{ position:relative; overflow:hidden; }
+  .hero-photo img{
+    width:100%;
+    height:auto;
+    display:block;
+  }
+  .hero-content{
+    padding: 40px 20px 52px;
+    text-align:center;
+  }
+  .video-section{ padding:32px 20px 0; }
+  .video-embed-wrap{
+    max-width:760px; margin:0 auto; border-radius:16px; overflow:hidden;
+    border:1px solid var(--borda-card); background:var(--bordo-escuro);
+  }
+  .hero-content .eyebrow{ color:#f2c744; }
+  .hero-content p.lede{
+    margin:14px auto 0;
+    max-width:56ch;
+    color:var(--texto-suave);
+    font-size:1.05rem;
+  }
+  .hero-meta{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:10px;
+    margin-top:26px;
+  }
+  .pill{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:rgba(0,0,0,.32);
+    border:1px solid var(--borda-card);
+    border-radius:999px;
+    padding:9px 15px;
+    font-size:.86rem;
+    font-weight:500;
+    color:var(--branco);
+  }
+  .pill svg{ width:15px; height:15px; flex:none; color:var(--dourado); }
+
+  /* ---------- section shell ---------- */
+  section{ padding:60px 0; border-top:1px solid rgba(255,255,255,.06); }
+  section.glow{ background:var(--glow); }
+
+  .reveal{ opacity:0; transform:translateY(26px); transition:opacity .7s ease, transform .7s ease; }
+  .reveal.visible{ opacity:1; transform:none; }
+  @media (prefers-reduced-motion:reduce){ .reveal{ opacity:1; transform:none; transition:none; } }
+  .section-title{
+    font-size:clamp(1.5rem,3vw,2.1rem);
+    text-align:center;
+    margin-bottom:12px;
+  }
+  .section-sub{
+    text-align:center;
+    color:var(--texto-suave);
+    max-width:62ch;
+    margin:0 auto 30px;
+    font-size:1rem;
+  }
+
+  /* ---------- stats ---------- */
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(180px,1fr));
+    gap:1px;
+    background:var(--borda-card);
+    border:1px solid var(--borda-card);
+    border-radius:var(--radius);
+    overflow:hidden;
+    max-width:560px;
+    margin:0 auto;
+  }
+  .stat{
+    background:var(--bordo-escuro);
+    padding:26px 18px;
+    display:flex; flex-direction:column; gap:4px;
+    text-align:center;
+    align-items:center;
+  }
+  .stat b{
+    font-family:var(--fonte-titulo);
+    font-size:clamp(1.8rem,3.4vw,2.3rem);
+    font-weight:800;
+    color:var(--laranja);
+  }
+  .stat span{ font-size:.82rem; color:var(--texto-suave); text-transform:uppercase; letter-spacing:.04em; }
+  .total-line{
+    text-align:center;
+    margin-top:22px;
+    font-family:var(--fonte-titulo);
+    font-weight:700;
+    color:var(--dourado);
+    font-size:1.05rem;
+  }
+
+  /* ---------- zoom affordance ---------- */
+  .zoomable{ cursor:zoom-in; transition:transform .25s ease, filter .25s ease; }
+  .zoomable:hover{ filter:brightness(1.06); }
+  .zoom-wrap{ position:relative; overflow:hidden; border-radius:16px; border:1px solid var(--borda-card); }
+  .zoom-wrap img{ transition:transform .35s ease; }
+  .zoom-wrap:hover img{ transform:scale(1.05); }
+  .zoom-badge{
+    position:absolute; right:12px; bottom:12px;
+    width:34px; height:34px; border-radius:50%;
+    background:rgba(10,5,5,.65); border:1px solid rgba(255,255,255,.3);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; pointer-events:none;
+  }
+  .zoom-badge svg{ width:16px; height:16px; }
+
+  /* ---------- duo photos (anfiteatro) ---------- */
+  .duo-photos{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:24px; }
+  @media (max-width:600px){ .duo-photos{ grid-template-columns:1fr; } }
+  .duo-photos .zoom-wrap img{ width:100%; height:260px; object-fit:cover; display:block; }
+  .highlight-card{
+    background:var(--card-bg); border:1px solid var(--borda-card); border-radius:16px;
+    padding:22px 24px;
+  }
+  .highlight-card b{
+    display:block; font-family:var(--fonte-titulo); font-size:1.2rem; font-weight:800;
+    color:var(--branco); margin-bottom:8px;
+  }
+  .highlight-card p{ color:var(--texto-suave); margin:0; }
+
+  /* ---------- info duo (auditorio menor / foyer) ---------- */
+  .info-duo{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:600px){ .info-duo{ grid-template-columns:1fr; } }
+  .info-card{
+    background:var(--card-bg); border:1px solid var(--borda-card); border-radius:16px; padding:24px;
+  }
+  .info-card .info-eyebrow{ color:var(--dourado); font-family:var(--fonte-titulo); font-weight:700; font-size:.8rem; letter-spacing:.08em; text-transform:uppercase; display:block; margin-bottom:10px; }
+  .info-card p{ color:var(--texto-suave); margin:0; }
+
+  /* ---------- split (photo + text) ---------- */
+  .split{ display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:center; }
+  @media (max-width:700px){ .split{ grid-template-columns:1fr; } }
+  .split.reverse .split-photo{ order:2; }
+  .split-photo .zoom-wrap img{ width:100%; height:280px; object-fit:cover; display:block; }
+  .split-text p{ color:var(--texto-suave); margin:0 0 12px; }
+  .split-text p:last-child{ margin-bottom:0; }
+  .split-text strong{ color:var(--dourado); }
+  .local-endereco{
+    background:var(--card-bg); border:1px solid var(--borda-card); border-radius:14px;
+    padding:16px 18px; margin-bottom:16px; font-size:.9rem;
+  }
+  .local-endereco b{ display:block; color:var(--dourado); font-family:var(--fonte-titulo); font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; margin-bottom:4px; }
+  .price-note{
+    background:rgba(242,199,68,.08); border:1px solid rgba(242,199,68,.35); border-radius:14px;
+    padding:16px 18px; margin-top:16px; font-size:.9rem; color:var(--texto-suave);
+  }
+  .price-note b{ color:var(--dourado); }
+
+  /* ---------- media / diretoria ---------- */
+  .media-card{
+    background:var(--card-bg); border:1px solid var(--borda-card); border-radius:16px; padding:24px;
+  }
+  .media-card b.title{ display:block; font-family:var(--fonte-titulo); font-weight:800; font-size:1.1rem; margin-bottom:10px; }
+  .media-card p{ color:var(--texto-suave); margin:0 0 10px; }
+  .media-card p:last-child{ margin-bottom:0; }
+
+  .duo-portrait{ display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:640px; margin:0 auto; }
+  @media (max-width:520px){ .duo-portrait{ grid-template-columns:1fr; max-width:300px; } }
+  .portrait{ display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .portrait img{
+    width:100%; aspect-ratio:1/1.05; object-fit:cover; border-radius:16px;
+    border:1px solid var(--borda-card);
+  }
+  .portrait b{ font-family:var(--fonte-titulo); font-weight:800; letter-spacing:.02em; font-size:1rem; text-transform:uppercase; }
+  .team-caption{ margin-top:22px; font-size:.9rem; color:var(--texto-suave); text-align:center; max-width:60ch; margin-inline:auto; }
+
+  /* ---------- floor plan ---------- */
+  .plan-card{
+    background:var(--card-bg);
+    border:1px solid var(--borda-card);
+    border-radius:var(--radius);
+    padding:20px;
+  }
+  .plan-card svg{ width:100%; height:auto; display:block; }
+  .plan-legend{
+    display:flex; flex-wrap:wrap; gap:14px;
+    margin-top:16px; font-size:.8rem; color:var(--texto-suave);
+  }
+  .plan-legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .swatch{ width:11px; height:11px; border-radius:3px; display:inline-block; }
+  .plan-zoom-hint{ text-align:center; font-size:.78rem; color:var(--texto-fraco); margin-top:10px; }
+
+  /* ---------- tables ---------- */
+  .tables-duo{ display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+  @media (max-width:700px){ .tables-duo{ grid-template-columns:1fr; } }
+  .table-scroll{ overflow-x:auto; margin-top:20px; border:1px solid var(--borda-card); border-radius:14px; }
+  table{ width:100%; border-collapse:collapse; min-width:280px; background:var(--bordo); }
+  caption{ text-align:left; font-family:var(--fonte-titulo); font-weight:700; font-size:1rem; color:var(--branco); padding:0 0 12px; caption-side:top; }
+  th,td{ padding:10px 16px; text-align:left; font-size:.88rem; color:var(--branco); }
+  thead th{
+    font-family:var(--fonte-titulo); font-size:.72rem; letter-spacing:.06em; font-weight:700;
+    text-transform:uppercase; color:var(--bordo-escuro); background:#d99aa5;
+  }
+  tbody tr:nth-child(odd){ background:var(--bordo); }
+  tbody tr:nth-child(even){ background:var(--bordo-escuro); }
+  td.num, th.num{ font-variant-numeric:tabular-nums; }
+
+  /* ---------- pricing ---------- */
+  .tiers{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:8px; }
+  @media (max-width:900px){ .tiers{ grid-template-columns:1fr; } }
+  .tier{
+    border-radius:var(--radius);
+    padding:26px 24px;
+    display:flex; flex-direction:column; gap:16px;
+    position:relative;
+    border:1px solid var(--borda-card);
+  }
+  .tier.diamond{ background:linear-gradient(160deg, #14232b, var(--bordo-escuro)); border-color:rgba(255,255,255,.35); }
+  .tier.master{ background:linear-gradient(160deg, var(--vermelho-vivo), var(--bordo-escuro)); }
+  .tier.gold{ background:var(--card-bg); border-color:rgba(242,199,68,.5); }
+  .tier .badge{
+    align-self:flex-start;
+    font-family:var(--fonte-titulo);
+    font-size:.7rem; letter-spacing:.1em; text-transform:uppercase;
+    padding:5px 11px; border-radius:999px; font-weight:700;
+  }
+  .tier.diamond .badge{ background:rgba(255,255,255,.12); color:#e8f2ff; }
+  .tier.master .badge{ background:rgba(0,0,0,.3); color:#fff; }
+  .tier.gold .badge{ background:rgba(242,199,68,.14); color:var(--dourado); }
+  .tier h3{ font-size:1.4rem; }
+  .tier .price{ font-family:var(--fonte-titulo); font-size:2.1rem; font-weight:800; }
+  .tier.diamond .price{ color:#e8f2ff; }
+  .tier.master .price{ color:#fff; }
+  .tier.gold .price{ color:var(--dourado); }
+  .tier .price small{ font-family:var(--fonte-corpo); font-size:.62rem; font-weight:500; color:var(--texto-suave); display:block; letter-spacing:.06em; text-transform:uppercase; }
+  .tier ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; flex:1; }
+  .tier li{ display:flex; gap:10px; font-size:.9rem; color:var(--texto-suave); align-items:flex-start; }
+  .tier li svg{ width:16px; height:16px; flex:none; margin-top:3px; color:var(--verde); }
+  .tier .pay{ border-top:1px dashed rgba(255,255,255,.2); padding-top:14px; font-size:.82rem; color:var(--texto-suave); }
+  .tier .pay b{ color:var(--branco); }
+
+  /* ---------- condicao comercial ---------- */
+  .cta-card{
+    background:linear-gradient(160deg, var(--vermelho-vivo), var(--bordo-escuro));
+    border:1px solid var(--borda-card); border-radius:20px;
+    padding:32px 28px; text-align:center; max-width:720px; margin:0 auto;
+  }
+  .cta-card p{ color:#fff; font-size:1.05rem; margin:0 0 14px; max-width:52ch; margin-inline:auto; }
+  .cta-card .cta-meta{ color:#f6dede; font-size:.9rem; }
+  .cta-sign{ text-align:center; margin-top:30px; }
+  .cta-sign b{ display:block; font-family:var(--fonte-titulo); color:var(--dourado); letter-spacing:.05em; font-size:.95rem; }
+  .cta-sign span{ color:var(--texto-fraco); font-size:.86rem; }
+
+  /* ---------- footer ---------- */
+  footer{
+    padding:26px 20px;
+    border-top:1px solid rgba(255,255,255,.1);
+    text-align:center;
+    font-size:.78rem; color:var(--texto-fraco);
+  }
+
+  /* ---------- lightbox ---------- */
+  .lightbox{
+    position:fixed; top:0; left:0; right:0; bottom:0; z-index:999;
+    background:var(--preto);
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+    overflow:auto;
+  }
+  .lightbox[hidden]{ display:none; }
+  .lightbox-inner{ width:100%; max-width:900px; max-height:100%; margin:0 auto; }
+  .lightbox-inner img{ max-width:100%; max-height:86vh; border-radius:10px; display:block; margin:0 auto; }
+  .lightbox-inner svg{ display:block; width:100%; height:auto; }
+  .lightbox-close{
+    position:fixed; top:18px; right:18px;
+    width:42px; height:42px; border-radius:50%;
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.3);
+    color:#fff; font-size:1.5rem; line-height:1; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="hero-photo">
+  <picture>
+    <source media="(max-width: 700px)" srcset="Imgs/FotoHeroMobile.png">
+    <img class="zoomable" src="Imgs/FotoHero.jpg" alt="Maior Congresso da América Latina em Práticas Integrativas no Tratamento e Prevenção do Câncer — São José dos Campos, São Paulo">
+  </picture>
+</div>
+
+<div class="video-section">
+  <div class="video-embed-wrap">
+    <div id="novva-video-17f6df88-ebeb-4d9c-b9b8-3e0a5b838196"></div>
+  </div>
+</div>
+<script
+  src="https://novvavideos.vercel.app/embed.js"
+  data-target="novva-video-17f6df88-ebeb-4d9c-b9b8-3e0a5b838196"
+  data-video-id="17f6df88-ebeb-4d9c-b9b8-3e0a5b838196"
+  data-autoplay="false"
+  data-muted="false"
+  data-responsive="true"
+  data-width="640"
+  async
+></script>
+
+<div class="hero-content">
+  <div class="container">
+    <span class="eyebrow">Oportunidade de patrocínio e exposição</span>
+    <h1 style="font-size:clamp(1.8rem,4.4vw,2.8rem); max-width:20ch; margin-inline:auto;">Kit do Expositor</h1>
+    <p class="lede">4º Congresso de Práticas Integrativas no Tratamento e Prevenção do Câncer — dois dias reunindo profissionais de saúde, terapeutas e o público que busca prevenção e cuidado integrativo.</p>
+    <div class="hero-meta">
+      <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>20–21 de novembro, sexta e sábado</span>
+      <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg>Hotel Nacional Inn, São José dos Campos — SP</span>
+      <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>até 1.000 pessoas no evento</span>
+    </div>
+  </div>
+</div>
+
+<div class="hero-bar">
+  <h1>20–21 de novembro de 2026</h1>
+</div>
+
+<section aria-label="Capacidade do evento">
+  <div class="container reveal">
+    <span class="eyebrow">Em números</span>
+    <h2 class="section-title">Auditório e feira</h2>
+    <div class="stats">
+      <div class="stat"><b data-count="500" data-suffix="">0</b><span>Auditório</span></div>
+      <div class="stat"><b data-count="500" data-prefix="+" data-suffix="">0</b><span>Feira</span></div>
+    </div>
+    <p class="total-line">Total estimado: 1.000 pessoas no evento.</p>
+  </div>
+</section>
+
+<section class="glow" aria-label="Estrutura — Anfiteatro Principal">
+  <div class="container reveal">
+    <span class="eyebrow">Estrutura</span>
+    <h2 class="section-title">Anfiteatro Principal</h2>
+    <div class="duo-photos">
+      <div class="zoom-wrap"><img class="zoomable" src="Imgs/Hotel Inn São José dos Campos/6.jpg" alt="Anfiteatro principal, visão da plateia"><span class="zoom-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg></span></div>
+      <div class="zoom-wrap"><img class="zoomable" src="Imgs/Hotel Inn São José dos Campos/4.jpg" alt="Anfiteatro principal, visão do palco"><span class="zoom-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg></span></div>
+    </div>
+    <div class="highlight-card">
+      <b>Até 400 pessoas</b>
+      <p>O anfiteatro é o principal espaço para as grandes palestras e para a apresentação exclusiva prevista na Cota Master.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-label="Estrutura — Auditório Menor e Foyer">
+  <div class="container reveal">
+    <span class="eyebrow">Estrutura</span>
+    <h2 class="section-title">Auditório Menor e Foyer de Exposição</h2>
+    <div class="info-duo">
+      <div class="info-card">
+        <div class="zoom-wrap" style="margin-bottom:16px;"><img class="zoomable" src="Imgs/AUDITÓRIO MENOR.jpeg" alt="Auditório Menor" style="width:100%;height:220px;object-fit:cover;"><span class="zoom-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg></span></div>
+        <span class="info-eyebrow">Auditório Menor</span>
+        <p>Capacidade para 120 pessoas, destinado a oficinas e palestras paralelas simultâneas.</p>
+      </div>
+      <div class="info-card">
+        <div class="zoom-wrap" style="margin-bottom:16px;"><img class="zoomable" src="Imgs/FOYER - 250 m².jpeg" alt="Foyer de exposição, 250 m²" style="width:100%;height:220px;object-fit:cover;"><span class="zoom-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg></span></div>
+        <span class="info-eyebrow">Foyer — 250 m²</span>
+        <p>Área destinada à exposição, com capacidade aproximada para 20 expositores.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="glow" aria-label="Local">
+  <div class="container reveal">
+    <span class="eyebrow">Local</span>
+    <h2 class="section-title">Hotel Nacional Inn — São José dos Campos</h2>
+    <div class="split">
+      <div class="split-photo zoom-wrap"><img class="zoomable" src="Imgs/Hotel Inn São José dos Campos/1.jpg" alt="Fachada do Hotel Nacional Inn São José dos Campos"><span class="zoom-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg></span></div>
+      <div class="split-text">
+        <div class="local-endereco">
+          <b>Endereço</b>
+          Av. Deputado Benedito Matarazzo, 9009 — São José dos Campos — SP
+        </div>
+        <p>O Hotel Nacional Inn está localizado às margens da Rodovia Dutra, com acesso facilitado entre São Paulo e Rio de Janeiro e ao lado do Shopping Center Vale.</p>
+        <p>São José dos Campos é uma das cidades mais importantes do Estado, e o hotel é tradicionalmente utilizado por autoridades em visitas à cidade.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-label="Hospedagem">
+  <div class="container reveal">
+    <span class="eyebrow">Hospedagem</span>
+    <h2 class="section-title">Conforto para Participantes e Expositores</h2>
+    <div class="split reverse">
+      <div class="split-photo">
+        <div class="duo-photos" style="grid-template-columns:1fr; margin-bottom:14px;">
+          <div class="zoom-wrap"><img class="zoomable" src="Imgs/Hotel Inn São José dos Campos/7.jpg" alt="Piscina do Hotel Nacional Inn" style="height:180px;"><span class="zoom-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg></span></div>
+          <div class="zoom-wrap"><img class="zoomable" src="Imgs/quarto.jpeg" alt="Apartamento do Hotel Nacional Inn" style="height:180px;"><span class="zoom-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg></span></div>
+        </div>
+      </div>
+      <div class="split-text">
+        <p>Rede hoteleira confortável, com estrutura de lazer e quartos para os participantes — 157 apartamentos, restaurante próprio, piscina, sauna e academia.</p>
+        <div class="price-note"><b>~R$ 300,00</b> por quarto para duas pessoas (valor aproximado).</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="glow" aria-label="Parceria de mídia">
+  <div class="container reveal">
+    <span class="eyebrow">Parceria de mídia</span>
+    <h2 class="section-title">Fernando Beteti</h2>
+    <div class="split">
+      <div class="split-photo"><img src="Imgs/Beteti.jpeg" alt="Fernando Beteti" style="border-radius:16px;border:1px solid var(--borda-card);width:100%;aspect-ratio:4/5;object-fit:cover;object-position:center 22%;"></div>
+      <div class="media-card">
+        <b class="title">Parceria e alcance digital</b>
+        <p>Evento em parceria com o jornalista Fernando Beteti. Além da exposição durante os dois dias do congresso, os parceiros terão direito a LIVE com o jornalista em seu canal no YouTube.</p>
+        <p>O canal possui mais de <strong style="color:var(--dourado)">1 milhão de seguidores</strong>, ampliando a exposição das marcas participantes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="glow" aria-label="Planta">
+  <div class="container reveal">
+    <span class="eyebrow">Planta</span>
+    <h2 class="section-title">Mapa dos Espaços do Congresso</h2>
+
+    <div class="plan-card zoom-wrap" id="plan-zoom" style="cursor:zoom-in;">
+      <svg viewBox="0 0 760 430" role="img" aria-label="Planta baixa do centro de convenções">
+        <g>
+          <path d="M470 20 A210 210 0 0 1 470 410 L560 410 A300 300 0 0 0 560 20 Z" fill="rgba(242,199,68,.1)" stroke="#f2c744" stroke-width="1.4"/>
+          <path d="M500 60 A165 165 0 0 1 500 370" fill="none" stroke="#f2c744" stroke-width="1" opacity=".5"/>
+          <path d="M530 95 A125 125 0 0 1 530 335" fill="none" stroke="#f2c744" stroke-width="1" opacity=".35"/>
+          <text x="560" y="220" text-anchor="middle" font-family="League Spartan" font-size="14" fill="#f2c744" font-weight="700">ANFITEATRO</text>
+          <text x="560" y="238" text-anchor="middle" font-family="Roboto" font-size="11" fill="rgba(255,255,255,.7)">até 400 lugares</text>
+        </g>
+
+        <rect x="150" y="24" width="230" height="150" rx="6" fill="rgba(0,0,0,.25)" stroke="rgba(217,53,72,.55)"/>
+        <text x="265" y="44" text-anchor="middle" font-family="League Spartan" font-size="12" fill="#fff" font-weight="700">PALESTRA SIMULTÂNEA</text>
+        <text x="265" y="58" text-anchor="middle" font-family="Roboto" font-size="10" fill="rgba(255,255,255,.7)">até 120 lugares</text>
+        <g transform="translate(165,68)">
+          <g fill="rgba(255,255,255,.14)">
+            <rect x="0" y="0" width="200" height="8" rx="2"/>
+            <rect x="0" y="14" width="200" height="8" rx="2"/>
+            <rect x="0" y="28" width="200" height="8" rx="2"/>
+            <rect x="0" y="42" width="200" height="8" rx="2"/>
+            <rect x="0" y="56" width="200" height="8" rx="2"/>
+            <rect x="0" y="70" width="200" height="8" rx="2"/>
+            <rect x="0" y="84" width="200" height="8" rx="2"/>
+          </g>
+        </g>
+
+        <g font-family="Roboto" font-size="9.5" fill="rgba(255,255,255,.7)">
+          <rect x="20" y="24" width="110" height="46" rx="5" fill="rgba(0,0,0,.25)" stroke="rgba(217,53,72,.55)"/>
+          <text x="75" y="42" text-anchor="middle" fill="#fff" font-weight="700">SALA 08</text>
+          <text x="75" y="55" text-anchor="middle">reuniões · 52 m²</text>
+
+          <rect x="20" y="82" width="110" height="46" rx="5" fill="rgba(0,0,0,.25)" stroke="rgba(217,53,72,.55)"/>
+          <text x="75" y="100" text-anchor="middle" fill="#fff" font-weight="700">SALA 07</text>
+          <text x="75" y="113" text-anchor="middle">reuniões · 47 m²</text>
+
+          <rect x="20" y="230" width="110" height="150" rx="5" fill="rgba(0,0,0,.25)" stroke="rgba(217,53,72,.55)"/>
+          <text x="75" y="252" text-anchor="middle" fill="#fff" font-weight="700">SALA 06</text>
+          <text x="75" y="265" text-anchor="middle">reuniões · 108 m²</text>
+
+          <rect x="140" y="330" width="90" height="50" rx="5" fill="rgba(0,0,0,.25)" stroke="rgba(217,53,72,.55)"/>
+          <text x="185" y="350" text-anchor="middle" fill="#fff" font-weight="700">SALÃO 05</text>
+          <text x="185" y="363" text-anchor="middle">reuniões · 90 m²</text>
+
+          <rect x="242" y="330" width="70" height="50" rx="5" fill="rgba(0,0,0,.25)" stroke="rgba(217,53,72,.55)"/>
+          <text x="277" y="350" text-anchor="middle" fill="#fff" font-weight="700">SALA 03</text>
+          <text x="277" y="363" text-anchor="middle">17 m²</text>
+
+          <rect x="320" y="330" width="70" height="50" rx="5" fill="rgba(0,0,0,.25)" stroke="rgba(217,53,72,.55)"/>
+          <text x="355" y="350" text-anchor="middle" fill="#fff" font-weight="700">SALA 04</text>
+          <text x="355" y="363" text-anchor="middle">11 m²</text>
+        </g>
+
+        <g>
+          <rect x="150" y="186" width="240" height="130" rx="6" fill="rgba(255,106,0,.12)" stroke="#ff6a00" stroke-width="1.1"/>
+          <text x="270" y="204" text-anchor="middle" font-family="League Spartan" font-size="12" fill="#ff6a00" font-weight="700">FOYER · ÁREA DE EXPOSITORES</text>
+          <text x="270" y="218" text-anchor="middle" font-family="Roboto" font-size="10" fill="rgba(255,255,255,.7)">250 m² · estandes 1–13</text>
+        </g>
+
+        <circle cx="70" cy="200" r="16" fill="rgba(242,199,68,.14)" stroke="#f2c744"/>
+        <text x="70" y="204" text-anchor="middle" font-family="League Spartan" font-size="8.5" fill="#f2c744" font-weight="700">CAFÉ</text>
+
+        <g font-family="Roboto" font-size="9.5" font-weight="700" fill="#fff">
+          <g fill="rgba(0,0,0,.3)" stroke="#ff6a00" stroke-width="1">
+            <rect x="160" y="228" width="24" height="24" rx="3"/>
+            <rect x="188" y="228" width="24" height="24" rx="3"/>
+            <rect x="216" y="228" width="24" height="24" rx="3"/>
+            <rect x="244" y="228" width="24" height="24" rx="3"/>
+            <rect x="272" y="228" width="24" height="24" rx="3"/>
+            <rect x="300" y="228" width="24" height="24" rx="3"/>
+            <rect x="328" y="228" width="24" height="24" rx="3"/>
+            <rect x="160" y="262" width="24" height="24" rx="3"/>
+            <rect x="188" y="262" width="24" height="24" rx="3"/>
+            <rect x="216" y="262" width="24" height="24" rx="3"/>
+            <rect x="244" y="262" width="24" height="24" rx="3"/>
+            <rect x="272" y="262" width="24" height="24" rx="3"/>
+            <rect x="300" y="262" width="24" height="24" rx="3"/>
+          </g>
+          <g text-anchor="middle">
+            <text x="172" y="244">1</text><text x="200" y="244">2</text><text x="228" y="244">3</text>
+            <text x="256" y="244">4</text><text x="284" y="244">5</text><text x="312" y="244">6</text>
+            <text x="340" y="244">7</text>
+            <text x="172" y="278">8</text><text x="200" y="278">9</text><text x="228" y="278">10</text>
+            <text x="256" y="278">11</text><text x="284" y="278">12</text><text x="312" y="278">13</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+    <p class="plan-zoom-hint">Clique na planta pra ampliar.</p>
+
+    <div class="plan-legend">
+      <span><i class="swatch" style="background:rgba(242,199,68,.1);border:1px solid #f2c744"></i>Anfiteatro</span>
+      <span><i class="swatch" style="background:rgba(255,106,0,.12);border:1px solid #ff6a00"></i>Foyer / estandes</span>
+      <span><i class="swatch" style="background:rgba(0,0,0,.25);border:1px solid rgba(217,53,72,.55)"></i>Salas de apoio</span>
+      <span><i class="swatch" style="background:rgba(242,199,68,.14);border:1px solid #f2c744"></i>Café</span>
+    </div>
+  </div>
+</section>
+
+<section aria-label="Exposição — Estandes">
+  <div class="container reveal">
+    <span class="eyebrow">Exposição</span>
+    <h2 class="section-title">Distribuição e Medidas dos Estandes</h2>
+
+    <div class="tables-duo">
+      <div class="table-scroll">
+        <table>
+          <caption>Área externa / foyer — estandes 1 a 13</caption>
+          <thead><tr><th>Estande</th><th class="num">Mesas</th><th>Tamanho</th></tr></thead>
+          <tbody>
+            <tr><td class="num">1</td><td class="num">3</td><td class="num">4,7 × 1,5 m</td></tr>
+            <tr><td class="num">2</td><td class="num">2</td><td class="num">2,5 × 1,9 m</td></tr>
+            <tr><td class="num">3</td><td class="num">2</td><td class="num">3,0 × 1,5 m</td></tr>
+            <tr><td class="num">4</td><td class="num">2</td><td class="num">3,0 × 1,5 m</td></tr>
+            <tr><td class="num">5</td><td class="num">2</td><td class="num">3,0 × 1,5 m</td></tr>
+            <tr><td class="num">6</td><td class="num">2</td><td class="num">3,0 × 1,5 m</td></tr>
+            <tr><td class="num">7</td><td class="num">1</td><td class="num">1,5 × 1,5 m</td></tr>
+            <tr><td class="num">8</td><td class="num">1</td><td class="num">1,5 × 1,0 m</td></tr>
+            <tr><td class="num">9</td><td class="num">1</td><td class="num">1,5 × 1,0 m</td></tr>
+            <tr><td class="num">10</td><td class="num">2</td><td class="num">1,5 × 1,5 m</td></tr>
+            <tr><td class="num">11</td><td class="num">2</td><td class="num">3,6 × 2,0 m</td></tr>
+            <tr><td class="num">12</td><td class="num">3</td><td class="num">4,5 × 1,5 m</td></tr>
+            <tr><td class="num">13</td><td class="num">bancada</td><td class="num">7,0 × 3,5 m</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <caption>Dentro da sala para expositores — estandes 14 a 32</caption>
+          <thead><tr><th>Estande</th><th class="num">Mesas</th><th>Tamanho</th></tr></thead>
+          <tbody>
+            <tr><td class="num">14</td><td class="num">4</td><td class="num">6,0 × 6,0 m</td></tr>
+            <tr><td class="num">15</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">16</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">17</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">18</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">19</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">20</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">21</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">22</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">23</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">24</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">25</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">26</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">27</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">28</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">29</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">30</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">31</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+            <tr><td class="num">32</td><td class="num">2</td><td class="num">1,70 × 1,50 m</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="glow" aria-label="Cotas de patrocínio">
+  <div class="container reveal">
+    <span class="eyebrow">Cota de patrocínio</span>
+    <h2 class="section-title">Pacotes de expositor</h2>
+    <p class="section-sub">Valores parceláveis em até 3 depósitos até a data do congresso, ou em até 12x no cartão — com 10% de desconto pra quem paga à vista.</p>
+
+    <div class="tiers">
+      <div class="tier diamond">
+        <span class="badge">Expositor Diamond</span>
+        <div>
+          <h3>Diamond</h3>
+          <div class="price">R$ 40.000<small>investimento total</small></div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:center;">
+          <img src="Imgs/LogoAcqua.png" alt="Exemplo de patrocinador Diamond — Acqua Purificadores" style="max-height:70px;width:auto;">
+        </div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>Cota principal de patrocínio, com a maior visibilidade de marca do Congresso</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>Inclui tudo da cota Master</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>Benefícios exclusivos definidos em proposta comercial dedicada</li>
+        </ul>
+        <div class="pay"><b>À vista:</b> 10% off · <b>Parcelado:</b> até 3 depósitos ou 12x no cartão</div>
+      </div>
+
+      <div class="tier master">
+        <span class="badge">Expositor Master</span>
+        <div>
+          <h3>Master</h3>
+          <div class="price">R$ 15.000<small>investimento total</small></div>
+        </div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>Palestra de 40 min no auditório principal, para 400 pessoas</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>Espaço Premium 3×2 m com bancada, pra expor e vender</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>Até 5 pessoas da equipe liberadas no estande</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>4 ingressos para convidados</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>Logo em backdrop e nos meios de comunicação do congresso</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>2 lives com Fernando Beteti — antes do congresso e após a palestra no evento</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>Contato de celular da empresa exibido no rodapé da live, pra geração de contatos</li>
+        </ul>
+        <div class="pay"><b>À vista:</b> 10% off · <b>Parcelado:</b> até 3 depósitos ou 12x no cartão</div>
+      </div>
+
+      <div class="tier gold">
+        <span class="badge">Expositor Gold</span>
+        <div>
+          <h3>Gold</h3>
+          <div class="price">R$ 6.000<small>investimento total</small></div>
+        </div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>Espaço Premium 2×2 m com bancada, pra expor e vender</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>Até 4 pessoas da equipe liberadas no estande</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>2 ingressos para convidados</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>Logo em backdrop e nos meios de comunicação do congresso</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>1 live exclusiva com Fernando Beteti, de 10 a 15 min, antes do congresso (out/nov)</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 13 4 4L19 7"/></svg>Contato de celular da empresa exibido no rodapé da live, pra geração de contatos</li>
+        </ul>
+        <div class="pay"><b>À vista:</b> 10% off · <b>Parcelado:</b> até 3 depósitos ou 12x no cartão</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-label="Condição comercial">
+  <div class="container reveal">
+    <span class="eyebrow">Condição comercial</span>
+    <h2 class="section-title">Pagamento à vista com 10% de desconto</h2>
+    <div class="cta-card">
+      <p>As oportunidades de exposição são limitadas. Reserve o espaço da sua marca e participe do 4º Congresso de Práticas Integrativas no Tratamento e Prevenção do Câncer.</p>
+      <div class="cta-meta">20 e 21 de Novembro · Hotel Nacional Inn · São José dos Campos — SP</div>
+    </div>
+    <div class="cta-sign">
+      <b>NOVVA SAÚDE INTEGRATIVA</b>
+      <span>Onasis Torres e Carlos Alberto — Diretoria</span>
+    </div>
+  </div>
+</section>
+
+<section class="glow" aria-label="Diretoria">
+  <div class="container reveal">
+    <span class="eyebrow">Diretoria</span>
+    <h2 class="section-title">Onasis Torres e Carlos Alberto</h2>
+    <div class="duo-portrait">
+      <div class="portrait"><img src="Imgs/Beto.png" alt="Carlos Alberto"><b>Carlos Alberto</b></div>
+      <div class="portrait"><img src="Imgs/Onasis.jpeg" alt="Onasis Torres"><b>Onasis Torres</b></div>
+    </div>
+    <p class="team-caption">Diretores da NOVVA Saúde Integrativa e idealizadores do Congresso.</p>
+    <p class="team-caption" style="margin-top:10px;"><a href="https://congressocancer.novvasaudeintegrativa.com.br/" target="_blank" rel="noopener" style="color:var(--dourado);font-weight:700;text-decoration:underline;">congressocancer.novvasaudeintegrativa.com.br</a></p>
+  </div>
+</section>
+
+<footer>
+  Kit de expositor · 4ª edição do Congresso de Práticas Integrativas no Tratamento e Prevenção do Câncer
+</footer>
+
+<div class="lightbox" id="lightbox" hidden>
+  <button class="lightbox-close" id="lightbox-close" aria-label="Fechar">&times;</button>
+  <div class="lightbox-inner" id="lightbox-inner"></div>
+</div>
+
+<script>
+(function(){
+  var lb = document.getElementById('lightbox');
+  var lbInner = document.getElementById('lightbox-inner');
+
+  function open(html){
+    lbInner.innerHTML = html;
+    lb.hidden = false;
+  }
+  function close(){
+    lb.hidden = true;
+    lbInner.innerHTML = '';
+  }
+
+  document.querySelectorAll('img.zoomable').forEach(function(img){
+    img.addEventListener('click', function(){
+      var alt = (img.getAttribute('alt') || '').replace(/"/g, '&quot;');
+      open('<img src="' + img.currentSrc + '" alt="' + alt + '">');
+    });
+  });
+
+  var planZoom = document.getElementById('plan-zoom');
+  if(planZoom){
+    planZoom.addEventListener('click', function(){
+      var svg = planZoom.querySelector('svg');
+      if(svg) open(svg.outerHTML);
+    });
+  }
+
+  document.getElementById('lightbox-close').addEventListener('click', close);
+  lb.addEventListener('click', function(e){ if(e.target === lb) close(); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animateCount(el){
+    var target = parseInt(el.getAttribute('data-count'), 10) || 0;
+    var prefix = el.getAttribute('data-prefix') || '';
+    var suffix = el.getAttribute('data-suffix') || '';
+    var thousand = el.getAttribute('data-thousand') === '1';
+    if(reduceMotion){
+      el.textContent = prefix + (thousand ? target.toLocaleString('pt-BR') : target) + suffix;
+      return;
+    }
+    var start = null, duration = 1100;
+    function frame(ts){
+      if(start === null) start = ts;
+      var p = Math.min((ts - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - p, 3);
+      var val = Math.round(target * eased);
+      el.textContent = prefix + (thousand ? val.toLocaleString('pt-BR') : val) + suffix;
+      if(p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  if('IntersectionObserver' in window){
+    var revealObserver = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(function(el){ revealObserver.observe(el); });
+
+    var countObserver = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          animateCount(entry.target);
+          countObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.4 });
+    document.querySelectorAll('.stat b[data-count]').forEach(function(el){ countObserver.observe(el); });
+  } else {
+    document.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('visible'); });
+    document.querySelectorAll('.stat b[data-count]').forEach(animateCount);
+  }
+})();
+</script>
+
+</body>
+</html>
