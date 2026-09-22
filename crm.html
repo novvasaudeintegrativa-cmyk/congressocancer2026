@@ -244,18 +244,27 @@
   }
 
   /* ---- comentários do Instagram ---- */
-  #ig-lista{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:start;}
-  @media (max-width:900px){ #ig-lista{grid-template-columns:repeat(2,1fr);} }
-  @media (max-width:600px){ #ig-lista{grid-template-columns:1fr;} }
+  /* auto-fill + minmax em vez de nº fixo de colunas por media query: cada
+     coluna nunca fica menor que 230px, então o próprio grid decide quantas
+     cabem — funciona tanto na página aberta direto (até 4, o container tem
+     1200px) quanto dentro do iframe do novva-crm.html (que pode renderizar
+     bem mais estreito que isso) sem estourar a largura nem precisar travar
+     breakpoint nenhum feito no chute. */
+  #ig-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;align-items:start;}
   .ig-item-oculto{display:none;}
   .ig-mostrar-mais{grid-column:1/-1;justify-self:center;margin-top:4px;font-family:var(--tit);font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;background:#fff;border:1px solid var(--linha);color:var(--bordo);padding:9px 18px;border-radius:9px;cursor:pointer;}
   .ig-mostrar-mais:hover{border-color:var(--bordo);}
-  .ig-item{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:12px 14px;}
+  .ig-item{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:12px 14px;min-width:0;}
   .ig-item-cab{display:flex;align-items:center;gap:8px;}
   .ig-item-info{min-width:0;flex:1;}
   .ig-item-nome{font-family:var(--tit);font-weight:800;font-size:12.5px;color:var(--ink);}
   .ig-item-quando{font-size:10.5px;color:var(--faint);}
-  .ig-item-texto{font-size:13px;color:var(--ink);margin:8px 0 0;padding-left:32px;}
+  /* overflow-wrap: os comentários às vezes trazem um link colado (sem
+     espaço) mais largo que a coluna — sem isso ele força a coluna a abrir
+     e o grid inteiro passa da largura do container/iframe. */
+  .ig-item-texto{font-size:13px;color:var(--ink);margin:8px 0 0;padding-left:32px;overflow-wrap:anywhere;}
+  .ig-item-dispensar{flex:none;background:none;border:0;color:var(--faint);font-size:11px;cursor:pointer;padding:2px 4px;}
+  .ig-item-dispensar:hover{color:var(--bordo);}
   .ig-resposta-caixa{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding-left:32px;}
   .ig-resposta-caixa textarea{width:100%;border:1px solid var(--linha);border-radius:9px;padding:8px 10px;font-family:var(--corpo);font-size:13px;color:var(--ink);background:#fff;resize:vertical;min-height:58px;}
   .ig-resposta-acoes{display:flex;gap:8px;align-items:center;justify-content:space-between;}
@@ -1417,6 +1426,7 @@
             '<div class="ig-item-nome">@' + esc(c.autor_username || 'desconhecido') + '</div>' +
             '<div class="ig-item-quando">' + fmtQuando(c.criado_em) + '</div>' +
           '</div>' +
+          '<button type="button" class="ig-item-dispensar" title="Já respondi isso fora do CRM (no app do Instagram) — tirar da lista">' + ic('x', 12) + '</button>' +
         '</div>' +
         '<div class="ig-item-texto">' + esc(c.texto || '') + '</div>' +
         '<div class="ig-resposta-caixa">' +
@@ -1452,6 +1462,14 @@
     }
 
     $('ig-lista').querySelectorAll('.ig-item').forEach(function(item){
+      var btnDispensar = item.querySelector('.ig-item-dispensar');
+      if (btnDispensar) btnDispensar.addEventListener('click', function(){
+        if (!confirm('Já respondeu esse comentário direto no Instagram (fora do CRM)? Isso só tira ele da lista aqui, não mexe no Instagram.')) return;
+        btnDispensar.disabled = true;
+        apiPatch('instagram_comentarios?comment_id=eq.' + encodeURIComponent(item.dataset.id), { respondido: true, respondido_em: new Date().toISOString() }, { Prefer: 'return=minimal' })
+          .then(function(){ carregarComentariosInstagram(); })
+          .catch(function(err){ alert('Não deu pra dispensar: ' + err.message); btnDispensar.disabled = false; });
+      });
       var btnResp = item.querySelector('.ig-responder-btn');
       if (btnResp){
         var input = item.querySelector('.ig-resposta-input');
