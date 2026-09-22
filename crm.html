@@ -258,6 +258,7 @@
   .ig-mostrar-mais{grid-column:1/-1;justify-self:center;margin-top:4px;font-family:var(--tit);font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;background:#fff;border:1px solid var(--linha);color:var(--bordo);padding:9px 18px;border-radius:9px;cursor:pointer;}
   .ig-mostrar-mais:hover{border-color:var(--bordo);}
   .ig-item{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:12px 14px;min-width:0;}
+  .ig-badge-propria{flex:none;display:flex;align-items:center;font-family:var(--tit);font-weight:700;font-size:9.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--bordo-vivo);background:rgba(185,45,61,.1);padding:3px 7px;border-radius:999px;white-space:nowrap;}
   .ig-item-cab{display:flex;align-items:center;gap:8px;}
   .ig-item-info{min-width:0;flex:1;}
   .ig-item-nome{font-family:var(--tit);font-weight:800;font-size:12.5px;color:var(--ink);}
@@ -1145,6 +1146,9 @@
 
   // ---------- render ----------
   function leadVisivelNoFiltro(l){
+    // Pipeline é só WhatsApp — leads antigos vindos de comentário do
+    // Instagram (canal='instagram') não aparecem mais aqui.
+    if (l.canal === 'instagram') return false;
     var fb = $('f-busca').value.trim().toLowerCase();
     if (fb && (l.nome || '').toLowerCase().indexOf(fb) === -1) return false;
     // simulando "ver como vendedor": só mostra o que é meu ou está livre pra assumir
@@ -1263,7 +1267,7 @@
       '</div>' +
       (badges ? '<div class="badges">' + badges + '</div>' : '') +
       '<div class="linha-acao acoes-rapidas">' +
-        (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="' + (l.canal === 'instagram' ? 'Ver comentário no Instagram' : 'Ver conversa no CRM') + '">' + ic('message-circle', 12) + '</button>') +
+        (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="Ver conversa no CRM">' + ic('message-circle', 12) + '</button>') +
         (l.campanha_whatsapp_nome ? '<span class="icon-btn meta" title="Veio da campanha Meta: ' + esc(l.campanha_whatsapp_nome) + '">' + ic('megaphone', 12) + '</span>' : '') +
         (triar ? '' : '<button type="button" class="icon-btn btn-nota' + (l.nota ? ' tem-nota' : '') + '" title="' + (l.nota ? esc(l.nota) : 'Adicionar anotação') + '">' + ic('edit-3', 12) + '</button>') +
         (triar ? '' : respIcon) +
@@ -1314,10 +1318,6 @@
     // ver conversa (pula pra seção Conversas e abre a thread desse número)
     var verConv = c.querySelector('.btn-ver-conversa');
     if (verConv) verConv.addEventListener('click', function(){
-      if (l.canal === 'instagram'){
-        $('view-instagram').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        return;
-      }
       var n = this.dataset.w;
       $('view-conversas').scrollIntoView({ behavior: 'smooth', block: 'start' });
       setTimeout(function(){ renderThread(n); }, 350);
@@ -1429,15 +1429,22 @@
     }); });
   }
 
+  // o webhook do Instagram não consegue distinguir com segurança um
+  // comentário de verdade da própria resposta da página (responder um
+  // comentário pela API também dispara o mesmo evento de webhook — ver
+  // SUPABASE.md §30.5.1/§30.5.2), então sinaliza aqui pelo @usuário e
+  // deixa a equipe decidir se dispensa no "x".
+  var NOSSO_INSTAGRAM_USERNAME = 'novvasaudeintegrativa';
+
   function renderComentariosInstagram(rows){
-    // já respondido = já virou lead automaticamente (ver virarLeadInstagram
-    // logo abaixo) — some dessa seção e passa a viver só no Pipeline, pra
-    // aqui sobrar só o que ainda espera resposta.
+    // já respondido = já foi tratado (pelo botão Responder ou pelo "x" de
+    // dispensar) — some dessa seção, pra aqui sobrar só o que ainda espera.
     rows = (rows || []).filter(function(c){ return !c.respondido && !c.virou_lead; });
     if (!rows.length){ $('ig-lista').innerHTML = '<div class="vazio-col">Nenhum comentário pendente — tudo respondido!</div>'; return; }
     var limite = igColunas() * IG_LIMITE_LINHAS;
     var itensHtml = rows.map(function(c, i){
       var oculto = !igExpandido && i >= limite;
+      var souEu = (c.autor_username || '').trim().toLowerCase() === NOSSO_INSTAGRAM_USERNAME;
       return '<div class="ig-item' + (oculto ? ' ig-item-oculto' : '') + '" data-id="' + esc(c.comment_id) + '" data-ig-id="' + esc(c.autor_ig_id || '') + '" data-username="' + esc(c.autor_username || '') + '">' +
         '<div class="ig-item-cab">' +
           avatarHtml(c.autor_username, c.autor_ig_id, 'instagram') +
@@ -1445,6 +1452,7 @@
             '<div class="ig-item-nome">@' + esc(c.autor_username || 'desconhecido') + '</div>' +
             '<div class="ig-item-quando">' + fmtQuando(c.criado_em) + '</div>' +
           '</div>' +
+          (souEu ? '<span class="ig-badge-propria" title="O autor é a própria conta do Congresso — provavelmente sua resposta enviada direto no Instagram, não um comentário novo">Sua conta</span>' : '') +
           '<button type="button" class="ig-item-dispensar" title="Já respondi isso fora do CRM (no app do Instagram) — tirar da lista">' + ic('x', 12) + '</button>' +
         '</div>' +
         '<div class="ig-item-texto">' + esc(c.texto || '') + '</div>' +
@@ -1471,15 +1479,6 @@
       renderComentariosInstagram(rows);
     });
 
-    function virarLeadInstagram(item){
-      var igId = item.dataset.igId, username = item.dataset.username;
-      if (!igId) return Promise.resolve();
-      return upsertLead('ig:' + igId, { nome_whatsapp: '@' + (username || 'instagram'), canal: 'instagram' })
-        .then(function(){
-          return apiPatch('instagram_comentarios?comment_id=eq.' + encodeURIComponent(item.dataset.id), { virou_lead: true }, { Prefer: 'return=minimal' });
-        });
-    }
-
     $('ig-lista').querySelectorAll('.ig-item').forEach(function(item){
       var btnDispensar = item.querySelector('.ig-item-dispensar');
       if (btnDispensar) btnDispensar.addEventListener('click', function(){
@@ -1504,8 +1503,7 @@
           if (!texto) return;
           btnResp.disabled = true; btnResp.textContent = 'Enviando…';
           instagramResponder(item.dataset.id, texto)
-            // responder já demonstra interesse em levar a conversa adiante — vira lead sozinho
-            .then(function(){ return virarLeadInstagram(item); })
+            // Pipeline é só WhatsApp — responder no Instagram não vira lead aqui
             .then(function(){ carregarComentariosInstagram(); })
             .catch(function(err){
               alert('Não deu pra responder: ' + err.message);

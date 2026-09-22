@@ -5702,24 +5702,8 @@ Supabase → **Edge Functions** → **Deploy a new function** → nome
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const VERIFY_TOKEN  = Deno.env.get("INSTAGRAM_VERIFY_TOKEN")?.trim();
-const IG_TOKEN       = Deno.env.get("INSTAGRAM_ACCESS_TOKEN")?.trim();
 const SUPABASE_URL   = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-// id da própria conta do Instagram — responder um comentário pela API
-// TAMBÉM dispara o webhook de "comments" (o reply é, ele mesmo, um novo
-// comentário), então sem esse filtro a sua própria resposta reaparecia
-// na lista como se fosse um comentário novo de outra pessoa. Busca uma
-// vez via Graph API e guarda em memória (a function fica "quente" entre
-// chamadas, então isso não bate na API a cada webhook).
-let meuIgId: string | null = null;
-async function getMeuIgId() {
-  if (meuIgId || !IG_TOKEN) return meuIgId;
-  const r = await fetch(`https://graph.instagram.com/v23.0/me?fields=id&access_token=${IG_TOKEN}`);
-  const d = await r.json().catch(() => null);
-  meuIgId = d?.id || null;
-  return meuIgId;
-}
 
 Deno.serve(async (req) => {
   const url = new URL(req.url);
@@ -5739,14 +5723,16 @@ Deno.serve(async (req) => {
 
   const body = await req.json().catch(() => null);
   const entradas = body?.entry || [];
-  const meuId = await getMeuIgId();
 
   for (const entrada of entradas) {
     const changes = entrada.changes || [];
     for (const change of changes) {
       if (change.field !== "comments") continue;
       const v = change.value || {};
-      if (meuId && v.from?.id === meuId) continue; // resposta da própria página, ignora
+      // não dá pra filtrar aqui a resposta da própria página com segurança
+      // (tentativas por id via Graph API e por @usuário já falharam nessa
+      // conta — ver §30.5.1/§30.5.2) — grava tudo, e o crm.html sinaliza
+      // e deixa a equipe dispensar manualmente (§30.5.2).
       const row = {
         comment_id: v.id,
         media_id: v.media?.id || null,
@@ -5776,11 +5762,14 @@ Deno.serve(async (req) => {
 **Secrets dessa function** (Edge Functions → `instagram-webhook` → Secrets):
 - `INSTAGRAM_VERIFY_TOKEN` — invente uma string qualquer (ex: um UUID),
   só precisa bater com o que você vai colar no painel da Meta no §30.4.
-- `INSTAGRAM_ACCESS_TOKEN` — o mesmo token já usado no
-  `instagram-responder` (§30.3), copia o valor pra cá também (cada Edge
-  Function tem seus próprios secrets).
 - `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já existem por padrão em
   toda Edge Function do projeto (não precisa criar).
+- **Não precisa de `INSTAGRAM_ACCESS_TOKEN` nem `INSTAGRAM_OWN_USERNAME`
+  aqui** — eram de tentativas anteriores de filtrar a própria resposta
+  no webhook, que não funcionaram (ver §30.5.1/§30.5.2). Pode remover
+  essas secrets do `instagram-webhook` se já tiver adicionado; o
+  `instagram-responder` (§30.3) continua precisando do
+  `INSTAGRAM_ACCESS_TOKEN` normalmente.
 
 ### 30.3. Edge Function `instagram-responder` (responde comentário pelo CRM)
 
@@ -5901,25 +5890,43 @@ mandar o reply pela API do Instagram também dispara o webhook de
 `comments` (o reply é, ele mesmo, um comentário novo), e a function
 gravava tudo que chegava, sem checar o autor.
 
-**Correção:** `instagram-webhook` (§30.2) agora busca o próprio ID da
-conta via Graph API (`INSTAGRAM_ACCESS_TOKEN`, precisa adicionar esse
-secret na function) e ignora qualquer evento cujo `from.id` seja o
-próprio — não grava, não aparece na lista.
+**1ª tentativa (não funcionou):** fazer o `instagram-webhook` buscar o
+próprio ID da conta via Graph API (`/me`) e ignorar evento cujo
+`from.id` batesse com esse ID. Na prática o ID que a Graph API devolve
+não bate com o `from.id` que vem no payload do webhook nessa conta, e a
+resposta própria continuou aparecendo — ver §30.5.2 pra solução final.
 
-**Pra aplicar:** cola o código atualizado do §30.2 na function
-`instagram-webhook` no Supabase, adiciona o secret
-`INSTAGRAM_ACCESS_TOKEN` nela e faz o Deploy de novo.
-
-**Limpeza do que já ficou gravado errado:** as respostas próprias que
-já caíram na tabela como comentário aparecem com
-`autor_username = 'novvasaudeintegrativa'` (ou o handle da sua conta).
-Pra apagar as que já estão lá, roda no SQL Editor do Supabase (troca o
-handle se for diferente):
+**Limpeza pontual:** se sobrar comentário próprio já gravado errado
+(aparece com `autor_username = 'novvasaudeintegrativa'`, ou o handle da
+sua conta), dá pra apagar direto no SQL Editor do Supabase:
 
 ```sql
 delete from public.instagram_comentarios
 where autor_username = 'novvasaudeintegrativa';
 ```
+
+### 30.5.2. Correção de verdade (21/09/2026) — sinaliza em vez de filtrar
+
+Depois que filtrar por ID (§30.5.1) não resolveu, e comparar por
+`@usuário` diretamente no webhook também não é 100% confiável (não dá
+pra saber se o payload sempre traz o `from.username` preenchido do
+mesmo jeito), a decisão foi: **parar de tentar adivinhar isso no
+webhook** — `instagram-webhook` (§30.2) voltou a gravar tudo que chega,
+sem filtro nenhum.
+
+Quem resolve agora é o `crm.html`: na lista "Comentários do Instagram",
+todo comentário cujo `autor_username` bate com a conta do Congresso
+(`novvasaudeintegrativa`) ganha um selo **"Sua conta"** ao lado do
+nome/data — um aviso visual de que aquilo provavelmente é uma resposta
+sua mandada direto pelo app do Instagram, não um comentário novo de
+verdade. A decisão de tirar da lista fica com quem está de olho na
+tela: clica no mesmo **"x"** de dispensar que já existia (marca
+`respondido=true`, some da lista).
+
+**Por que essa abordagem:** é a única que não depende de nenhum detalhe
+de API que possa variar por conta/token (ID interno, formato do
+payload) — o `@usuário` que aparece pro humano é o mesmo que o humano
+reconhece na hora, sem chance de falso negativo silencioso.
 
 ### 30.6. Pendências (registradas, não fazem parte desta fase)
 
@@ -5930,6 +5937,14 @@ where autor_username = 'novvasaudeintegrativa';
 - ~~Unificar com o inbox do WhatsApp~~ — resolvido de outro jeito, ver §31.
 
 ## 31. CRM — Instagram: botão "Virar lead" (comentário entra no Pipeline)
+
+> **Revertido (21/09/2026):** decisão foi manter o Pipeline só pra
+> WhatsApp — comentário respondido no Instagram não vira lead mais.
+> `crm.html` não chama mais essa conversão automática, e o Kanban agora
+> filtra fora qualquer lead com `canal='instagram'` (inclusive os que já
+> tinham sido criados antes). O SQL abaixo (coluna `canal`, `virou_lead`
+> e o RPC) não foi desfeito no banco — é inofensivo ficar, só não é mais
+> usado por essa função. Fica registrado só como histórico.
 
 **Contexto (19/09/2026):** a seção "Comentários do Instagram" (§30)
 ficou meio solta, sem relação com o resto do fluxo de vendas. Em vez de
