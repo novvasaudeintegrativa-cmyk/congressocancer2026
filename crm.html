@@ -114,11 +114,21 @@
   .icon-btn-apagar:hover{background:var(--bordo-vivo);border-color:var(--bordo-vivo);color:#fff;}
   .icon-btn-apagar:disabled{opacity:.5;cursor:default;}
   .icon-btn.sm{width:18px;height:18px;font-size:9.5px;}
-  .card .nota{width:100%;margin-top:5px;font-family:var(--corpo);font-size:11px;padding:5px 7px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--ink);resize:vertical;min-height:34px;}
+  .card .nota-editor{width:100%;margin-top:5px;display:flex;flex-direction:column;gap:4px;}
+  .card .nota{width:100%;font-family:var(--corpo);font-size:11px;padding:5px 7px;border-radius:7px;border:1px solid var(--linha);background:#fff;color:var(--ink);resize:vertical;min-height:34px;}
+  .card .nota-lembrete-label{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--soft);}
+  .card .nota-lembrete{font-family:var(--corpo);font-size:10.5px;padding:3px 5px;border-radius:6px;border:1px solid var(--linha);background:#fff;color:var(--ink);flex:1;min-width:0;}
   .icon-btn.meta{background:rgba(47,111,158,.14);color:var(--azul);border-color:var(--azul);cursor:default;}
   .icon-btn.meta:hover{background:rgba(47,111,158,.14);color:var(--azul);}
+  .icon-btn.btn-nota{position:relative;}
   .icon-btn.btn-nota.tem-nota{background:rgba(140,34,46,.14);color:var(--bordo);border-color:var(--bordo);}
   .icon-btn.btn-nota.tem-nota:hover{background:var(--bordo);color:#fff;}
+  .icon-btn.btn-nota .nota-dot{display:none;}
+  .icon-btn.btn-nota.tem-nota .nota-dot{display:block;position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:var(--bordo);border:1.5px solid var(--card);}
+  @keyframes lembrete-piscar{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .icon-btn.btn-nota.lembrete-alerta{border-color:var(--bordo-vivo);color:var(--bordo-vivo);animation:lembrete-piscar 1s ease-in-out infinite;}
+  .icon-btn.btn-nota.lembrete-alerta:hover{background:var(--bordo-vivo);color:#fff;}
+  .icon-btn.btn-nota.lembrete-alerta .nota-dot{background:var(--bordo-vivo);}
   .vazio-col{font-size:11px;color:var(--faint);text-align:center;padding:14px 4px;}
   .btn-ver-mais{width:100%;font-family:var(--tit);font-weight:700;font-size:10.5px;letter-spacing:.02em;text-transform:uppercase;background:#fff;border:1px dashed var(--linha);color:var(--soft);padding:7px;border-radius:8px;cursor:pointer;margin-top:2px;}
   .btn-ver-mais:hover{border-color:var(--bordo);color:var(--bordo);}
@@ -1255,6 +1265,8 @@
       vslBadge = '<span class="badge vsl" title="Progresso assistido da VSL">' + ic('film', 10) + ' ' + vslTxt + '</span>';
     }
     var badges = nivelBadge + vslBadge + tempoRespostaBadge(l) + (origem ? '<span class="badge origem">' + esc(origem) + '</span>' : '');
+    var lembreteAlerta = lembreteVencido(l.lembrete_em);
+    var tituloNota = (l.nota ? l.nota : 'Adicionar anotação') + (l.lembrete_em ? '\nLembrete: ' + fmtQuando(l.lembrete_em) : '');
     var ICON_WA = '<svg class="ic-wa" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm0 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 012.41 5.82c0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.4-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.188 8.188 0 01-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23zm-4.55 4.72c-.15 0-.4.06-.6.29-.21.23-.8.78-.8 1.91s.82 2.22.94 2.37c.11.15 1.6 2.57 3.97 3.5 1.96.77 2.36.62 2.78.58.42-.04 1.36-.55 1.55-1.09.19-.53.19-.99.14-1.09-.06-.1-.21-.15-.44-.27-.23-.11-1.36-.67-1.57-.75-.21-.08-.36-.11-.51.12-.15.23-.59.75-.72.9-.13.15-.26.17-.49.06-.23-.12-.96-.35-1.83-1.13-.68-.6-1.13-1.35-1.27-1.58-.13-.23-.01-.35.1-.47.11-.11.23-.27.35-.4.11-.13.15-.23.23-.38.08-.15.04-.29-.02-.4-.06-.11-.51-1.24-.71-1.7-.19-.45-.38-.39-.51-.4h-.44z"/></svg>';
 
     c.innerHTML =
@@ -1267,10 +1279,13 @@
       '<div class="linha-acao acoes-rapidas">' +
         (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="Ver conversa no CRM">' + ic('message-circle', 12) + '</button>') +
         (l.campanha_whatsapp_nome ? '<span class="icon-btn meta" title="Veio da campanha Meta: ' + esc(l.campanha_whatsapp_nome) + '">' + ic('megaphone', 12) + '</span>' : '') +
-        (triar ? '' : '<button type="button" class="icon-btn btn-nota' + (l.nota ? ' tem-nota' : '') + '" title="' + (l.nota ? esc(l.nota) : 'Adicionar anotação') + '">' + ic('edit-3', 12) + '</button>') +
+        (triar ? '' : '<button type="button" class="icon-btn btn-nota' + (l.nota ? ' tem-nota' : '') + (lembreteAlerta ? ' lembrete-alerta' : '') + '" title="' + esc(tituloNota) + '">' + ic('edit-3', 12) + '<span class="nota-dot"></span></button>') +
         (!triar && gestorAgora() ? '<span class="spacer"></span><button type="button" class="icon-btn icon-btn-apagar" data-w="' + esc(l.whatsapp || '') + '" title="Apagar este lead do pipeline">' + ic('trash-2', 12) + '</button>' : '') +
       '</div>' +
-      (triar ? '' : '<textarea class="nota" placeholder="anotação…" hidden>' + esc(l.nota || '') + '</textarea>');
+      (triar ? '' : '<div class="nota-editor" hidden>' +
+        '<textarea class="nota" placeholder="anotação…">' + esc(l.nota || '') + '</textarea>' +
+        '<label class="nota-lembrete-label">' + ic('clock', 11) + ' Lembrete <input type="datetime-local" class="nota-lembrete" value="' + esc(paraDatetimeLocal(l.lembrete_em)) + '"></label>' +
+      '</div>');
 
     var btnApagar = c.querySelector('.icon-btn-apagar');
     if (btnApagar) btnApagar.addEventListener('click', function(){
@@ -1287,21 +1302,31 @@
       setTimeout(function(){ renderThread(n); }, 350);
     });
 
-    // nota (ícone abre o campo, salva e fecha ao sair)
+    // nota + lembrete (ícone abre o editor, salva os dois campos e fecha
+    // quando o foco sai do editor inteiro — não no blur de cada campo
+    // isolado, senão trocar da textarea pro campo de data já fechava tudo)
+    var notaEditor = c.querySelector('.nota-editor');
     var nota = c.querySelector('.nota');
+    var notaLembrete = c.querySelector('.nota-lembrete');
     var btnNota = c.querySelector('.btn-nota');
-    if (btnNota && nota) btnNota.addEventListener('click', function(){
-      nota.hidden = !nota.hidden;
-      if (!nota.hidden) nota.focus();
+    if (btnNota && notaEditor) btnNota.addEventListener('click', function(){
+      notaEditor.hidden = !notaEditor.hidden;
+      if (!notaEditor.hidden) nota.focus();
     });
-    if (nota) nota.addEventListener('blur', function(){
-      var novo = this.value.trim();
-      nota.hidden = true;
+    if (notaEditor) notaEditor.addEventListener('focusout', function(e){
+      if (notaEditor.contains(e.relatedTarget)) return; // só trocou de campo dentro do editor
+      var novoTexto = (nota.value || '').trim();
+      var novoLembrete = notaLembrete.value ? new Date(notaLembrete.value).toISOString() : null;
+      notaEditor.hidden = true;
       if (btnNota){
-        btnNota.classList.toggle('tem-nota', !!novo);
-        btnNota.title = novo || 'Adicionar anotação';
+        var temLembreteAgora = lembreteVencido(novoLembrete);
+        btnNota.classList.toggle('tem-nota', !!novoTexto);
+        btnNota.classList.toggle('lembrete-alerta', temLembreteAgora);
+        btnNota.title = (novoTexto || 'Adicionar anotação') + (novoLembrete ? '\nLembrete: ' + fmtQuando(novoLembrete) : '');
       }
-      if (novo !== (l.nota || '')) upsertLead(l.whatsapp, { nota: novo || null });
+      if (novoTexto !== (l.nota || '') || novoLembrete !== (l.lembrete_em || null)){
+        upsertLead(l.whatsapp, { nota: novoTexto || null, lembrete_em: novoLembrete });
+      }
     });
 
     return c;
@@ -1363,6 +1388,20 @@
     var hm = d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
     if (d.toDateString() === hoje.toDateString()) return hm;
     return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) + ' ' + hm;
+  }
+  // lembrete da anotação: "vencido" = data/hora marcada já chegou (hoje ou antes) —
+  // é o gatilho pro botão de anotação piscar como alerta.
+  function lembreteVencido(iso){
+    if (!iso) return false;
+    return new Date(iso).getTime() <= Date.now();
+  }
+  // <input type="datetime-local"> espera "AAAA-MM-DDTHH:mm" em horário local
+  // (sem timezone) — converte o timestamp UTC vindo do banco pra isso.
+  function paraDatetimeLocal(iso){
+    if (!iso) return '';
+    var d = new Date(iso);
+    var p = function(n){ return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
   }
 
   // ---------- comentários do Instagram ----------
