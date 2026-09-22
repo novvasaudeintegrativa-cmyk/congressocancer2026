@@ -702,6 +702,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 <script>
 (function(){
   // captura a URL antes do supabase-js processar/limpar o hash de recuperação
@@ -1385,7 +1386,6 @@
 
   var RESPOSTAS_RAPIDAS = [
     { rotulo: 'Site', texto: 'Você confere todos os detalhes (programação, valores e inscrição) direto na nossa página: https://congressocancer.novvasaudeintegrativa.com.br/time-comercial.html' },
-    { rotulo: 'Site (link não abre)', texto: 'Copie esse link: https://congressocancer.novvasaudeintegrativa.com.br/time-comercial.html e cole em seu navegador ou clica diretamente no link que está na Bio do Instagram' },
   ];
 
   function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
@@ -1826,13 +1826,41 @@
     return m + ':' + (s < 10 ? '0' : '') + s;
   }
 
-  var MIME_AUDIO_PREFERIDOS = ['audio/ogg;codecs=opus', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
-  function escolherMimeAudio(){
-    if (!window.MediaRecorder) return '';
-    for (var i = 0; i < MIME_AUDIO_PREFERIDOS.length; i++){
-      if (MediaRecorder.isTypeSupported(MIME_AUDIO_PREFERIDOS[i])) return MIME_AUDIO_PREFERIDOS[i];
-    }
-    return '';
+  // O MediaRecorder do navegador grava em webm/opus (Chrome/Edge) — a Meta só
+  // aceita ogg/opus, aac, mp4, mpeg ou amr pra áudio de WhatsApp. Testado em
+  // produção: mandar webm direto resulta em status "failed" (a Meta aceita o
+  // pedido mas rejeita o arquivo depois, sem erro síncrono pra gente pegar).
+  // Corrige convertendo pra MP3 (audio/mpeg, suportado) no navegador antes de
+  // mostrar o preview/enviar, usando o lamejs (puro JS, carregado via CDN).
+  function blobParaMp3(blobOriginal){
+    return blobOriginal.arrayBuffer().then(function(buf){
+      var AudioCtx = window.AudioContext || window.webkitAudioContext;
+      var ctx = new AudioCtx();
+      return ctx.decodeAudioData(buf).then(function(audioBuffer){
+        var ch0 = audioBuffer.getChannelData(0);
+        var amostras = ch0;
+        if (audioBuffer.numberOfChannels > 1){
+          var ch1 = audioBuffer.getChannelData(1);
+          amostras = new Float32Array(ch0.length);
+          for (var i = 0; i < ch0.length; i++) amostras[i] = (ch0[i] + ch1[i]) / 2;
+        }
+        var pcm16 = new Int16Array(amostras.length);
+        for (var j = 0; j < amostras.length; j++){
+          var s = Math.max(-1, Math.min(1, amostras[j]));
+          pcm16[j] = s < 0 ? s * 32768 : s * 32767;
+        }
+        var encoder = new lamejs.Mp3Encoder(1, audioBuffer.sampleRate, 64);
+        var blocoTamanho = 1152, partesMp3 = [];
+        for (var k = 0; k < pcm16.length; k += blocoTamanho){
+          var enc = encoder.encodeBuffer(pcm16.subarray(k, k + blocoTamanho));
+          if (enc.length) partesMp3.push(enc);
+        }
+        var fim = encoder.flush();
+        if (fim.length) partesMp3.push(fim);
+        ctx.close();
+        return new Blob(partesMp3, { type: 'audio/mpeg' });
+      });
+    });
   }
 
   function iniciarGravacaoAudio(numero){
@@ -1841,17 +1869,25 @@
       return;
     }
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream){
-      var mimeType = escolherMimeAudio();
-      var mr = mimeType ? new MediaRecorder(stream, { mimeType: mimeType }) : new MediaRecorder(stream);
+      var mr = new MediaRecorder(stream);
       var chunks = [];
       mr.addEventListener('dataavailable', function(e){ if (e.data && e.data.size) chunks.push(e.data); });
       mr.addEventListener('stop', function(){
         stream.getTracks().forEach(function(t){ t.stop(); });
         if (gravacaoAudio && gravacaoAudio.timerId) clearInterval(gravacaoAudio.timerId);
         if (!gravacaoAudio || gravacaoAudio.numero !== numero || gravacaoAudio.cancelado) return;
-        var blob = new Blob(chunks, { type: mr.mimeType || mimeType || 'audio/webm' });
-        gravacaoAudio = { numero: numero, blob: blob, mimeType: blob.type, url: URL.createObjectURL(blob) };
+        var blobBruto = new Blob(chunks, { type: mr.mimeType || 'audio/webm' });
+        gravacaoAudio = { numero: numero, convertendo: true };
         if (conversaAtual === numero) sincronizarGravacaoUi(numero);
+        blobParaMp3(blobBruto).then(function(mp3){
+          if (!gravacaoAudio || gravacaoAudio.numero !== numero) return; // descartado nesse meio tempo
+          gravacaoAudio = { numero: numero, blob: mp3, mimeType: 'audio/mpeg', url: URL.createObjectURL(mp3) };
+          if (conversaAtual === numero) sincronizarGravacaoUi(numero);
+        }).catch(function(err){
+          alert('Não deu pra processar o áudio: ' + (err && err.message ? err.message : err));
+          gravacaoAudio = null;
+          if (conversaAtual === numero) sincronizarGravacaoUi(numero);
+        });
       });
       gravacaoAudio = { numero: numero, mediaRecorder: mr, iniciadoEm: Date.now(), stream: stream };
       gravacaoAudio.timerId = setInterval(function(){
@@ -1911,6 +1947,10 @@
   function sincronizarGravacaoUi(n){
     var resp = $('thread-resp');
     if (!resp || !gravacaoAudio || gravacaoAudio.numero !== n) return;
+    if (gravacaoAudio.convertendo){
+      resp.innerHTML = '<div class="thread-grav-ativa"><span class="thread-grav-label">Processando áudio…</span></div>';
+      return;
+    }
     if (gravacaoAudio.mediaRecorder){
       resp.innerHTML =
         '<div class="thread-grav-ativa">' +
