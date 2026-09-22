@@ -235,6 +235,16 @@
   .thread-resp textarea{flex:1;border:1px solid var(--linha);border-radius:10px;padding:8px 10px;font-family:var(--corpo);font-size:13px;resize:none;min-height:38px;max-height:120px;color:var(--ink);background:#fff;}
   .thread-resp button{font-family:var(--tit);font-weight:800;font-size:12px;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:10px;padding:9px 16px;cursor:pointer;}
   .thread-resp button:disabled{opacity:.5;cursor:default;}
+  .thread-resp .thread-mic{flex:none;width:38px;height:38px;padding:0;border-radius:50%;background:#fff;border:1.5px solid var(--linha);color:var(--soft);text-transform:none;font-weight:400;display:flex;align-items:center;justify-content:center;}
+  .thread-resp .thread-mic:hover{border-color:var(--bordo);color:var(--bordo);}
+  .thread-grav-ativa,.thread-grav-preview{display:flex;align-items:center;gap:10px;width:100%;}
+  .thread-grav-dot{width:10px;height:10px;border-radius:50%;background:var(--bordo-vivo);flex:none;animation:grav-pulso 1.1s ease-in-out infinite;}
+  @keyframes grav-pulso{0%,100%{opacity:1;}50%{opacity:.25;}}
+  .thread-grav-tempo{font-family:var(--tit);font-weight:800;font-size:13px;color:var(--ink);flex:none;}
+  .thread-grav-label{font-size:12px;color:var(--soft);flex:1;}
+  .thread-grav-preview audio{flex:1;min-width:0;height:36px;}
+  .thread-resp .thread-grav-icone{flex:none;background:none;border:1px solid var(--linha);color:var(--faint);width:34px;height:34px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;text-transform:none;font-weight:400;}
+  .thread-resp .thread-grav-icone:hover{border-color:var(--bordo);color:var(--bordo);}
 
   @media (max-width:760px){
     .inbox{grid-template-columns:1fr;height:auto;}
@@ -727,7 +737,8 @@
     cpu: '<path d="M12 20v2"/><path d="M12 2v2"/><path d="M17 20v2"/><path d="M17 2v2"/><path d="M2 12h2"/><path d="M2 17h2"/><path d="M2 7h2"/><path d="M20 12h2"/><path d="M20 17h2"/><path d="M20 7h2"/><path d="M7 20v2"/><path d="M7 2v2"/><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/>',
     'alert-circle': '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
     x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
-    'trash-2': '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'
+    'trash-2': '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+    mic: '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>'
   };
 
   // ---------- selinhos de canal (logo de verdade, preenchido — não é do mesmo set de ícones de linha) ----------
@@ -1715,7 +1726,7 @@
       '<div class="thread-rapidas" id="thread-rapidas">' +
         RESPOSTAS_RAPIDAS.map(function(r, i){ return '<button type="button" class="btn-rapida" data-i="' + i + '">' + esc(r.rotulo) + '</button>'; }).join('') +
       '</div>' +
-      '<div class="thread-resp"><textarea id="resp-texto" placeholder="responder…"></textarea><button type="button" id="resp-enviar">Enviar</button></div>';
+      '<div class="thread-resp" id="thread-resp"><textarea id="resp-texto" placeholder="responder…"></textarea><button type="button" id="resp-mic" class="thread-mic" title="Gravar áudio">' + ic('mic', 16) + '</button><button type="button" id="resp-enviar">Enviar</button></div>';
     var tm = $('thread-msgs');
     tm.scrollTop = pertoDoFim ? tm.scrollHeight : Math.min(scrollAnterior, tm.scrollHeight);
     if (rascunhoAnterior){
@@ -1751,6 +1762,10 @@
         btn.click();
       }
     });
+
+    var btnMic = $('resp-mic');
+    if (btnMic) btnMic.addEventListener('click', function(){ iniciarGravacaoAudio(n); });
+    sincronizarGravacaoUi(n);
 
     carregarIaStatus(n);
   }
@@ -1795,6 +1810,134 @@
       if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
       return data;
     }); });
+  }
+
+  // ---------- gravar e enviar áudio (WhatsApp) ----------
+  // Estado fora do DOM de propósito: a thread inteira é reconstruída (innerHTML)
+  // toda vez que chega mensagem nova via realtime (ver ligarRealtime), o que
+  // apagaria qualquer gravação em andamento se ela vivesse só nos elementos da
+  // tela. Guardando aqui, sincronizarGravacaoUi() só precisa redesenhar o
+  // #thread-resp pra refletir o estado atual sempre que a thread for redesenhada.
+  var gravacaoAudio = null;
+
+  function fmtTempoGravacao(ms){
+    var s = Math.floor(ms / 1000), m = Math.floor(s / 60);
+    s = s % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  var MIME_AUDIO_PREFERIDOS = ['audio/ogg;codecs=opus', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'];
+  function escolherMimeAudio(){
+    if (!window.MediaRecorder) return '';
+    for (var i = 0; i < MIME_AUDIO_PREFERIDOS.length; i++){
+      if (MediaRecorder.isTypeSupported(MIME_AUDIO_PREFERIDOS[i])) return MIME_AUDIO_PREFERIDOS[i];
+    }
+    return '';
+  }
+
+  function iniciarGravacaoAudio(numero){
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
+      alert('Esse navegador (ou esse contexto — precisa ser https) não permite gravar áudio.');
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream){
+      var mimeType = escolherMimeAudio();
+      var mr = mimeType ? new MediaRecorder(stream, { mimeType: mimeType }) : new MediaRecorder(stream);
+      var chunks = [];
+      mr.addEventListener('dataavailable', function(e){ if (e.data && e.data.size) chunks.push(e.data); });
+      mr.addEventListener('stop', function(){
+        stream.getTracks().forEach(function(t){ t.stop(); });
+        if (gravacaoAudio && gravacaoAudio.timerId) clearInterval(gravacaoAudio.timerId);
+        if (!gravacaoAudio || gravacaoAudio.numero !== numero || gravacaoAudio.cancelado) return;
+        var blob = new Blob(chunks, { type: mr.mimeType || mimeType || 'audio/webm' });
+        gravacaoAudio = { numero: numero, blob: blob, mimeType: blob.type, url: URL.createObjectURL(blob) };
+        if (conversaAtual === numero) sincronizarGravacaoUi(numero);
+      });
+      gravacaoAudio = { numero: numero, mediaRecorder: mr, iniciadoEm: Date.now(), stream: stream };
+      gravacaoAudio.timerId = setInterval(function(){
+        var el = $('thread-grav-tempo');
+        if (el && gravacaoAudio) el.textContent = fmtTempoGravacao(Date.now() - gravacaoAudio.iniciadoEm);
+      }, 250);
+      mr.start();
+      if (conversaAtual === numero) sincronizarGravacaoUi(numero);
+    }).catch(function(err){
+      alert('Não deu pra acessar o microfone: ' + (err && err.message ? err.message : err));
+    });
+  }
+
+  function pararGravacaoAudio(){
+    if (gravacaoAudio && gravacaoAudio.mediaRecorder && gravacaoAudio.mediaRecorder.state !== 'inactive'){
+      gravacaoAudio.mediaRecorder.stop();
+    }
+  }
+
+  function descartarGravacaoAudio(){
+    if (!gravacaoAudio) return;
+    var numero = gravacaoAudio.numero;
+    if (gravacaoAudio.timerId) clearInterval(gravacaoAudio.timerId);
+    if (gravacaoAudio.mediaRecorder && gravacaoAudio.mediaRecorder.state !== 'inactive'){
+      gravacaoAudio.cancelado = true;
+      gravacaoAudio.mediaRecorder.stop();
+    }
+    if (gravacaoAudio.stream) gravacaoAudio.stream.getTracks().forEach(function(t){ t.stop(); });
+    if (gravacaoAudio.url) URL.revokeObjectURL(gravacaoAudio.url);
+    gravacaoAudio = null;
+    if (conversaAtual === numero) sincronizarGravacaoUi(numero);
+  }
+
+  function enviarGravacaoAudio(numero){
+    if (!gravacaoAudio || gravacaoAudio.numero !== numero || !gravacaoAudio.blob) return Promise.reject(new Error('nada gravado'));
+    var blob = gravacaoAudio.blob, mimeType = gravacaoAudio.mimeType;
+    return blob.arrayBuffer().then(function(buf){
+      var bin = '', bytes = new Uint8Array(buf);
+      for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      var base64 = btoa(bin);
+      return fetch(SUPABASE_URL + '/functions/v1/whatsapp-send', {
+        method: 'POST',
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numero: numero, audio_base64: base64, mime_type: mimeType })
+      });
+    }).then(function(r){ return r.text().then(function(t){
+      var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
+      if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
+      return data;
+    }); }).then(function(res){
+      if (gravacaoAudio && gravacaoAudio.url) URL.revokeObjectURL(gravacaoAudio.url);
+      gravacaoAudio = null;
+      return carregarConversas().then(function(){ return res; });
+    });
+  }
+
+  function sincronizarGravacaoUi(n){
+    var resp = $('thread-resp');
+    if (!resp || !gravacaoAudio || gravacaoAudio.numero !== n) return;
+    if (gravacaoAudio.mediaRecorder){
+      resp.innerHTML =
+        '<div class="thread-grav-ativa">' +
+          '<span class="thread-grav-dot"></span>' +
+          '<span class="thread-grav-tempo" id="thread-grav-tempo">' + fmtTempoGravacao(Date.now() - gravacaoAudio.iniciadoEm) + '</span>' +
+          '<span class="thread-grav-label">Gravando…</span>' +
+          '<button type="button" id="grav-cancelar" class="thread-grav-icone" title="Cancelar">' + ic('x', 14) + '</button>' +
+          '<button type="button" id="grav-parar">Parar</button>' +
+        '</div>';
+      $('grav-cancelar').addEventListener('click', descartarGravacaoAudio);
+      $('grav-parar').addEventListener('click', pararGravacaoAudio);
+    } else if (gravacaoAudio.blob){
+      resp.innerHTML =
+        '<div class="thread-grav-preview">' +
+          '<audio controls src="' + esc(gravacaoAudio.url) + '"></audio>' +
+          '<button type="button" id="grav-descartar" class="thread-grav-icone" title="Descartar">' + ic('x', 14) + '</button>' +
+          '<button type="button" id="grav-enviar-audio">Enviar áudio</button>' +
+        '</div>';
+      $('grav-descartar').addEventListener('click', descartarGravacaoAudio);
+      $('grav-enviar-audio').addEventListener('click', function(){
+        var btn = this; btn.disabled = true; btn.textContent = 'Enviando…';
+        enviarGravacaoAudio(n).catch(function(err){
+          alert('Não deu pra enviar o áudio: ' + err.message);
+          btn.disabled = false; btn.textContent = 'Enviar áudio';
+        });
+      });
+    }
   }
 
   // ---------- enviar e-mail (Resend, via Edge Function email-send) ----------
