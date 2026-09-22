@@ -1772,6 +1772,16 @@ card na coluna "Novo" do Kanban.
 
 ## 15.7. CRM — sem "dono" do lead (todo mundo pode responder qualquer um)
 
+> **Reconfirmado (21/09/2026):** essa é a política que precisa estar
+> valendo de verdade no banco — se o vendedor não conseguir arrastar
+> card entre colunas do Kanban (drag-and-drop faz um `upsertLead` que
+> muda só a `etapa`, mas esbarra em RLS se a policy de UPDATE ainda tiver
+> alguma checagem de `atribuido_a`/dono), é sinal de que o SQL abaixo
+> nunca foi rodado ou foi sobrescrito por engano por uma versão mais
+> antiga (ex: a do §17.1). Roda o bloco abaixo de novo no SQL Editor —
+> é idempotente (`drop policy if exists` + `create policy`), seguro
+> rodar quantas vezes precisar.
+
 Decisão (11/09/2026): não existe comissão por vendedor — todo mundo
 trabalha pelo mesmo objetivo (fechar venda), então a trava de "esse lead
 já é de outro vendedor" (criada em §17.6/§17.7) foi **removida**. Agora:
@@ -2214,6 +2224,17 @@ não devolver sem querer uma conversa que um vendedor já está tocando.
 
 ## 17. CRM — visibilidade aberta + "assumir lead" (venda conjunta)
 
+> **Superseded pelo §15.7 (decisão de 11/09/2026):** o modelo de "dono do
+> lead" com trava (`atribuido_a`/"Assumir conversa" reivindicando pra
+> sempre) descrito aqui foi **removido**. A política de UPDATE do
+> `lead_status` criada abaixo (§17.1) ainda checava `atribuido_a =
+> auth.uid() or urgente = true or atribuido_a is null` — restritiva
+> demais pro modelo atual ("qualquer membro ativo edita qualquer
+> lead", sem checar dono nenhum). Se o SQL do §15.7 nunca foi rodado de
+> verdade no Supabase (só documentado), fica valendo essa versão daqui
+> na prática, e é isso que trava o vendedor de arrastar card no Kanban
+> — **rode o SQL do §15.7 de novo** pra corrigir.
+
 Mudança de regra: **todo vendedor ativo vê qualquer conversa que chega no
 CRM**, não só a carteira dele. Isso é o modelo "Fila da Cris" que já estava
 desenhado como simulação no `novva-crm.html` — venda conjunta, quem
@@ -2221,7 +2242,7 @@ assumir primeiro atende. Depois que a Cris faz o primeiro contato, cabe a
 qualquer vendedor pedir pra assumir aquele lead; o primeiro que clicar
 "Assumir conversa" vira o dono, e mais ninguém rouba depois.
 
-### 17.1. SQL — migração
+### 17.1. SQL — migração (histórico — ver aviso acima, substituído pelo §15.7)
 
 ```sql
 -- mensagens: qualquer membro ativo da equipe vê tudo (não só a carteira dele)
