@@ -503,9 +503,6 @@
     <div class="sec-crm"><span>Qualidade do WhatsApp</span><button type="button" id="qw-checar" class="btn-atualizar">Checar agora</button></div>
     <div class="aviso">Monitora a nota de qualidade do número que a Cris usa (a mesma dos vendedores) — cai antes de virar restrição/banimento. Não é estimativa nossa, vem direto da Meta.</div>
     <div id="qw-atual" class="qw-atual">Nenhuma checagem ainda — clica em "Checar agora".</div>
-    <div class="campanhas-tabela-wrap">
-      <table class="campanhas-tabela"><tbody id="qw-historico"></tbody></table>
-    </div>
   </div>
 
   <div id="view-equipe" class="painel" hidden>
@@ -2505,17 +2502,18 @@
   }
 
   function carregarQualidadeWhatsapp(){
-    return apiGet('whatsapp_qualidade?select=id,criado_em,quality_rating,messaging_limit&order=criado_em.desc&limit=30')
+    return apiGet('whatsapp_qualidade?select=id,criado_em,quality_rating,messaging_limit&order=criado_em.desc&limit=1')
       .then(renderQualidadeWhatsapp)
       .catch(function(err){
-        $('qw-historico').innerHTML = '<tr><td style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>';
+        $('qw-atual').innerHTML = '<span style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</span>';
       });
   }
 
+  // só mostra a checagem mais recente — sem lista de histórico (era um
+  // monte de checagem antiga acumulando sem servir pra nada na prática).
   function renderQualidadeWhatsapp(rows){
-    rows = rows || [];
-    if (rows.length){
-      var atual = rows[0];
+    var atual = (rows || [])[0];
+    if (atual){
       $('qw-atual').innerHTML =
         '<span class="qw-badge ' + classeQualidade(atual.quality_rating) + '">' + esc(rotuloQualidade(atual.quality_rating)) + '</span>' +
         '<span>Limite de mensagens: <b>' + esc(atual.messaging_limit || 'não informado') + '</b></span>' +
@@ -2523,14 +2521,6 @@
     } else {
       $('qw-atual').textContent = 'Nenhuma checagem ainda — clica em "Checar agora".';
     }
-
-    $('qw-historico').innerHTML = rows.map(function(r){
-      return '<tr>' +
-        '<td><span class="qw-badge ' + classeQualidade(r.quality_rating) + '">' + esc(rotuloQualidade(r.quality_rating)) + '</span></td>' +
-        '<td class="cp-cont">' + esc(r.messaging_limit || '—') + '</td>' +
-        '<td style="text-align:right">' + fmtQuando(r.criado_em) + '</td>' +
-      '</tr>';
-    }).join('') || '<tr><td>Sem histórico ainda.</td></tr>';
   }
 
   $('qw-checar').addEventListener('click', function(){
