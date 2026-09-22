@@ -1479,16 +1479,16 @@
           (c.respondido ? '' : '<button type="button" class="ig-item-dispensar" title="Já respondi isso fora do CRM (no app do Instagram) — marcar como respondido">' + ic('x', 12) + '</button>') +
         '</div>' +
         '<div class="ig-item-texto">' + esc(c.texto || '') + '</div>' +
-        (c.respondido
-          ? '<div class="ig-resposta-enviada"><b>Sua resposta:</b> ' + esc(c.resposta_texto || '(respondido fora do CRM, sem texto registrado)') + '</div>'
-          : '<div class="ig-resposta-caixa">' +
-              '<textarea class="ig-resposta-input" placeholder="Responder no Instagram…" rows="2"></textarea>' +
-              '<div class="ig-resposta-acoes">' +
-                '<button type="button" class="ig-resposta-site-btn">+ Link do site</button>' +
-                '<button type="button" class="ig-responder-btn">Responder</button>' +
-              '</div>' +
-            '</div>'
-        ) +
+        (c.respondido && c.resposta_texto
+          ? '<div class="ig-resposta-enviada"><b>Sua última resposta:</b> ' + esc(c.resposta_texto) + '</div>'
+          : '') +
+        '<div class="ig-resposta-caixa">' +
+          '<textarea class="ig-resposta-input" placeholder="' + (c.respondido ? 'Responder de novo…' : 'Responder no Instagram…') + '" rows="2"></textarea>' +
+          '<div class="ig-resposta-acoes">' +
+            '<button type="button" class="ig-resposta-site-btn">+ Link do site</button>' +
+            '<button type="button" class="ig-responder-btn">Responder</button>' +
+          '</div>' +
+        '</div>' +
       '</div>';
     }).join('');
 
