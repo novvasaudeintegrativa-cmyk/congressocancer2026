@@ -262,8 +262,13 @@
   .ig-badge-ok{flex:none;display:flex;align-items:center;gap:4px;font-family:var(--tit);font-weight:700;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--verde);background:rgba(31,138,76,.12);padding:3px 8px;border-radius:999px;}
   .ig-item-cab{display:flex;align-items:center;gap:8px;}
   .ig-item-info{min-width:0;flex:1;}
-  .ig-item-nome{font-family:var(--tit);font-weight:800;font-size:12.5px;color:var(--ink);}
+  .ig-item-nome{font-family:var(--tit);font-weight:800;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .ig-item-quando{font-size:10.5px;color:var(--faint);}
+  /* selos (Sua conta / Respondido) e botões (Histórico / Dispensar) numa
+     linha própria, separada do cabeçalho — antes ficavam todos espremidos
+     ao lado do nome e, com @usuário comprido, o nome quebrava em 2 linhas
+     e os selos ficavam centralizados por cima, sobrepondo o texto. */
+  .ig-item-selos{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;padding-left:32px;}
   /* overflow-wrap: os comentários às vezes trazem um link colado (sem
      espaço) mais largo que a coluna — sem isso ele força a coluna a abrir
      e o grid inteiro passa da largura do container/iframe. */
@@ -1466,6 +1471,8 @@
             '<div class="ig-item-nome">@' + esc(c.autor_username || 'desconhecido') + '</div>' +
             '<div class="ig-item-quando">' + fmtQuando(c.criado_em) + '</div>' +
           '</div>' +
+        '</div>' +
+        '<div class="ig-item-selos">' +
           (souEu ? '<span class="ig-badge-propria" title="O autor é a própria conta do Congresso — provavelmente sua resposta enviada direto no Instagram, não um comentário novo">Sua conta</span>' : '') +
           (c.respondido ? '<span class="ig-badge-ok">' + ic('check', 11) + ' Respondido</span>' : '') +
           (c.autor_ig_id ? '<button type="button" class="ig-item-historico" title="Ver histórico de comentários dessa pessoa">' + ic('message-circle', 12) + '</button>' : '') +
