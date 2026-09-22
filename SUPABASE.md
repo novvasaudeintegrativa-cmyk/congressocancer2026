@@ -1458,17 +1458,39 @@ Deno.serve(async (req) => {
 
   const numero = String(body.numero || "").replace(/\D/g, "");
   const texto = String(body.texto || "").trim();
-  if (!numero || !texto) return j({ erro: "numero e texto obrigatórios" }, 400);
+  const audioBase64 = body.audio_base64 ? String(body.audio_base64) : null;
+  const mimeType = String(body.mime_type || "audio/ogg");
+  if (!numero || (!texto && !audioBase64)) {
+    return j({ erro: "numero e (texto ou audio_base64) obrigatórios" }, 400);
+  }
+
+  // áudio: sobe pro mesmo bucket público que já guarda mídia recebida
+  // (§15.8), manda por link (a Cloud API aceita audio.link direto, sem
+  // precisar do passo extra de upload pro /media da Meta).
+  let metaPayload: Record<string, unknown>;
+  let tipoSalvo = "text";
+  let midiaUrlSalva: string | null = null;
+  if (audioBase64) {
+    const bytes = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
+    const ext = (mimeType.split("/")[1] || "ogg").split(";")[0];
+    const path = `enviado-${crypto.randomUUID()}.${ext}`;
+    const upR = await fetch(`${URL_}/storage/v1/object/whatsapp-media/${path}`, {
+      method: "POST",
+      headers: { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": mimeType, "x-upsert": "true" },
+      body: bytes,
+    });
+    if (!upR.ok) return j({ erro: "falha ao salvar áudio: " + (await upR.text()) }, 500);
+    midiaUrlSalva = `${URL_}/storage/v1/object/public/whatsapp-media/${path}`;
+    tipoSalvo = "audio";
+    metaPayload = { messaging_product: "whatsapp", to: numero, type: "audio", audio: { link: midiaUrlSalva } };
+  } else {
+    metaPayload = { messaging_product: "whatsapp", to: numero, type: "text", text: { body: texto } };
+  }
 
   const metaResp = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
     method: "POST",
     headers: { authorization: `Bearer ${WA_TOKEN}`, "content-type": "application/json" },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to: numero,
-      type: "text",
-      text: { body: texto },
-    }),
+    body: JSON.stringify(metaPayload),
   });
   const metaBody = await metaResp.json();
   if (!metaResp.ok) return j({ erro: metaBody.error?.message || "falha ao enviar" }, 502);
@@ -1480,7 +1502,7 @@ Deno.serve(async (req) => {
     headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
     body: JSON.stringify([{
       wa_message_id: waId, lead_whatsapp: numero, direcao: "enviada",
-      tipo: "text", texto, status: "sent", wa_timestamp: new Date().toISOString(),
+      tipo: tipoSalvo, texto: texto || null, midia_url: midiaUrlSalva, status: "sent", wa_timestamp: new Date().toISOString(),
       enviado_por: u.id, raw: metaBody,
     }]),
   });
@@ -1514,6 +1536,24 @@ o JWT do usuário logado, igual o `equipe-admin`).
 ativo da equipe pode responder qualquer lead a qualquer momento — não tem
 mais reivindicação/dono (ver §15.7). Responder só desliga a Cris e avança
 a etapa.
+
+**Atualização (21/09/2026) — resposta por áudio:** a função agora aceita
+`audio_base64` + `mime_type` no lugar de `texto` (o `crm.html` grava com
+`MediaRecorder` no navegador e manda em base64). Sobe o áudio pro mesmo
+bucket público `whatsapp-media` que já guarda mídia recebida (§15.8) e
+manda pra Meta por `audio.link` — mais simples que o upload de duas
+etapas pro endpoint `/media` da própria Meta.
+
+⚠️ **Ponto de atenção não testado em produção:** a Meta documenta como
+tipos aceitos pra áudio `aac`, `mp4`, `mpeg`, `amr` e `ogg` (só codec
+Opus). O `MediaRecorder` do Chrome grava nativamente em
+`audio/webm;codecs=opus` — mesmo codec (Opus), container diferente
+(WebM em vez de Ogg), que não está na lista oficial. Pode funcionar
+assim mesmo (a Meta costuma ser mais tolerante que a documentação) ou
+pode falhar/vir sem tocar no WhatsApp de quem recebe — só testando de
+verdade pra saber. Se falhar, o preview do áudio ainda toca normal
+dentro do próprio CRM (é só um `<audio>` HTML apontando pro arquivo no
+Storage), o problema seria só na entrega via WhatsApp.
 
 ## 15. CRM — Gestão de equipe pelo painel (Edge Function `equipe-admin`)
 
@@ -3098,6 +3138,7 @@ Regras importantes (decisão da empresa, 11/09/2026; escopo reforçado em 18/09/
 - Se o lead trouxer qualquer assunto fora do congresso (dúvida sobre o tratamento dele, pedido de indicação/opinião sobre medicamento ou substância — incluindo ivermectina, própolis, canabidiol ou qualquer outra —, ajuda pra comprar/importar/obter algo, diagnóstico, prognóstico, ou qualquer outro tema pessoal/médico/legal), NÃO desenvolva esse assunto: não faça lista, não dê passo a passo, não recomende "conversar com o médico sobre X" nem cite de volta as substâncias que a pessoa mencionou. NÃO diga que vai chamar alguém do time pra essa parte — a equipe é só de organizadores do evento, ninguém aqui está habilitado a orientar sobre tratamento/medicamento, então nunca prometa isso. Responda em no máximo 2 linhas, com empatia genuína e honestidade (ex: "essa parte do tratamento eu não tenho como te orientar, viu — isso é com a sua médica mesmo"), sem entrar no mérito, e traga de volta com naturalidade pro congresso (ex: comentar que lá ela vai poder trocar direto com especialistas em oncologia integrativa, que lidam com esse tipo de dúvida no dia a dia deles).
 - NÃO informe valores, preço de lote, datas, programação, nomes de palestrantes, certificado ou qualquer detalhe aprofundado do congresso diretamente na conversa — pra qualquer pergunta desse tipo, responda breve e sempre mande pra página: "Isso está bem explicadinho na nossa página, com todos os detalhes — dá uma olhada: https://congressocancer.novvasaudeintegrativa.com.br". Nunca cite valor em R$ na conversa, nem repita o que está no "CONTEÚDO ATUAL DO SITE" abaixo — esse conteúdo é só pra você mesma saber do que se trata o congresso, não pra repassar em detalhe.
 - Sempre que passar o link da página pro lead, use exatamente https://congressocancer.novvasaudeintegrativa.com.br (sem `/time-comercial.html` no final) — esse sufixo é só um redirecionamento interno do site, não deve aparecer na conversa.
+- Se essa é a primeira mensagem que você manda nessa conversa (olhe o histórico: se não tem nenhuma mensagem sua ainda), já cumprimente, diga rapidamente do que se trata o congresso e já mande o link da página nessa mesma resposta — não espere a pessoa perguntar ou demonstrar interesse primeiro, o objetivo é levar ela pra página o quanto antes.
 - Pode confirmar o básico/geral sem detalhar (ex: "sim, é sobre práticas integrativas em oncologia", "é em São Paulo, 2 dias"), mas sempre fechando com o convite pra ver tudo na página.
 - Se souber quem é o lead (seção "QUEM É ESSE CONTATO"), trate com familiaridade e chame pelo nome.
 - Não empurre a venda de forma agressiva nem finja urgência falsa — só reforce com naturalidade que vale a pena conferir a página agora.
@@ -3315,19 +3356,18 @@ async function deixarCrisResponder(numero: string) {
   const conhecido = await leadConhecido(numero);
   const emComercial = dentroComercial();
 
-  if (emComercial && !(await crisFalouRecentemente(numero, 6))) {
-    const texto = conhecido
-      ? `Oi, ${conhecido.nome}! Tudo bem? Aqui é da equipe do Congresso Câncer 2026 😊 Já vou chamar alguém do nosso time pra continuar com você, só um instante!`
-      : "Oi! Tudo bem? Aqui é da equipe do Congresso Câncer 2026 😊 Recebi sua mensagem — já vou chamar alguém do nosso time pra te atender direitinho, só um instante!";
-    const waId = await mandarWhatsapp(numero, texto);
-    if (!waId) return;
-    await gravarEnviada(numero, waId, texto);
-    await marcarUrgente(numero);
-    return;
-  }
-
+  // Antes, a 1ª mensagem dentro do horário comercial mandava uma frase
+  // fixa ("já vou chamar alguém do time...") e PARAVA — sem link, sem
+  // conversa de verdade — só voltava a chamar a IA de verdade depois de
+  // 6h. Na prática isso deixava lead sem resposta de conteúdo nenhuma
+  // até um humano aparecer (às vezes nunca). Corrigido (21/09/2026): a
+  // primeira resposta já é gerada pela própria Cris (crisResponde), que
+  // segue a instrução de já mandar o link na 1ª mensagem — ela continua
+  // desenvolvendo a conversa normalmente daí em diante, e um humano
+  // pode assumir a qualquer momento (isso só desliga `ia_ativa`, ver
+  // topo da função).
   if (emComercial) {
-    await marcarUrgente(numero);
+    await marcarUrgente(numero); // sinaliza o time desde a 1ª mensagem, mesmo a Cris já respondendo de verdade
     const jaAjudouDeVerdade = (await contarRespostasCris(numero)) >= 2;
     if (!jaAjudouDeVerdade && (await crisFalouRecentemente(numero, 0.25))) {
       return;
@@ -3445,6 +3485,21 @@ Deno.serve(async (req) => {
 > atualização de status (`PATCH`, só a coluna `status`) do insert de
 > mensagens novas (`POST` upsert, como antes). Precisa **redeploy do
 > `whatsapp-webhook`** com o código acima pra parar de acontecer.
+
+> **Correção (21/09/2026) — Cris não mandava o link nem desenvolvia a
+> conversa na 1ª mensagem.** Dentro do horário comercial, o primeiro
+> contato de um lead disparava só uma frase fixa ("já vou chamar alguém
+> do time...") e a função **retornava sem chamar a IA de verdade** —
+> só voltava a responder com conteúdo depois de 6h sem falar com esse
+> número. Na prática, muita gente ficava sem nenhuma resposta útil
+> (nem link, nem conversa) até um humano aparecer, o que nem sempre
+> acontecia rápido. Removida essa frase fixa: agora toda 1ª mensagem já
+> cai direto no `crisResponde` (a IA de verdade), e o `CRIS_INSTRUCOES`
+> ganhou uma regra nova mandando ela já cumprimentar **e mandar o link
+> da página na própria 1ª resposta**, sem esperar a pessoa demonstrar
+> interesse. O aviso pro time (`marcarUrgente`) continua acontecendo
+> desde a 1ª mensagem, só não trava mais a resposta de verdade. Precisa
+> **redeploy do `whatsapp-webhook`** com o código atualizado acima.
 
 ## 19. Apagar usuário de teste — "Database error deleting user"
 
