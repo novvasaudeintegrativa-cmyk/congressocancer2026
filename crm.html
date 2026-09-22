@@ -1488,6 +1488,32 @@
   // fora daqui mesmo.
   var NOSSO_INSTAGRAM_USERNAME = 'novvasaudeintegrativa';
 
+  // "+ Link do site" varia a frase em vez de sempre mandar o texto idêntico
+  // pra pessoas diferentes (evita parecer resposta de bot nos comentários
+  // públicos) — consulta os últimos 3 dias de respostas já enviadas e evita
+  // repetir a mesma variação nesse período.
+  var IG_LINK_SITE = 'https://congressocancer.novvasaudeintegrativa.com.br/time-comercial.html';
+  var IG_FRASES_LINK = [
+    'Você confere todos os detalhes (programação, valores e inscrição) direto na nossa página: ' + IG_LINK_SITE,
+    'Tá tudo certinho explicado na nossa página oficial, dá uma olhada: ' + IG_LINK_SITE,
+    'Passa lá na nossa página que tem todos os detalhes: ' + IG_LINK_SITE,
+    'Dá uma olhadinha na nossa página, está tudo por lá: ' + IG_LINK_SITE,
+    'Segue o link da nossa página com todas as informações: ' + IG_LINK_SITE,
+  ];
+  function escolherFraseLink(callback){
+    var desde = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+    apiGet('instagram_comentarios?select=resposta_texto&respondido=eq.true&respondido_em=gte.' + encodeURIComponent(desde))
+      .then(function(rows){
+        var usadasRecentemente = (rows || []).map(function(r){ return r.resposta_texto || ''; });
+        var disponiveis = IG_FRASES_LINK.filter(function(f){
+          return !usadasRecentemente.some(function(u){ return u.indexOf(f) !== -1; });
+        });
+        var lista = disponiveis.length ? disponiveis : IG_FRASES_LINK;
+        callback(lista[Math.floor(Math.random() * lista.length)]);
+      })
+      .catch(function(){ callback(IG_FRASES_LINK[Math.floor(Math.random() * IG_FRASES_LINK.length)]); });
+  }
+
   function renderComentariosInstagram(rows){
     rows = (rows || []).filter(function(c){ return (c.autor_username || '').trim().toLowerCase() !== NOSSO_INSTAGRAM_USERNAME; });
     if (!rows.length){ $('ig-lista').innerHTML = '<div class="vazio-col">Nenhum comentário ainda.</div>'; return; }
@@ -1553,10 +1579,13 @@
         var input = item.querySelector('.ig-resposta-input');
         var btnSite = item.querySelector('.ig-resposta-site-btn');
         if (btnSite) btnSite.addEventListener('click', function(){
-          var link = 'https://congressocancer.novvasaudeintegrativa.com.br/time-comercial.html';
-          var atual = input.value;
-          input.value = atual && !atual.trim().endsWith(link) ? (atual.replace(/\s+$/, '') + ' ' + link) : link;
-          input.focus();
+          btnSite.disabled = true;
+          escolherFraseLink(function(frase){
+            var atual = input.value.trim();
+            input.value = atual && !atual.endsWith(IG_LINK_SITE) ? (atual + ' ' + frase) : frase;
+            input.focus();
+            btnSite.disabled = false;
+          });
         });
         btnResp.addEventListener('click', function(){
           var texto = input.value.trim();
