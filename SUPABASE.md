@@ -3242,11 +3242,33 @@ async function historico(numero: string) {
   return r.ok ? await r.json() : [];
 }
 
+// últimas aberturas que a Cris mandou (primeira mensagem dela pra cada lead
+// diferente) nas últimas 72h — vira exemplo negativo no prompt pra ela não
+// repetir a mesma saudação quase palavra por palavra de lead pra lead.
+async function aberturasRecentes(): Promise<string[]> {
+  try {
+    const desde = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/mensagens?direcao=eq.enviada&enviado_por=is.null&criado_em=gte.${desde}&select=lead_whatsapp,texto,criado_em&order=criado_em.asc`,
+      { headers: svcHeaders },
+    );
+    if (!r.ok) return [];
+    const rows = await r.json();
+    const porLead = new Map<string, string>();
+    for (const row of rows) {
+      if (!porLead.has(row.lead_whatsapp) && row.texto) porLead.set(row.lead_whatsapp, row.texto);
+    }
+    return Array.from(porLead.values()).slice(-5);
+  } catch (e) { console.error("aberturasRecentes:", e); return []; }
+}
+
 async function crisResponde(msgsHist: any[], conhecido: { nome: string; profissao: string | null; nivel: string | null } | null, emComercial: boolean): Promise<string | null> {
   const msgs = msgsHist
     .filter((m: any) => m.texto)
     .map((m: any) => ({ role: m.direcao === "recebida" ? "user" : "assistant", content: m.texto }));
   if (!msgs.length || msgs[msgs.length - 1].role !== "user") return null;
+
+  const ehPrimeiraMensagem = !msgs.some((m) => m.role === "assistant");
 
   const site = await textoDoSite();
   const notaHorario = emComercial
@@ -3258,6 +3280,13 @@ async function crisResponde(msgsHist: any[], conhecido: { nome: string; profissa
       (conhecido.profissao ? `, profissão ${conhecido.profissao}` : "") +
       (conhecido.nivel ? `, nível de interesse ${conhecido.nivel}` : "") +
       ". Já preencheu o formulário do site antes.";
+  }
+  if (ehPrimeiraMensagem) {
+    const aberturas = await aberturasRecentes();
+    if (aberturas.length) {
+      system += "\n\nSUAS ÚLTIMAS ABERTURAS (mensagens que você mandou pra OUTROS leads nas últimas 72h) — não repita nenhuma delas quase palavra por palavra, varie o jeito de cumprimentar e apresentar o congresso:\n- " +
+        aberturas.join("\n- ");
+    }
   }
 
   const resp = await fetch("https://api.anthropic.com/v1/messages", {
@@ -3527,6 +3556,16 @@ Deno.serve(async (req) => {
 > **qualquer pergunta** sobre o congresso — não é mais uma lista
 > fechada de tópicos, é o comportamento padrão da Cris em praticamente
 > toda resposta.
+>
+> **Reforço 2 (21/09/2026) — não repetir a mesma abertura:** pedido do
+> Time Comercial pra evitar a Cris soar robótica cumprimentando todo
+> mundo com a mesma frase. Nova função `aberturasRecentes()` busca a
+> primeira mensagem que a Cris mandou pra cada lead diferente nas
+> últimas 72h (até 5) e injeta isso no prompt como "não repita nenhuma
+> dessas" sempre que for a primeira resposta de uma conversa nova — a
+> IA já gera texto na hora (não é frase fixa), isso só dá exemplos
+> negativos concretos pra ela variar de verdade em vez de cair sempre
+> no mesmo padrão.
 
 ## 19. Apagar usuário de teste — "Database error deleting user"
 
