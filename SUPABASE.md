@@ -11,6 +11,17 @@ pública — acesso só por quem tem a URL, igual `index.html` e `quiz.html`.
 Arquivos deste `.md` **não** vão para o FTP (o deploy exclui `*.md`) — é só
 referência de setup.
 
+> **Nota (21/09/2026) — secrets são do projeto, não por function.** Em vários
+> pontos deste documento tem frases tipo "Secrets dessa function" listando o
+> que cadastrar em Edge Functions → `nome-da-function` → Secrets. Isso é
+> impreciso: no Supabase, secret é **compartilhado por todo o projeto** —
+> qualquer Edge Function já enxerga qualquer secret cadastrado, sem precisar
+> recadastrar por function. O que É de fato específico de cada function é só
+> a config em **Settings** (ex: "Verify JWT with legacy secret"). Então, se um
+> secret (`WHATSAPP_PERMANENT_TOKEN`, `CAMPANHA_AUTO_TOKEN`, etc.) já existe
+> em qualquer function, ele já está disponível pra todas — não precisa
+> conferir/recriar de novo a cada function nova.
+
 ---
 
 ## 1. Criar o projeto Supabase
