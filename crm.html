@@ -119,13 +119,6 @@
   .icon-btn.meta:hover{background:rgba(47,111,158,.14);color:var(--azul);}
   .icon-btn.btn-nota.tem-nota{background:rgba(140,34,46,.14);color:var(--bordo);border-color:var(--bordo);}
   .icon-btn.btn-nota.tem-nota:hover{background:var(--bordo);color:#fff;}
-  .icon-btn.resp-icon.sem-dono{background:transparent;color:var(--bordo);border-color:var(--bordo);}
-  .icon-btn.resp-icon.sem-dono:hover{background:var(--bordo);color:#fff;}
-  .icon-btn.resp-icon.meu{background:var(--bordo);color:#fff;border-color:var(--bordo);}
-  .icon-btn.resp-icon.meu:hover{background:var(--bordo);color:#fff;}
-  .icon-btn.resp-icon.outro{background:transparent;color:var(--bordo);border-color:var(--bordo);font-family:var(--tit);font-weight:800;font-size:10px;}
-  .icon-btn.resp-icon.outro:hover{background:var(--bordo);color:#fff;}
-  .card .sel-resp{width:100%;margin-top:5px;}
   .vazio-col{font-size:11px;color:var(--faint);text-align:center;padding:14px 4px;}
   .btn-ver-mais{width:100%;font-family:var(--tit);font-weight:700;font-size:10.5px;letter-spacing:.02em;text-transform:uppercase;background:#fff;border:1px dashed var(--linha);color:var(--soft);padding:7px;border-radius:8px;cursor:pointer;margin-top:2px;}
   .btn-ver-mais:hover{border-color:var(--bordo);color:var(--bordo);}
@@ -1264,17 +1257,6 @@
     var badges = nivelBadge + vslBadge + tempoRespostaBadge(l) + (origem ? '<span class="badge origem">' + esc(origem) + '</span>' : '');
     var ICON_WA = '<svg class="ic-wa" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm0 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 012.41 5.82c0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.4-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.188 8.188 0 01-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23zm-4.55 4.72c-.15 0-.4.06-.6.29-.21.23-.8.78-.8 1.91s.82 2.22.94 2.37c.11.15 1.6 2.57 3.97 3.5 1.96.77 2.36.62 2.78.58.42-.04 1.36-.55 1.55-1.09.19-.53.19-.99.14-1.09-.06-.1-.21-.15-.44-.27-.23-.11-1.36-.67-1.57-.75-.21-.08-.36-.11-.51.12-.15.23-.59.75-.72.9-.13.15-.26.17-.49.06-.23-.12-.96-.35-1.83-1.13-.68-.6-1.13-1.35-1.27-1.58-.13-.23-.01-.35.1-.47.11-.11.23-.27.35-.4.11-.13.15-.23.23-.38.08-.15.04-.29-.02-.4-.06-.11-.51-1.24-.71-1.7-.19-.45-.38-.39-.51-.4h-.44z"/></svg>';
 
-    // ícone de responsável: muda de acordo com o estado (sem dono / é você / é outra pessoa)
-    var respIcon;
-    if (!l.atribuido_a){
-      respIcon = '<button type="button" class="icon-btn resp-icon sem-dono" data-w="' + esc(l.whatsapp || '') + '" title="Sem responsável — clique pra assumir">' + ic('user-plus', 12) + '</button>';
-    } else if (l.atribuido_a === estado.eu.id){
-      respIcon = '<button type="button" class="icon-btn resp-icon meu" data-w="' + esc(l.whatsapp || '') + '" title="Responsável: você">' + ic('check', 12) + '</button>';
-    } else {
-      var inicial = (l.atribuido_nome || '?').trim().charAt(0).toUpperCase();
-      respIcon = '<button type="button" class="icon-btn resp-icon outro" data-w="' + esc(l.whatsapp || '') + '" title="Responsável: ' + esc(l.atribuido_nome || '?') + '">' + inicial + '</button>';
-    }
-
     c.innerHTML =
       '<div class="card-head">' + avatarHtml(l.nome, wpp, l.canal) +
         '<div class="info"><div class="nome">' + (l.nome || (wpp ? '+' + wpp : '(sem nome)')) + '</div>' +
@@ -1286,43 +1268,9 @@
         (triar ? '' : '<button type="button" class="icon-btn btn-ver-conversa" data-w="' + esc(l.whatsapp || '') + '" title="Ver conversa no CRM">' + ic('message-circle', 12) + '</button>') +
         (l.campanha_whatsapp_nome ? '<span class="icon-btn meta" title="Veio da campanha Meta: ' + esc(l.campanha_whatsapp_nome) + '">' + ic('megaphone', 12) + '</span>' : '') +
         (triar ? '' : '<button type="button" class="icon-btn btn-nota' + (l.nota ? ' tem-nota' : '') + '" title="' + (l.nota ? esc(l.nota) : 'Adicionar anotação') + '">' + ic('edit-3', 12) + '</button>') +
-        (triar ? '' : respIcon) +
         (!triar && gestorAgora() ? '<span class="spacer"></span><button type="button" class="icon-btn icon-btn-apagar" data-w="' + esc(l.whatsapp || '') + '" title="Apagar este lead do pipeline">' + ic('trash-2', 12) + '</button>' : '') +
       '</div>' +
-      (triar ? '' : '<textarea class="nota" placeholder="anotação…" hidden>' + esc(l.nota || '') + '</textarea>') +
-      (gestorAgora() && !triar ? '<select class="sel-resp" hidden></select>' : '');
-
-    // responsável (gestor pode reatribuir clicando no ícone; vendedor só assume se estiver livre)
-    if (gestorAgora()){
-      var selR = c.querySelector('.sel-resp');
-      if (selR){
-        var o0 = document.createElement('option');
-        o0.value = ''; o0.textContent = 'sem responsável';
-        selR.appendChild(o0);
-        estado.vendedores.forEach(function(v){
-          var o = document.createElement('option');
-          o.value = v.id; o.textContent = v.nome + (v.papel === 'gestor' ? ' (gestor)' : '');
-          if (v.id === l.atribuido_a) o.selected = true;
-          selR.appendChild(o);
-        });
-        selR.addEventListener('change', function(){
-          upsertLead(l.whatsapp, { atribuido_a: this.value || null });
-        });
-        selR.addEventListener('blur', function(){ selR.hidden = true; });
-      }
-    }
-    var respBtn = c.querySelector('.resp-icon');
-    if (respBtn) respBtn.addEventListener('click', function(){
-      if (gestorAgora()){
-        var sel = c.querySelector('.sel-resp');
-        if (sel){ sel.hidden = false; sel.focus(); }
-        return;
-      }
-      if (!l.atribuido_a){
-        respBtn.disabled = true;
-        upsertLead(l.whatsapp, { atribuido_a: estado.eu.id }).catch(function(){ respBtn.disabled = false; });
-      }
-    });
+      (triar ? '' : '<textarea class="nota" placeholder="anotação…" hidden>' + esc(l.nota || '') + '</textarea>');
 
     var btnApagar = c.querySelector('.icon-btn-apagar');
     if (btnApagar) btnApagar.addEventListener('click', function(){
