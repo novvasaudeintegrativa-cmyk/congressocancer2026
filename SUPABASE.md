@@ -3449,7 +3449,7 @@ Deno.serve(async (req) => {
         await notificarPush(
           "Nova mensagem no WhatsApp",
           `+${m.from}: ${texto || (m.type ? "(" + m.type + ")" : "mensagem")}`,
-          "https://congressocancer.novvasaudeintegrativa.com.br/Ads/crm.html",
+          "https://congressocancer.novvasaudeintegrativa.com.br/crm.html",
         );
       }
       // Atualizacoes de status (sent/delivered/read/failed) NAO entram em
