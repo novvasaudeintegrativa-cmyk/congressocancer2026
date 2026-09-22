@@ -121,14 +121,15 @@
   .icon-btn.meta{background:rgba(47,111,158,.14);color:var(--azul);border-color:var(--azul);cursor:default;}
   .icon-btn.meta:hover{background:rgba(47,111,158,.14);color:var(--azul);}
   .icon-btn.btn-nota{position:relative;}
-  .icon-btn.btn-nota.tem-nota{background:rgba(140,34,46,.14);color:var(--bordo);border-color:var(--bordo);}
-  .icon-btn.btn-nota.tem-nota:hover{background:var(--bordo);color:#fff;}
+  .icon-btn.btn-nota.tem-nota{background:rgba(193,68,14,.16);color:var(--laranja-escuro);border-color:var(--laranja-escuro);}
+  .icon-btn.btn-nota.tem-nota:hover{background:var(--laranja-escuro);color:#fff;}
   .icon-btn.btn-nota .nota-dot{display:none;}
-  .icon-btn.btn-nota.tem-nota .nota-dot{display:block;position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:var(--bordo);border:1.5px solid var(--card);}
+  .icon-btn.btn-nota.tem-nota .nota-dot{display:block;position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:var(--laranja-escuro);border:1.5px solid var(--card);}
   @keyframes lembrete-piscar{0%,100%{opacity:1;}50%{opacity:.3;}}
-  .icon-btn.btn-nota.lembrete-alerta{border-color:var(--bordo-vivo);color:var(--bordo-vivo);animation:lembrete-piscar 1s ease-in-out infinite;}
-  .icon-btn.btn-nota.lembrete-alerta:hover{background:var(--bordo-vivo);color:#fff;}
-  .icon-btn.btn-nota.lembrete-alerta .nota-dot{background:var(--bordo-vivo);}
+  .icon-btn.btn-nota.lembrete-alerta{background:var(--laranja-escuro);border-color:var(--laranja-escuro);color:#fff;animation:lembrete-piscar 1s ease-in-out infinite;}
+  .icon-btn.btn-nota.lembrete-alerta .nota-dot{background:#fff;}
+  .nota-preview{width:100%;margin-top:5px;padding:6px 8px;background:rgba(193,68,14,.08);border:1px dashed rgba(193,68,14,.35);border-radius:7px;font-size:10.5px;line-height:1.35;color:var(--laranja-escuro);cursor:pointer;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .nota-preview:hover{background:rgba(193,68,14,.14);}
   .vazio-col{font-size:11px;color:var(--faint);text-align:center;padding:14px 4px;}
   .btn-ver-mais{width:100%;font-family:var(--tit);font-weight:700;font-size:10.5px;letter-spacing:.02em;text-transform:uppercase;background:#fff;border:1px dashed var(--linha);color:var(--soft);padding:7px;border-radius:8px;cursor:pointer;margin-top:2px;}
   .btn-ver-mais:hover{border-color:var(--bordo);color:var(--bordo);}
@@ -1282,6 +1283,7 @@
         (triar ? '' : '<button type="button" class="icon-btn btn-nota' + (l.nota ? ' tem-nota' : '') + (lembreteAlerta ? ' lembrete-alerta' : '') + '" title="' + esc(tituloNota) + '">' + ic('edit-3', 12) + '<span class="nota-dot"></span></button>') +
         (!triar && gestorAgora() ? '<span class="spacer"></span><button type="button" class="icon-btn icon-btn-apagar" data-w="' + esc(l.whatsapp || '') + '" title="Apagar este lead do pipeline">' + ic('trash-2', 12) + '</button>' : '') +
       '</div>' +
+      (!triar && l.nota ? '<div class="nota-preview" title="' + esc(tituloNota) + '">' + esc(l.nota) + '</div>' : '') +
       (triar ? '' : '<div class="nota-editor" hidden>' +
         '<textarea class="nota" placeholder="anotação…">' + esc(l.nota || '') + '</textarea>' +
         '<label class="nota-lembrete-label">' + ic('clock', 11) + ' Lembrete <input type="datetime-local" class="nota-lembrete" value="' + esc(paraDatetimeLocal(l.lembrete_em)) + '"></label>' +
@@ -1313,16 +1315,35 @@
       notaEditor.hidden = !notaEditor.hidden;
       if (!notaEditor.hidden) nota.focus();
     });
+    var notaPreview = c.querySelector('.nota-preview');
+    if (notaPreview && notaEditor) notaPreview.addEventListener('click', function(){
+      notaEditor.hidden = false;
+      nota.focus();
+    });
     if (notaEditor) notaEditor.addEventListener('focusout', function(e){
       if (notaEditor.contains(e.relatedTarget)) return; // só trocou de campo dentro do editor
       var novoTexto = (nota.value || '').trim();
       var novoLembrete = notaLembrete.value ? new Date(notaLembrete.value).toISOString() : null;
       notaEditor.hidden = true;
+      var tituloNovo = (novoTexto || 'Adicionar anotação') + (novoLembrete ? '\nLembrete: ' + fmtQuando(novoLembrete) : '');
       if (btnNota){
-        var temLembreteAgora = lembreteVencido(novoLembrete);
         btnNota.classList.toggle('tem-nota', !!novoTexto);
-        btnNota.classList.toggle('lembrete-alerta', temLembreteAgora);
-        btnNota.title = (novoTexto || 'Adicionar anotação') + (novoLembrete ? '\nLembrete: ' + fmtQuando(novoLembrete) : '');
+        btnNota.classList.toggle('lembrete-alerta', lembreteVencido(novoLembrete));
+        btnNota.title = tituloNovo;
+      }
+      // prévia some/aparece/atualiza conforme o texto muda
+      var preview = c.querySelector('.nota-preview');
+      if (novoTexto){
+        if (!preview){
+          preview = document.createElement('div');
+          preview.className = 'nota-preview';
+          preview.addEventListener('click', function(){ notaEditor.hidden = false; nota.focus(); });
+          notaEditor.parentNode.insertBefore(preview, notaEditor);
+        }
+        preview.textContent = novoTexto;
+        preview.title = tituloNovo;
+      } else if (preview){
+        preview.remove();
       }
       if (novoTexto !== (l.nota || '') || novoLembrete !== (l.lembrete_em || null)){
         upsertLead(l.whatsapp, { nota: novoTexto || null, lembrete_em: novoLembrete });
