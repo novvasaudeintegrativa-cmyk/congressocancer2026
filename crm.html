@@ -277,14 +277,10 @@
   .ig-item-historico{flex:none;background:none;border:0;color:var(--faint);cursor:pointer;padding:2px 4px;}
   .ig-item-historico:hover{color:var(--bordo);}
 
-  /* ---- modal de histórico de comentários do Instagram (por pessoa) ---- */
-  .ig-modal-fundo{position:fixed;inset:0;background:rgba(42,35,32,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:200;}
-  .ig-modal{background:var(--card);border-radius:16px;max-width:460px;width:100%;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;}
-  .ig-modal-cab{padding:13px 16px;border-bottom:1px solid var(--linha);display:flex;align-items:center;justify-content:space-between;gap:10px;}
-  .ig-modal-cab b{font-family:var(--tit);font-size:14px;}
-  .ig-modal-fechar{flex:none;background:none;border:0;color:var(--faint);cursor:pointer;padding:4px;}
-  .ig-modal-fechar:hover{color:var(--bordo);}
-  .ig-modal-msgs{flex:1;min-height:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:#f2ede9;}
+  /* ---- painel inline de histórico de comentários do Instagram (por pessoa) ---- */
+  .ig-item-historico-painel{margin-top:10px;margin-left:32px;border:1px solid var(--linha);border-radius:10px;max-height:220px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;background:#f2ede9;}
+  .ig-item-historico-carregando{font-size:12px;color:var(--faint);text-align:center;padding:6px;}
+  .ig-item-historico-painel .bolha{font-size:12px;max-width:88%;}
   .ig-resposta-caixa{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding-left:32px;}
   .ig-resposta-caixa textarea{width:100%;border:1px solid var(--linha);border-radius:9px;padding:8px 10px;font-family:var(--corpo);font-size:13px;color:var(--ink);background:#fff;resize:vertical;min-height:58px;}
   .ig-resposta-acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
@@ -1490,6 +1486,7 @@
             '<button type="button" class="ig-responder-btn">Responder</button>' +
           '</div>' +
         '</div>' +
+        '<div class="ig-item-historico-painel" hidden></div>' +
       '</div>';
     }).join('');
 
@@ -1517,7 +1514,7 @@
       });
       var btnHistorico = item.querySelector('.ig-item-historico');
       if (btnHistorico) btnHistorico.addEventListener('click', function(){
-        abrirHistoricoInstagram(item.dataset.igId, item.dataset.username);
+        alternarHistoricoInstagram(item, item.dataset.igId, item.dataset.username);
       });
       var btnResp = item.querySelector('.ig-responder-btn');
       if (btnResp){
@@ -1547,28 +1544,30 @@
   var btnAtualizarIg = $('btn-atualizar-ig');
   if (btnAtualizarIg) btnAtualizarIg.addEventListener('click', carregarComentariosInstagram);
 
-  // ---------- histórico de comentários do Instagram por pessoa (modal) ----------
+  // ---------- histórico de comentários do Instagram por pessoa (painel inline) ----------
   // instagram_comentarios não é apagado quando dispensado/respondido — só sai
   // da lista de pendentes — então dá pra remontar a conversa inteira dessa
   // pessoa (todo comentário + resposta), igual o botão Conversa do WhatsApp.
-  function fecharHistoricoInstagram(){
-    var fundo = $('ig-modal-fundo');
-    if (fundo) fundo.remove();
-    document.removeEventListener('keydown', fecharHistoricoInstagramNaEsc);
-  }
-  function fecharHistoricoInstagramNaEsc(e){
-    if (e.key === 'Escape') fecharHistoricoInstagram();
-  }
-
-  function abrirHistoricoInstagram(igId, username){
-    if (!igId) return;
+  //
+  // Era um modal com "position:fixed" cobrindo a tela, mas o crm.html
+  // também roda dentro de um iframe (novva-crm.html) que cresce pra
+  // altura do conteúdo em vez de rolar por conta própria — "fixed" ali
+  // vira relativo ao iframe inteiro, não ao que está visível na tela
+  // naquele momento, e o modal abria longe de onde a pessoa estava
+  // olhando. Um painel que expande dentro do próprio card não tem esse
+  // problema: aparece exatamente onde o botão foi clicado.
+  function alternarHistoricoInstagram(item, igId, username){
+    var painel = item.querySelector('.ig-item-historico-painel');
+    if (!painel || !igId) return;
+    if (!painel.hidden){ painel.hidden = true; return; }
+    painel.hidden = false;
+    painel.innerHTML = '<div class="ig-item-historico-carregando">Carregando…</div>';
     apiGet('instagram_comentarios?select=texto,resposta_texto,respondido,respondido_em,criado_em&autor_ig_id=eq.' + encodeURIComponent(igId) + '&order=criado_em.asc')
-      .then(function(rows){ renderHistoricoInstagram(rows || [], username); })
-      .catch(function(err){ alert('Não deu pra carregar o histórico: ' + err.message); });
+      .then(function(rows){ renderHistoricoInstagram(painel, rows || []); })
+      .catch(function(err){ painel.innerHTML = '<div class="ig-item-historico-carregando">Erro: ' + esc(err.message) + '</div>'; });
   }
 
-  function renderHistoricoInstagram(rows, username){
-    fecharHistoricoInstagram();
+  function renderHistoricoInstagram(painel, rows){
     var msgsHtml = rows.map(function(c){
       var html = '<div class="bolha rec">' + esc(c.texto || '(sem texto)') + '<span class="hora">' + fmtQuando(c.criado_em) + '</span></div>';
       if (c.respondido && c.resposta_texto){
@@ -1576,20 +1575,8 @@
       }
       return html;
     }).join('') || '<div class="thread-vazio">Nenhum histórico ainda.</div>';
-
-    var fundo = document.createElement('div');
-    fundo.id = 'ig-modal-fundo';
-    fundo.className = 'ig-modal-fundo';
-    fundo.innerHTML =
-      '<div class="ig-modal">' +
-        '<div class="ig-modal-cab"><b>@' + esc(username || 'desconhecido') + '</b><button type="button" class="ig-modal-fechar" id="ig-modal-fechar-btn">' + ic('x', 16) + '</button></div>' +
-        '<div class="ig-modal-msgs" id="ig-modal-msgs">' + msgsHtml + '</div>' +
-      '</div>';
-    document.body.appendChild(fundo);
-    $('ig-modal-msgs').scrollTop = $('ig-modal-msgs').scrollHeight;
-    $('ig-modal-fechar-btn').addEventListener('click', fecharHistoricoInstagram);
-    fundo.addEventListener('click', function(e){ if (e.target === fundo) fecharHistoricoInstagram(); });
-    document.addEventListener('keydown', fecharHistoricoInstagramNaEsc);
+    painel.innerHTML = msgsHtml;
+    painel.scrollTop = painel.scrollHeight;
   }
 
   function fmtDuracao(ms){
