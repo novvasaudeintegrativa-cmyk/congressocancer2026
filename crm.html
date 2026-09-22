@@ -259,6 +259,7 @@
   .ig-mostrar-mais:hover{border-color:var(--bordo);}
   .ig-item{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:12px 14px;min-width:0;}
   .ig-badge-propria{flex:none;display:flex;align-items:center;font-family:var(--tit);font-weight:700;font-size:9.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--bordo-vivo);background:rgba(185,45,61,.1);padding:3px 7px;border-radius:999px;white-space:nowrap;}
+  .ig-badge-ok{flex:none;display:flex;align-items:center;gap:4px;font-family:var(--tit);font-weight:700;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--verde);background:rgba(31,138,76,.12);padding:3px 8px;border-radius:999px;}
   .ig-item-cab{display:flex;align-items:center;gap:8px;}
   .ig-item-info{min-width:0;flex:1;}
   .ig-item-nome{font-family:var(--tit);font-weight:800;font-size:12.5px;color:var(--ink);}
@@ -287,6 +288,7 @@
   .ig-resposta-site-btn:hover{border-color:var(--bordo);color:var(--bordo);}
   .ig-resposta-acoes .ig-responder-btn{flex:none;font-family:var(--tit);font-weight:800;font-size:11.5px;text-transform:uppercase;background:var(--bordo);color:#fff;border:0;border-radius:9px;padding:8px 14px;cursor:pointer;}
   .ig-resposta-acoes .ig-responder-btn:disabled{opacity:.5;cursor:default;}
+  .ig-resposta-enviada{font-size:12.5px;color:var(--soft);margin-top:8px;padding-left:32px;}
 
   /* ---- equipe ---- */
   .equipe-tabela-wrap{overflow-x:auto;border:1px solid var(--linha);border-radius:12px;background:var(--card);}
@@ -1451,10 +1453,8 @@
   var NOSSO_INSTAGRAM_USERNAME = 'novvasaudeintegrativa';
 
   function renderComentariosInstagram(rows){
-    // já respondido = já foi tratado (pelo botão Responder ou pelo "x" de
-    // dispensar) — some dessa seção, pra aqui sobrar só o que ainda espera.
-    rows = (rows || []).filter(function(c){ return !c.respondido && !c.virou_lead; });
-    if (!rows.length){ $('ig-lista').innerHTML = '<div class="vazio-col">Nenhum comentário pendente — tudo respondido!</div>'; return; }
+    rows = rows || [];
+    if (!rows.length){ $('ig-lista').innerHTML = '<div class="vazio-col">Nenhum comentário ainda.</div>'; return; }
     var limite = igColunas() * IG_LIMITE_LINHAS;
     var itensHtml = rows.map(function(c, i){
       var oculto = !igExpandido && i >= limite;
@@ -1467,17 +1467,21 @@
             '<div class="ig-item-quando">' + fmtQuando(c.criado_em) + '</div>' +
           '</div>' +
           (souEu ? '<span class="ig-badge-propria" title="O autor é a própria conta do Congresso — provavelmente sua resposta enviada direto no Instagram, não um comentário novo">Sua conta</span>' : '') +
+          (c.respondido ? '<span class="ig-badge-ok">' + ic('check', 11) + ' Respondido</span>' : '') +
           (c.autor_ig_id ? '<button type="button" class="ig-item-historico" title="Ver histórico de comentários dessa pessoa">' + ic('message-circle', 12) + '</button>' : '') +
-          '<button type="button" class="ig-item-dispensar" title="Já respondi isso fora do CRM (no app do Instagram) — tirar da lista">' + ic('x', 12) + '</button>' +
+          (c.respondido ? '' : '<button type="button" class="ig-item-dispensar" title="Já respondi isso fora do CRM (no app do Instagram) — marcar como respondido">' + ic('x', 12) + '</button>') +
         '</div>' +
         '<div class="ig-item-texto">' + esc(c.texto || '') + '</div>' +
-        '<div class="ig-resposta-caixa">' +
-          '<textarea class="ig-resposta-input" placeholder="Responder no Instagram…" rows="2"></textarea>' +
-          '<div class="ig-resposta-acoes">' +
-            '<button type="button" class="ig-resposta-site-btn">+ Link do site</button>' +
-            '<button type="button" class="ig-responder-btn">Responder</button>' +
-          '</div>' +
-        '</div>' +
+        (c.respondido
+          ? '<div class="ig-resposta-enviada"><b>Sua resposta:</b> ' + esc(c.resposta_texto || '(respondido fora do CRM, sem texto registrado)') + '</div>'
+          : '<div class="ig-resposta-caixa">' +
+              '<textarea class="ig-resposta-input" placeholder="Responder no Instagram…" rows="2"></textarea>' +
+              '<div class="ig-resposta-acoes">' +
+                '<button type="button" class="ig-resposta-site-btn">+ Link do site</button>' +
+                '<button type="button" class="ig-responder-btn">Responder</button>' +
+              '</div>' +
+            '</div>'
+        ) +
       '</div>';
     }).join('');
 
@@ -1497,7 +1501,7 @@
     $('ig-lista').querySelectorAll('.ig-item').forEach(function(item){
       var btnDispensar = item.querySelector('.ig-item-dispensar');
       if (btnDispensar) btnDispensar.addEventListener('click', function(){
-        if (!confirm('Já respondeu esse comentário direto no Instagram (fora do CRM)? Isso só tira ele da lista aqui, não mexe no Instagram.')) return;
+        if (!confirm('Já respondeu esse comentário direto no Instagram (fora do CRM)? Isso marca como respondido aqui, não mexe no Instagram.')) return;
         btnDispensar.disabled = true;
         apiPatch('instagram_comentarios?comment_id=eq.' + encodeURIComponent(item.dataset.id), { respondido: true, respondido_em: new Date().toISOString() }, { Prefer: 'return=minimal' })
           .then(function(){ carregarComentariosInstagram(); })
