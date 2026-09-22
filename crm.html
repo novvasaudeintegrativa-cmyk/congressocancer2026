@@ -1187,15 +1187,26 @@
 
     ETAPAS.forEach(function(e){
       var doStage = leads.filter(function(l){ return l.etapa === e.id; });
-      // prioridade: quem veio de campanha do WhatsApp aparece primeiro,
-      // dentro de cada grupo mantém a ordem por mais recente (já vem assim da RPC)
+      // prioridade: 1º quem tem mensagem recebida ainda sem resposta (senão
+      // um lead antigo que recebeu mensagem nova hoje fica enterrado no
+      // meio da coluna, sem ninguém notar) — 2º quem veio de campanha do
+      // WhatsApp — dentro de cada grupo mantém a ordem por mais recente
+      // (já vem assim da RPC).
       doStage.sort(function(a, b){
+        var pendA = leadPendente(a) ? 1 : 0;
+        var pendB = leadPendente(b) ? 1 : 0;
+        if (pendA !== pendB) return pendB - pendA;
         var pa = a.campanha_whatsapp_nome ? 1 : 0;
         var pb = b.campanha_whatsapp_nome ? 1 : 0;
         return pb - pa;
       });
       board.appendChild(coluna(e.rot, doStage, false, e.id));
     });
+  }
+  // tem mensagem recebida esperando resposta (mesma condição do badge
+  // "aguardando" em tempoRespostaBadge)
+  function leadPendente(l){
+    return !!l.ultima_recebida_em && !l.respondido_em;
   }
 
   function coluna(rotulo, leads, triar, etapaId){
