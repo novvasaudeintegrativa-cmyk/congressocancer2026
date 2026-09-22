@@ -5928,6 +5928,21 @@ de API que possa variar por conta/token (ID interno, formato do
 payload) — o `@usuário` que aparece pro humano é o mesmo que o humano
 reconhece na hora, sem chance de falso negativo silencioso.
 
+### 30.5.3. Ajuste (21/09/2026) — filtra em vez de sinalizar
+
+Na prática o selo "Sua conta" + dispensar manual (§30.5.2) confundia:
+como a linha própria da conta é sempre a resposta de um comentário que
+já está ali do lado (com "Sua resposta: ..." mostrado dentro do card
+de verdade), aparecer como um card separado dava a impressão de duas
+conversas diferentes quando era uma só.
+
+Como já é 100% certo que `autor_username = 'novvasaudeintegrativa'`
+nunca é um comentário de verdade (só existe por causa do próprio reply
+disparando o webhook de novo — §30.5), o `crm.html` agora **filtra**
+essas linhas da lista de vez, em vez de mostrar e deixar a equipe
+dispensar. Selo "Sua conta" e o `souEu` que o gerava foram removidos —
+não faz mais sentido sinalizar um card que nunca aparece.
+
 ### 30.6. Pendências (registradas, não fazem parte desta fase)
 
 - **Renovar o token automaticamente** antes dos 60 dias vencerem (uma

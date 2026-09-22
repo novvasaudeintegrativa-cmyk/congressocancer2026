@@ -258,7 +258,6 @@
   .ig-mostrar-mais{grid-column:1/-1;justify-self:center;margin-top:4px;font-family:var(--tit);font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;background:#fff;border:1px solid var(--linha);color:var(--bordo);padding:9px 18px;border-radius:9px;cursor:pointer;}
   .ig-mostrar-mais:hover{border-color:var(--bordo);}
   .ig-item{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:12px 14px;min-width:0;}
-  .ig-badge-propria{flex:none;display:flex;align-items:center;font-family:var(--tit);font-weight:700;font-size:9.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--bordo-vivo);background:rgba(185,45,61,.1);padding:3px 7px;border-radius:999px;white-space:nowrap;}
   .ig-badge-ok{flex:none;display:flex;align-items:center;gap:4px;font-family:var(--tit);font-weight:700;font-size:10px;letter-spacing:.03em;text-transform:uppercase;color:var(--verde);background:rgba(31,138,76,.12);padding:3px 8px;border-radius:999px;}
   .ig-item-cab{display:flex;align-items:center;gap:8px;}
   .ig-item-info{min-width:0;flex:1;}
@@ -1453,17 +1452,19 @@
   // o webhook do Instagram não consegue distinguir com segurança um
   // comentário de verdade da própria resposta da página (responder um
   // comentário pela API também dispara o mesmo evento de webhook — ver
-  // SUPABASE.md §30.5.1/§30.5.2), então sinaliza aqui pelo @usuário e
-  // deixa a equipe decidir se dispensa no "x".
+  // SUPABASE.md §30.5.1/§30.5.2) — então essas linhas nunca são um
+  // comentário de verdade, são sempre o efeito colateral do reply. Em vez
+  // de mostrar como card avulso pra alguém ter que dispensar (confunde:
+  // parece uma conversa separada da que já está logo ali do lado), filtra
+  // fora daqui mesmo.
   var NOSSO_INSTAGRAM_USERNAME = 'novvasaudeintegrativa';
 
   function renderComentariosInstagram(rows){
-    rows = rows || [];
+    rows = (rows || []).filter(function(c){ return (c.autor_username || '').trim().toLowerCase() !== NOSSO_INSTAGRAM_USERNAME; });
     if (!rows.length){ $('ig-lista').innerHTML = '<div class="vazio-col">Nenhum comentário ainda.</div>'; return; }
     var limite = igColunas() * IG_LIMITE_LINHAS;
     var itensHtml = rows.map(function(c, i){
       var oculto = !igExpandido && i >= limite;
-      var souEu = (c.autor_username || '').trim().toLowerCase() === NOSSO_INSTAGRAM_USERNAME;
       return '<div class="ig-item' + (oculto ? ' ig-item-oculto' : '') + '" data-id="' + esc(c.comment_id) + '" data-ig-id="' + esc(c.autor_ig_id || '') + '" data-username="' + esc(c.autor_username || '') + '">' +
         '<div class="ig-item-cab">' +
           avatarHtml(c.autor_username, c.autor_ig_id, 'instagram') +
@@ -1473,7 +1474,6 @@
           '</div>' +
         '</div>' +
         '<div class="ig-item-selos">' +
-          (souEu ? '<span class="ig-badge-propria" title="O autor é a própria conta do Congresso — provavelmente sua resposta enviada direto no Instagram, não um comentário novo">Sua conta</span>' : '') +
           (c.respondido ? '<span class="ig-badge-ok">' + ic('check', 11) + ' Respondido</span>' : '') +
           (c.autor_ig_id ? '<button type="button" class="ig-item-historico" title="Ver histórico de comentários dessa pessoa">' + ic('message-circle', 12) + '</button>' : '') +
           (c.respondido ? '' : '<button type="button" class="ig-item-dispensar" title="Já respondi isso fora do CRM (no app do Instagram) — marcar como respondido">' + ic('x', 12) + '</button>') +
