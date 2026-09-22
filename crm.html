@@ -499,7 +499,7 @@
     </div>
   </div>
 
-  <div id="view-qualidade-whatsapp" class="painel" hidden>
+  <div id="view-qualidade-whatsapp" class="painel">
     <div class="sec-crm"><span>Qualidade do WhatsApp</span><button type="button" id="qw-checar" class="btn-atualizar">Checar agora</button></div>
     <div class="aviso">Monitora a nota de qualidade do número que a Cris usa (a mesma dos vendedores) — cai antes de virar restrição/banimento. Não é estimativa nossa, vem direto da Meta.</div>
     <div id="qw-atual" class="qw-atual">Nenhuma checagem ainda — clica em "Checar agora".</div>
@@ -918,12 +918,12 @@
       ligarPresenca();
       carregarAuditorio();
       carregarComentariosInstagram();
+      carregarQualidadeWhatsapp();
       if (estado.ehGestor) {
         carregarEquipe();
         carregarCampanhas(); carregarGeracoesIA();
         carregarCampanhasWhatsapp(); carregarTemplatesWhatsapp();
         carregarOptinWhatsapp();
-        carregarQualidadeWhatsapp();
         if (user.email) $('cp-teste-email').value = user.email;
         $('btn-ver-como').hidden = false;
       }
@@ -970,7 +970,7 @@
     $('aviso-gestor').hidden = !estado.ehGestor || simulando;
     if (estado.ehGestor){
       $('btn-ver-como').textContent = simulando ? 'Voltar a visualizar como Gestor' : 'Visualizar como Vendedor';
-      ['view-equipe','view-campanhas','view-campanhas-whatsapp','view-optin-whatsapp','view-qualidade-whatsapp'].forEach(function(id){
+      ['view-equipe','view-campanhas','view-campanhas-whatsapp','view-optin-whatsapp'].forEach(function(id){
         $(id).hidden = simulando;
       });
     }
@@ -2491,7 +2491,7 @@
     URL.revokeObjectURL(url);
   });
 
-  // ---------- qualidade do número WhatsApp (só gestor) ----------
+  // ---------- qualidade do número WhatsApp (visível pra todo mundo — número é o mesmo da Cris/vendedores) ----------
   function classeQualidade(q){
     q = String(q || '').toUpperCase();
     if (q === 'GREEN') return 'green';
