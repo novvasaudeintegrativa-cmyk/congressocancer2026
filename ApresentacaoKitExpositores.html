@@ -256,8 +256,14 @@
     border:1px solid var(--borda-card);
     border-radius:var(--radius);
     padding:20px;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
   }
   .plan-card svg{ width:100%; height:auto; display:block; }
+  .plan-duo{ display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:stretch; }
+  @media (max-width:700px){ .plan-duo{ grid-template-columns:1fr; } }
   .plan-legend{
     display:flex; flex-wrap:wrap; gap:14px;
     margin-top:16px; font-size:.8rem; color:var(--texto-suave);
@@ -360,7 +366,7 @@
 <div class="hero-photo">
   <picture>
     <source media="(max-width: 700px)" srcset="Imgs/FotoHeroMobile.png">
-    <img class="zoomable" src="Imgs/FotoHero.jpg" alt="Maior Congresso da América Latina em Práticas Integrativas no Tratamento e Prevenção do Câncer — São José dos Campos, São Paulo">
+    <img class="zoomable" src="Imgs/FotoHero.png" alt="Maior Congresso da América Latina em Práticas Integrativas no Tratamento e Prevenção do Câncer — São José dos Campos, São Paulo">
   </picture>
 </div>
 
@@ -500,6 +506,7 @@
     <span class="eyebrow">Planta</span>
     <h2 class="section-title">Mapa dos Espaços do Congresso</h2>
 
+    <div class="plan-duo">
     <div class="plan-card zoom-wrap" id="plan-zoom" style="cursor:zoom-in;">
       <svg viewBox="0 0 760 430" role="img" aria-label="Planta baixa do centro de convenções">
         <g>
@@ -586,13 +593,21 @@
         </g>
       </svg>
     </div>
-    <p class="plan-zoom-hint">Clique na planta pra ampliar.</p>
+
+    <div class="zoom-wrap" style="height:100%;min-height:280px;"><img class="zoomable" src="Imgs/mapa evento.jpeg" alt="Planta oficial do Centro de Convenções, com numeração completa dos estandes e salas" style="width:100%;height:100%;object-fit:cover;background:#fff;"><span class="zoom-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg></span></div>
+    </div>
+    <p class="plan-zoom-hint">Clique em qualquer planta pra ampliar.</p>
 
     <div class="plan-legend">
       <span><i class="swatch" style="background:rgba(242,199,68,.1);border:1px solid #f2c744"></i>Anfiteatro</span>
       <span><i class="swatch" style="background:rgba(255,106,0,.12);border:1px solid #ff6a00"></i>Foyer / estandes</span>
       <span><i class="swatch" style="background:rgba(0,0,0,.25);border:1px solid rgba(217,53,72,.55)"></i>Salas de apoio</span>
       <span><i class="swatch" style="background:rgba(242,199,68,.14);border:1px solid #f2c744"></i>Café</span>
+    </div>
+
+    <div class="highlight-card" style="margin-top:24px;">
+      <b>Centro de Convenções — Brigadeiro (Marechal do Ar) Casemiro Montenegro Filho</b>
+      <p>Auditório "Aldo Rosa" · Sala 01 "Wandalle" · Sala 02 "Wallauscheck" · Sala 03 "Ricardo" · Sala 04 "Jacek" · Sala 05 "Young" · Sala 06 "Smith" · Sala 07 "Focke, Veiga" · Sala 08 "Leal" · Sala 09 "Moraes".</p>
     </div>
   </div>
 </section>
@@ -669,7 +684,7 @@
           <h3>Diamond</h3>
           <div class="price">R$ 40.000<small>investimento total</small></div>
         </div>
-        <div style="background:#fff;border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:center;">
+        <div style="background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:16px;display:flex;align-items:center;justify-content:center;">
           <img src="Imgs/LogoAcqua.png" alt="Exemplo de patrocinador Diamond — Acqua Purificadores" style="max-height:70px;width:auto;">
         </div>
         <ul>
@@ -739,7 +754,7 @@
     <h2 class="section-title">Onasis Torres e Carlos Alberto</h2>
     <div class="duo-portrait">
       <div class="portrait"><img src="Imgs/Beto.png" alt="Carlos Alberto"><b>Carlos Alberto</b></div>
-      <div class="portrait"><img src="Imgs/Onasis.jpeg" alt="Onasis Torres"><b>Onasis Torres</b></div>
+      <div class="portrait"><img src="Imgs/Onasis.jpeg" alt="Onasis Torres" style="object-position:center 12%;"><b>Onasis Torres</b></div>
     </div>
     <p class="team-caption">Diretores da NOVVA Saúde Integrativa e idealizadores do Congresso.</p>
     <p class="team-caption" style="margin-top:10px;"><a href="https://congressocancer.novvasaudeintegrativa.com.br/" target="_blank" rel="noopener" style="color:var(--dourado);font-weight:700;text-decoration:underline;">congressocancer.novvasaudeintegrativa.com.br</a></p>
