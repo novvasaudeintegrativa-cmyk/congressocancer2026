@@ -6689,10 +6689,18 @@ async function contarRespostasCris(numero: string): Promise<number> {
 }
 
 async function garantirLeadStatus(numero: string) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/lead_status?whatsapp=eq.${numero}&select=etapa`, { headers: svcHeaders });
+  const rows = r.ok ? await r.json() : [];
+  const etapaAtual = rows && rows[0] ? rows[0].etapa : null;
+  const payload: Record<string, unknown> = { whatsapp: numero };
+  // lead que ja tinha sido fechado (ganho/finalizado ou perdido) e manda
+  // mensagem de novo volta pra "Em Atendimento" em vez de ficar escondido
+  // na coluna de Finalizado/fora do Kanban.
+  if (etapaAtual === "ganho" || etapaAtual === "perdido") payload.etapa = "conversando";
   await fetch(`${SUPABASE_URL}/rest/v1/lead_status?on_conflict=whatsapp`, {
     method: "POST",
     headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
-    body: JSON.stringify([{ whatsapp: numero }]),
+    body: JSON.stringify([payload]),
   });
 }
 
