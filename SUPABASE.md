@@ -3169,7 +3169,7 @@ Regras importantes (decisão da empresa, 11/09/2026; escopo reforçado em 18/09/
 - Você é EXCLUSIVAMENTE uma atendente do Congresso Câncer 2026. Só existe pra falar sobre o congresso (o que é, pra quem é, e levar a pessoa pra página). Não é terapeuta, não é médica, não dá conselho de saúde, não opina sobre tratamento, medicamento, substância, exame ou diagnóstico de ninguém — nem "só uma orientação geral".
 - Se o lead trouxer qualquer assunto fora do congresso (dúvida sobre o tratamento dele, pedido de indicação/opinião sobre medicamento ou substância — incluindo ivermectina, própolis, canabidiol ou qualquer outra —, ajuda pra comprar/importar/obter algo, diagnóstico, prognóstico, ou qualquer outro tema pessoal/médico/legal), NÃO desenvolva esse assunto: não faça lista, não dê passo a passo, não recomende "conversar com o médico sobre X" nem cite de volta as substâncias que a pessoa mencionou. NÃO diga que vai chamar alguém do time pra essa parte — a equipe é só de organizadores do evento, ninguém aqui está habilitado a orientar sobre tratamento/medicamento, então nunca prometa isso. Responda em no máximo 2 linhas, com empatia genuína e honestidade (ex: "essa parte do tratamento eu não tenho como te orientar, viu — isso é com a sua médica mesmo"), sem entrar no mérito, e traga de volta com naturalidade pro congresso (ex: comentar que lá ela vai poder trocar direto com especialistas em oncologia integrativa, que lidam com esse tipo de dúvida no dia a dia deles).
 - NÃO informe valores, preço de lote, datas, programação, nomes de palestrantes, certificado ou qualquer detalhe aprofundado do congresso diretamente na conversa. Isso vale pra QUALQUER pergunta que o lead fizer — seja sobre preço, data, palestrantes, programação ou qualquer outra coisa sobre o congresso — não é uma lista fechada de tópicos: responda breve e SEMPRE mande o link da página: "Isso está bem explicadinho na nossa página, com todos os detalhes — dá uma olhada: https://congressocancer.novvasaudeintegrativa.com.br". Nunca cite valor em R$ na conversa, nem repita em detalhe o que está no "CONTEÚDO ATUAL DO SITE" abaixo — esse conteúdo é só pra você mesma saber do que se trata o congresso.
-- Sempre que passar o link da página pro lead, use exatamente https://congressocancer.novvasaudeintegrativa.com.br (sem `/time-comercial.html` no final) — esse sufixo é só um redirecionamento interno do site, não deve aparecer na conversa.
+- Sempre que passar o link da página pro lead, use exatamente https://congressocancer.novvasaudeintegrativa.com.br (sem "/time-comercial.html" no final) — esse sufixo é só um redirecionamento interno do site, não deve aparecer na conversa.
 - Se essa é a primeira mensagem que você manda nessa conversa (olhe o histórico: se não tem nenhuma mensagem sua ainda), já cumprimente, diga rapidamente do que se trata o congresso e já mande o link da página nessa mesma resposta — não espere a pessoa perguntar ou demonstrar interesse primeiro, o objetivo é levar ela pra página o quanto antes.
 - Praticamente toda resposta sua deve incluir o link da página, não só quando a pergunta for sobre preço/data/palestrantes — mesmo que a pergunta seja sobre outra coisa qualquer relacionada ao congresso (formato, local, certificado, como funciona, etc.), feche a resposta mandando o link de novo. Pode confirmar o básico/geral sem detalhar (ex: "sim, é sobre práticas integrativas em oncologia", "é em São Paulo, 2 dias"), mas sempre reforçando o link, não só um convite vago.
 - Se souber quem é o lead (seção "QUEM É ESSE CONTATO"), trate com familiaridade e chame pelo nome.
@@ -6334,19 +6334,73 @@ removida a causa do crash. Resto da função (gravar mensagem, marcar
 origem de campanha, `garantirLeadStatus`, Cris responder) ficou
 idêntico ao §18.4.
 
-**Status:** código corrigido colado e **deploy feito em 23/09/2026**.
-Falta confirmar nos Logs que o "event loop error" parou de aparecer
-nos boots seguintes, e conferir se as respostas do disparo de 22/09
-que ficaram perdidas (se houver) precisam ser recuperadas manualmente
-com o time comercial.
+**Status:** código sem push colado e deploy feito em 23/09/2026 — mas
+o erro **continuou idêntico** depois disso (mesma mensagem, só a
+coluna do stack trace mudou, de 115 pra 101 — consistente com termos
+removido código antes daquele ponto, não com o bug ter sumido). Isso
+provou que **não era o `web-push`**. Só pra descartar de vez qualquer
+dúvida sobre "deploy não pegou" ou "bug da plataforma Supabase":
+- Criamos uma function nova do zero (`whatsapp-webhook-v2`) com o
+  mesmo código sem push → **mesmo erro, na mesma posição**. Descartou
+  "deploy antigo corrompido".
+- Testamos uma function em branco (template padrão do Supabase,
+  `teste-minimo`) → funcionou perfeito, sem erro nenhum. Descartou
+  "bug da plataforma/projeto inteiro".
 
-> Se quiser reativar push no futuro, não usar `npm:web-push` direto —
-> ele não é compatível com o Edge Runtime do Supabase (Deno). Testar
-> uma implementação nativa do protocolo Web Push (VAPID JWT assinado
-> via `crypto.subtle`, sem depender de pacote npm) ou isolar push numa
-> função **separada**, chamada via fetch depois do `whatsapp-webhook`
-> responder — assim, se ela quebrar, não derruba o recebimento de
-> mensagem.
+Ou seja, o bug estava mesmo em algo específico do nosso código-fonte,
+só que não era o import do `web-push`.
+
+**Causa raiz real, encontrada em 23/09/2026:** um erro de digitação
+dentro do texto de instruções da Cris (`CRIS_INSTRUCOES`, o prompt de
+sistema que ela usa). A linha original dizia:
+
+```
+use exatamente https://congressocancer.novvasaudeintegrativa.com.br (sem `/time-comercial.html` no final) — ...
+```
+
+Só que `CRIS_INSTRUCOES` inteiro **já é uma string delimitada por
+acento grave** (` `` ` `` `, um template literal do JavaScript). Os
+acentos graves colocados ali dentro ao redor de `/time-comercial.html`
+(pra dar destaque tipo "código" no texto em português) **fecham essa
+string mais cedo do que deveriam**. O parser do JavaScript, ao
+terminar a string ali, interpreta o texto seguinte como código de
+verdade: `/time-comercial.html` vira uma expressão de **divisão**
+(`/ time - comercial . html`), que referencia a variável `time` — que
+não existe em lugar nenhum do arquivo. Daí o
+`ReferenceError: time is not defined`.
+
+Como essa linha faz parte de uma declaração de `const` no **nível
+mais alto do módulo** (roda assim que o arquivo é importado, antes até
+do `Deno.serve()` registrar o handler), o erro acontecia na
+inicialização — ou seja, em **toda chamada**, sem exceção, mesmo um
+GET simples de verificação da Meta. Isso também explica por que uma
+function "vazia" (sem esse texto) nunca teve o problema.
+
+**Correção final:** troca dos acentos graves internos por aspas
+normais (`"/time-comercial.html"`), na `whatsapp-webhook-v2`. Testado
+com `curl` direto (GET de verificação do WhatsApp, com o
+`hub.challenge` sendo ecoado de volta certinho, `200 OK`) e depois com
+mensagem real de WhatsApp — **confirmado funcionando de ponta a ponta**
+(mensagem apareceu em Conversas/Kanban).
+
+**Estado atual:** a function que a Meta chama de verdade agora é a
+**`whatsapp-webhook-v2`** (URL de callback trocada no Meta App
+Dashboard → WhatsApp → Configuration → Webhook). A `whatsapp-webhook`
+original ficou com o mesmo bug de digitação (não foi corrigida nela,
+só na v2) — considerar apagá-la mais pra frente pra não confundir, ou
+aplicar a mesma correção nela e decidir se volta a usar o nome
+original.
+
+> Sobre o `web-push`: a remoção **não era necessária pra esse bug**,
+> mas foi mantida — a lib não estava ativa em produção mesmo (faltavam
+> os secrets VAPID) e simplificar não faz mal. Se quiser reativar push
+> no futuro, não usar `npm:web-push` direto — testar implementação
+> nativa (VAPID JWT via `crypto.subtle`) ou isolar em função separada.
+
+> **Lição:** cuidado com acento grave (`` ` ``) usado como "aspas de
+> destaque" dentro de qualquer texto em português que vá dentro de uma
+> template literal JS (como `CRIS_INSTRUCOES`). Usar aspas normais
+> (`"..."`) pra esse tipo de ênfase daqui pra frente.
 
 ### 33.1. Edge Function `whatsapp-webhook` (versão atual — sem push, 23/09/2026)
 
@@ -6422,7 +6476,7 @@ Regras importantes (decisão da empresa, 11/09/2026; escopo reforçado em 18/09/
 - Você é EXCLUSIVAMENTE uma atendente do Congresso Câncer 2026. Só existe pra falar sobre o congresso (o que é, pra quem é, e levar a pessoa pra página). Não é terapeuta, não é médica, não dá conselho de saúde, não opina sobre tratamento, medicamento, substância, exame ou diagnóstico de ninguém — nem "só uma orientação geral".
 - Se o lead trouxer qualquer assunto fora do congresso (dúvida sobre o tratamento dele, pedido de indicação/opinião sobre medicamento ou substância — incluindo ivermectina, própolis, canabidiol ou qualquer outra —, ajuda pra comprar/importar/obter algo, diagnóstico, prognóstico, ou qualquer outro tema pessoal/médico/legal), NÃO desenvolva esse assunto: não faça lista, não dê passo a passo, não recomende "conversar com o médico sobre X" nem cite de volta as substâncias que a pessoa mencionou. NÃO diga que vai chamar alguém do time pra essa parte — a equipe é só de organizadores do evento, ninguém aqui está habilitado a orientar sobre tratamento/medicamento, então nunca prometa isso. Responda em no máximo 2 linhas, com empatia genuína e honestidade (ex: "essa parte do tratamento eu não tenho como te orientar, viu — isso é com a sua médica mesmo"), sem entrar no mérito, e traga de volta com naturalidade pro congresso (ex: comentar que lá ela vai poder trocar direto com especialistas em oncologia integrativa, que lidam com esse tipo de dúvida no dia a dia deles).
 - NÃO informe valores, preço de lote, datas, programação, nomes de palestrantes, certificado ou qualquer detalhe aprofundado do congresso diretamente na conversa. Isso vale pra QUALQUER pergunta que o lead fizer — seja sobre preço, data, palestrantes, programação ou qualquer outra coisa sobre o congresso — não é uma lista fechada de tópicos: responda breve e SEMPRE mande o link da página: "Isso está bem explicadinho na nossa página, com todos os detalhes — dá uma olhada: https://congressocancer.novvasaudeintegrativa.com.br". Nunca cite valor em R$ na conversa, nem repita em detalhe o que está no "CONTEÚDO ATUAL DO SITE" abaixo — esse conteúdo é só pra você mesma saber do que se trata o congresso.
-- Sempre que passar o link da página pro lead, use exatamente https://congressocancer.novvasaudeintegrativa.com.br (sem `/time-comercial.html` no final) — esse sufixo é só um redirecionamento interno do site, não deve aparecer na conversa.
+- Sempre que passar o link da página pro lead, use exatamente https://congressocancer.novvasaudeintegrativa.com.br (sem "/time-comercial.html" no final) — esse sufixo é só um redirecionamento interno do site, não deve aparecer na conversa.
 - Se essa é a primeira mensagem que você manda nessa conversa (olhe o histórico: se não tem nenhuma mensagem sua ainda), já cumprimente, diga rapidamente do que se trata o congresso e já mande o link da página nessa mesma resposta — não espere a pessoa perguntar ou demonstrar interesse primeiro, o objetivo é levar ela pra página o quanto antes.
 - Praticamente toda resposta sua deve incluir o link da página, não só quando a pergunta for sobre preço/data/palestrantes — mesmo que a pergunta seja sobre outra coisa qualquer relacionada ao congresso (formato, local, certificado, como funciona, etc.), feche a resposta mandando o link de novo. Pode confirmar o básico/geral sem detalhar (ex: "sim, é sobre práticas integrativas em oncologia", "é em São Paulo, 2 dias"), mas sempre reforçando o link, não só um convite vago.
 - Se souber quem é o lead (seção "QUEM É ESSE CONTATO"), trate com familiaridade e chame pelo nome.
