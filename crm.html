@@ -347,6 +347,7 @@
   .campanhas-tabela .cp-enviar{font-family:var(--tit);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;background:var(--bordo);border:0;color:#fff;padding:7px 13px;border-radius:999px;cursor:pointer;}
   .campanhas-tabela .cp-enviar:hover{background:var(--bordo-vivo);}
   .campanhas-tabela .cp-enviar:disabled{opacity:.5;cursor:default;}
+  .campanhas-tabela .cp-qtd{width:52px;padding:6px 7px;border-radius:8px;border:1px solid var(--linha);background:#fff;color:var(--ink);font-family:var(--corpo);font-size:12px;text-align:center;margin-right:6px;}
   .form-campanha{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:14px 16px;}
   .form-campanha label{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);margin:10px 0 5px;font-weight:600;}
   .form-campanha label:first-child{margin-top:0;}
@@ -601,7 +602,8 @@
     <div class="col-campanhas">
       <div id="view-campanhas-whatsapp" class="painel" hidden>
         <div class="sec-crm"><span>Campanhas WhatsApp</span></div>
-        <div class="aviso">Só funciona com um <b>template já aprovado pela Meta</b> — escolha na lista abaixo (carregada direto do WhatsApp Manager). Campanhas <b>Marketing</b> disparam sozinhas, automaticamente, só <b>terça a quinta das 13h às 14h</b>, em lotes de até 50 — número já contatado em outra campanha de marketing nunca recebe de novo (fica marcado como "pulado"). O botão "Enviar próximo lote" continua disponível pra forçar um envio manual a qualquer hora.</div>
+        <div class="aviso">Só funciona com um <b>template já aprovado pela Meta</b> — escolha na lista abaixo (carregada direto do WhatsApp Manager). Campanhas <b>Marketing</b> disparam sozinhas, automaticamente, só <b>terça a quinta das 13h às 14h</b>, em lotes com a quantidade que você escolher (até 50 por vez) — número já contatado em outra campanha de marketing nunca recebe de novo (fica marcado como "pulado"). O botão "Enviar lote" continua disponível pra forçar um envio manual a qualquer hora, na quantidade que você digitar ao lado do botão.</div>
+        <div class="aviso" id="meta-limite-aviso" style="display:none;"></div>
 
         <div class="campanhas-tabela-wrap">
           <table class="campanhas-tabela"><tbody id="campanhas-wa-lista"></tbody></table>
@@ -956,7 +958,7 @@
       if (estado.ehGestor) {
         carregarEquipe();
         carregarCampanhas(); carregarGeracoesIA();
-        carregarCampanhasWhatsapp(); carregarTemplatesWhatsapp();
+        carregarCampanhasWhatsapp(); carregarTemplatesWhatsapp(); carregarLimiteMetaResumo();
         carregarOptinWhatsapp();
         if (user.email) $('cp-teste-email').value = user.email;
         $('btn-ver-como').hidden = false;
@@ -2415,6 +2417,19 @@
     return out;
   }
 
+  function carregarLimiteMetaResumo(){
+    return apiGet('whatsapp_qualidade?select=quality_rating,messaging_limit,criado_em&order=criado_em.desc&limit=1')
+      .then(function(rows){
+        var atual = (rows || [])[0];
+        var el = $('meta-limite-aviso');
+        if (!el) return;
+        if (!atual){ el.style.display = 'none'; return; }
+        el.style.display = 'block';
+        el.innerHTML = 'Limite de envio liberado pela Meta agora: <b>' + esc(atual.messaging_limit || 'não informado') + '</b> mensagens/24h · Qualidade do número: <span class="qw-badge ' + classeQualidade(atual.quality_rating) + '">' + esc(rotuloQualidade(atual.quality_rating)) + '</span> · checado ' + fmtQuando(atual.criado_em) + ' (atualiza na aba "Qualidade WhatsApp").';
+      })
+      .catch(function(){ var el = $('meta-limite-aviso'); if (el) el.style.display = 'none'; });
+  }
+
   function carregarCampanhasWhatsapp(){
     return apiGet('campanhas_whatsapp_resumo?select=*').then(renderCampanhasWhatsapp).catch(function(err){
       $('campanhas-wa-lista').innerHTML = '<tr><td style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + '</td></tr>';
@@ -2430,16 +2445,19 @@
           (c.falhas ? ' · <span class="cp-falhas">' + c.falhas + ' falhas</span>' : '') +
           (c.pulados ? ' · ' + c.pulados + ' pulados (já contatados)' : '') + ' · ' + c.total + ' total</td>' +
         '<td style="text-align:right"><button type="button" class="icon-btn wa-historico-btn" data-id="' + c.id + '" data-nome="' + esc(c.nome) + '" title="Ver histórico de envios">' + ic('clock', 14) + '</button> ' +
+          (c.pendentes ? '<input type="number" class="cp-qtd" min="1" max="' + Math.max(1, c.pendentes) + '" value="' + Math.min(50, c.pendentes) + '" title="Quantidade a enviar neste lote" data-id="' + c.id + '">' : '') +
           '<button type="button" class="cp-enviar wa-enviar" data-id="' + c.id + '"' + (c.pendentes ? '' : ' disabled') + '>' +
-          (c.pendentes ? 'Enviar próximo lote' : 'Concluída') + '</button></td>' +
+          (c.pendentes ? 'Enviar lote' : 'Concluída') + '</button></td>' +
       '</tr>';
     }).join('') || '<tr><td>Nenhuma campanha ainda.</td></tr>';
 
     $('campanhas-wa-lista').querySelectorAll('.wa-enviar').forEach(function(btn){
       btn.addEventListener('click', function(){
         var id = this.dataset.id;
+        var qtdInput = $('campanhas-wa-lista').querySelector('.cp-qtd[data-id="' + id + '"]');
+        var qtd = qtdInput ? Math.max(1, Number(qtdInput.value) || 50) : 50;
         this.disabled = true; this.textContent = 'Enviando…';
-        campanhaWhatsappEnviarLote(id).then(function(res){
+        campanhaWhatsappEnviarLote(id, qtd).then(function(res){
           alert('Lote enviado: ' + res.enviados + ' ok' + (res.falhas ? ', ' + res.falhas + ' falharam' : '') + '.');
           return carregarCampanhasWhatsapp();
         }).catch(function(err){
@@ -2529,11 +2547,13 @@
       .finally(function(){ btn.disabled = false; btn.innerHTML = ic('download') + ' Exportar CSV'; });
   });
 
-  function campanhaWhatsappEnviarLote(campanhaId){
+  function campanhaWhatsappEnviarLote(campanhaId, lote){
+    var body = { campanha_id: Number(campanhaId) };
+    if (lote) body.lote = Number(lote);
     return fetch(SUPABASE_URL + '/functions/v1/campanha-whatsapp-lote', {
       method: 'POST',
       headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ campanha_id: Number(campanhaId) })
+      body: JSON.stringify(body)
     }).then(function(r){ return r.text().then(function(t){
       var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
       if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
