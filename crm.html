@@ -636,6 +636,10 @@
         </div>
 
         <form id="form-campanha-whatsapp" class="form-campanha">
+          <label for="cw-arquivo">Lista de contatos (CSV com colunas numero, nome, lote)</label>
+          <input type="file" id="cw-arquivo" accept=".csv,text/csv" required>
+          <div class="dica">Só use números da lista "Opt-in WhatsApp". Número em qualquer formato — o sistema limpa pra só dígitos.</div>
+
           <label for="cw-nome">Nome da campanha (só pra identificar)</label>
           <input type="text" id="cw-nome" placeholder="ex: Reengajamento WhatsApp 2026" required>
 
@@ -676,10 +680,6 @@
           <input type="text" id="cw-teste-nome" placeholder="nome pra usar no {{1}} do teste (ex: seu nome)">
           <button type="button" id="cw-teste-btn">Enviar teste</button>
           <div class="cp-msg" id="cw-teste-msg"></div>
-
-          <label for="cw-arquivo">Lista de contatos (CSV com colunas numero, nome, lote)</label>
-          <input type="file" id="cw-arquivo" accept=".csv,text/csv" required>
-          <div class="dica">Só use números da lista "Opt-in WhatsApp". Número em qualquer formato — o sistema limpa pra só dígitos.</div>
 
           <button type="submit" id="cw-criar-btn">Criar campanha e importar contatos</button>
           <div class="cp-msg" id="cw-msg"></div>
