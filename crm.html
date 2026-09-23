@@ -341,13 +341,17 @@
   .campanhas-tabela tr:first-child td{border-top:0;}
   .campanhas-tabela .cp-nome{font-family:var(--tit);font-weight:800;}
   .campanhas-tabela .cp-assunto{color:var(--soft);font-size:12px;}
-  .campanhas-tabela .cp-cont{font-size:12px;color:var(--soft);margin-top:4px;}
+  .campanhas-tabela .cp-cont{font-size:12px;color:var(--soft);}
+  .campanhas-tabela .cp-linha-topo td{padding-bottom:6px;}
+  .campanhas-tabela .cp-linha-stats td{padding-top:8px;padding-bottom:12px;}
+  .campanhas-tabela .cp-linha-stats + .cp-linha-topo td{border-top:1px solid var(--linha);}
   .campanhas-tabela .cp-cont b{color:var(--ink);}
   .campanhas-tabela .cp-falhas{color:var(--bordo-vivo);}
   .campanhas-tabela .cp-enviar{font-family:var(--tit);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;background:var(--bordo);border:0;color:#fff;padding:7px 13px;border-radius:999px;cursor:pointer;}
   .campanhas-tabela .cp-enviar:hover{background:var(--bordo-vivo);}
   .campanhas-tabela .cp-enviar:disabled{opacity:.5;cursor:default;}
-  .campanhas-tabela .cp-qtd{width:52px;padding:6px 7px;border-radius:8px;border:1px solid var(--linha);background:#fff;color:var(--ink);font-family:var(--corpo);font-size:12px;text-align:center;margin-right:6px;}
+  .campanhas-tabela .cp-qtd{width:52px;padding:6px 7px;border-radius:8px;border:1px solid var(--linha);background:#fff;color:var(--ink);font-family:var(--corpo);font-size:12px;text-align:center;}
+  .campanhas-tabela .cp-acoes{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;}
   .form-campanha{background:var(--card);border:1px solid var(--linha);border-radius:12px;padding:14px 16px;}
   .form-campanha label{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);margin:10px 0 5px;font-weight:600;}
   .form-campanha label:first-child{margin-top:0;}
@@ -2439,16 +2443,16 @@
   function renderCampanhasWhatsapp(rows){
     rows = rows || [];
     $('campanhas-wa-lista').innerHTML = rows.map(function(c){
-      return '<tr>' +
-        '<td><div class="cp-nome">' + esc(c.nome) + ' <span class="badge origem" style="font-size:9px;">' + esc(c.categoria || 'marketing') + '</span></div><div class="cp-assunto">template: ' + esc(c.template_nome) + ' (' + esc(c.idioma) + ')</div>' +
-          '<div class="cp-cont"><b>' + c.enviados + '</b> enviados · ' + c.pendentes + ' pendentes' +
-          (c.falhas ? ' · <span class="cp-falhas">' + c.falhas + ' falhas</span>' : '') +
-          (c.pulados ? ' · ' + c.pulados + ' pulados (já contatados)' : '') + ' · ' + c.total + ' total</div></td>' +
-        '<td style="text-align:right"><button type="button" class="icon-btn wa-historico-btn" data-id="' + c.id + '" data-nome="' + esc(c.nome) + '" title="Ver histórico de envios">' + ic('clock', 14) + '</button> ' +
+      return '<tr class="cp-linha-topo">' +
+        '<td><div class="cp-nome">' + esc(c.nome) + ' <span class="badge origem" style="font-size:9px;">' + esc(c.categoria || 'marketing') + '</span></div><div class="cp-assunto">template: ' + esc(c.template_nome) + ' (' + esc(c.idioma) + ')</div></td>' +
+        '<td><div class="cp-acoes"><button type="button" class="icon-btn wa-historico-btn" data-id="' + c.id + '" data-nome="' + esc(c.nome) + '" title="Ver histórico de envios">' + ic('clock', 14) + '</button>' +
           (c.pendentes ? '<input type="number" class="cp-qtd" min="1" max="' + Math.max(1, c.pendentes) + '" value="' + Math.min(50, c.pendentes) + '" title="Quantidade a enviar neste lote" data-id="' + c.id + '">' : '') +
           '<button type="button" class="cp-enviar wa-enviar" data-id="' + c.id + '"' + (c.pendentes ? '' : ' disabled') + '>' +
-          (c.pendentes ? 'Enviar lote' : 'Concluída') + '</button></td>' +
-      '</tr>';
+          (c.pendentes ? 'Enviar lote' : 'Concluída') + '</button></div></td>' +
+      '</tr>' +
+      '<tr class="cp-linha-stats"><td colspan="2"><div class="cp-cont"><b>' + c.enviados + '</b> enviados · ' + c.pendentes + ' pendentes' +
+          (c.falhas ? ' · <span class="cp-falhas">' + c.falhas + ' falhas</span>' : '') +
+          (c.pulados ? ' · ' + c.pulados + ' pulados (já contatados)' : '') + ' · ' + c.total + ' total</div></td></tr>';
     }).join('') || '<tr><td>Nenhuma campanha ainda.</td></tr>';
 
     $('campanhas-wa-lista').querySelectorAll('.wa-enviar').forEach(function(btn){
