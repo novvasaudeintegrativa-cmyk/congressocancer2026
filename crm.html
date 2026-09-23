@@ -657,7 +657,7 @@
             <div class="dica">Depois de aprovado no WhatsApp Manager, volta aqui e preenche os campos abaixo com o nome exato do template.</div>
           </div>
 
-          <label for="cw-template-select">Escolher template (carregado direto da Meta) <button type="button" id="cw-template-atualizar" class="btn-atualizar" style="margin-left:6px;">Atualizar lista</button></label>
+          <label for="cw-template-select">Escolher template (carregado direto da Meta) <button type="button" id="cw-template-atualizar" class="btn-atualizar" style="margin-left:6px;" title="Atualizar lista"></button></label>
           <select id="cw-template-select">
             <option value="">— clique em "Atualizar lista" —</option>
           </select>
@@ -768,7 +768,6 @@
     ['cp-optin-cta', 'smartphone', 'Inserir CTA de opt-in WhatsApp'],
     ['cp-teste-btn', 'send', 'Enviar teste'],
     ['cw-gerar-ia', 'sparkles', 'Gerar rascunho com IA'],
-    ['cw-template-atualizar', 'refresh-cw', 'Atualizar lista'],
     ['cw-teste-btn', 'send', 'Enviar teste'],
     ['optin-exportar', 'download', 'Exportar CSV'],
     ['wa-historico-exportar', 'download', 'Exportar CSV'],
@@ -779,6 +778,7 @@
     var el = $(x[0]);
     if (el) el.innerHTML = ic(x[1]) + ' ' + x[2];
   });
+  if ($('cw-template-atualizar')) $('cw-template-atualizar').innerHTML = ic('refresh-cw');
 
   function dbg(m){ try { console.log('[crm]', m); } catch(e){} }
   window.addEventListener('unhandledrejection', function(ev){
@@ -2570,7 +2570,7 @@
   function carregarTemplatesWhatsapp(){
     var sel = $('cw-template-select');
     var btn = $('cw-template-atualizar');
-    if (btn){ btn.disabled = true; btn.innerHTML = ic('refresh-cw') + ' Carregando…'; }
+    if (btn){ btn.disabled = true; btn.innerHTML = ic('refresh-cw'); btn.title = 'Carregando…'; }
     sel.innerHTML = '<option value="">— carregando… —</option>';
     return fetch(SUPABASE_URL + '/functions/v1/whatsapp-templates-listar', {
       method: 'POST',
@@ -2592,7 +2592,7 @@
       sel.innerHTML = '<option value="">Erro ao carregar — digite manualmente abaixo</option>';
       console.error('templates whatsapp:', err);
     }).finally(function(){
-      if (btn){ btn.disabled = false; btn.innerHTML = ic('refresh-cw') + ' Atualizar lista'; }
+      if (btn){ btn.disabled = false; btn.innerHTML = ic('refresh-cw'); btn.title = 'Atualizar lista'; }
     });
   }
 
