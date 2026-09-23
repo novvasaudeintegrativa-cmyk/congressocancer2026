@@ -673,7 +673,7 @@
           <label for="cw-idioma">Idioma do template</label>
           <input type="text" id="cw-idioma" value="pt_BR" required>
 
-          <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;font-size:13px;color:var(--ink);"><input type="checkbox" id="cw-variavel-nome" checked style="width:auto;"> O template usa {{1}} pro nome do contato</label>
+          <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;font-size:13px;color:var(--ink);"><input type="checkbox" id="cw-variavel-nome" checked style="width:auto;"> O template usa <span id="cw-variavel-token-label">{{1}}</span> pro nome do contato</label>
 
           <label for="cw-teste-numero">Número de teste (manda o template atual, com o nome do template já aprovado acima)</label>
           <input type="text" id="cw-teste-numero" placeholder="ex: 5511999999999 (com DDI e DDD)">
@@ -2601,6 +2601,7 @@
     var t = templatesWhatsapp[Number(this.value)];
     $('cw-template-preview').textContent = t ? t.preview : '';
     templateSelecionadoToken = t ? t.variavel_token : null;
+    $('cw-variavel-token-label').textContent = '{{' + (templateSelecionadoToken || '1') + '}}';
     if (!t) return;
     $('cw-template').value = t.nome;
     $('cw-idioma').value = t.idioma;
@@ -2734,6 +2735,8 @@
           $('form-campanha-whatsapp').reset();
           $('cw-idioma').value = 'pt_BR';
           $('cw-variavel-nome').checked = true;
+          templateSelecionadoToken = null;
+          $('cw-variavel-token-label').textContent = '{{1}}';
           $('cw-rascunho').value = '';
           return carregarCampanhasWhatsapp();
         })
