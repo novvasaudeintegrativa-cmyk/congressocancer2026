@@ -1195,7 +1195,12 @@
     ['trafego','quiz','crm','financeiro'].forEach(function(t){ $('painel-' + t).hidden = t !== tab; });
     if (!state.carregado[tab]){
       state.carregado[tab] = true;
-      $(IFRAMES[tab]).src = ARQUIVOS[tab];
+      // "?v=" com timestamp força o navegador a buscar a versão nova no
+      // servidor toda vez que a aba é aberta nessa sessão, em vez de
+      // reaproveitar uma cópia em cache de uma sessão anterior (o deploy
+      // podia ter mudado o arquivo e o iframe continuava mostrando o
+      // antigo até um F5 na página inteira).
+      $(IFRAMES[tab]).src = ARQUIVOS[tab] + '?v=' + Date.now();
     }
   }
 
@@ -1312,7 +1317,10 @@
   $('reload').addEventListener('click', function(){
     $(this).disabled = true;
     var f = $(IFRAMES[state.tab]);
-    if (f && f.src) f.contentWindow.location.reload();
+    // troca o src com um "?v=" novo em vez de reload() simples — garante
+    // que busca a versão de verdade no servidor, sem depender de cache
+    // do navegador (reload() sozinho podia reaproveitar cache antigo).
+    if (f) f.src = ARQUIVOS[state.tab] + '?v=' + Date.now();
     setTimeout(function(){ $('reload').disabled = false; }, 400);
   });
 
