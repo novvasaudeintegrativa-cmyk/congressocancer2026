@@ -232,6 +232,39 @@
   }
   .price-note b{ color:var(--dourado); }
 
+  /* ---------- carrossel de fotos do hotel ---------- */
+  .hotel-carousel{
+    margin-top:34px;
+    width:100vw;
+    margin-left:calc(50% - 50vw);
+    overflow:hidden;
+    -webkit-mask-image:linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+    mask-image:linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+  }
+  .hotel-track{
+    display:flex;
+    width:max-content;
+    animation:hotel-scroll 55s linear infinite;
+  }
+  .hotel-carousel:hover .hotel-track{ animation-play-state:paused; }
+  .hotel-track img{
+    height:200px;
+    width:auto;
+    margin-right:18px;
+    border-radius:14px;
+    object-fit:cover;
+    border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 14px 34px rgba(0,0,0,.45);
+    cursor:zoom-in;
+    flex-shrink:0;
+  }
+  @keyframes hotel-scroll{
+    from{ transform:translateX(0); }
+    to{ transform:translateX(-50%); }
+  }
+  @media (prefers-reduced-motion:reduce){ .hotel-track{ animation:none; } }
+  @media (max-width:600px){ .hotel-track img{ height:160px; } }
+
   /* ---------- media / diretoria ---------- */
   .media-card{
     background:var(--card-bg); border:1px solid var(--borda-card); border-radius:16px; padding:24px;
@@ -458,6 +491,25 @@
         </div>
         <p>O Hotel Nacional Inn está localizado às margens da Rodovia Dutra, com acesso facilitado entre São Paulo e Rio de Janeiro e ao lado do Shopping Center Vale.</p>
         <p>São José dos Campos é uma das cidades mais importantes do Estado, e o hotel é tradicionalmente utilizado por autoridades em visitas à cidade.</p>
+      </div>
+    </div>
+
+    <div class="hotel-carousel" aria-label="Fotos do Hotel Nacional Inn São José dos Campos">
+      <div class="hotel-track">
+        <img class="zoomable" src="Imgs/Hotel/hotel-1.webp" alt="Hotel Nacional Inn São José dos Campos — foto 1">
+        <img class="zoomable" src="Imgs/Hotel/hotel-2.webp" alt="Hotel Nacional Inn São José dos Campos — foto 2">
+        <img class="zoomable" src="Imgs/Hotel/hotel-3.webp" alt="Hotel Nacional Inn São José dos Campos — foto 3">
+        <img class="zoomable" src="Imgs/Hotel/hotel-4.webp" alt="Hotel Nacional Inn São José dos Campos — foto 4">
+        <img class="zoomable" src="Imgs/Hotel/hotel-5.webp" alt="Hotel Nacional Inn São José dos Campos — foto 5">
+        <img class="zoomable" src="Imgs/Hotel/hotel-6.webp" alt="Hotel Nacional Inn São José dos Campos — foto 6">
+        <img class="zoomable" src="Imgs/Hotel/hotel-7.webp" alt="Hotel Nacional Inn São José dos Campos — foto 7">
+        <img src="Imgs/Hotel/hotel-1.webp" alt="" aria-hidden="true">
+        <img src="Imgs/Hotel/hotel-2.webp" alt="" aria-hidden="true">
+        <img src="Imgs/Hotel/hotel-3.webp" alt="" aria-hidden="true">
+        <img src="Imgs/Hotel/hotel-4.webp" alt="" aria-hidden="true">
+        <img src="Imgs/Hotel/hotel-5.webp" alt="" aria-hidden="true">
+        <img src="Imgs/Hotel/hotel-6.webp" alt="" aria-hidden="true">
+        <img src="Imgs/Hotel/hotel-7.webp" alt="" aria-hidden="true">
       </div>
     </div>
   </div>
