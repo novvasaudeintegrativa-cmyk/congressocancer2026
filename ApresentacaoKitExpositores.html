@@ -83,6 +83,13 @@
     height:auto;
     display:block;
   }
+  .hero-photo::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:0; height:130px;
+    background:linear-gradient(180deg, transparent, #3C0101);
+    pointer-events:none;
+  }
+  @media (max-width:700px){ .hero-photo::after{ height:70px; } }
   .hero-content{
     padding: 40px 20px 52px;
     text-align:center;
