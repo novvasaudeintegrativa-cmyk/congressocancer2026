@@ -6807,3 +6807,79 @@ Deno.serve(async (req) => {
 > nunca chegou a funcionar de verdade em produção (secrets nunca
 > foram cadastrados) e estava quebrando a função principal. Ver nota
 > acima (§33) antes de reintroduzir.
+
+## 34. CRM — template de WhatsApp com imagem no cabeçalho (erro `#132012`)
+
+**Sintoma (24/09/2026):** ao testar/disparar o template `disparocongresso2026`
+(que tem uma **imagem no cabeçalho** e um botão), a Meta respondia
+`(#132012) Parameter format does not match format in the created template`.
+**Causa:** o CRM só mandava o componente `body`. Pela API oficial, template
+com cabeçalho de mídia exige mandar a mídia **em cada envio** (a imagem
+usada na criação do template é só amostra pra aprovação).
+
+**Solução:** campo novo "URL da imagem do cabeçalho" no formulário de
+campanha (já vem preenchido com
+`https://congressocancer.novvasaudeintegrativa.com.br/Imgs/Disparos/TemplateDisparo_Congresso226.jpg`,
+JPG 1920×1080, ~297 KB — limite da Meta é 5 MB). Vazio = template sem
+imagem. O link precisa ser público.
+
+### 34.1. SQL (rodar no SQL Editor **antes** de usar o formulário novo)
+
+```sql
+alter table public.campanhas_whatsapp
+  add column if not exists header_imagem_url text;
+
+notify pgrst, 'reload schema';
+```
+
+### 34.2. Edge Function `whatsapp-template-teste` — trocar o `const components`
+
+Apaga o `const components = ...;` antigo (e o `usaNamed` antigo, se existir
+mais acima, pode ficar — os nomes abaixo não colidem) e cola:
+
+```ts
+  const headerImagemUrl = String(body.header_imagem_url || "").trim();
+  const tokenVar = body.variavel_token ? String(body.variavel_token).trim() : null;
+  const nomeado = !!tokenVar && !/^\d+$/.test(tokenVar);
+  const components: any[] = [];
+  if (headerImagemUrl) {
+    components.push({ type: "header", parameters: [{ type: "image", image: { link: headerImagemUrl } }] });
+  }
+  if (variavelNome) {
+    components.push({ type: "body", parameters: [
+      nomeado
+        ? { type: "text", parameter_name: tokenVar, text: nomeTeste || "Teste" }
+        : { type: "text", text: nomeTeste || "Teste" },
+    ] });
+  }
+```
+
+### 34.3. Edge Function `campanha-whatsapp-lote` — 2 trocas
+
+1. No `select` da campanha, incluir a coluna nova:
+
+```ts
+`${URL_}/rest/v1/campanhas_whatsapp?id=eq.${campanhaId}&select=template_nome,idioma,variavel_nome,variavel_token,header_imagem_url`
+```
+
+2. Dentro do `for (const c of pendentes)`, trocar o `const components = ...;`
+antigo por:
+
+```ts
+    const components: any[] = [];
+    if (camp.header_imagem_url) {
+      components.push({ type: "header", parameters: [{ type: "image", image: { link: camp.header_imagem_url } }] });
+    }
+    if (camp.variavel_nome) {
+      components.push({ type: "body", parameters: [
+        usaNamed
+          ? { type: "text", parameter_name: camp.variavel_token, text: c.nome || "" }
+          : { type: "text", text: c.nome || "" },
+      ] });
+    }
+```
+
+Deploy das duas funções normalmente (Verify JWT continua ligado nelas).
+Se o template também tiver **botão com link dinâmico** (`{{1}}` na URL), falta
+um componente `button` — hoje o botão "SE INSCREVA AGORA MESMO" é de link fixo,
+que não precisa de parâmetro.
