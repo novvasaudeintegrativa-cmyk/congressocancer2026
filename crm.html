@@ -1072,14 +1072,14 @@
   // já é usado pelas regras de permissão (gestor x vendedor) e não pode ser sobrescrito.
   var TELAS_CRM = {
     // o Auditório aparece sempre embaixo das 3 telas do dia a dia (não tem item próprio no menu)
-    // Pipeline e Conversas ficam juntos: o botão de conversa do card do Kanban já leva pra Conversas
-    pipeline:  ['view-pipeline', 'view-conversas', 'view-auditorio'],
-    instagram: ['view-instagram', 'view-auditorio'],
+    // Instagram, Pipeline e Conversas ficam juntos numa tela só (o botão de conversa do card
+    // do Kanban já leva pra Conversas), com o Auditório embaixo — mesma ordem da página original
+    pipeline:  ['view-instagram', 'view-pipeline', 'view-conversas', 'view-auditorio'],
     campanhas: ['view-qualidade-whatsapp', '.col-campanhas'],
     equipe:    ['view-equipe']
   };
   function mostrarTelaCrm(nome){
-    if (nome === 'conversas') nome = 'pipeline';
+    if (nome === 'conversas' || nome === 'instagram') nome = 'pipeline';
     var visiveis = TELAS_CRM[nome] || null;
     // título no topo da página: na tela do Pipeline mostra "Conversas WhatsApp"
     var titulo = document.getElementById('topo-titulo');
