@@ -473,6 +473,24 @@
     .duas-col{grid-template-columns:1fr 1fr;}
     #painel-quiz .kpis{grid-template-columns:repeat(3,minmax(0,1fr));}
   }
+
+  /* ============ Layout NewCRM no menu lateral (formas do NewCRM, cores e fonte do Congresso) ============ */
+  .sidebar{border-right:0;border-radius:0 32px 32px 0;box-shadow:0 0 40px rgba(42,35,32,.06);padding:24px 16px;}
+  .sidebar.recolhida{padding:24px 10px;}
+  .btn-recolher{width:34px;height:34px;border:0;border-radius:50%;background:var(--bg);}
+  .btn-recolher:hover{background:var(--track);}
+  .tabs-principal{gap:4px;}
+  .tabs-principal button[data-tab],.tabs-principal a{min-height:48px;padding:0 16px;border:0;border-radius:18px;font-size:14px;transition:background .15s ease,color .15s ease;}
+  .tabs-principal button.on{box-shadow:0 10px 22px rgba(138,34,46,.28);}
+  .crm-sub{margin-left:22px;}
+  .crm-sub button{min-height:38px;border:0;border-radius:14px;font-size:12.5px;}
+  .crm-sub button.on{box-shadow:0 6px 14px rgba(138,34,46,.22);}
+  .link-ajuda,.sidebar .reload{border-radius:18px;}
+  .wrap{max-width:1584px;padding:22px 28px 48px;}
+  @media (max-width:820px){
+    .sidebar,.sidebar.recolhida{border-radius:0 0 26px 26px;}
+    .wrap{padding:20px 16px 48px;}
+  }
 </style>
 </head>
 <body>
