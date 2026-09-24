@@ -1071,10 +1071,10 @@
   // Usa uma classe própria (.fora-da-tela) em vez do atributo hidden, porque o hidden
   // já é usado pelas regras de permissão (gestor x vendedor) e não pode ser sobrescrito.
   var TELAS_CRM = {
-    pipeline:  ['view-pipeline'],
-    conversas: ['view-conversas'],
-    instagram: ['view-instagram'],
-    auditorio: ['view-auditorio'],
+    // o Auditório aparece sempre embaixo das 3 telas do dia a dia (não tem item próprio no menu)
+    pipeline:  ['view-pipeline', 'view-auditorio'],
+    conversas: ['view-conversas', 'view-auditorio'],
+    instagram: ['view-instagram', 'view-auditorio'],
     campanhas: ['view-qualidade-whatsapp', '.col-campanhas'],
     equipe:    ['view-equipe']
   };

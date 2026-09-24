@@ -81,6 +81,7 @@
   .crm-sub button[hidden]{display:none;}
   .crm-sub button:hover{background:var(--track);color:var(--ink);}
   .crm-sub button.on{background:var(--bordo);border-color:var(--bordo);color:#fff;}
+  .crm-sub button:focus:not(:focus-visible){outline:none;}
   .sidebar.recolhida .crm-sub{display:none;}
   .sidebar .reload{margin-top:auto;}
 
@@ -523,7 +524,6 @@
       <button type="button" data-tela="pipeline" class="on">Pipeline</button>
       <button type="button" data-tela="conversas">Conversas</button>
       <button type="button" data-tela="instagram">Instagram</button>
-      <button type="button" data-tela="auditorio">Auditório</button>
       <button type="button" data-tela="campanhas" data-solo-gestor hidden>Campanhas</button>
       <button type="button" data-tela="equipe" data-solo-gestor hidden>Equipe</button>
     </div>
@@ -1380,10 +1380,15 @@
   });
 
   $('btn-ir-auditorio').addEventListener('click', function(){
-    state.telaCrm = 'auditorio';
+    // o Auditório fica embaixo das telas do CRM: vai pro Pipeline e rola até ele
+    state.telaCrm = 'pipeline';
     var btnCrm = document.querySelector('#tabs-principal [data-tab="crm"]');
     if (btnCrm) btnCrm.click();
-    irParaTelaCrm('auditorio');
+    irParaTelaCrm('pipeline');
+    setTimeout(function(){
+      var f = $('crm-iframe');
+      if (f && f.contentWindow) f.contentWindow.postMessage({ fonte:'novva-scroll-para', id:'view-auditorio' }, '*');
+    }, 300);
   });
 
   // ---- menu lateral colapsável (tipo Monday), lembra a escolha no navegador ----
