@@ -522,6 +522,9 @@
     </div>
     <div class="crm-sub" id="crm-sub">
       <button type="button" data-tela="pipeline" class="on">Pipeline</button>
+      <button type="button" data-tela="contatos">Contatos</button>
+      <button type="button" data-tela="tarefas">Tarefas</button>
+      <button type="button" data-tela="painel">Painel</button>
       <button type="button" data-tela="campanhas" data-solo-gestor hidden>Campanhas</button>
       <button type="button" data-tela="equipe" data-solo-gestor hidden>Equipe</button>
     </div>
@@ -1351,6 +1354,7 @@
         if (f && f.contentWindow === e.source) f.style.height = Math.max(300, d.altura) + 'px';
       });
     }
+    if (d.fonte === 'novva-crm-ir-tela' && d.tela) irParaTelaCrm(d.tela);
     if (d.fonte === 'novva-crm-papel'){
       ABAS_SO_GESTOR.forEach(function(t){
         var btn = document.querySelector('#tabs-principal [data-tab="' + t + '"]');
