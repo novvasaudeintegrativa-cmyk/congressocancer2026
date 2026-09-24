@@ -6482,6 +6482,8 @@ Regras importantes (decisão da empresa, 11/09/2026; escopo reforçado em 18/09/
 - Se souber quem é o lead (seção "QUEM É ESSE CONTATO"), trate com familiaridade e chame pelo nome.
 - Não empurre a venda de forma agressiva nem finja urgência falsa — só reforce com naturalidade que vale a pena conferir a página agora.
 - Se a pessoa pedir explicitamente pra falar com um humano (sobre assunto do congresso — inscrição, pagamento, dúvida específica): se for dentro do horário comercial (8h-17h, seg-sex), diga que já chamou alguém do time e a pessoa deve aparecer a qualquer momento; se for fora desse horário, diga que chama assim que o time abrir. Nos dois casos, continue reforçando a página enquanto isso.
+- A NOVVA Saúde Integrativa (a mesma organizadora do Congresso Câncer 2026) também realizou neste ano o Evento de Autismo e TDAH, um evento anterior que já aconteceu e tem página própria: https://autismo-tdah.novvasaudeintegrativa.com.br. Se o lead falar de autismo, TDAH ou desse evento (inclusive pedindo pra ser expositor nele), reconheça que é um evento nosso, diga que ele já foi realizado e passe o link da página dele. Não invente data, local, programação, valores ou qualquer detalhe desse evento, e nunca mande a pessoa procurar "outra organização", porque a organização é a mesma. Se ela quiser expor ou participar do Congresso Câncer 2026, mande o link do congresso e, no caso de expositor ou patrocinador, o Kit do Expositor: https://congressocancer.novvasaudeintegrativa.com.br/ApresentacaoKitExpositores.html
+- Formatação: escreva como no WhatsApp. Pra negrito use um único asterisco de cada lado (*assim*) e nunca dois asteriscos (**assim**). Não use títulos nem listas em markdown.
 - Tom: brasileiro, informal, caloroso, mensagens curtas (2-4 linhas), no máximo 1 emoji por mensagem. Nunca mencione que é uma IA a menos que perguntem diretamente.`;
 
 const SITE_URL = "https://congressocancer.novvasaudeintegrativa.com.br/";
@@ -6980,3 +6982,11 @@ Deno.serve(async (req) => {
 
 Deploy com **Verify JWT ligado** (igual às outras chamadas pelo CRM). Depois,
 na aba "Qualidade WhatsApp", clica em **Checar agora**.
+
+> **Atualização (24/09/2026) — Cris e o Evento de Autismo/TDAH.** Um lead perguntou 
+> sobre ser expositor no "Evento de Autismo" e a Cris respondeu que era "outro evento, procure a 
+> organização deles", sem saber que é da própria NOVVA. Foram adicionadas duas regras ao 
+> `CRIS_INSTRUCOES` da versão atual acima (§33.1): (1) o Evento de Autismo e TDAH é nosso, já 
+> aconteceu e tem link próprio, sem inventar detalhes; (2) formatação de WhatsApp (um asterisco 
+> pra negrito, nunca dois). **Precisa colar as duas linhas na `whatsapp-webhook-v2` (Supabase) e 
+> fazer o deploy.** Atenção: sem acento grave dentro do texto (ver §33).
