@@ -280,6 +280,8 @@
   .media-card{
     background:var(--card-bg); border:1px solid var(--borda-card); border-radius:16px; padding:24px;
   }
+  .split-media{ align-items:stretch; }
+  .split-media .media-card{ display:flex; flex-direction:column; justify-content:center; padding:32px 28px; }
   .media-card b.title{ display:block; font-family:var(--fonte-titulo); font-weight:800; font-size:1.1rem; margin-bottom:10px; }
   .media-card p{ color:var(--texto-suave); margin:0 0 10px; }
   .media-card p:last-child{ margin-bottom:0; }
@@ -547,8 +549,8 @@
   <div class="container reveal">
     <span class="eyebrow">Parceria de mídia</span>
     <h2 class="section-title">Fernando Beteti</h2>
-    <div class="split">
-      <div class="split-photo"><img src="Imgs/Beteti.jpeg" alt="Fernando Beteti" style="border-radius:16px;border:1px solid var(--borda-card);width:100%;aspect-ratio:4/5;object-fit:cover;object-position:center 22%;"></div>
+    <div class="split split-media">
+      <div class="split-photo"><img src="Imgs/Beteti.jpeg" alt="Fernando Beteti" style="border-radius:16px;border:1px solid var(--borda-card);width:100%;aspect-ratio:1/1.05;object-fit:cover;object-position:center 22%;"></div>
       <div class="media-card">
         <b class="title">Parceria e alcance digital</b>
         <p>Evento em parceria com o jornalista Fernando Beteti. Além da exposição durante os dois dias do congresso, os parceiros terão direito a LIVE com o jornalista em seu canal no YouTube.</p>
