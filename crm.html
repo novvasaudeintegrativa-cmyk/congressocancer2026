@@ -65,7 +65,9 @@
   .filtros .cont{font-size:11.5px;color:var(--faint);margin-left:auto;}
   .busca-wrap{position:relative;}
   .busca-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint);pointer-events:none;}
-  .busca-wrap input{padding-left:30px;}
+  .busca-wrap input{padding-left:34px;width:380px;max-width:100%;font-size:14px;padding-top:10px;padding-bottom:10px;}
+  .busca-wrap{flex:1 1 380px;max-width:480px;}
+  .busca-wrap input{width:100%;}
 
   .board{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start;}
   .col{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:10px;min-width:230px;max-width:260px;flex:0 0 auto;}
@@ -460,7 +462,7 @@
     <div class="filtros">
       <div class="busca-wrap">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-        <input type="search" id="f-busca" placeholder="buscar por nome…">
+        <input type="search" id="f-busca" placeholder="buscar por nome ou número…">
       </div>
     </div>
 
@@ -1197,7 +1199,12 @@
     // Instagram (canal='instagram') não aparecem mais aqui.
     if (l.canal === 'instagram') return false;
     var fb = $('f-busca').value.trim().toLowerCase();
-    if (fb && (l.nome || '').toLowerCase().indexOf(fb) === -1) return false;
+    if (fb){
+      var achouNome = (l.nome || '').toLowerCase().indexOf(fb) !== -1;
+      var digitos = fb.replace(/\D/g, '');
+      var achouNumero = digitos.length > 0 && (l.whatsapp || '').replace(/\D/g, '').indexOf(digitos) !== -1;
+      if (!achouNome && !achouNumero) return false;
+    }
     // simulando "ver como vendedor": só mostra o que é meu ou está livre pra assumir
     if (estado.ehGestor && estado.verComoVendedor && l.atribuido_a && l.atribuido_a !== estado.eu.id) return false;
     return true;
