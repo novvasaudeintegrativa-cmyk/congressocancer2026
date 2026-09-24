@@ -6883,3 +6883,100 @@ Deploy das duas funções normalmente (Verify JWT continua ligado nelas).
 Se o template também tiver **botão com link dinâmico** (`{{1}}` na URL), falta
 um componente `button` — hoje o botão "SE INSCREVA AGORA MESMO" é de link fixo,
 que não precisa de parâmetro.
+
+## 35. CRM — limite diário de envio da Meta ("não informado")
+
+**Sintoma (24/09/2026):** na tela de Campanhas WhatsApp, "Limite de envio
+liberado pela Meta agora: não informado", só a qualidade aparecia. A Edge
+Function `whatsapp-quality-check` (a que grava em `whatsapp_qualidade`) não
+estava conseguindo ler o limite.
+
+**O que a Meta informa:** o *tier* de mensagens do número (`TIER_250`,
+`TIER_1K`, `TIER_10K`, `TIER_100K` ou `TIER_UNLIMITED`) = quantos **contatos
+diferentes** o número pode iniciar conversa em 24h (janela móvel). A API
+**não informa o saldo restante** — só o teto. O CRM estima o saldo somando
+os envios de campanha das últimas 24h (`campanha_whatsapp_contatos.enviado_em`),
+então respostas do time e outros envios fora do CRM não entram na conta.
+
+**Front (`crm.html`):** converte o tier em número (ex.: `TIER_1K` → 1.000),
+mostra "enviados nas últimas 24h" e "restam cerca de X".
+
+### 35.1. Edge Function `whatsapp-quality-check` (substitui a atual)
+
+Editor → apaga tudo e cola. Tenta a lista de campos mais completa e, se a
+Meta recusar algum campo, cai pra listas menores.
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const URL_    = Deno.env.get("SUPABASE_URL")!;
+const ANON    = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SVC     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const WA_TOKEN        = Deno.env.get("WHATSAPP_PERMANENT_TOKEN")!;
+const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${userToken}` } });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
+async function ehGestor(uid: string) {
+  const r = await fetch(`${URL_}/rest/v1/perfis?id=eq.${uid}&select=papel,ativo`, { headers: svcHeaders });
+  const rows = await r.json();
+  const p = rows && rows[0];
+  return !!(p && p.ativo && p.papel === "gestor");
+}
+
+const LISTAS_DE_CAMPOS = [
+  "quality_rating,messaging_limit_tier,whatsapp_business_manager_messaging_limit,display_phone_number",
+  "quality_rating,messaging_limit_tier",
+  "quality_rating",
+];
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method" }, 405);
+
+  const auth = req.headers.get("authorization") || "";
+  const u = await quemChamou(auth.replace(/^Bearer\s+/i, ""));
+  if (!u) return j({ erro: "não autenticado" }, 401);
+  if (!(await ehGestor(u.id))) return j({ erro: "só o gestor pode checar" }, 403);
+
+  let dados: any = null;
+  let ultimoErro = "";
+  for (const campos of LISTAS_DE_CAMPOS) {
+    const r = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}?fields=${campos}`, {
+      headers: { authorization: `Bearer ${WA_TOKEN}` },
+    });
+    const b = await r.json();
+    if (r.ok) { dados = b; break; }
+    ultimoErro = b.error?.message || "falha ao consultar a Meta";
+  }
+  if (!dados) return j({ erro: ultimoErro }, 502);
+
+  const limite = dados.messaging_limit_tier ?? dados.whatsapp_business_manager_messaging_limit ?? null;
+
+  const ins = await fetch(`${URL_}/rest/v1/whatsapp_qualidade`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "return=minimal" },
+    body: JSON.stringify([{ quality_rating: dados.quality_rating ?? null, messaging_limit: limite }]),
+  });
+  if (!ins.ok) return j({ erro: "não consegui gravar: " + (await ins.text()) }, 500);
+
+  return j({ ok: true, quality_rating: dados.quality_rating ?? null, messaging_limit: limite, bruto: dados });
+});
+```
+
+Deploy com **Verify JWT ligado** (igual às outras chamadas pelo CRM). Depois,
+na aba "Qualidade WhatsApp", clica em **Checar agora**.

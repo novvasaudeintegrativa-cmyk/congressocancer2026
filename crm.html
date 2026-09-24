@@ -2428,15 +2428,36 @@
     return out;
   }
 
+  var LIMITE_POR_TIER = { TIER_50: 50, TIER_250: 250, TIER_1K: 1000, TIER_2K: 2000, TIER_10K: 10000, TIER_100K: 100000 };
+  function limiteMetaNumero(v){
+    var s = String(v == null ? '' : v).trim().toUpperCase();
+    if (!s) return null;
+    if (s === 'TIER_UNLIMITED' || s === 'UNLIMITED') return Infinity;
+    if (LIMITE_POR_TIER[s]) return LIMITE_POR_TIER[s];
+    var n = Number(s.replace(/\D/g, ''));
+    return n > 0 ? n : null;
+  }
+
   function carregarLimiteMetaResumo(){
-    return apiGet('whatsapp_qualidade?select=quality_rating,messaging_limit,criado_em&order=criado_em.desc&limit=1')
-      .then(function(rows){
-        var atual = (rows || [])[0];
+    var desde = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    return Promise.all([
+      apiGet('whatsapp_qualidade?select=quality_rating,messaging_limit,criado_em&order=criado_em.desc&limit=1'),
+      apiGet('campanha_whatsapp_contatos?select=id&status=eq.enviado&enviado_em=gte.' + encodeURIComponent(desde)).catch(function(){ return null; })
+    ]).then(function(res){
+        var atual = (res[0] || [])[0];
+        var enviados24h = res[1] ? res[1].length : null;
         var el = $('meta-limite-aviso');
         if (!el) return;
         if (!atual){ el.style.display = 'none'; return; }
         el.style.display = 'block';
-        el.innerHTML = 'Limite de envio liberado pela Meta agora: <b>' + esc(atual.messaging_limit || 'não informado') + '</b> mensagens/24h · Qualidade do número: <span class="qw-badge ' + classeQualidade(atual.quality_rating) + '">' + esc(rotuloQualidade(atual.quality_rating)) + '</span> · checado ' + fmtQuando(atual.criado_em) + ' (atualiza na aba "Qualidade WhatsApp").';
+        var lim = limiteMetaNumero(atual.messaging_limit);
+        var txtLimite, txtSaldo = '';
+        if (lim === Infinity){ txtLimite = '<b>sem limite definido</b> pela Meta'; }
+        else if (lim){
+          txtLimite = 'até <b>' + lim.toLocaleString('pt-BR') + '</b> contatos novos por dia';
+          if (enviados24h != null) txtSaldo = ' · enviados pelo CRM nas últimas 24h: <b>' + enviados24h.toLocaleString('pt-BR') + '</b> (restam cerca de <b>' + Math.max(0, lim - enviados24h).toLocaleString('pt-BR') + '</b>)';
+        } else { txtLimite = '<b>não informado</b> (clica em "Checar agora" na aba "Qualidade WhatsApp")'; }
+        el.innerHTML = 'Limite liberado pela Meta: ' + txtLimite + txtSaldo + ' · Qualidade do número: <span class="qw-badge ' + classeQualidade(atual.quality_rating) + '">' + esc(rotuloQualidade(atual.quality_rating)) + '</span> · checado ' + fmtQuando(atual.criado_em) + '.';
       })
       .catch(function(){ var el = $('meta-limite-aviso'); if (el) el.style.display = 'none'; });
   }
@@ -2850,7 +2871,7 @@
     if (atual){
       $('qw-atual').innerHTML =
         '<span class="qw-badge ' + classeQualidade(atual.quality_rating) + '">' + esc(rotuloQualidade(atual.quality_rating)) + '</span>' +
-        '<span>Limite de mensagens: <b>' + esc(atual.messaging_limit || 'não informado') + '</b></span>' +
+        '<span>Limite de mensagens: <b>' + (function(){ var l = limiteMetaNumero(atual.messaging_limit); return l === Infinity ? 'sem limite definido' : (l ? 'até ' + l.toLocaleString('pt-BR') + ' contatos novos/dia' : esc(atual.messaging_limit || 'não informado')); })() + '</b></span>' +
         '<span>Última checagem: ' + fmtQuando(atual.criado_em) + '</span>';
     } else {
       $('qw-atual').textContent = 'Nenhuma checagem ainda — clica em "Checar agora".';
