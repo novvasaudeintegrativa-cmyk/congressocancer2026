@@ -64,6 +64,7 @@
   .filtros select,.filtros input{font-family:var(--corpo);font-size:12.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--linha);background:#fff;color:var(--ink);}
   .filtros .cont{font-size:11.5px;color:var(--faint);margin-left:auto;}
   .busca-wrap{position:relative;}
+  .fora-da-tela{display:none !important;}
   .busca-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint);pointer-events:none;}
   .busca-wrap input{padding-left:34px;width:380px;max-width:100%;font-size:14px;padding-top:10px;padding-bottom:10px;}
   .busca-wrap{flex:1 1 380px;max-width:480px;}
@@ -1004,6 +1005,37 @@
     if (!d || d.fonte !== 'novva-scroll-para' || !d.id) return;
     var alvo = document.getElementById(d.id);
     if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // "uma tela por vez": o menu lateral do novva-crm.html (que embute esta página) manda
+  // { fonte:'novva-crm-tela', tela:'pipeline' } e só aquela tela fica visível. Só age
+  // quando essa mensagem chega — aberta sozinha, a página continua com tudo empilhado.
+  // Usa uma classe própria (.fora-da-tela) em vez do atributo hidden, porque o hidden
+  // já é usado pelas regras de permissão (gestor x vendedor) e não pode ser sobrescrito.
+  var TELAS_CRM = {
+    pipeline:  ['view-pipeline'],
+    conversas: ['view-conversas'],
+    instagram: ['view-instagram'],
+    auditorio: ['view-auditorio'],
+    campanhas: ['view-qualidade-whatsapp', '.col-campanhas'],
+    equipe:    ['view-equipe']
+  };
+  function mostrarTelaCrm(nome){
+    var visiveis = TELAS_CRM[nome] || null;
+    Object.keys(TELAS_CRM).forEach(function(tela){
+      TELAS_CRM[tela].forEach(function(sel){
+        var els = sel.charAt(0) === '.' ? document.querySelectorAll(sel) : [document.getElementById(sel)];
+        Array.prototype.forEach.call(els, function(el){
+          if (el) el.classList.toggle('fora-da-tela', !!visiveis && visiveis.indexOf(sel) === -1);
+        });
+      });
+    });
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('message', function(e){
+    var d = e.data;
+    if (!d || d.fonte !== 'novva-crm-tela') return;
+    mostrarTelaCrm(d.tela);
   });
 
   // gestor "de verdade" agora (ignora quando está simulando visualização de vendedor)

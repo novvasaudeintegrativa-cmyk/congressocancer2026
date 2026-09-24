@@ -74,6 +74,14 @@
   }
   .tabs-principal button.on{background:var(--bordo);border-color:var(--bordo);color:#fff;}
   .tabs-principal button:not(.on):hover, .tabs-principal a:hover{background:var(--track);color:var(--ink);}
+  /* submenu das telas do CRM (só aparece com a aba CRM ativa e a sidebar aberta) */
+  .crm-sub{display:flex;flex-direction:column;gap:3px;margin:-1px 0 4px 18px;padding-left:10px;border-left:2px solid var(--track);}
+  .crm-sub[hidden]{display:none;}
+  .crm-sub button{font-family:var(--tit);font-weight:700;font-size:12px;padding:8px 10px;border-radius:8px;cursor:pointer;text-align:left;background:transparent;border:1.5px solid transparent;color:var(--soft);}
+  .crm-sub button[hidden]{display:none;}
+  .crm-sub button:hover{background:var(--track);color:var(--ink);}
+  .crm-sub button.on{background:var(--bordo);border-color:var(--bordo);color:#fff;}
+  .sidebar.recolhida .crm-sub{display:none;}
   .sidebar .reload{margin-top:auto;}
 
   /* ---- setinha de ajuda de cada menu: abre o flyout lateral com a explicação
@@ -181,6 +189,8 @@
     .btn-recolher{display:none;}
     .tabs-principal{flex-direction:row;flex-wrap:wrap;}
     .tab-row{width:auto;}
+    .crm-sub{flex-direction:row;flex-wrap:wrap;margin:0;padding:0;border:0;}
+    .sidebar.recolhida .crm-sub:not([hidden]){display:flex;}
     .tabs-principal button span, .tabs-principal a span, .link-ajuda span{display:none;}
     .link-ajuda{width:auto;}
     .sidebar .reload{margin-top:0;margin-left:auto;}
@@ -490,6 +500,14 @@
     <div class="tab-row">
       <button type="button" data-tab="crm" class="on" title="CRM"><svg class="ico2"><use href="#i-users"/></svg><span>CRM</span></button>
       <button type="button" class="tab-ajuda" data-ajuda="crm" data-ajuda-tit="CRM" title="O que é isso?" aria-label="Ajuda sobre CRM" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+    </div>
+    <div class="crm-sub" id="crm-sub">
+      <button type="button" data-tela="pipeline" class="on">Pipeline</button>
+      <button type="button" data-tela="conversas">Conversas</button>
+      <button type="button" data-tela="instagram">Instagram</button>
+      <button type="button" data-tela="auditorio">Auditório</button>
+      <button type="button" data-tela="campanhas" data-solo-gestor hidden>Campanhas</button>
+      <button type="button" data-tela="equipe" data-solo-gestor hidden>Equipe</button>
     </div>
     <div class="tab-row">
       <button type="button" data-tab="trafego" hidden title="Tráfego"><svg class="ico2"><use href="#i-trend"/></svg><span>Tráfego</span></button>
@@ -1192,6 +1210,7 @@
 
   function ativarPainel(tab){
     state.tab = tab;
+    if ($('crm-sub')) $('crm-sub').hidden = tab !== 'crm';
     ['trafego','quiz','crm','financeiro'].forEach(function(t){ $('painel-' + t).hidden = t !== tab; });
     if (!state.carregado[tab]){
       state.carregado[tab] = true;
@@ -1282,6 +1301,22 @@
     fecharAjuda();
   });
 
+  // ---- telas do CRM: o submenu avisa o crm.html (dentro do iframe) qual tela mostrar ----
+  function irParaTelaCrm(tela){
+    state.telaCrm = tela;
+    document.querySelectorAll('#crm-sub button').forEach(function(b){ b.classList.toggle('on', b.dataset.tela === tela); });
+    var f = $('crm-iframe');
+    if (f && f.contentWindow) f.contentWindow.postMessage({ fonte:'novva-crm-tela', tela: tela }, '*');
+    window.scrollTo(0, 0);
+  }
+  $('crm-sub').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-tela]'); if (!b) return;
+    irParaTelaCrm(b.dataset.tela);
+    fecharAjuda();
+  });
+  // o crm.html recarrega (aba aberta pela 1ª vez ou botão Atualizar): reaplica a tela atual
+  $('crm-iframe').addEventListener('load', function(){ irParaTelaCrm(state.telaCrm || 'pipeline'); });
+
   // ---- iframes sem barra de rolagem própria: cada página avisa a própria altura via
   // postMessage (funciona também testando local em file://, ao contrário de ler
   // contentDocument direto, que o navegador bloqueia entre arquivos file:// diferentes).
@@ -1308,6 +1343,8 @@
         var seta = document.querySelector('#tabs-principal [data-ajuda="' + t + '"]');
         if (seta) seta.hidden = !d.ehGestor;
       });
+      document.querySelectorAll('#crm-sub [data-solo-gestor]').forEach(function(b){ b.hidden = !d.ehGestor; });
+      if (!d.ehGestor && (state.telaCrm === 'campanhas' || state.telaCrm === 'equipe')) irParaTelaCrm('pipeline');
       if (!d.ehGestor && ABAS_SO_GESTOR.indexOf(state.tab) !== -1){
         document.querySelector('#tabs-principal [data-tab="crm"]').click();
       }
@@ -1325,12 +1362,10 @@
   });
 
   $('btn-ir-auditorio').addEventListener('click', function(){
+    state.telaCrm = 'auditorio';
     var btnCrm = document.querySelector('#tabs-principal [data-tab="crm"]');
     if (btnCrm) btnCrm.click();
-    setTimeout(function(){
-      var f = $('crm-iframe');
-      if (f && f.contentWindow) f.contentWindow.postMessage({ fonte:'novva-scroll-para', id:'view-auditorio' }, '*');
-    }, 200);
+    irParaTelaCrm('auditorio');
   });
 
   // ---- menu lateral colapsável (tipo Monday), lembra a escolha no navegador ----
