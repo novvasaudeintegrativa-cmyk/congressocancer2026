@@ -7220,7 +7220,8 @@ Antes de subir o manual, confira o limite diário no aviso do topo da tela de Ca
 
 ### 39.1. Edge Function `campanha-whatsapp-lote` — versão completa
 
-Substitui a função inteira (baseada no §28.2 + imagem de cabeçalho do §34.3). Verify JWT ligado; o
+Substitui a função inteira (baseada no §28.2 + imagem de cabeçalho do §34.3). Verify JWT **DESLIGADO**
+(o disparo automático não manda login de usuário, e a função já faz a própria verificação); o
 secret `CAMPANHA_AUTO_TOKEN` (disparo automático) continua igual.
 
 ```ts
