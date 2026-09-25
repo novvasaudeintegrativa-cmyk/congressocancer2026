@@ -6990,3 +6990,70 @@ na aba "Qualidade WhatsApp", clica em **Checar agora**.
 > aconteceu e tem link próprio, sem inventar detalhes; (2) formatação de WhatsApp (um asterisco 
 > pra negrito, nunca dois). **Precisa colar as duas linhas na `whatsapp-webhook-v2` (Supabase) e 
 > fazer o deploy.** Atenção: sem acento grave dentro do texto (ver §33).
+## 36. CRM — botão "abrir o post" nos comentários do Instagram
+
+Cada card de comentário (tela do Pipeline, seção "Comentários do Instagram") ganhou um
+ícone de "abrir link" que leva direto pro post do Instagram onde a pessoa comentou.
+
+**Como funciona:** a tabela `instagram_comentarios` só guarda o `media_id` (id interno do
+post), não o endereço. O endereço (`permalink`) vem da API do Instagram
+(`GET /{media_id}?fields=permalink`), então o botão chama uma Edge Function nova e abre o
+resultado numa aba. O link fica guardado na página (não vai pro banco), então o segundo
+clique no mesmo post é instantâneo. Sem mudança de banco.
+
+### 36.1. Edge Function `instagram-post-link`
+
+Supabase → Edge Functions → Deploy a new function → nome **`instagram-post-link`** →
+editor → apaga tudo e cola. Usa o mesmo secret `INSTAGRAM_ACCESS_TOKEN` da
+`instagram-responder`. **Verify JWT ligado**, igual às outras chamadas pelo CRM.
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const IG_TOKEN     = Deno.env.get("INSTAGRAM_ACCESS_TOKEN")?.trim();
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const ANON_KEY     = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: { apikey: ANON_KEY, authorization: `Bearer ${userToken}` },
+  });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method not allowed" }, 405);
+
+  const auth = req.headers.get("authorization") || "";
+  const user = await quemChamou(auth.replace(/^Bearer\s+/i, ""));
+  if (!user) return j({ erro: "não autenticado" }, 401);
+
+  const { media_id } = await req.json().catch(() => ({}));
+  // só dígitos: o valor entra na URL da API, então nada de outro formato
+  if (!media_id || !/^\d+$/.test(String(media_id))) return j({ erro: "media_id inválido" }, 400);
+
+  const r = await fetch(`https://graph.instagram.com/v23.0/${media_id}?fields=permalink`, {
+    headers: { authorization: `Bearer ${IG_TOKEN}` },
+  });
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.permalink) {
+    return j({ erro: b?.error?.message || "o Instagram não devolveu o link desse post" }, 502);
+  }
+  return j({ ok: true, permalink: b.permalink });
+});
+```
+
+**Limitação:** funciona pra posts da própria conta conectada (a do token). Post apagado
+ou comentário de um anúncio/post de outra conta pode não devolver link; nesse caso o CRM
+avisa "Não consegui abrir o post" com a mensagem que o Instagram deu.
