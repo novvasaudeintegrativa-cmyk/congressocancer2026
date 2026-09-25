@@ -7123,3 +7123,83 @@ e, dentro do objeto retornado, junto de `preview: bodyText,`:
 ```
 
 Faça o deploy (Verify JWT continua ligado). Nenhuma mudança de banco.
+
+### 38.2. Edge Function `whatsapp-templates-listar` — versão completa (24/09/2026)
+
+Substitui a função inteira (a versão anterior só estava documentada em pedaços, §27.2). Lista os
+templates da conta do WhatsApp (WABA) na Meta e devolve `header_formato`. O id da WABA vem do secret
+`WHATSAPP_WABA_ID` (ou `WHATSAPP_BUSINESS_ACCOUNT_ID`); se nenhum existir, usa `885985207685253`
+(§14.4). Só gestor. Verify JWT ligado.
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const URL_     = Deno.env.get("SUPABASE_URL")!;
+const ANON     = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SVC      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const WA_TOKEN = Deno.env.get("WHATSAPP_PERMANENT_TOKEN")!;
+const WABA_ID  = (Deno.env.get("WHATSAPP_WABA_ID") ?? Deno.env.get("WHATSAPP_BUSINESS_ACCOUNT_ID") ?? "885985207685253").trim();
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${userToken}` } });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
+async function ehGestor(uid: string) {
+  const r = await fetch(`${URL_}/rest/v1/perfis?id=eq.${uid}&select=papel,ativo`, { headers: svcHeaders });
+  const rows = await r.json();
+  const p = rows && rows[0];
+  return !!(p && p.ativo && p.papel === "gestor");
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method" }, 405);
+
+  const auth = req.headers.get("authorization") || "";
+  const u = await quemChamou(auth.replace(/^Bearer\s+/i, ""));
+  if (!u) return j({ erro: "não autenticado" }, 401);
+  if (!(await ehGestor(u.id))) return j({ erro: "só o gestor pode listar templates" }, 403);
+
+  let url = `https://graph.facebook.com/v20.0/${WABA_ID}/message_templates?fields=name,status,category,language,components&limit=100`;
+  const todos: any[] = [];
+  for (let i = 0; i < 5 && url; i++) {
+    const r = await fetch(url, { headers: { authorization: `Bearer ${WA_TOKEN}` } });
+    const b = await r.json().catch(() => ({}));
+    if (!r.ok) return j({ erro: b?.error?.message || "falha ao listar os templates na Meta" }, 502);
+    todos.push(...(b.data || []));
+    url = b.paging?.next || "";
+  }
+
+  const templates = todos.map((t: any) => {
+    const bodyComp = (t.components || []).find((c: any) => c.type === "BODY");
+    const headerComp = (t.components || []).find((c: any) => c.type === "HEADER");
+    const bodyText = bodyComp?.text || "";
+    const match = bodyText.match(/\{\{([^}]+)\}\}/);
+    const token = match ? match[1].trim() : null;
+    return {
+      nome: t.name,
+      status: t.status,
+      categoria: String(t.category || "").toLowerCase(),
+      idioma: t.language,
+      variavel_nome: !!token,
+      variavel_token: token,
+      preview: bodyText,
+      header_formato: headerComp?.format || null,
+    };
+  });
+
+  return j({ ok: true, templates });
+});
+```
