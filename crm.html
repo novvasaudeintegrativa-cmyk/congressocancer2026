@@ -352,6 +352,10 @@
   .campanhas-tabela .cp-assunto{color:var(--soft);font-size:12px;}
   .campanhas-tabela .cp-cont{font-size:12px;color:var(--soft);}
   .campanhas-tabela .cp-template{color:var(--bordo);font-family:var(--tit);}
+  .cw-avancado{margin:10px 0 4px;}
+  .cw-avancado summary{cursor:pointer;font-size:12.5px;color:var(--soft);font-weight:600;}
+  .cw-avancado[open] summary{margin-bottom:6px;}
+  #cw-template-resumo b{color:var(--bordo);}
   .campanhas-tabela .cp-linha-topo td{padding-bottom:2px;}
   .campanhas-tabela .cp-linha-acoes td{border-top:0;padding-top:2px;padding-bottom:6px;}
   .campanhas-tabela .cp-linha-stats td{padding-top:8px;padding-bottom:12px;}
@@ -838,17 +842,22 @@
           </select>
           <div class="dica" id="cw-template-preview"></div>
 
-          <label for="cw-template">Nome do template (preenchido ao escolher acima, ou digite manualmente)</label>
-          <input type="text" id="cw-template" placeholder="ex: reengajamento_congresso_2026" required>
-
-          <label for="cw-idioma">Idioma do template</label>
-          <input type="text" id="cw-idioma" value="pt_BR" required>
+          <div class="dica" id="cw-template-resumo">Nenhum template escolhido ainda.</div>
 
           <label for="cw-header-imagem">URL da imagem do cabeçalho (só se o template tiver imagem no topo)</label>
           <input type="text" id="cw-header-imagem" value="https://congressocancer.novvasaudeintegrativa.com.br/Imgs/Disparos/TemplateDisparo_Congresso226.jpg" placeholder="deixe vazio se o template não tem imagem no cabeçalho">
           <div class="dica">A Meta exige mandar a imagem em cada envio, mesmo ela já estando no template. Precisa ser um link público (JPG ou PNG, até 5 MB).</div>
 
+          <details id="cw-avancado" class="cw-avancado">
+            <summary>Ajustar manualmente (nome, idioma, variável do nome)</summary>
+            <label for="cw-template">Nome do template (preenchido ao escolher acima, ou digite manualmente)</label>
+            <input type="text" id="cw-template" placeholder="ex: reengajamento_congresso_2026">
+
+            <label for="cw-idioma">Idioma do template</label>
+            <input type="text" id="cw-idioma" value="pt_BR">
+
           <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;font-size:13px;color:var(--ink);"><input type="checkbox" id="cw-variavel-nome" checked style="width:auto;"> O template usa <span id="cw-variavel-token-label">{{1}}</span> pro nome do contato</label>
+          </details>
 
           <label for="cw-teste-numero">Número de teste (manda o template atual, com o nome do template já aprovado acima)</label>
           <input type="text" id="cw-teste-numero" placeholder="ex: 5511999999999 (com DDI e DDD)">
@@ -3090,6 +3099,7 @@
       if (!templatesWhatsapp.length) sel.innerHTML = '<option value="">Nenhum template encontrado na Meta</option>';
     }).catch(function(err){
       sel.innerHTML = '<option value="">Erro ao carregar — digite manualmente abaixo</option>';
+      $('cw-avancado').open = true;
       console.error('templates whatsapp:', err);
     }).finally(function(){
       if (btn){ btn.disabled = false; btn.innerHTML = ic('refresh-cw'); btn.title = 'Atualizar lista'; }
@@ -3097,6 +3107,15 @@
   }
 
   var templateSelecionadoToken = null;
+  // uma linha só dizendo o que foi escolhido (nome, idioma e se leva o nome do contato)
+  function atualizarResumoTemplate(){
+    var nome = $('cw-template').value.trim();
+    $('cw-template-resumo').innerHTML = nome
+      ? 'Template escolhido: <b>' + esc(nome) + '</b> · ' + esc($('cw-idioma').value.trim() || 'pt_BR') + ' · ' + ($('cw-variavel-nome').checked ? 'leva o nome do contato' : 'sem nome do contato')
+      : 'Nenhum template escolhido ainda.';
+  }
+  ['cw-template', 'cw-idioma'].forEach(function(id){ $(id).addEventListener('input', atualizarResumoTemplate); });
+  $('cw-variavel-nome').addEventListener('change', atualizarResumoTemplate);
   $('cw-template-select').addEventListener('change', function(){
     var t = templatesWhatsapp[Number(this.value)];
     $('cw-template-preview').textContent = t ? t.preview : '';
@@ -3107,6 +3126,7 @@
     $('cw-idioma').value = t.idioma;
     $('cw-variavel-nome').checked = t.variavel_nome;
     $('cw-categoria').value = (t.categoria || 'marketing').toLowerCase();
+    atualizarResumoTemplate();
   });
 
   $('cw-template-atualizar').addEventListener('click', carregarTemplatesWhatsapp);
@@ -3206,7 +3226,12 @@
     var idioma = $('cw-idioma').value.trim() || 'pt_BR';
     var variavelNome = $('cw-variavel-nome').checked;
     var arquivo = $('cw-arquivo').files[0];
-    if (!nome || !templateNome || !arquivo) return;
+    if (!nome || !arquivo) return;
+    if (!templateNome){
+      $('cw-msg').style.color = 'var(--bordo-vivo)';
+      $('cw-msg').textContent = 'Escolha o template na lista "Escolher template".';
+      return;
+    }
 
     var btn = $('cw-criar-btn'); btn.disabled = true; btn.textContent = 'Importando…';
     $('cw-msg').style.color = 'var(--soft)'; $('cw-msg').textContent = '';
@@ -3237,6 +3262,7 @@
           $('cw-variavel-nome').checked = true;
           templateSelecionadoToken = null;
           $('cw-variavel-token-label').textContent = '{{1}}';
+          atualizarResumoTemplate();
           $('cw-rascunho').value = '';
           return carregarCampanhasWhatsapp();
         })
