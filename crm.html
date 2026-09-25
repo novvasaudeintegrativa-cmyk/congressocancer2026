@@ -845,9 +845,12 @@
 
           <div class="dica" id="cw-template-resumo">Nenhum template escolhido ainda.</div>
 
-          <label for="cw-header-imagem">URL da imagem do cabeçalho (só se o template tiver imagem no topo)</label>
-          <input type="text" id="cw-header-imagem" value="https://congressocancer.novvasaudeintegrativa.com.br/Imgs/Disparos/TemplateDisparo_Congresso226.jpg" placeholder="deixe vazio se o template não tem imagem no cabeçalho">
-          <div class="dica">A Meta exige mandar a imagem em cada envio, mesmo ela já estando no template. Precisa ser um link público (JPG ou PNG, até 5 MB).</div>
+          <div id="cw-header-wrap" hidden>
+            <label for="cw-header-imagem">Imagem do cabeçalho (esse template tem imagem no topo)</label>
+            <input type="text" id="cw-header-imagem" value="" placeholder="link público da imagem (JPG ou PNG, até 5 MB)">
+            <div class="dica">A Meta exige mandar a imagem em cada envio, mesmo ela já estando no template. Já vem preenchido com o banner do congresso; troque se for outra imagem.</div>
+            <div class="dica" id="cw-header-aviso" style="color:var(--bordo-vivo);"></div>
+          </div>
 
           <details id="cw-avancado" class="cw-avancado">
             <summary>Ajustar manualmente (nome, idioma, variável do nome)</summary>
@@ -3106,6 +3109,20 @@
   }
 
   var templateSelecionadoToken = null;
+  // Só mostra o campo da imagem quando o template exige (cabeçalho de imagem). A lista da Meta
+  // informa o formato em t.header_formato; se a função ainda não informa (undefined), mostra
+  // o campo por segurança, como era antes. Sem imagem no template, o campo é limpo e nada é enviado.
+  var IMG_CABECALHO_PADRAO = 'https://congressocancer.novvasaudeintegrativa.com.br/Imgs/Disparos/TemplateDisparo_Congresso226.jpg';
+  function ajustarCabecalhoDoTemplate(t){
+    var fmt = t ? t.header_formato : undefined;
+    var precisa = fmt === 'IMAGE' || fmt === undefined;
+    var campo = $('cw-header-imagem');
+    $('cw-header-wrap').hidden = !precisa;
+    if (precisa){ if (!campo.value.trim()) campo.value = IMG_CABECALHO_PADRAO; }
+    else campo.value = '';
+    var nomes = { VIDEO: 'vídeo', DOCUMENT: 'documento' };
+    $('cw-header-aviso').textContent = nomes[fmt] ? 'Esse template tem cabeçalho de ' + nomes[fmt] + ', que o CRM ainda não envia. O disparo vai dar erro na Meta.' : '';
+  }
   // uma linha só dizendo o que foi escolhido (nome, idioma e se leva o nome do contato)
   function atualizarResumoTemplate(){
     var nome = $('cw-template').value.trim();
@@ -3115,6 +3132,7 @@
   }
   ['cw-template', 'cw-idioma'].forEach(function(id){ $(id).addEventListener('input', atualizarResumoTemplate); });
   $('cw-variavel-nome').addEventListener('change', atualizarResumoTemplate);
+  $('cw-avancado').addEventListener('toggle', function(){ if (this.open && $('cw-header-wrap').hidden) ajustarCabecalhoDoTemplate({}); });
   $('cw-template-select').addEventListener('change', function(){
     var t = templatesWhatsapp[Number(this.value)];
     $('cw-template-preview').textContent = t ? t.preview : '';
@@ -3124,6 +3142,7 @@
     $('cw-template').value = t.nome;
     $('cw-idioma').value = t.idioma;
     $('cw-variavel-nome').checked = t.variavel_nome;
+    ajustarCabecalhoDoTemplate(t);
     $('cw-categoria').value = (t.categoria || 'marketing').toLowerCase();
     atualizarResumoTemplate();
     // se existe UMA campanha com envio pendente e o template escolhido é outro, já pergunta se troca
@@ -3266,6 +3285,7 @@
           $('cw-variavel-nome').checked = true;
           templateSelecionadoToken = null;
           $('cw-variavel-token-label').textContent = '{{1}}';
+          $('cw-header-wrap').hidden = true; $('cw-header-imagem').value = '';
           atualizarResumoTemplate();
           $('cw-rascunho').value = '';
           return carregarCampanhasWhatsapp();

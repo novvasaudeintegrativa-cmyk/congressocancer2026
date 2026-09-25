@@ -7092,3 +7092,34 @@ notify pgrst, 'reload schema';
 > **Ajuste (24/09/2026):** o botão "Trocar template" do card foi removido; a troca acontece
 > ao escolher o template na lista. Com duas ou mais campanhas pendentes ao mesmo tempo o CRM não
 > pergunta (não sabe qual trocar).
+
+## 38. CRM — campo da imagem do cabeçalho só aparece quando o template exige
+
+**Problema (24/09/2026):** o campo "URL da imagem do cabeçalho" ficava sempre visível, mesmo
+em template sem imagem, e ninguém sabia se devia preencher ou apagar.
+
+**Solução:** a lista de templates da Meta passa a informar o formato do cabeçalho
+(`header_formato`: `IMAGE`, `VIDEO`, `DOCUMENT`, `TEXT` ou nada). O CRM só mostra o campo da imagem
+quando o formato é `IMAGE`, já preenchido com o banner do congresso, e limpa o campo nos outros casos
+(assim nenhuma imagem é enviada a um template que não tem cabeçalho). Para `VIDEO`/`DOCUMENT` avisa
+que o CRM ainda não envia esse tipo.
+
+**Compatibilidade:** enquanto a Edge Function não informar `header_formato`, o CRM mostra o campo
+como antes (por segurança).
+
+### 38.1. Edge Function `whatsapp-templates-listar` — 2 linhas
+
+Dentro do `.map((t: any) => { ... })` que monta cada template (onde já existe o `bodyComp`),
+adicione a busca do cabeçalho e o campo novo no `return`:
+
+```ts
+    const headerComp = (t.components || []).find((c: any) => c.type === "HEADER");
+```
+
+e, dentro do objeto retornado, junto de `preview: bodyText,`:
+
+```ts
+      header_formato: headerComp?.format || null,
+```
+
+Faça o deploy (Verify JWT continua ligado). Nenhuma mudança de banco.
