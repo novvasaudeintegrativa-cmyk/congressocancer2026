@@ -7203,3 +7203,181 @@ Deno.serve(async (req) => {
   return j({ ok: true, templates });
 });
 ```
+
+## 39. CRM — lote manual maior que 50 ("pedi 150 e enviou só 50")
+
+**Causa (24/09/2026):** a Edge Function `campanha-whatsapp-lote` tinha `LOTE_MAX = 50` e cortava
+qualquer pedido do CRM acima disso (`Math.min(lote, LOTE_MAX)`). O teto de 50 foi pensado pro disparo
+**automático** (janela terça a quinta, 13h-14h), pra proteger a nota de qualidade do número.
+
+**Solução:** dois tetos. Automático continua em **50**. Manual (botão "Enviar lote") sobe pra **250**.
+O envio é um por vez, então a função para sozinha após ~110 s (o Supabase derruba a função por volta
+de 150 s) e devolve `parou_por_tempo: true`; o CRM avisa e é só clicar de novo pra continuar.
+Nenhuma mudança de banco.
+
+Antes de subir o manual, confira o limite diário no aviso do topo da tela de Campanhas
+("Limite liberado pela Meta") e vá em lotes que caibam nele.
+
+### 39.1. Edge Function `campanha-whatsapp-lote` — versão completa
+
+Substitui a função inteira (baseada no §28.2 + imagem de cabeçalho do §34.3). Verify JWT ligado; o
+secret `CAMPANHA_AUTO_TOKEN` (disparo automático) continua igual.
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const URL_    = Deno.env.get("SUPABASE_URL")!;
+const ANON    = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SVC     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const WA_TOKEN        = Deno.env.get("WHATSAPP_PERMANENT_TOKEN")!;
+const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
+const AUTO_TOKEN      = (Deno.env.get("CAMPANHA_AUTO_TOKEN") ?? "").trim();
+const LOTE_MAX_AUTO   = 50;    // disparo automático (cron)
+const LOTE_MAX_MANUAL = 250;   // botão "Enviar lote" do CRM
+const ORCAMENTO_MS    = 110_000; // para antes do limite de tempo da função
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-automation-token",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${userToken}` } });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
+async function ehGestor(uid: string) {
+  const r = await fetch(`${URL_}/rest/v1/perfis?id=eq.${uid}&select=papel,ativo`, { headers: svcHeaders });
+  const rows = await r.json();
+  const p = rows && rows[0];
+  return !!(p && p.ativo && p.papel === "gestor");
+}
+
+function horaBrasil(): { dow: number; hora: number } {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo", hour12: false, weekday: "short", hour: "2-digit",
+  });
+  const partes = fmt.formatToParts(new Date());
+  const hora = Number(partes.find((p) => p.type === "hour")?.value ?? "0");
+  const diaTxt = partes.find((p) => p.type === "weekday")?.value ?? "";
+  const dias: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { dow: dias[diaTxt] ?? 0, hora };
+}
+function dentroJanelaDisparo(): boolean {
+  const { dow, hora } = horaBrasil();
+  return dow >= 2 && dow <= 4 && hora === 13; // terça(2) a quinta(4), 13h-14h
+}
+
+async function campanhaAutoAlvo(): Promise<number | null> {
+  const r = await fetch(
+    `${URL_}/rest/v1/campanhas_whatsapp_resumo?categoria=eq.marketing&pendentes=gt.0&select=id&order=criado_em.asc&limit=1`,
+    { headers: svcHeaders },
+  );
+  if (!r.ok) return null;
+  const rows = await r.json();
+  return rows && rows[0] ? rows[0].id : null;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method" }, 405);
+
+  const autoHeader = req.headers.get("x-automation-token") || "";
+  const ehAutomatico = !!AUTO_TOKEN && autoHeader === AUTO_TOKEN;
+
+  let campanhaId: number | null = null;
+  let lote = LOTE_MAX_AUTO;
+
+  if (ehAutomatico) {
+    if (!dentroJanelaDisparo()) {
+      return j({ ok: true, pulado: "fora da janela de disparo (terça a quinta, 13h-14h)" });
+    }
+    let body: any = {};
+    try { body = await req.json(); } catch { /* cron pode chamar sem corpo */ }
+    lote = Math.min(Number(body.lote) || LOTE_MAX_AUTO, LOTE_MAX_AUTO);
+    campanhaId = await campanhaAutoAlvo();
+    if (!campanhaId) return j({ ok: true, pulado: "nenhuma campanha de marketing com pendentes" });
+  } else {
+    const auth = req.headers.get("authorization") || "";
+    const token = auth.replace(/^Bearer\s+/i, "");
+    const u = await quemChamou(token);
+    if (!u) return j({ erro: "não autenticado" }, 401);
+    if (!(await ehGestor(u.id))) return j({ erro: "só o gestor pode disparar campanhas" }, 403);
+
+    let body: any;
+    try { body = await req.json(); } catch { return j({ erro: "bad body" }, 400); }
+    campanhaId = Number(body.campanha_id);
+    lote = Math.min(Number(body.lote) || LOTE_MAX_AUTO, LOTE_MAX_MANUAL);
+    if (!campanhaId) return j({ erro: "campanha_id obrigatório" }, 400);
+  }
+
+  const campResp = await fetch(
+    `${URL_}/rest/v1/campanhas_whatsapp?id=eq.${campanhaId}&select=template_nome,idioma,variavel_nome,variavel_token,header_imagem_url`,
+    { headers: svcHeaders },
+  );
+  const campRows = await campResp.json();
+  const camp = campRows && campRows[0];
+  if (!camp) return j({ erro: "campanha não encontrada" }, 404);
+
+  const usaNamed = camp.variavel_token && !/^\d+$/.test(camp.variavel_token);
+
+  const pendResp = await fetch(
+    `${URL_}/rest/v1/campanha_whatsapp_contatos?campanha_id=eq.${campanhaId}&status=eq.pendente&select=id,numero,nome&order=id.asc&limit=${lote}`,
+    { headers: svcHeaders },
+  );
+  const pendentes = await pendResp.json();
+
+  const INICIO = Date.now();
+  let parouPorTempo = false;
+  let enviados = 0, falhas = 0;
+  for (const c of pendentes) {
+    if (Date.now() - INICIO > ORCAMENTO_MS) { parouPorTempo = true; break; }
+
+    const components: any[] = [];
+    if (camp.header_imagem_url) {
+      components.push({ type: "header", parameters: [{ type: "image", image: { link: camp.header_imagem_url } }] });
+    }
+    if (camp.variavel_nome) {
+      components.push({ type: "body", parameters: [
+        usaNamed
+          ? { type: "text", parameter_name: camp.variavel_token, text: c.nome || "" }
+          : { type: "text", text: c.nome || "" },
+      ] });
+    }
+    try {
+      const r = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${WA_TOKEN}`, "content-type": "application/json" },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: c.numero,
+          type: "template",
+          template: { name: camp.template_nome, language: { code: camp.idioma }, components },
+        }),
+      });
+      const rb = await r.json();
+      if (!r.ok) throw new Error(rb.error?.message || "falha meta");
+      const waId = rb.messages?.[0]?.id ?? null;
+      await fetch(`${URL_}/rest/v1/campanha_whatsapp_contatos?id=eq.${c.id}`, {
+        method: "PATCH", headers: { ...svcHeaders, prefer: "return=minimal" },
+        body: JSON.stringify({ status: "enviado", enviado_em: new Date().toISOString(), wa_message_id: waId }),
+      });
+      enviados++;
+    } catch (e) {
+      await fetch(`${URL_}/rest/v1/campanha_whatsapp_contatos?id=eq.${c.id}`, {
+        method: "PATCH", headers: { ...svcHeaders, prefer: "return=minimal" },
+        body: JSON.stringify({ status: "falhou", erro: String(e) }),
+      });
+      falhas++;
+    }
+  }
+
+  return j({ ok: true, campanha_id: campanhaId, automatico: ehAutomatico, enviados, falhas, tentativas: pendentes.length, parou_por_tempo: parouPorTempo });
+});
+```

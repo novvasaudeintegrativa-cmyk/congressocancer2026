@@ -2973,7 +2973,11 @@
         if (!confirm('Enviar até ' + qtd + ' mensagem(ns) com o template "' + tpl + '"?\n\nSe não for esse o template certo, clique em Cancelar e escolha o correto em "Escolher template" (mais abaixo).')) return;
         this.disabled = true; this.textContent = 'Enviando…';
         campanhaWhatsappEnviarLote(id, qtd).then(function(res){
-          alert('Lote enviado com o template "' + tpl + '": ' + res.enviados + ' ok' + (res.falhas ? ', ' + res.falhas + ' falharam' : '') + '.');
+          var feitos = (res.enviados || 0) + (res.falhas || 0);
+          var aviso = '';
+          if (res.parou_por_tempo) aviso = '\n\nO envio parou por limite de tempo antes de terminar o lote. Clique em "Enviar lote" de novo pra continuar de onde parou.';
+          else if (feitos < qtd) aviso = '\n\nVocê pediu ' + qtd + ' e foram processados ' + feitos + '. Isso acontece quando não sobram pendentes ou quando a função limita o tamanho do lote.';
+          alert('Lote enviado com o template "' + tpl + '": ' + res.enviados + ' ok' + (res.falhas ? ', ' + res.falhas + ' falharam' : '') + '.' + aviso);
           return carregarCampanhasWhatsapp();
         }).catch(function(err){
           alert('Erro: ' + err.message);
