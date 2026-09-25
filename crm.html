@@ -2955,7 +2955,6 @@
           (c.pendentes ? '<input type="number" class="cp-qtd" min="1" max="' + Math.max(1, c.pendentes) + '" value="' + Math.min(50, c.pendentes) + '" title="Quantidade a enviar neste lote" data-id="' + c.id + '">' : '') +
           '<button type="button" class="cp-enviar wa-enviar" data-id="' + c.id + '" data-template="' + esc(c.template_nome) + '"' + (c.pendentes ? '' : ' disabled') + '>' +
           (c.pendentes ? 'Enviar lote' : 'Concluída') + '</button>' +
-          (c.pendentes ? '<button type="button" class="btn-atualizar wa-trocar" data-id="' + c.id + '" data-nome="' + esc(c.nome) + '" data-template="' + esc(c.template_nome) + '" title="Usar o template escolhido no formulário abaixo nos próximos lotes desta campanha">Trocar template</button>' : '') +
           '</div></td></tr>' +
       '<tr class="cp-linha-stats"><td colspan="2"><div class="cp-cont"><b>' + c.enviados + '</b> enviados · ' + c.pendentes + ' pendentes' +
           (c.falhas ? ' · <span class="cp-falhas">' + c.falhas + ' falhas</span>' : '') +
@@ -2968,7 +2967,7 @@
         var qtdInput = $('campanhas-wa-lista').querySelector('.cp-qtd[data-id="' + id + '"]');
         var qtd = qtdInput ? Math.max(1, Number(qtdInput.value) || 50) : 50;
         var tpl = this.dataset.template;
-        if (!confirm('Enviar até ' + qtd + ' mensagem(ns) com o template "' + tpl + '"?\n\nSe não for esse o template certo, clique em Cancelar e use "Trocar template".')) return;
+        if (!confirm('Enviar até ' + qtd + ' mensagem(ns) com o template "' + tpl + '"?\n\nSe não for esse o template certo, clique em Cancelar e escolha o correto em "Escolher template" (mais abaixo).')) return;
         this.disabled = true; this.textContent = 'Enviando…';
         campanhaWhatsappEnviarLote(id, qtd).then(function(res){
           alert('Lote enviado com o template "' + tpl + '": ' + res.enviados + ' ok' + (res.falhas ? ', ' + res.falhas + ' falharam' : '') + '.');
@@ -2981,15 +2980,6 @@
     });
 
     campanhasWaAtuais = rows;
-    $('campanhas-wa-lista').querySelectorAll('.wa-trocar').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var novo = $('cw-template').value.trim();
-        if (!novo){ alert('Escolha primeiro o novo template no formulário abaixo ("Escolher template").'); return; }
-        if (novo === this.dataset.template){ alert('Essa campanha já usa o template "' + novo + '".'); return; }
-        trocarTemplateCampanha(this.dataset.id, this.dataset.nome, this.dataset.template, this);
-      });
-    });
-
     $('campanhas-wa-lista').querySelectorAll('.wa-historico-btn').forEach(function(btn){
       btn.addEventListener('click', function(){
         abrirHistoricoWhatsapp(this.dataset.id, this.dataset.nome);

@@ -7067,8 +7067,8 @@ template antigo, e ninguém percebia. Além disso o banco bloqueava qualquer edi
 (`revoke update`, §25.1).
 
 **Solução (front):** o card mostra "Template deste disparo: X" em destaque; "Enviar lote" pede
-confirmação com o nome do template; e o botão **Trocar template** aplica na campanha o template
-escolhido no formulário (nome, idioma, variável do nome e imagem de cabeçalho). Só o que ainda
+confirmação com o nome do template; e, ao **escolher um template** em "Escolher template" (com uma
+campanha de envios pendentes), o CRM pergunta se aplica esse template na campanha (nome, idioma, variável do nome e imagem de cabeçalho). Só o que ainda
 está pendente sai com o template novo; o que já foi enviado não muda.
 
 ### 37.1. SQL (rodar no SQL Editor antes de usar "Trocar template")
@@ -7088,3 +7088,7 @@ notify pgrst, 'reload schema';
 ```
 
 (depende de `header_imagem_url`, criada no §34.1.)
+
+> **Ajuste (24/09/2026):** o botão "Trocar template" do card foi removido; a troca acontece
+> ao escolher o template na lista. Com duas ou mais campanhas pendentes ao mesmo tempo o CRM não
+> pergunta (não sabe qual trocar).
