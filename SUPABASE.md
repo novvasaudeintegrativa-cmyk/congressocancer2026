@@ -7057,3 +7057,34 @@ Deno.serve(async (req) => {
 **Limitação:** funciona pra posts da própria conta conectada (a do token). Post apagado
 ou comentário de um anúncio/post de outra conta pode não devolver link; nesse caso o CRM
 avisa "Não consegui abrir o post" com a mensagem que o Instagram deu.
+
+## 37. CRM — trocar o template de uma campanha de WhatsApp
+
+**Problema (24/09/2026):** o template usado pelo botão "Enviar lote" é o que está **gravado na
+campanha** (`campanhas_whatsapp.template_nome`), definido na criação. Escolher outro template
+no formulário só valia pra uma campanha **nova**; o card continuava mostrando (e enviando) o
+template antigo, e ninguém percebia. Além disso o banco bloqueava qualquer edição
+(`revoke update`, §25.1).
+
+**Solução (front):** o card mostra "Template deste disparo: X" em destaque; "Enviar lote" pede
+confirmação com o nome do template; e o botão **Trocar template** aplica na campanha o template
+escolhido no formulário (nome, idioma, variável do nome e imagem de cabeçalho). Só o que ainda
+está pendente sai com o template novo; o que já foi enviado não muda.
+
+### 37.1. SQL (rodar no SQL Editor antes de usar "Trocar template")
+
+Libera edição só dessas colunas, só pro gestor:
+
+```sql
+grant update (template_nome, idioma, variavel_nome, variavel_token, header_imagem_url)
+  on public.campanhas_whatsapp to authenticated;
+
+drop policy if exists "gestor edita campanhas whatsapp" on public.campanhas_whatsapp;
+create policy "gestor edita campanhas whatsapp" on public.campanhas_whatsapp
+  for update to authenticated
+  using (public.eh_gestor()) with check (public.eh_gestor());
+
+notify pgrst, 'reload schema';
+```
+
+(depende de `header_imagem_url`, criada no §34.1.)
