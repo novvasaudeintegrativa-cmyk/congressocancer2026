@@ -841,6 +841,7 @@
             <option value="">— clique em "Atualizar lista" —</option>
           </select>
           <div class="dica" id="cw-template-preview"></div>
+          <div class="dica">Ao escolher, se houver uma campanha com envios pendentes, o CRM pergunta se quer trocar o template dela (Cancelar mantém como está).</div>
 
           <div class="dica" id="cw-template-resumo">Nenhum template escolhido ainda.</div>
 
@@ -2924,6 +2925,25 @@
     });
   }
 
+  // campanhas carregadas por último (pra saber, ao escolher um template, qual campanha tem envio pendente)
+  var campanhasWaAtuais = [];
+  function trocarTemplateCampanha(id, nomeCamp, antigo, btn){
+    var novo = $('cw-template').value.trim();
+    var img = $('cw-header-imagem').value.trim();
+    if (!novo) return;
+    if (!confirm('Trocar o template da campanha "' + nomeCamp + '"?\n\nDe: ' + antigo + '\nPara: ' + novo + '\nImagem do cabeçalho: ' + (img || 'nenhuma') + '\n\nOs próximos lotes vão sair com o template novo. O que já foi enviado não muda.\n\nSe você só está escolhendo o template pra uma campanha NOVA, clique em Cancelar.')) return;
+    if (btn) btn.disabled = true;
+    apiPatch('campanhas_whatsapp?id=eq.' + encodeURIComponent(id), {
+      template_nome: novo,
+      idioma: $('cw-idioma').value.trim() || 'pt_BR',
+      variavel_nome: $('cw-variavel-nome').checked,
+      variavel_token: templateSelecionadoToken,
+      header_imagem_url: img || null
+    }, { Prefer: 'return=minimal' })
+      .then(function(){ return carregarCampanhasWhatsapp(); })
+      .catch(function(err){ alert('Não deu pra trocar o template: ' + err.message + '\n\nSe falou de permissão, falta rodar o SQL do SUPABASE.md §37.'); if (btn) btn.disabled = false; });
+  }
+
   function renderCampanhasWhatsapp(rows){
     rows = rows || [];
     $('campanhas-wa-lista').innerHTML = rows.map(function(c){
@@ -2960,24 +2980,13 @@
       });
     });
 
+    campanhasWaAtuais = rows;
     $('campanhas-wa-lista').querySelectorAll('.wa-trocar').forEach(function(btn){
       btn.addEventListener('click', function(){
         var novo = $('cw-template').value.trim();
         if (!novo){ alert('Escolha primeiro o novo template no formulário abaixo ("Escolher template").'); return; }
-        var antigo = this.dataset.template;
-        if (novo === antigo){ alert('Essa campanha já usa o template "' + antigo + '".'); return; }
-        var img = $('cw-header-imagem').value.trim();
-        if (!confirm('Trocar o template da campanha "' + this.dataset.nome + '"?\n\nDe: ' + antigo + '\nPara: ' + novo + '\nImagem do cabeçalho: ' + (img || 'nenhuma') + '\n\nOs próximos lotes vão sair com o template novo. O que já foi enviado não muda.')) return;
-        var b = this; b.disabled = true;
-        apiPatch('campanhas_whatsapp?id=eq.' + encodeURIComponent(this.dataset.id), {
-          template_nome: novo,
-          idioma: $('cw-idioma').value.trim() || 'pt_BR',
-          variavel_nome: $('cw-variavel-nome').checked,
-          variavel_token: templateSelecionadoToken,
-          header_imagem_url: img || null
-        }, { Prefer: 'return=minimal' })
-          .then(function(){ return carregarCampanhasWhatsapp(); })
-          .catch(function(err){ alert('Não deu pra trocar o template: ' + err.message + '\n\nSe falou de permissão, falta rodar o SQL do SUPABASE.md §37.'); b.disabled = false; });
+        if (novo === this.dataset.template){ alert('Essa campanha já usa o template "' + novo + '".'); return; }
+        trocarTemplateCampanha(this.dataset.id, this.dataset.nome, this.dataset.template, this);
       });
     });
 
@@ -3127,6 +3136,11 @@
     $('cw-variavel-nome').checked = t.variavel_nome;
     $('cw-categoria').value = (t.categoria || 'marketing').toLowerCase();
     atualizarResumoTemplate();
+    // se existe UMA campanha com envio pendente e o template escolhido é outro, já pergunta se troca
+    var pend = (campanhasWaAtuais || []).filter(function(c){ return c.pendentes > 0; });
+    if (pend.length === 1 && pend[0].template_nome !== t.nome){
+      trocarTemplateCampanha(pend[0].id, pend[0].nome, pend[0].template_nome, null);
+    }
   });
 
   $('cw-template-atualizar').addEventListener('click', carregarTemplatesWhatsapp);
