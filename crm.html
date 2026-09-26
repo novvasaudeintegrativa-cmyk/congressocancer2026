@@ -2729,6 +2729,23 @@
     });
   }
 
+  // Plano gratuito do Resend: 100 e-mails por DIA (o dia do Resend vira à meia-noite UTC = 21h em Brasília).
+  // Quando fizer upgrade, é só subir este número. Conta só o que saiu por campanha; e-mails de teste e
+  // os enviados pelo card do lead também gastam a cota do Resend.
+  var EMAIL_LIMITE_DIA = 100;
+  function contarEnviadosHojeEmail(){
+    var agora = new Date();
+    var inicioUtc = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate())).toISOString();
+    return fetch(SUPABASE_URL + '/rest/v1/campanha_contatos?select=id&status=eq.enviado&enviado_em=gte.' + encodeURIComponent(inicioUtc) + '&limit=1', {
+      headers: apiHeaders({ Prefer: 'count=exact' })
+    }).then(function(r){
+      var faixa = r.headers.get('content-range') || '';
+      var total = Number(faixa.split('/')[1]);
+      if (!r.ok || isNaN(total)) throw new Error('sem contagem');
+      return total;
+    });
+  }
+
   function renderCampanhas(rows){
     rows = rows || [];
     $('campanhas-lista').innerHTML = rows.map(function(c){
@@ -2737,7 +2754,7 @@
         '<td class="cp-cont"><b>' + c.enviados + '</b> enviados · ' + c.pendentes + ' pendentes' +
           (c.falhas ? ' · <span class="cp-falhas">' + c.falhas + ' falhas</span>' : '') + ' · ' + c.total + ' total</td>' +
         '<td style="text-align:right;white-space:nowrap;">' +
-          (c.pendentes ? '<input type="number" class="cp-qtd" min="1" max="501" value="' + Math.min(c.pendentes, 100) + '" title="quantos e-mails enviar agora (máximo 501 por vez)" style="width:64px;margin-right:6px;">' : '') +
+          (c.pendentes ? '<input type="number" class="cp-qtd" min="1" max="' + EMAIL_LIMITE_DIA + '" value="' + Math.min(c.pendentes, EMAIL_LIMITE_DIA) + '" title="quantos e-mails enviar agora (máximo ' + EMAIL_LIMITE_DIA + ' por dia no plano gratuito do Resend)" style="width:64px;margin-right:6px;">' : '') +
           '<button type="button" class="cp-enviar" data-id="' + c.id + '" data-nome="' + attrEsc(c.nome) + '" data-assunto="' + attrEsc(c.assunto) + '" data-pend="' + c.pendentes + '"' + (c.pendentes ? '' : ' disabled') + '>' +
           (c.pendentes ? 'Enviar lote' : 'Concluída') + '</button>' +
           ' <button type="button" class="cp-apagar" data-id="' + c.id + '" data-nome="' + attrEsc(c.nome) + '" data-enviados="' + c.enviados + '" data-total="' + c.total + '" title="apagar esta campanha e a lista de contatos dela" style="background:transparent;color:var(--bordo);border:1px solid var(--bordo);border-radius:999px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;margin-left:6px;">Apagar</button></td>' +
@@ -2765,50 +2782,65 @@
         var id = this.dataset.id;
         var campo = this.parentNode.querySelector('.cp-qtd');
         var qtd = Math.floor(Number(campo && campo.value));
-        if (!(qtd >= 1)){ alert('Digite quantos e-mails enviar (de 1 a 501).'); return; }
-        qtd = Math.min(qtd, 501, Number(this.dataset.pend) || 501);
-        // aos poucos: grupos de 25 com pausa entre eles, pra não despejar tudo de uma vez na caixa dos provedores
-        var FATIA = 25, PAUSA_S = 45;
-        var devagar = qtd > FATIA;
-        var minutos = Math.ceil((Math.ceil(qtd / FATIA) - 1) * PAUSA_S / 60);
-        if (!confirm('Enviar ' + qtd + ' e-mail(s) da campanha "' + this.dataset.nome + '"?\n\nAssunto: ' + this.dataset.assunto + '\n\nOs primeiros ' + qtd + ' contatos pendentes da lista vão receber, na ordem do arquivo. Isso não pode ser desfeito.' +
-          (devagar ? '\n\nO envio vai aos poucos: ' + FATIA + ' por vez, com pausa de ' + PAUSA_S + ' segundos entre os grupos (cerca de ' + minutos + ' min no total). Deixe esta aba aberta e a tela ligada até acabar. Pra interromper, clique em "Parar" (o que já saiu não volta).' : ''))) return;
+        if (!(qtd >= 1)){ alert('Digite quantos e-mails enviar (de 1 a ' + EMAIL_LIMITE_DIA + ').'); return; }
+        qtd = Math.min(qtd, EMAIL_LIMITE_DIA, Number(this.dataset.pend) || EMAIL_LIMITE_DIA);
+        // antes de enviar: quanto ainda cabe no limite do dia (se a contagem falhar, segue com o pedido)
+        var botaoOrig = this;
+        botaoOrig.disabled = true;
+        contarEnviadosHojeEmail().catch(function(){ return 0; }).then(function(hoje){
+          botaoOrig.disabled = false;
+          var livre = EMAIL_LIMITE_DIA - hoje;
+          if (livre <= 0){
+            alert('O limite de ' + EMAIL_LIMITE_DIA + ' e-mails por dia (plano gratuito do Resend) já foi usado hoje (' + hoje + ' enviados).\n\nO dia do Resend vira à meia-noite UTC, ou seja, 21h em Brasília. Depois disso dá pra enviar mais.');
+            return;
+          }
+          if (qtd > livre){
+            alert('Hoje ainda cabem só ' + livre + ' e-mail(s) no limite diário (' + hoje + ' já enviados). Vou usar ' + livre + '.');
+            qtd = livre;
+          }
+          // aos poucos: grupos de 25 com pausa entre eles, pra não despejar tudo de uma vez na caixa dos provedores
+          var FATIA = 25, PAUSA_S = 45;
+          var devagar = qtd > FATIA;
+          var minutos = Math.ceil((Math.ceil(qtd / FATIA) - 1) * PAUSA_S / 60);
+          if (!confirm('Enviar ' + qtd + ' e-mail(s) da campanha "' + botaoOrig.dataset.nome + '"?\n\nAssunto: ' + botaoOrig.dataset.assunto + '\n\nOs primeiros ' + qtd + ' contatos pendentes da lista vão receber, na ordem do arquivo. Isso não pode ser desfeito.' +
+            (devagar ? '\n\nO envio vai aos poucos: ' + FATIA + ' por vez, com pausa de ' + PAUSA_S + ' segundos entre os grupos (cerca de ' + minutos + ' min no total). Deixe esta aba aberta e a tela ligada até acabar. Pra interromper, clique em "Parar" (o que já saiu não volta).' : ''))) return;
 
-        var botao = this, restante = qtd, enviados = 0, falhas = 0;
-        botao.dataset.enviando = '1'; botao.dataset.parar = '';
-        botao.textContent = devagar ? 'Parar (0/' + qtd + ')' : 'Enviando…';
-        botao.disabled = !devagar;
+          var botao = botaoOrig, restante = qtd, enviados = 0, falhas = 0;
+          botao.dataset.enviando = '1'; botao.dataset.parar = '';
+          botao.textContent = devagar ? 'Parar (0/' + qtd + ')' : 'Enviando…';
+          botao.disabled = !devagar;
 
-        function fim(msg){
-          delete botao.dataset.enviando;
-          alert('Enviados: ' + enviados + ' ok' + (falhas ? ', ' + falhas + ' falharam' : '') + '.' + (msg ? '\n\n' + msg : ''));
-          return carregarCampanhas();
-        }
-        function pausa(){
-          return new Promise(function(ok){
-            var s = 0, t = setInterval(function(){
-              s++;
-              if (s >= PAUSA_S || botao.dataset.parar === '1'){ clearInterval(t); ok(); }
-            }, 1000);
-          });
-        }
-        function fatia(){
-          if (botao.dataset.parar === '1') return fim('Envio interrompido por você. Os que faltam continuam pendentes.');
-          if (restante <= 0) return fim('');
-          var n = Math.min(FATIA, restante);
-          return campanhaEnviarLote(id, n).then(function(res){
-            enviados += res.enviados; falhas += res.falhas;
-            restante -= (res.enviados + res.falhas);
-            if (devagar) botao.textContent = 'Parar (' + enviados + '/' + qtd + ')';
-            if (!res.tentativas) return fim('Não há mais contatos pendentes nessa campanha.');
-            if (res.falhas && res.falhas >= Math.ceil(n / 2)) return fim('Parei sozinho: metade ou mais desse grupo falhou. Confira o painel do Resend antes de continuar.');
+          function fim(msg){
+            delete botao.dataset.enviando;
+            alert('Enviados: ' + enviados + ' ok' + (falhas ? ', ' + falhas + ' falharam' : '') + '.' + (msg ? '\n\n' + msg : ''));
+            return carregarCampanhas();
+          }
+          function pausa(){
+            return new Promise(function(ok){
+              var s = 0, t = setInterval(function(){
+                s++;
+                if (s >= PAUSA_S || botao.dataset.parar === '1'){ clearInterval(t); ok(); }
+              }, 1000);
+            });
+          }
+          function fatia(){
+            if (botao.dataset.parar === '1') return fim('Envio interrompido por você. Os que faltam continuam pendentes.');
             if (restante <= 0) return fim('');
-            return pausa().then(fatia);
-          }).catch(function(err){
-            return fim('Erro: ' + err.message);
-          });
-        }
-        fatia();
+            var n = Math.min(FATIA, restante);
+            return campanhaEnviarLote(id, n).then(function(res){
+              enviados += res.enviados; falhas += res.falhas;
+              restante -= (res.enviados + res.falhas);
+              if (devagar) botao.textContent = 'Parar (' + enviados + '/' + qtd + ')';
+              if (!res.tentativas) return fim('Não há mais contatos pendentes nessa campanha.');
+              if (res.falhas && res.falhas >= Math.ceil(n / 2)) return fim('Parei sozinho: metade ou mais desse grupo falhou. Confira o painel do Resend antes de continuar.');
+              if (restante <= 0) return fim('');
+              return pausa().then(fatia);
+            }).catch(function(err){
+              return fim('Erro: ' + err.message);
+            });
+          }
+          fatia();
+        });
       });
     });
   }
