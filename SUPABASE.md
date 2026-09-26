@@ -4070,8 +4070,11 @@ const URL_    = Deno.env.get("SUPABASE_URL")!;
 const ANON    = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SVC     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
+const SECRET  = (Deno.env.get("DESCADASTRO_SECRET") ?? "").trim();
 const FROM = "Novva Saúde Integrativa <contato@novvasaudeintegrativa.com.br>";
-const LOTE_MAX = 501;          // teto por clique (26/09/2026: subiu de 100)
+const SITE = "https://congressocancer.novvasaudeintegrativa.com.br";
+const FUNC_DESCADASTRO = `${URL_}/functions/v1/email-descadastro`;
+const LOTE_MAX = 501;          // teto por clique
 const ORCAMENTO_MS = 110_000;  // para antes do limite de tempo da função (~150 s)
 
 const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
@@ -4126,6 +4129,27 @@ function preencher(txt: string, nome: string) {
   return String(txt || "").replace(/\{\{\s*nome\s*\}\}/gi, primeiroNome(nome));
 }
 
+// assinatura do link de descadastro (a função email-descadastro confere com o mesmo segredo)
+async function assinar(email: string) {
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(email));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// quem já pediu pra sair da lista (consulta de 100 em 100 e-mails)
+async function jaDescadastrados(emails: string[]) {
+  const saiu = new Set<string>();
+  for (let i = 0; i < emails.length; i += 100) {
+    const lista = emails.slice(i, i + 100).map((e) => `"${e.replace(/"/g, "")}"`).join(",");
+    const r = await fetch(`${URL_}/rest/v1/email_descadastros?select=email&email=in.(${encodeURIComponent(lista)})`, { headers: svcHeaders });
+    if (!r.ok) throw new Error("não consegui conferir a lista de descadastros");
+    for (const x of await r.json()) saiu.add(String(x.email).toLowerCase());
+  }
+  return saiu;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   const j = (o: unknown, s = 200) =>
@@ -4137,6 +4161,8 @@ Deno.serve(async (req) => {
   const u = await quemChamou(token);
   if (!u) return j({ erro: "não autenticado" }, 401);
   if (!(await ehGestor(u.id))) return j({ erro: "só o gestor pode disparar campanhas" }, 403);
+  // sem o segredo não há como gerar o link de descadastro: melhor não enviar nada
+  if (!SECRET) return j({ erro: "DESCADASTRO_SECRET não configurado no Supabase (SUPABASE.md §42)" }, 500);
 
   let body: any;
   try { body = await req.json(); } catch { return j({ erro: "bad body" }, 400); }
@@ -4155,16 +4181,42 @@ Deno.serve(async (req) => {
   );
   const pendentes = await pendResp.json();
 
+  let saiu: Set<string>;
+  try { saiu = await jaDescadastrados(pendentes.map((c: any) => String(c.email).trim().toLowerCase())); }
+  catch (e) { return j({ erro: String((e as Error).message || e) }, 500); }
+
   const INICIO = Date.now();
   let parouPorTempo = false;
-  let enviados = 0, falhas = 0;
+  let enviados = 0, falhas = 0, descadastrados = 0;
   for (const c of pendentes) {
     if (Date.now() - INICIO > ORCAMENTO_MS) { parouPorTempo = true; break; }
+    const emailLc = String(c.email).trim().toLowerCase();
+
+    // quem já saiu da lista não recebe (e não fica pendente pra sempre)
+    if (saiu.has(emailLc)) {
+      await fetch(`${URL_}/rest/v1/campanha_contatos?id=eq.${c.id}`, {
+        method: "PATCH", headers: { ...svcHeaders, prefer: "return=minimal" },
+        body: JSON.stringify({ status: "descadastrado" }),
+      });
+      descadastrados++;
+      continue;
+    }
+
+    const q = `e=${encodeURIComponent(emailLc)}&t=${await assinar(emailLc)}`;
+    const linkPagina = `${SITE}/descadastro.html?${q}`;   // vai no rodapé (página de confirmação)
+    const linkUmClique = `${FUNC_DESCADASTRO}?${q}`;        // vai no cabeçalho (botão "cancelar inscrição" do Gmail)
+
     const assunto = preencher(camp.assunto, c.nome);
-    const corpoTxt = preencher(camp.corpo, c.nome);
-    const html = corpoTxt.split(/\n{2,}/).map((p: string) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
+    const corpoTxt = preencher(camp.corpo, c.nome).replace(/\{\{\s*link_descadastro\s*\}\}/gi, linkPagina);
+    const rodapeTxt = `\n\nPara deixar de receber nossos e-mails, acesse: ${linkPagina}`;
+    const rodapeHtml = `<p style="font-size:12px;color:#777;margin-top:24px;">Para deixar de receber nossos e-mails, <a href="${linkPagina}">clique aqui</a>.</p>`;
+    const html = corpoTxt.split(/\n{2,}/).map((p: string) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("") + rodapeHtml;
+
     try {
-      const { ok, rb } = await resendEnviar({ from: FROM, to: [c.email], subject: assunto, html, text: corpoTxt });
+      const { ok, rb } = await resendEnviar({
+        from: FROM, to: [c.email], subject: assunto, html, text: corpoTxt + rodapeTxt,
+        headers: { "List-Unsubscribe": `<${linkUmClique}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+      });
       if (!ok) throw new Error(rb.message || "falha resend");
       await fetch(`${URL_}/rest/v1/campanha_contatos?id=eq.${c.id}`, {
         method: "PATCH", headers: { ...svcHeaders, prefer: "return=minimal" },
@@ -4180,13 +4232,13 @@ Deno.serve(async (req) => {
     }
   }
 
-  return j({ ok: true, enviados, falhas, tentativas: pendentes.length, parou_por_tempo: parouPorTempo });
+  return j({ ok: true, enviados, falhas, descadastrados, tentativas: pendentes.length, parou_por_tempo: parouPorTempo });
 });
 ```
 
 **Deploy.** Mantém **"Verify JWT with legacy secret" LIGADO** (mesmo padrão
-do `email-send`/`whatsapp-send`) — não precisa de secret novo, reusa o
-`RESEND_API_KEY` já configurado no §21.2.
+do `email-send`/`whatsapp-send`). Usa o `RESEND_API_KEY` do §21.2 e, desde 26/09/2026,
+o secret `DESCADASTRO_SECRET` (ver §42 — sem ele a função recusa enviar).
 
 ### 22.3. Edge Function `gerar-texto-campanha` (botão "✨ Gerar com IA")
 
@@ -7667,3 +7719,141 @@ create policy "gestor cria geracoes ia" on public.campanha_ia_geracoes
 
 notify pgrst, 'reload schema';
 ```
+
+## 42. E-mail — descadastro automático (LGPD)
+
+**O que faz (26/09/2026):** todo e-mail das campanhas sai com um rodapé de descadastro, sem ninguém
+precisar digitar nada, e com o cabeçalho `List-Unsubscribe` (o botão "Cancelar inscrição" que o Gmail e
+o Yahoo mostram no topo e exigem de quem envia em volume). Quem clica cai na página `descadastro.html`
+do site, confirma com um botão, e o e-mail entra na tabela `email_descadastros`. A `campanha-email-lote`
+não envia mais para quem está nessa tabela (marca o contato como `descadastrado`).
+
+**Por que a página pede confirmação:** programas de segurança de e-mail "abrem" os links sozinhos. Se um
+simples GET descadastrasse, metade da lista sairia sem querer. O GET só redireciona pra página; quem
+descadastra é o POST do botão (e o POST de um clique do Gmail).
+
+**Texto do rodapé (igual em todo e-mail, só a linha de descadastro):**
+> Para deixar de receber nossos e-mails, clique aqui.
+
+Quem quiser colocar o link em outro lugar do texto usa `{{link_descadastro}}` no corpo (vira o endereço
+da página); o rodapé automático entra de qualquer jeito.
+
+### 42.1. SQL (rodar no SQL Editor)
+
+```sql
+create table if not exists public.email_descadastros (
+  email      text primary key,
+  criado_em  timestamptz not null default now(),
+  origem     text
+);
+alter table public.email_descadastros enable row level security;
+
+drop policy if exists "gestor ve descadastros" on public.email_descadastros;
+create policy "gestor ve descadastros" on public.email_descadastros
+  for select to authenticated using (public.eh_gestor());
+
+-- só as Edge Functions (service role) gravam
+revoke insert, update, delete on public.email_descadastros from anon, authenticated;
+grant select on public.email_descadastros to authenticated;
+
+-- novo status de contato: quem já saiu da lista
+alter table public.campanha_contatos drop constraint if exists campanha_contatos_status_check;
+alter table public.campanha_contatos
+  add constraint campanha_contatos_status_check
+  check (status in ('pendente','enviado','falhou','descadastrado'));
+
+notify pgrst, 'reload schema';
+```
+
+### 42.2. Secret
+
+Supabase → Edge Functions → **Secrets** → **Add new secret**:
+- Nome: `DESCADASTRO_SECRET`
+- Valor: uma sequência longa e aleatória (ex.: 40 letras e números misturados). Guarde em lugar seguro:
+  se trocar depois, os links dos e-mails já enviados deixam de funcionar.
+
+### 42.3. Edge Function `email-descadastro`
+
+Edge Functions → Deploy a new function → nome **`email-descadastro`** → cola o código abaixo.
+**"Verify JWT with legacy secret" DESLIGADO** (é chamada pelo público, sem login; o que a protege é a
+assinatura do link).
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+// Descadastro de e-mail (LGPD). Verify JWT DESLIGADO: é aberta ao público, mas só age
+// com um link assinado (HMAC) gerado pela campanha-email-lote pra aquele e-mail.
+const URL_   = Deno.env.get("SUPABASE_URL")!;
+const SVC    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SECRET = (Deno.env.get("DESCADASTRO_SECRET") ?? "").trim();
+const SITE   = "https://congressocancer.novvasaudeintegrativa.com.br";
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "content-type, x-client-info, apikey, authorization",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+};
+
+async function assinar(email: string) {
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(email));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+function iguais(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (!SECRET) return j({ erro: "DESCADASTRO_SECRET não configurado" }, 500);
+
+  const url = new URL(req.url);
+  const email = (url.searchParams.get("e") || "").trim().toLowerCase();
+  const t = (url.searchParams.get("t") || "").trim().toLowerCase();
+
+  // GET só leva pra página de confirmação (assim programas que "abrem" links do e-mail
+  // não descadastram ninguém sem querer). Quem age é o POST.
+  if (req.method === "GET") {
+    return new Response(null, {
+      status: 302,
+      headers: { ...CORS, location: `${SITE}/descadastro.html?e=${encodeURIComponent(email)}&t=${encodeURIComponent(t)}` },
+    });
+  }
+  if (req.method !== "POST") return j({ erro: "method" }, 405);
+
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !t) return j({ erro: "link inválido" }, 400);
+  if (!iguais(await assinar(email), t)) return j({ erro: "link inválido" }, 400);
+
+  const r = await fetch(`${URL_}/rest/v1/email_descadastros?on_conflict=email`, {
+    method: "POST",
+    headers: { ...svcHeaders, prefer: "resolution=ignore-duplicates,return=minimal" },
+    body: JSON.stringify([{ email, origem: "link_no_email" }]),
+  });
+  if (!r.ok) return j({ erro: "não consegui registrar agora, tente de novo" }, 500);
+  return j({ ok: true });
+});
+```
+
+### 42.4. Atualizar a `campanha-email-lote`
+
+Cole a versão do §22.2 (já atualizada com o rodapé, o cabeçalho e o filtro de descadastrados).
+**Verify JWT continua LIGADO.**
+
+### 42.5. Site
+
+O arquivo `descadastro.html` (raiz do site) é a página de confirmação; vai pro ar com o push.
+
+### 42.6. Conferir
+
+1. Mande um lote de 1 pra um e-mail seu: no fim do e-mail deve estar o rodapé com o link, e no Gmail
+   deve aparecer "Cancelar inscrição" ao lado do remetente.
+2. Clique no link → página com o botão → confirme → "Pronto, você saiu da lista".
+3. Supabase → Table Editor → `email_descadastros` deve ter o seu e-mail. Remova a linha pra voltar a receber.

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Sair da lista de e-mails · Congresso Câncer</title>
+<style>
+  @font-face{font-family:"League Spartan";src:url("Fonts/LeagueSpartan-Bold.otf") format("opentype");font-weight:700;font-display:swap;}
+  :root{--bordo-escuro:#2b0b0e;--bordo:#5c171e;--vermelho:#b92d3d;--claro:#f6f1ee;--texto:#2b2224;}
+  *{box-sizing:border-box;}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:linear-gradient(180deg,var(--bordo-escuro),var(--bordo));font-family:Roboto,Arial,sans-serif;color:var(--texto);}
+  .cartao{width:100%;max-width:460px;background:#fff;border-radius:22px;padding:32px 28px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);}
+  h1{margin:0 0 12px;font:700 22px/1.2 "League Spartan",Arial,sans-serif;color:var(--bordo);}
+  p{margin:0 0 20px;font-size:15px;line-height:1.5;}
+  .email{display:inline-block;margin-bottom:20px;padding:6px 12px;border-radius:999px;background:var(--claro);font-size:14px;word-break:break-all;}
+  button{border:0;border-radius:999px;background:var(--vermelho);color:#fff;font:700 14px "League Spartan",Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:13px 26px;cursor:pointer;}
+  button:disabled{opacity:.55;cursor:default;}
+  .msg{margin-top:16px;font-size:14px;}
+  .ok{color:#1d7a3f;}
+  .erro{color:var(--vermelho);}
+  .manter{display:block;margin-top:18px;font-size:13px;color:#6b5f61;}
+  [hidden]{display:none !important;}
+</style>
+</head>
+<body>
+<main class="cartao">
+  <div id="tela-confirma" hidden>
+    <h1>Deixar de receber nossos e-mails?</h1>
+    <p>Você deixará de receber e-mails do Congresso Câncer, da Novva Saúde Integrativa, neste endereço:</p>
+    <div class="email" id="email"></div><br>
+    <button type="button" id="btn">Confirmar e sair da lista</button>
+    <div class="msg" id="msg"></div>
+    <a class="manter" href="https://congressocancer.novvasaudeintegrativa.com.br/">Prefiro continuar recebendo</a>
+  </div>
+
+  <div id="tela-ok" hidden>
+    <h1>Pronto, você saiu da lista</h1>
+    <p>Você não receberá mais e-mails do Congresso Câncer neste endereço. Pode levar alguns instantes para o pedido valer em todos os envios.</p>
+    <a class="manter" href="https://congressocancer.novvasaudeintegrativa.com.br/">Ir para o site do Congresso</a>
+  </div>
+
+  <div id="tela-invalido" hidden>
+    <h1>Link inválido</h1>
+    <p>Este link de descadastro não é válido ou está incompleto. Use o link que veio no rodapé do e-mail, ou responda o e-mail pedindo para sair da lista.</p>
+  </div>
+</main>
+
+<script>
+(function(){
+  var FUNCAO = 'https://nbhekjgbszyuuxrynzfo.supabase.co/functions/v1/email-descadastro';
+  var q = new URLSearchParams(location.search);
+  var email = (q.get('e') || '').trim();
+  var t = (q.get('t') || '').trim();
+  function $(id){ return document.getElementById(id); }
+
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !t){ $('tela-invalido').hidden = false; return; }
+  $('email').textContent = email;
+  $('tela-confirma').hidden = false;
+
+  // só um clique no botão descadastra: abrir o link, sozinho, não faz nada
+  $('btn').addEventListener('click', function(){
+    var btn = this; btn.disabled = true; btn.textContent = 'Enviando…';
+    $('msg').textContent = '';
+    fetch(FUNCAO + '?e=' + encodeURIComponent(email) + '&t=' + encodeURIComponent(t), { method: 'POST' })
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){
+        if (!r.ok || d.erro) throw new Error(d.erro || 'erro');
+        $('tela-confirma').hidden = true; $('tela-ok').hidden = false;
+      }); })
+      .catch(function(err){
+        btn.disabled = false; btn.textContent = 'Confirmar e sair da lista';
+        var invalido = /inv[aá]lido/i.test(err.message);
+        $('msg').className = 'msg erro';
+        $('msg').textContent = invalido ? 'Este link não é válido. Use o link que veio no rodapé do e-mail.' : 'Não deu certo agora. Tente de novo em instantes.';
+      });
+  });
+})();
+</script>
+</body>
+</html>

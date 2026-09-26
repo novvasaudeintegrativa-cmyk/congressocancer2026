@@ -778,7 +778,7 @@
 
           <label for="cp-corpo">Corpo do e-mail</label>
           <textarea id="cp-corpo" placeholder="pode usar {{nome}} pra personalizar" required></textarea>
-          <div class="dica">{{nome}} no assunto ou no corpo é trocado pelo nome de cada contato na hora do envio.</div>
+          <div class="dica">{{nome}} no assunto ou no corpo é trocado pelo primeiro nome de cada contato na hora do envio. O <b>rodapé de descadastro</b> entra sozinho no fim de todo e-mail (não precisa digitar).</div>
           <button type="button" id="cp-salvar-edicao">Salvar no histórico</button>
           <div class="dica">Guarda o assunto e o corpo que estão na tela. Texto escrito à mão vira um registro novo; depois de gerar ou clicar em "Usar" num texto do histórico, o clique atualiza aquele mesmo registro, sem criar outro.</div>
           <!-- opt-in de WhatsApp escondido por enquanto (26/09/2026); pra voltar, tire o atributo hidden dos dois elementos -->
@@ -2805,14 +2805,14 @@
           if (!confirm('Enviar ' + qtd + ' e-mail(s) da campanha "' + botaoOrig.dataset.nome + '"?\n\nAssunto: ' + botaoOrig.dataset.assunto + '\n\nOs primeiros ' + qtd + ' contatos pendentes da lista vão receber, na ordem do arquivo. Isso não pode ser desfeito.' +
             (devagar ? '\n\nO envio vai aos poucos: ' + FATIA + ' por vez, com pausa de ' + PAUSA_S + ' segundos entre os grupos (cerca de ' + minutos + ' min no total). Deixe esta aba aberta e a tela ligada até acabar. Pra interromper, clique em "Parar" (o que já saiu não volta).' : ''))) return;
 
-          var botao = botaoOrig, restante = qtd, enviados = 0, falhas = 0;
+          var botao = botaoOrig, restante = qtd, enviados = 0, falhas = 0, pulados = 0;
           botao.dataset.enviando = '1'; botao.dataset.parar = '';
           botao.textContent = devagar ? 'Parar (0/' + qtd + ')' : 'Enviando…';
           botao.disabled = !devagar;
 
           function fim(msg){
             delete botao.dataset.enviando;
-            alert('Enviados: ' + enviados + ' ok' + (falhas ? ', ' + falhas + ' falharam' : '') + '.' + (msg ? '\n\n' + msg : ''));
+            alert('Enviados: ' + enviados + ' ok' + (falhas ? ', ' + falhas + ' falharam' : '') + '.' + (pulados ? '\n\n' + pulados + ' contato(s) já tinham saído da lista e foram pulados.' : '') + (msg ? '\n\n' + msg : ''));
             return carregarCampanhas();
           }
           function pausa(){
@@ -2828,7 +2828,7 @@
             if (restante <= 0) return fim('');
             var n = Math.min(FATIA, restante);
             return campanhaEnviarLote(id, n).then(function(res){
-              enviados += res.enviados; falhas += res.falhas;
+              enviados += res.enviados; falhas += res.falhas; pulados += (res.descadastrados || 0);
               restante -= (res.enviados + res.falhas);
               if (devagar) botao.textContent = 'Parar (' + enviados + '/' + qtd + ')';
               if (!res.tentativas) return fim('Não há mais contatos pendentes nessa campanha.');
@@ -2924,7 +2924,8 @@
     // mesma regra do envio real (campanha-email-lote): {{nome}} em qualquer caixa vira o primeiro nome
     var nomeTeste = primeiroNomeEmail((estado.eu && estado.eu.nome) || '');
     var assuntoTeste = '[TESTE] ' + assunto.replace(/\{\{\s*nome\s*\}\}/gi, nomeTeste);
-    var corpoTeste = corpo.replace(/\{\{\s*nome\s*\}\}/gi, nomeTeste);
+    var corpoTeste = corpo.replace(/\{\{\s*nome\s*\}\}/gi, nomeTeste) +
+      '\n\nPara deixar de receber nossos e-mails, acesse: (aqui vai o link individual de cada pessoa; ele só aparece no envio real da campanha)';
     var btn = this; btn.disabled = true; btn.textContent = 'Enviando…';
     $('cp-teste-msg').style.color = 'var(--soft)'; $('cp-teste-msg').textContent = '';
     // um por vez; se algum falhar, os outros continuam e o aviso lista quais deram erro
