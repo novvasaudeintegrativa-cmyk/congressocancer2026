@@ -4071,7 +4071,8 @@ const ANON    = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SVC     = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const FROM = "Novva Saúde Integrativa <contato@novvasaudeintegrativa.com.br>";
-const LOTE_MAX = 100;
+const LOTE_MAX = 501;          // teto por clique (26/09/2026: subiu de 100)
+const ORCAMENTO_MS = 110_000;  // para antes do limite de tempo da função (~150 s)
 
 const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
 
@@ -4092,6 +4093,23 @@ async function ehGestor(uid: string) {
   const rows = await r.json();
   const p = rows && rows[0];
   return !!(p && p.ativo && p.papel === "gestor");
+}
+
+// o Resend limita a ~2 envios por segundo; se responder 429, espera e tenta de novo (até 4 vezes)
+async function resendEnviar(payload: unknown) {
+  let r: Response | null = null;
+  let rb: any = {};
+  for (let t = 0; t < 4; t++) {
+    r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { authorization: `Bearer ${RESEND_API_KEY}`, "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    rb = await r.json().catch(() => ({}));
+    if (r.status !== 429) break;
+    await new Promise((res) => setTimeout(res, 1000 * (t + 1)));
+  }
+  return { ok: r!.ok, rb };
 }
 
 // primeiro nome com só a inicial maiúscula ("RAIMUNDA ANÁLIA" -> "Raimunda"); sem nome, "colega"
@@ -4137,19 +4155,17 @@ Deno.serve(async (req) => {
   );
   const pendentes = await pendResp.json();
 
+  const INICIO = Date.now();
+  let parouPorTempo = false;
   let enviados = 0, falhas = 0;
   for (const c of pendentes) {
+    if (Date.now() - INICIO > ORCAMENTO_MS) { parouPorTempo = true; break; }
     const assunto = preencher(camp.assunto, c.nome);
     const corpoTxt = preencher(camp.corpo, c.nome);
     const html = corpoTxt.split(/\n{2,}/).map((p: string) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
     try {
-      const r = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { authorization: `Bearer ${RESEND_API_KEY}`, "content-type": "application/json" },
-        body: JSON.stringify({ from: FROM, to: [c.email], subject: assunto, html, text: corpoTxt }),
-      });
-      const rb = await r.json();
-      if (!r.ok) throw new Error(rb.message || "falha resend");
+      const { ok, rb } = await resendEnviar({ from: FROM, to: [c.email], subject: assunto, html, text: corpoTxt });
+      if (!ok) throw new Error(rb.message || "falha resend");
       await fetch(`${URL_}/rest/v1/campanha_contatos?id=eq.${c.id}`, {
         method: "PATCH", headers: { ...svcHeaders, prefer: "return=minimal" },
         body: JSON.stringify({ status: "enviado", enviado_em: new Date().toISOString(), resend_id: rb.id || null }),
@@ -4164,7 +4180,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  return j({ ok: true, enviados, falhas, tentativas: pendentes.length });
+  return j({ ok: true, enviados, falhas, tentativas: pendentes.length, parou_por_tempo: parouPorTempo });
 });
 ```
 
