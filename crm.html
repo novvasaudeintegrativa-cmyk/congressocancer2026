@@ -779,7 +779,8 @@
           <div class="dica">Adiciona no fim do texto um link pronto pra quem quiser também receber novidades por WhatsApp — quem clicar e mandar a mensagem fica registrado como "optou" (ver "Opt-in WhatsApp" ao lado).</div>
 
           <label for="cp-teste-email">E-mail de teste (manda o assunto/corpo atual pra conferir antes de criar a campanha)</label>
-          <input type="email" id="cp-teste-email" placeholder="seu-email@novvasaudeintegrativa.com.br">
+          <input type="text" id="cp-teste-email" placeholder="seu-email@gmail.com, outro@hotmail.com" autocomplete="email">
+          <div class="dica">Pode colocar vários e-mails separados por vírgula (ex.: um Gmail e um Hotmail, pra ver como cai em cada caixa).</div>
           <button type="button" id="cp-teste-btn">Enviar teste</button>
           <div class="cp-msg" id="cp-teste-msg"></div>
 
@@ -2805,12 +2806,18 @@
   }
 
   $('cp-teste-btn').addEventListener('click', function(){
-    var destino = $('cp-teste-email').value.trim();
+    var destinos = $('cp-teste-email').value.split(/[,;\s]+/).map(function(x){ return x.trim(); }).filter(Boolean);
+    var invalidos = destinos.filter(function(x){ return !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x); });
     var assunto = $('cp-assunto').value.trim();
     var corpo = $('cp-corpo').value.trim();
-    if (!destino){
+    if (!destinos.length){
       $('cp-teste-msg').style.color = 'var(--bordo-vivo)';
       $('cp-teste-msg').textContent = 'Preenche o e-mail de teste.';
+      return;
+    }
+    if (invalidos.length){
+      $('cp-teste-msg').style.color = 'var(--bordo-vivo)';
+      $('cp-teste-msg').textContent = 'E-mail inválido: ' + invalidos.join(', ');
       return;
     }
     if (!assunto || !corpo){
@@ -2824,12 +2831,16 @@
     var corpoTeste = corpo.replace(/\{\{\s*nome\s*\}\}/gi, nomeTeste);
     var btn = this; btn.disabled = true; btn.textContent = 'Enviando…';
     $('cp-teste-msg').style.color = 'var(--soft)'; $('cp-teste-msg').textContent = '';
-    emailEnviar(destino, assuntoTeste, corpoTeste, null).then(function(){
-      $('cp-teste-msg').style.color = 'var(--verde)';
-      $('cp-teste-msg').textContent = 'Teste enviado pra ' + destino + '! ({{nome}} virou "' + nomeTeste + '" nesse teste)';
-    }).catch(function(err){
-      $('cp-teste-msg').style.color = 'var(--bordo-vivo)';
-      $('cp-teste-msg').textContent = 'Erro: ' + err.message;
+    // um por vez; se algum falhar, os outros continuam e o aviso lista quais deram erro
+    var ok = [], erros = [];
+    destinos.reduce(function(cadeia, d){
+      return cadeia.then(function(){
+        return emailEnviar(d, assuntoTeste, corpoTeste, null).then(function(){ ok.push(d); }).catch(function(err){ erros.push(d + ' (' + err.message + ')'); });
+      });
+    }, Promise.resolve()).then(function(){
+      var m = $('cp-teste-msg');
+      m.style.color = erros.length ? 'var(--bordo-vivo)' : 'var(--verde)';
+      m.textContent = (ok.length ? 'Teste enviado pra ' + ok.join(', ') + '! ({{nome}} virou "' + nomeTeste + '" nesse teste). ' : '') + (erros.length ? 'Falhou: ' + erros.join('; ') : '');
     }).finally(function(){ btn.disabled = false; btn.innerHTML = ic('send') + ' Enviar teste'; });
   });
 
