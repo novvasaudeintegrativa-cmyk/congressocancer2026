@@ -348,6 +348,12 @@
   .campanhas-tabela{width:100%;border-collapse:collapse;font-size:13px;}
   .campanhas-tabela td{padding:10px 14px;border-top:1px solid var(--linha);vertical-align:middle;}
   .campanhas-tabela tr:first-child td{border-top:0;}
+  /* celular: cada campanha vira um bloco (senão o campo de quantidade e o botão ficam escondidos à direita) */
+  @media (max-width:700px){
+    #campanhas-lista tr{display:block;padding:6px 0;border-top:1px solid var(--linha);}
+    #campanhas-lista tr:first-child{border-top:0;}
+    #campanhas-lista td{display:block;border-top:0;padding:6px 14px;text-align:left !important;white-space:normal !important;}
+  }
   .campanhas-tabela .cp-nome{font-family:var(--tit);font-weight:800;}
   .campanhas-tabela .cp-assunto{color:var(--soft);font-size:12px;}
   .campanhas-tabela .cp-cont{font-size:12px;color:var(--soft);}
@@ -775,8 +781,9 @@
           <div class="dica">{{nome}} no assunto ou no corpo é trocado pelo nome de cada contato na hora do envio.</div>
           <button type="button" id="cp-salvar-edicao" disabled>Salvar edição no histórico</button>
           <div class="dica">Fica ativo depois de gerar ou clicar em "Usar" num texto do histórico — edita à vontade e clica aqui pra atualizar aquele mesmo registro, sem criar um novo.</div>
-          <button type="button" id="cp-optin-cta">Inserir CTA de opt-in WhatsApp</button>
-          <div class="dica">Adiciona no fim do texto um link pronto pra quem quiser também receber novidades por WhatsApp — quem clicar e mandar a mensagem fica registrado como "optou" (ver "Opt-in WhatsApp" ao lado).</div>
+          <!-- opt-in de WhatsApp escondido por enquanto (26/09/2026); pra voltar, tire o atributo hidden dos dois elementos -->
+          <button type="button" id="cp-optin-cta" hidden>Inserir CTA de opt-in WhatsApp</button>
+          <div class="dica" hidden>Adiciona no fim do texto um link pronto pra quem quiser também receber novidades por WhatsApp — quem clicar e mandar a mensagem fica registrado como "optou" (ver "Opt-in WhatsApp" ao lado).</div>
 
           <label for="cp-teste-email">E-mail de teste (manda o assunto/corpo atual pra conferir antes de criar a campanha)</label>
           <input type="text" id="cp-teste-email" placeholder="seu-email@gmail.com, outro@hotmail.com" autocomplete="email">
