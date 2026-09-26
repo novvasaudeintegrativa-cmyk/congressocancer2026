@@ -7642,3 +7642,28 @@ O token novo vale também pras funções `instagram-responder` e `instagram-post
 - A Meta troca nomes de métricas de tempos em tempos; a função ignora a que não existir mais e
   mostra o motivo no aviso.
 - Stories e posts muito antigos podem não ter todas as métricas.
+
+## 41. CRM — salvar no histórico um texto de e-mail escrito à mão
+
+**Problema (26/09/2026):** o botão "Salvar edição no histórico" só ficava ativo depois de "Gerar com
+IA" ou "Usar" (ele atualizava um registro que já existia). Quem escrevia assunto e corpo à mão não
+tinha como guardar o texto.
+
+**Solução:** o botão (agora "Salvar no histórico") fica sempre ativo. Com texto do histórico carregado,
+atualiza aquele registro; com texto escrito à mão, **cria um registro novo** em `campanha_ia_geracoes`
+(o texto aparece em "Textos já gerados", com o resumo "(escrito à mão)").
+
+### 41.1. SQL (rodar só se o CRM avisar erro de permissão ao salvar)
+
+Até agora só a Edge Function (service role) gravava nessa tabela; o CRM lia, atualizava e apagava.
+Isto libera o INSERT direto pelo gestor:
+
+```sql
+grant insert on public.campanha_ia_geracoes to authenticated;
+
+drop policy if exists "gestor cria geracoes ia" on public.campanha_ia_geracoes;
+create policy "gestor cria geracoes ia" on public.campanha_ia_geracoes
+  for insert to authenticated with check (public.eh_gestor());
+
+notify pgrst, 'reload schema';
+```

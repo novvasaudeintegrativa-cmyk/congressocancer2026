@@ -779,8 +779,8 @@
           <label for="cp-corpo">Corpo do e-mail</label>
           <textarea id="cp-corpo" placeholder="pode usar {{nome}} pra personalizar" required></textarea>
           <div class="dica">{{nome}} no assunto ou no corpo é trocado pelo nome de cada contato na hora do envio.</div>
-          <button type="button" id="cp-salvar-edicao" disabled>Salvar edição no histórico</button>
-          <div class="dica">Fica ativo depois de gerar ou clicar em "Usar" num texto do histórico — edita à vontade e clica aqui pra atualizar aquele mesmo registro, sem criar um novo.</div>
+          <button type="button" id="cp-salvar-edicao">Salvar no histórico</button>
+          <div class="dica">Guarda o assunto e o corpo que estão na tela. Texto escrito à mão vira um registro novo; depois de gerar ou clicar em "Usar" num texto do histórico, o clique atualiza aquele mesmo registro, sem criar outro.</div>
           <!-- opt-in de WhatsApp escondido por enquanto (26/09/2026); pra voltar, tire o atributo hidden dos dois elementos -->
           <button type="button" id="cp-optin-cta" hidden>Inserir CTA de opt-in WhatsApp</button>
           <div class="dica" hidden>Adiciona no fim do texto um link pronto pra quem quiser também receber novidades por WhatsApp — quem clicar e mandar a mensagem fica registrado como "optou" (ver "Opt-in WhatsApp" ao lado).</div>
@@ -981,7 +981,7 @@
   // botões estáticos que já existem no HTML — troca o texto com emoji pelo ícone
   [
     ['cp-gerar-ia', 'sparkles', 'Gerar com IA'],
-    ['cp-salvar-edicao', 'save', 'Salvar edição no histórico'],
+    ['cp-salvar-edicao', 'save', 'Salvar no histórico'],
     ['cp-optin-cta', 'smartphone', 'Inserir CTA de opt-in WhatsApp'],
     ['cp-teste-btn', 'send', 'Enviar teste'],
     ['cw-gerar-ia', 'sparkles', 'Gerar rascunho com IA'],
@@ -2678,7 +2678,7 @@
 
   function marcarGeracaoAtual(id){
     geracaoAtualId = id || null;
-    $('cp-salvar-edicao').disabled = !geracaoAtualId;
+    // o botão fica sempre ativo: com texto do histórico atualiza aquele registro; texto escrito à mão cria um novo
   }
 
   function carregarGeracoesIA(){
@@ -2739,9 +2739,24 @@
         '<td style="text-align:right;white-space:nowrap;">' +
           (c.pendentes ? '<input type="number" class="cp-qtd" min="1" max="501" value="' + Math.min(c.pendentes, 100) + '" title="quantos e-mails enviar agora (máximo 501 por vez)" style="width:64px;margin-right:6px;">' : '') +
           '<button type="button" class="cp-enviar" data-id="' + c.id + '" data-nome="' + attrEsc(c.nome) + '" data-assunto="' + attrEsc(c.assunto) + '" data-pend="' + c.pendentes + '"' + (c.pendentes ? '' : ' disabled') + '>' +
-          (c.pendentes ? 'Enviar lote' : 'Concluída') + '</button></td>' +
+          (c.pendentes ? 'Enviar lote' : 'Concluída') + '</button>' +
+          ' <button type="button" class="cp-apagar" data-id="' + c.id + '" data-nome="' + attrEsc(c.nome) + '" data-enviados="' + c.enviados + '" data-total="' + c.total + '" title="apagar esta campanha e a lista de contatos dela" style="background:transparent;color:var(--bordo);border:1px solid var(--bordo);border-radius:999px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;margin-left:6px;">Apagar</button></td>' +
       '</tr>';
     }).join('') || '<tr><td>Nenhuma campanha ainda.</td></tr>';
+
+    $('campanhas-lista').querySelectorAll('.cp-apagar').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var env = Number(this.dataset.enviados) || 0;
+        var aviso = 'Apagar a campanha "' + this.dataset.nome + '" e os ' + this.dataset.total + ' contatos dela?\n\n' +
+          (env ? 'ATENÇÃO: ' + env + ' e-mail(s) já foram enviados por ela. Apagar remove o registro de quem recebeu (o e-mail em si não volta).\n\n' : 'Nenhum e-mail foi enviado por ela.\n\n') +
+          'Isso não pode ser desfeito.';
+        if (!confirm(aviso)) return;
+        this.disabled = true; this.textContent = 'Apagando…';
+        apiDelete('campanhas_email?id=eq.' + encodeURIComponent(this.dataset.id))
+          .then(function(){ return carregarCampanhas(); })
+          .catch(function(err){ alert('Não consegui apagar: ' + err.message); carregarCampanhas(); });
+      });
+    });
 
     $('campanhas-lista').querySelectorAll('.cp-enviar').forEach(function(btn){
       btn.addEventListener('click', function(){
@@ -3475,23 +3490,28 @@
   // ---------- CTA de opt-in WhatsApp no corpo do e-mail ----------
   var LINK_OPTIN_WHATSAPP = 'https://wa.me/5511934873737?text=Quero%20receber%20novidades%20do%20Congresso%20C%C3%A2ncer%202026%20pelo%20WhatsApp%20da%20Novva%20Sa%C3%BAde%20Integrativa';
   $('cp-salvar-edicao').addEventListener('click', function(){
-    if (!geracaoAtualId) return;
     var assunto = $('cp-assunto').value.trim();
     var corpo = $('cp-corpo').value.trim();
     var brief = $('cp-brief').value.trim();
-    if (!assunto || !corpo) return;
+    var msg = $('cp-msg');
+    if (!assunto || !corpo){ msg.style.color = 'var(--bordo-vivo)'; msg.textContent = 'Preencha assunto e corpo antes de salvar.'; return; }
     var btn = this; btn.disabled = true; btn.textContent = 'Salvando…';
-    apiPatch('campanha_ia_geracoes?id=eq.' + geracaoAtualId, { brief: brief, assunto: assunto, corpo: corpo })
+    var atualizando = !!geracaoAtualId;
+    var pedido = atualizando
+      ? apiPatch('campanha_ia_geracoes?id=eq.' + geracaoAtualId, { brief: brief, assunto: assunto, corpo: corpo })
+      : apiPost('campanha_ia_geracoes', { criado_por: estado.eu && estado.eu.id, brief: brief || '(escrito à mão)', assunto: assunto, corpo: corpo }, { Prefer: 'return=representation' })
+          .then(function(rows){ if (rows && rows[0] && rows[0].id) marcarGeracaoAtual(rows[0].id); });
+    pedido
       .then(function(){
-        $('cp-msg').style.color = 'var(--verde)';
-        $('cp-msg').textContent = 'Edição salva no histórico.';
+        msg.style.color = 'var(--verde)';
+        msg.textContent = atualizando ? 'Edição salva no histórico.' : 'Texto salvo no histórico (aparece em "Textos já gerados").';
         return carregarGeracoesIA();
       })
       .catch(function(err){
-        $('cp-msg').style.color = 'var(--bordo-vivo)';
-        $('cp-msg').textContent = 'Erro ao salvar: ' + err.message;
+        msg.style.color = 'var(--bordo-vivo)';
+        msg.textContent = 'Erro ao salvar: ' + err.message + (atualizando ? '' : ' — se falou de permissão, falta rodar o SQL do SUPABASE.md §41.');
       })
-      .finally(function(){ btn.disabled = false; btn.innerHTML = ic('save') + ' Salvar edição no histórico'; });
+      .finally(function(){ btn.disabled = false; btn.innerHTML = ic('save') + ' Salvar no histórico'; });
   });
 
   $('cp-optin-cta').addEventListener('click', function(){
