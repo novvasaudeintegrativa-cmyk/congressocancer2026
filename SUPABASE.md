@@ -4094,8 +4094,18 @@ async function ehGestor(uid: string) {
   return !!(p && p.ativo && p.papel === "gestor");
 }
 
+// primeiro nome com só a inicial maiúscula ("RAIMUNDA ANÁLIA" -> "Raimunda"); sem nome, "colega"
+function primeiroNome(nome: string) {
+  const partes = String(nome || "").replace(/\(.*?\)/g, " ").trim().split(/\s+/).filter(Boolean);
+  const titulo = /^(dr|dra|prof|profa|sr|sra)\.?$/i;
+  while (partes.length > 1 && titulo.test(partes[0])) partes.shift();
+  const p = partes[0] || "";
+  if (!p || titulo.test(p)) return "colega";
+  return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+}
+// {{nome}} em qualquer caixa ({{NOME}}, {{Nome}}) e com espaços ({{ nome }})
 function preencher(txt: string, nome: string) {
-  return String(txt || "").replace(/\{\{nome\}\}/g, nome || "");
+  return String(txt || "").replace(/\{\{\s*nome\s*\}\}/gi, primeiroNome(nome));
 }
 
 Deno.serve(async (req) => {
@@ -7382,3 +7392,237 @@ Deno.serve(async (req) => {
   return j({ ok: true, campanha_id: campanhaId, automatico: ehAutomatico, enviados, falhas, tentativas: pendentes.length, parou_por_tempo: parouPorTempo });
 });
 ```
+
+## 40. CRM — métricas dos posts do Instagram (Painel → "Posts do Instagram")
+
+**O que faz (26/09/2026):** traz pro CRM os números que aparecem em "Post insights" do
+Instagram: curtidas, comentários, compartilhamentos, salvamentos, visualizações, alcance
+(visualizadores), visitas ao perfil e novos seguidores, por postagem. Fica na tela **Painel**,
+só pro gestor, com totais no topo, ordenação e o botão **Atualizar do Instagram**.
+
+**Como funciona:** o botão chama a Edge Function `instagram-insights-sync`, que lista os posts
+recentes da conta do token, busca as métricas de cada um e grava em duas tabelas:
+`instagram_posts` (números mais recentes, uma linha por post) e `instagram_posts_hist`
+(uma foto por post por dia, pra ver evolução depois). O CRM só lê `instagram_posts`.
+
+### 40.1. SQL (rodar no SQL Editor)
+
+```sql
+create table if not exists public.instagram_posts (
+  media_id           text primary key,
+  permalink          text,
+  legenda            text,
+  tipo               text,
+  imagem_url         text,
+  publicado_em       timestamptz,
+  curtidas           integer,
+  comentarios        integer,
+  compartilhamentos  integer,
+  salvos             integer,
+  visualizacoes      integer,
+  alcance            integer,
+  interacoes         integer,
+  visitas_perfil     integer,
+  novos_seguidores   integer,
+  atualizado_em      timestamptz not null default now()
+);
+
+create table if not exists public.instagram_posts_hist (
+  media_id           text not null,
+  dia                date not null,
+  curtidas           integer,
+  comentarios        integer,
+  compartilhamentos  integer,
+  salvos             integer,
+  visualizacoes      integer,
+  alcance            integer,
+  interacoes         integer,
+  visitas_perfil     integer,
+  novos_seguidores   integer,
+  primary key (media_id, dia)
+);
+
+alter table public.instagram_posts      enable row level security;
+alter table public.instagram_posts_hist enable row level security;
+
+drop policy if exists "gestor ve posts instagram" on public.instagram_posts;
+create policy "gestor ve posts instagram" on public.instagram_posts
+  for select to authenticated using (public.eh_gestor());
+
+drop policy if exists "gestor ve historico posts instagram" on public.instagram_posts_hist;
+create policy "gestor ve historico posts instagram" on public.instagram_posts_hist
+  for select to authenticated using (public.eh_gestor());
+
+-- só a Edge Function (service role) grava
+revoke insert, update, delete on public.instagram_posts      from anon, authenticated;
+revoke insert, update, delete on public.instagram_posts_hist from anon, authenticated;
+grant select on public.instagram_posts, public.instagram_posts_hist to authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+### 40.2. Edge Function `instagram-insights-sync`
+
+Supabase → Edge Functions → Deploy a new function → nome **`instagram-insights-sync`** →
+editor → apaga tudo e cola. Usa o secret `INSTAGRAM_ACCESS_TOKEN` (o mesmo da
+`instagram-responder`). **Verify JWT ligado** (só o gestor chama).
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const IG_TOKEN = Deno.env.get("INSTAGRAM_ACCESS_TOKEN")?.trim();
+const URL_     = Deno.env.get("SUPABASE_URL")!;
+const ANON     = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SVC      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const GRAPH    = "https://graph.instagram.com/v23.0";
+
+const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+// nome da métrica na API -> coluna
+const METRICAS: Record<string, string> = {
+  views: "visualizacoes",
+  reach: "alcance",
+  saved: "salvos",
+  shares: "compartilhamentos",
+  total_interactions: "interacoes",
+  profile_visits: "visitas_perfil",
+  follows: "novos_seguidores",
+};
+
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${URL_}/auth/v1/user`, { headers: { apikey: ANON, authorization: `Bearer ${userToken}` } });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
+async function ehGestor(uid: string) {
+  const r = await fetch(`${URL_}/rest/v1/perfis?id=eq.${uid}&select=papel,ativo`, { headers: svcHeaders });
+  const rows = await r.json();
+  const p = rows && rows[0];
+  return !!(p && p.ativo && p.papel === "gestor");
+}
+
+async function ig(path: string) {
+  const r = await fetch(`${GRAPH}${path}`, { headers: { authorization: `Bearer ${IG_TOKEN}` } });
+  const b = await r.json().catch(() => ({}));
+  return { ok: r.ok, b };
+}
+
+function lerMetricas(b: any, saida: Record<string, number>) {
+  for (const m of b?.data ?? []) {
+    const col = METRICAS[m.name];
+    if (!col) continue;
+    const v = m.values?.[0]?.value ?? m.total_value?.value;
+    if (typeof v === "number") saida[col] = v;
+  }
+}
+
+// tenta todas juntas; se o Instagram recusar alguma (nem todo tipo de post tem todas),
+// tenta uma por uma e guarda só as que vierem
+async function insightsDe(id: string, erros: string[]) {
+  const saida: Record<string, number> = {};
+  const todas = await ig(`/${id}/insights?metric=${Object.keys(METRICAS).join(",")}`);
+  if (todas.ok) { lerMetricas(todas.b, saida); return saida; }
+  for (const nome of Object.keys(METRICAS)) {
+    const um = await ig(`/${id}/insights?metric=${nome}`);
+    if (um.ok) lerMetricas(um.b, saida);
+    else erros.push(`${nome}: ${um.b?.error?.message || "recusada"}`);
+  }
+  return saida;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method not allowed" }, 405);
+
+  const auth = req.headers.get("authorization") || "";
+  const u = await quemChamou(auth.replace(/^Bearer\s+/i, ""));
+  if (!u) return j({ erro: "não autenticado" }, 401);
+  if (!(await ehGestor(u.id))) return j({ erro: "só o gestor pode atualizar as métricas" }, 403);
+  if (!IG_TOKEN) return j({ erro: "INSTAGRAM_ACCESS_TOKEN não configurado" }, 500);
+
+  const body = await req.json().catch(() => ({}));
+  const limite = Math.min(Math.max(Number(body.limite) || 25, 1), 50);
+
+  const lista = await ig(
+    `/me/media?fields=id,caption,media_type,media_product_type,permalink,thumbnail_url,media_url,timestamp,like_count,comments_count&limit=${limite}`,
+  );
+  if (!lista.ok) return j({ erro: lista.b?.error?.message || "o Instagram não devolveu a lista de posts" }, 502);
+  const posts: any[] = lista.b?.data ?? [];
+
+  const erros: string[] = [];
+  const linhas: any[] = [];
+  const agora = new Date().toISOString();
+  const dia = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }); // AAAA-MM-DD
+
+  // 5 posts por vez, pra não estourar o tempo nem o limite da API
+  for (let i = 0; i < posts.length; i += 5) {
+    const grupo = posts.slice(i, i + 5);
+    const resultados = await Promise.all(grupo.map((p) => insightsDe(p.id, erros)));
+    grupo.forEach((p, k) => {
+      linhas.push({
+        media_id: p.id,
+        permalink: p.permalink ?? null,
+        legenda: p.caption ?? null,
+        tipo: p.media_product_type || p.media_type || null,
+        imagem_url: p.thumbnail_url || p.media_url || null,
+        publicado_em: p.timestamp ?? null,
+        curtidas: p.like_count ?? null,
+        comentarios: p.comments_count ?? null,
+        atualizado_em: agora,
+        ...resultados[k],
+      });
+    });
+  }
+
+  if (linhas.length) {
+    // PostgREST exige as mesmas colunas em todas as linhas do lote
+    const cols = ["media_id", "permalink", "legenda", "tipo", "imagem_url", "publicado_em", "curtidas", "comentarios",
+      "compartilhamentos", "salvos", "visualizacoes", "alcance", "interacoes", "visitas_perfil", "novos_seguidores", "atualizado_em"];
+    const norm = linhas.map((l) => Object.fromEntries(cols.map((c) => [c, l[c] ?? null])));
+    const r1 = await fetch(`${URL_}/rest/v1/instagram_posts?on_conflict=media_id`, {
+      method: "POST", headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(norm),
+    });
+    if (!r1.ok) return j({ erro: "não consegui gravar os posts: " + (await r1.text()).slice(0, 200) }, 500);
+
+    const colsHist = cols.filter((c) => !["permalink", "legenda", "tipo", "imagem_url", "publicado_em", "atualizado_em"].includes(c));
+    const hist = norm.map((l) => ({ ...Object.fromEntries(colsHist.map((c) => [c, l[c]])), dia }));
+    const r2 = await fetch(`${URL_}/rest/v1/instagram_posts_hist?on_conflict=media_id,dia`, {
+      method: "POST", headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(hist),
+    });
+    if (!r2.ok) erros.push("histórico: " + (await r2.text()).slice(0, 120));
+  }
+
+  const semMetricas = linhas.length > 0 && linhas.every((l) => l.visualizacoes == null && l.alcance == null);
+  return j({ ok: true, posts: linhas.length, sem_metricas: semMetricas, primeiro_erro: erros[0] ?? null });
+});
+```
+
+### 40.3. Se o Instagram recusar os números (permissão do token)
+
+Os números por post exigem a permissão **`instagram_business_manage_insights`** no token
+(a lista de posts, com curtidas e comentários, só precisa da `instagram_business_basic`).
+Se depois do primeiro clique em "Atualizar do Instagram" o CRM disser que achou os posts mas
+"o Instagram não liberou os números", é isso:
+
+1. developers.facebook.com → seu app → **Instagram** (API do Instagram com login) → gerar o
+   token de novo, marcando a permissão de **insights** (`instagram_business_manage_insights`).
+2. Supabase → Edge Functions → **Secrets** → atualizar `INSTAGRAM_ACCESS_TOKEN` com o novo.
+3. Clicar de novo em "Atualizar do Instagram".
+
+O token novo vale também pras funções `instagram-responder` e `instagram-post-link`.
+
+**Limitações:**
+- Post feito em **colaboração** (ex.: com o perfil de uma palestrante) só devolve números pra
+  conta que o publicou; se vier vazio nesse post, é isso, e os demais não são afetados.
+- Post com menos de algumas horas pode ter alguns números ainda zerados.
+- A Meta troca nomes de métricas de tempos em tempos; a função ignora a que não existir mais e
+  mostra o motivo no aviso.
+- Stories e posts muito antigos podem não ter todas as métricas.

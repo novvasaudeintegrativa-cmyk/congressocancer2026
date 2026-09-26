@@ -345,11 +345,21 @@
       return;
     }
     var head = '<thead><tr><th>Campanha</th><th>Origem</th><th class="n">Sessões</th><th class="n">Initiate checkout</th></tr></thead>';
-    var body = rows.map(function(r){
+    // macros da Meta que não foram trocadas ({{ad.name}} etc.): clique em prévia/link copiado do Gerenciador, não é tráfego real
+    function ehMacro(r){ return /\{\{[^}]*\}\}/.test([r.campaign, r.source, r.medium].join(' ')); }
+    var reais = rows.filter(function(r){ return !ehMacro(r); });
+    var previas = rows.filter(ehMacro);
+    var body = reais.map(function(r){
       var org = [r.source, r.medium].filter(function(x){ return x; }).join(' · ') || '—';
       return '<tr><td>' + (r.campaign||'(sem campaign)') + '</td><td style="color:var(--soft)">' + org +
              '</td><td class="n">' + fmt(r.sessoes) + '</td><td class="n">' + fmt(r.checkouts) + '</td></tr>';
     }).join('');
+    if (previas.length){
+      var sess = 0, chk = 0;
+      previas.forEach(function(r){ sess += Number(r.sessoes) || 0; chk += Number(r.checkouts) || 0; });
+      body += '<tr style="opacity:.6;font-style:italic;"><td>Prévia de anúncio</td><td style="color:var(--soft)">macros da Meta não resolvidas (teste/link copiado)</td>' +
+              '<td class="n">' + fmt(sess) + '</td><td class="n">' + fmt(chk) + '</td></tr>';
+    }
     $('camp').innerHTML = head + '<tbody>' + body + '</tbody>';
   }
 

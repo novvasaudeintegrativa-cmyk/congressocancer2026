@@ -684,6 +684,26 @@
     </div>
   </div>
 
+  <div id="view-posts-ig" class="painel" hidden>
+    <div class="sec-crm"><span>Posts do Instagram</span><span class="cont" id="posts-ig-cont"></span></div>
+    <div class="aviso">Números de cada postagem, direto do Instagram (curtidas, comentários, compartilhamentos, salvamentos, visualizações, alcance e visitas ao perfil). Clique em "Atualizar do Instagram" pra buscar os números mais recentes — cada clique também guarda uma foto do dia pra acompanhar a evolução.</div>
+    <div class="nx-tiles" id="posts-ig-tiles"></div>
+    <div class="filtros">
+      <select id="posts-ig-ordem">
+        <option value="interacoes">Mais engajamento</option>
+        <option value="visualizacoes">Mais visualizações</option>
+        <option value="alcance">Maior alcance</option>
+        <option value="recentes">Mais recentes</option>
+      </select>
+      <button type="button" class="btn-atualizar" id="posts-ig-atualizar">Atualizar do Instagram</button>
+    </div>
+    <div class="cp-msg" id="posts-ig-msg"></div>
+    <div class="nx-rolagem"><table class="nx-tabela">
+      <thead><tr><th>Post</th><th>Curtidas</th><th>Coment.</th><th>Compart.</th><th>Salvos</th><th>Visualizações</th><th>Alcance</th><th>Visitas ao perfil</th><th>Novos seg.</th></tr></thead>
+      <tbody id="posts-ig-lista"></tbody>
+    </table></div>
+  </div>
+
   <div id="view-contatos" class="painel">
     <div class="sec-crm"><span>Contatos</span><span class="cont" id="contatos-cont"></span></div>
     <div class="filtros">
@@ -1153,6 +1173,7 @@
         carregarCampanhas(); carregarGeracoesIA();
         carregarCampanhasWhatsapp(); carregarTemplatesWhatsapp(); carregarLimiteMetaResumo();
         carregarOptinWhatsapp();
+        carregarPostsInstagram();
         if (user.email) $('cp-teste-email').value = user.email;
         $('btn-ver-como').hidden = false;
       }
@@ -1198,7 +1219,7 @@
     pipeline:  ['view-instagram', 'view-pipeline', 'view-conversas', 'view-auditorio'],
     contatos:  ['view-contatos'],
     tarefas:   ['view-tarefas'],
-    painel:    ['view-painel'],
+    painel:    ['view-painel', 'view-posts-ig'],
     campanhas: ['view-qualidade-whatsapp', '.col-campanhas'],
     equipe:    ['view-equipe']
   };
@@ -1240,7 +1261,7 @@
     $('aviso-gestor').hidden = !estado.ehGestor || simulando;
     if (estado.ehGestor){
       $('btn-ver-como').textContent = simulando ? 'Voltar a visualizar como Gestor' : 'Visualizar como Vendedor';
-      ['view-equipe','view-campanhas','view-campanhas-whatsapp','view-optin-whatsapp'].forEach(function(id){
+      ['view-equipe','view-campanhas','view-campanhas-whatsapp','view-optin-whatsapp','view-posts-ig'].forEach(function(id){
         $(id).hidden = simulando;
       });
     }
@@ -2619,6 +2640,8 @@
     }
     var cab = parseLinha(linhas[0]).map(function(h){ return h.toLowerCase().trim(); });
     var iNome = cab.indexOf('nome');
+    // aceita cabeçalhos como "Cliente / Nome" (exportação da Eduzz)
+    if (iNome === -1) iNome = cab.findIndex(function(h){ return h.indexOf('nome') !== -1; });
     var iEmail = cab.indexOf('email');
     if (iEmail === -1) iEmail = cab.findIndex(function(h){ return h.indexOf('mail') !== -1; });
     var iLote = cab.indexOf('lote');
@@ -2772,6 +2795,15 @@
     }).finally(function(){ btn.disabled = false; btn.innerHTML = ic('sparkles') + ' Gerar com IA'; });
   });
 
+  // primeiro nome com só a inicial maiúscula ("RAIMUNDA ANÁLIA" -> "Raimunda"); sem nome, "colega"
+  function primeiroNomeEmail(nome){
+    var partes = String(nome || '').replace(/\(.*?\)/g, ' ').trim().split(/\s+/).filter(Boolean);
+    while (partes.length > 1 && /^(dr|dra|prof|profa|sr|sra)\.?$/i.test(partes[0])) partes.shift();
+    var p = partes[0] || '';
+    if (!p || /^(dr|dra|prof|profa|sr|sra)\.?$/i.test(p)) return 'colega';
+    return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+  }
+
   $('cp-teste-btn').addEventListener('click', function(){
     var destino = $('cp-teste-email').value.trim();
     var assunto = $('cp-assunto').value.trim();
@@ -2786,9 +2818,10 @@
       $('cp-teste-msg').textContent = 'Preenche assunto e corpo antes de testar.';
       return;
     }
-    var nomeTeste = (estado.eu && estado.eu.nome) || 'Teste';
-    var assuntoTeste = '[TESTE] ' + assunto.replace(/\{\{nome\}\}/g, nomeTeste);
-    var corpoTeste = corpo.replace(/\{\{nome\}\}/g, nomeTeste);
+    // mesma regra do envio real (campanha-email-lote): {{nome}} em qualquer caixa vira o primeiro nome
+    var nomeTeste = primeiroNomeEmail((estado.eu && estado.eu.nome) || '');
+    var assuntoTeste = '[TESTE] ' + assunto.replace(/\{\{\s*nome\s*\}\}/gi, nomeTeste);
+    var corpoTeste = corpo.replace(/\{\{\s*nome\s*\}\}/gi, nomeTeste);
     var btn = this; btn.disabled = true; btn.textContent = 'Enviando…';
     $('cp-teste-msg').style.color = 'var(--soft)'; $('cp-teste-msg').textContent = '';
     emailEnviar(destino, assuntoTeste, corpoTeste, null).then(function(){
@@ -3309,6 +3342,76 @@
   });
 
   // ---------- custo de IA (Cris + campanhas, só gestor) ----------
+  // ---------- Posts do Instagram (métricas por postagem, só gestor) ----------
+  // Os números ficam na tabela instagram_posts (SUPABASE.md §40); a Edge Function
+  // instagram-insights-sync busca no Instagram e grava. O CRM só lê a tabela.
+  var postsIg = [];
+  function attrEsc(t){ return esc(t).replace(/"/g, '&quot;'); }
+  function nPost(v){ return v == null ? '—' : Number(v).toLocaleString('pt-BR'); }
+  function somaPosts(campo){ return postsIg.reduce(function(a, p){ return a + (Number(p[campo]) || 0); }, 0); }
+
+  function carregarPostsInstagram(){
+    return apiGet('instagram_posts?select=*&order=publicado_em.desc&limit=100')
+      .then(function(rows){ postsIg = rows || []; renderPostsInstagram(); })
+      .catch(function(err){
+        $('posts-ig-lista').innerHTML = '<tr><td colspan="9" style="color:var(--bordo-vivo)">Erro: ' + esc(err.message) + ' — falta rodar o SQL do SUPABASE.md §40?</td></tr>';
+      });
+  }
+
+  function renderPostsInstagram(){
+    var ordem = $('posts-ig-ordem').value;
+    var lista = postsIg.slice();
+    lista.sort(function(a, b){
+      if (ordem === 'recentes') return String(b.publicado_em || '').localeCompare(String(a.publicado_em || ''));
+      return (Number(b[ordem]) || 0) - (Number(a[ordem]) || 0);
+    });
+    $('posts-ig-cont').textContent = postsIg.length + ' post(s)';
+    $('posts-ig-tiles').innerHTML =
+      '<div class="nx-tile nx-tile-forte"><b>' + nPost(somaPosts('visualizacoes')) + '</b><span>visualizações</span></div>' +
+      '<div class="nx-tile"><b>' + nPost(somaPosts('alcance')) + '</b><span>alcance somado</span></div>' +
+      '<div class="nx-tile"><b>' + nPost(somaPosts('interacoes')) + '</b><span>interações</span></div>' +
+      '<div class="nx-tile nx-tile-claro"><b>' + nPost(somaPosts('novos_seguidores')) + '</b><span>novos seguidores</span></div>';
+    if (!lista.length){
+      $('posts-ig-lista').innerHTML = '<tr><td colspan="9" style="color:var(--soft)">Nenhum post carregado ainda. Clique em "Atualizar do Instagram".</td></tr>';
+      return;
+    }
+    $('posts-ig-lista').innerHTML = lista.map(function(p){
+      var img = /^https:\/\//.test(p.imagem_url || '') ? '<img src="' + attrEsc(p.imagem_url) + '" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:10px;flex:none;">' : '';
+      var legenda = (p.legenda || '').replace(/\s+/g, ' ').trim();
+      if (legenda.length > 90) legenda = legenda.slice(0, 90) + '…';
+      var data = p.publicado_em ? new Date(p.publicado_em).toLocaleDateString('pt-BR') : '';
+      var abrir = /^https:\/\//.test(p.permalink || '') ? ' · <a href="' + attrEsc(p.permalink) + '" target="_blank" rel="noopener">abrir</a>' : '';
+      return '<tr><td><div style="display:flex;gap:10px;align-items:center;min-width:220px;">' + img +
+        '<div><div>' + esc(legenda || '(sem legenda)') + '</div><div style="font-size:12px;color:var(--soft);">' + esc(data) + (p.tipo ? ' · ' + esc(String(p.tipo).toLowerCase()) : '') + abrir + '</div></div></div></td>' +
+        '<td>' + nPost(p.curtidas) + '</td><td>' + nPost(p.comentarios) + '</td><td>' + nPost(p.compartilhamentos) + '</td><td>' + nPost(p.salvos) + '</td>' +
+        '<td>' + nPost(p.visualizacoes) + '</td><td>' + nPost(p.alcance) + '</td><td>' + nPost(p.visitas_perfil) + '</td><td>' + nPost(p.novos_seguidores) + '</td></tr>';
+    }).join('');
+  }
+
+  $('posts-ig-ordem').addEventListener('change', renderPostsInstagram);
+  $('posts-ig-atualizar').addEventListener('click', function(){
+    var btn = this; btn.disabled = true; btn.textContent = 'Buscando no Instagram…';
+    var msg = $('posts-ig-msg'); msg.style.color = 'var(--soft)'; msg.textContent = '';
+    fetch(SUPABASE_URL + '/functions/v1/instagram-insights-sync', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ limite: 30 })
+    }).then(function(r){ return r.text().then(function(t){
+      var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
+      if (!r.ok || !data || data.erro) throw new Error((data && data.erro && (data.erro.message || data.erro)) || ('HTTP ' + r.status));
+      return data;
+    }); }).then(function(data){
+      msg.style.color = data.sem_metricas ? 'var(--bordo-vivo)' : 'var(--verde)';
+      msg.textContent = data.sem_metricas
+        ? 'Achei ' + data.posts + ' post(s), mas o Instagram não liberou os números: ' + (data.primeiro_erro || 'sem detalhe') + ' (provável falta da permissão instagram_business_manage_insights no token — SUPABASE.md §40.3).'
+        : data.posts + ' post(s) atualizado(s).' + (data.primeiro_erro ? ' Algumas métricas não vieram: ' + data.primeiro_erro : '');
+      return carregarPostsInstagram();
+    }).catch(function(err){
+      msg.style.color = 'var(--bordo-vivo)';
+      msg.textContent = 'Não deu pra atualizar: ' + (err && err.message ? err.message : err);
+    }).finally(function(){ btn.disabled = false; btn.textContent = 'Atualizar do Instagram'; });
+  });
+
   // ---------- CTA de opt-in WhatsApp no corpo do e-mail ----------
   var LINK_OPTIN_WHATSAPP = 'https://wa.me/5511934873737?text=Quero%20receber%20novidades%20do%20Congresso%20C%C3%A2ncer%202026%20pelo%20WhatsApp%20da%20Novva%20Sa%C3%BAde%20Integrativa';
   $('cp-salvar-edicao').addEventListener('click', function(){
