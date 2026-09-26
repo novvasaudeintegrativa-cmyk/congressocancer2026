@@ -2729,16 +2729,23 @@
         '<td><div class="cp-nome">' + esc(c.nome) + '</div><div class="cp-assunto">' + esc(c.assunto) + '</div></td>' +
         '<td class="cp-cont"><b>' + c.enviados + '</b> enviados · ' + c.pendentes + ' pendentes' +
           (c.falhas ? ' · <span class="cp-falhas">' + c.falhas + ' falhas</span>' : '') + ' · ' + c.total + ' total</td>' +
-        '<td style="text-align:right"><button type="button" class="cp-enviar" data-id="' + c.id + '"' + (c.pendentes ? '' : ' disabled') + '>' +
-          (c.pendentes ? 'Enviar próximo lote' : 'Concluída') + '</button></td>' +
+        '<td style="text-align:right;white-space:nowrap;">' +
+          (c.pendentes ? '<input type="number" class="cp-qtd" min="1" max="100" value="' + Math.min(c.pendentes, 100) + '" title="quantos e-mails enviar agora (máximo 100 por vez)" style="width:64px;margin-right:6px;">' : '') +
+          '<button type="button" class="cp-enviar" data-id="' + c.id + '" data-nome="' + attrEsc(c.nome) + '" data-assunto="' + attrEsc(c.assunto) + '" data-pend="' + c.pendentes + '"' + (c.pendentes ? '' : ' disabled') + '>' +
+          (c.pendentes ? 'Enviar lote' : 'Concluída') + '</button></td>' +
       '</tr>';
     }).join('') || '<tr><td>Nenhuma campanha ainda.</td></tr>';
 
     $('campanhas-lista').querySelectorAll('.cp-enviar').forEach(function(btn){
       btn.addEventListener('click', function(){
         var id = this.dataset.id;
+        var campo = this.parentNode.querySelector('.cp-qtd');
+        var qtd = Math.floor(Number(campo && campo.value));
+        if (!(qtd >= 1)){ alert('Digite quantos e-mails enviar (de 1 a 100).'); return; }
+        qtd = Math.min(qtd, 100, Number(this.dataset.pend) || 100);
+        if (!confirm('Enviar ' + qtd + ' e-mail(s) da campanha "' + this.dataset.nome + '"?\n\nAssunto: ' + this.dataset.assunto + '\n\nOs primeiros ' + qtd + ' contatos pendentes da lista vão receber agora, na ordem do arquivo. Isso não pode ser desfeito.')) return;
         this.disabled = true; this.textContent = 'Enviando…';
-        campanhaEnviarLote(id).then(function(res){
+        campanhaEnviarLote(id, qtd).then(function(res){
           alert('Lote enviado: ' + res.enviados + ' ok' + (res.falhas ? ', ' + res.falhas + ' falharam' : '') + '.');
           return carregarCampanhas();
         }).catch(function(err){
@@ -2749,11 +2756,11 @@
     });
   }
 
-  function campanhaEnviarLote(campanhaId){
+  function campanhaEnviarLote(campanhaId, lote){
     return fetch(SUPABASE_URL + '/functions/v1/campanha-email-lote', {
       method: 'POST',
       headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ campanha_id: Number(campanhaId) })
+      body: JSON.stringify({ campanha_id: Number(campanhaId), lote: Number(lote) || 100 })
     }).then(function(r){ return r.text().then(function(t){
       var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
       if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
