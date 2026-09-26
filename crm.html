@@ -348,6 +348,14 @@
   .campanhas-tabela{width:100%;border-collapse:collapse;font-size:13px;}
   .campanhas-tabela td{padding:10px 14px;border-top:1px solid var(--linha);vertical-align:middle;}
   .campanhas-tabela tr:first-child td{border-top:0;}
+  .cp-edit-linha td{background:#faf8f6;}
+  .cp-edit-linha label{display:block;margin:8px 0 4px;font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;}
+  .cp-edit-linha input,.cp-edit-linha textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--linha);border-radius:12px;font:inherit;font-size:13px;background:#fff;}
+  .cp-edit-linha textarea{resize:vertical;}
+  .cp-edit-linha .dica{font-size:11px;color:var(--faint);margin-top:6px;}
+  .cp-edit-acoes{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+  .cp-edit-acoes button{border-radius:999px;padding:8px 16px;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;border:1px solid var(--bordo);background:transparent;color:var(--bordo);}
+  .cp-edit-acoes .cp-edit-salvar{background:var(--bordo);color:#fff;}
   /* celular: cada campanha vira um bloco (senão o campo de quantidade e o botão ficam escondidos à direita) */
   @media (max-width:700px){
     #campanhas-lista tr{display:block;padding:6px 0;border-top:1px solid var(--linha);}
@@ -2757,9 +2765,46 @@
           (c.pendentes ? '<input type="number" class="cp-qtd" min="1" max="' + EMAIL_LIMITE_DIA + '" value="' + Math.min(c.pendentes, EMAIL_LIMITE_DIA) + '" title="quantos e-mails enviar agora (máximo ' + EMAIL_LIMITE_DIA + ' por dia no plano gratuito do Resend)" style="width:64px;margin-right:6px;">' : '') +
           '<button type="button" class="cp-enviar" data-id="' + c.id + '" data-nome="' + attrEsc(c.nome) + '" data-assunto="' + attrEsc(c.assunto) + '" data-pend="' + c.pendentes + '"' + (c.pendentes ? '' : ' disabled') + '>' +
           (c.pendentes ? 'Enviar lote' : 'Concluída') + '</button>' +
+          ' <button type="button" class="cp-editar" data-id="' + c.id + '" title="editar o assunto e o corpo desta campanha" style="background:transparent;color:var(--bordo);border:1px solid var(--bordo);border-radius:999px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;margin-left:6px;">Editar</button>' +
           ' <button type="button" class="cp-apagar" data-id="' + c.id + '" data-nome="' + attrEsc(c.nome) + '" data-enviados="' + c.enviados + '" data-total="' + c.total + '" title="apagar esta campanha e a lista de contatos dela" style="background:transparent;color:var(--bordo);border:1px solid var(--bordo);border-radius:999px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;margin-left:6px;">Apagar</button></td>' +
-      '</tr>';
+      '</tr>' +
+      // painel de edição do texto (aparece ao clicar em "Editar")
+      '<tr class="cp-edit-linha" id="cp-edit-' + c.id + '" hidden><td colspan="3">' +
+        '<label>Assunto</label><input type="text" class="cp-edit-assunto" value="' + attrEsc(c.assunto) + '">' +
+        '<label>Corpo do e-mail</label><textarea class="cp-edit-corpo" rows="12">' + esc(c.corpo || '') + '</textarea>' +
+        '<div class="dica">Vale só pros <b>próximos</b> envios: quem já recebeu não muda. Use {{nome}} pro primeiro nome. O rodapé de descadastro entra sozinho no fim.</div>' +
+        '<div class="cp-edit-acoes"><button type="button" class="cp-edit-salvar" data-id="' + c.id + '">Salvar texto</button>' +
+        '<button type="button" class="cp-edit-cancelar" data-id="' + c.id + '">Cancelar</button><span class="cp-edit-msg"></span></div>' +
+      '</td></tr>';
     }).join('') || '<tr><td>Nenhuma campanha ainda.</td></tr>';
+
+    // "Editar": abre/fecha o painel; "Salvar texto" grava assunto e corpo da campanha
+    $('campanhas-lista').querySelectorAll('.cp-editar').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var linha = $('cp-edit-' + this.dataset.id);
+        if (linha) linha.hidden = !linha.hidden;
+      });
+    });
+    $('campanhas-lista').querySelectorAll('.cp-edit-cancelar').forEach(function(btn){
+      btn.addEventListener('click', function(){ carregarCampanhas(); });
+    });
+    $('campanhas-lista').querySelectorAll('.cp-edit-salvar').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var linha = $('cp-edit-' + this.dataset.id);
+        var assunto = linha.querySelector('.cp-edit-assunto').value.trim();
+        var corpo = linha.querySelector('.cp-edit-corpo').value.trim();
+        var msg = linha.querySelector('.cp-edit-msg');
+        if (!assunto || !corpo){ msg.style.color = 'var(--bordo-vivo)'; msg.textContent = 'Preencha assunto e corpo.'; return; }
+        var b = this; b.disabled = true; b.textContent = 'Salvando…'; msg.textContent = '';
+        apiPatch('campanhas_email?id=eq.' + encodeURIComponent(this.dataset.id), { assunto: assunto, corpo: corpo }, { Prefer: 'return=minimal' })
+          .then(function(){ return carregarCampanhas(); })
+          .catch(function(err){
+            b.disabled = false; b.textContent = 'Salvar texto';
+            msg.style.color = 'var(--bordo-vivo)';
+            msg.textContent = 'Erro: ' + err.message + ' — se falou de permissão, falta rodar o SQL do SUPABASE.md §43.';
+          });
+      });
+    });
 
     $('campanhas-lista').querySelectorAll('.cp-apagar').forEach(function(btn){
       btn.addEventListener('click', function(){

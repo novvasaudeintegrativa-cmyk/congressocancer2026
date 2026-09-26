@@ -7857,3 +7857,25 @@ O arquivo `descadastro.html` (raiz do site) é a página de confirmação; vai p
    deve aparecer "Cancelar inscrição" ao lado do remetente.
 2. Clique no link → página com o botão → confirme → "Pronto, você saiu da lista".
 3. Supabase → Table Editor → `email_descadastros` deve ter o seu e-mail. Remova a linha pra voltar a receber.
+
+## 43. CRM — editar o texto de uma campanha de e-mail
+
+**Por quê (26/09/2026):** o assunto e o corpo ficavam travados depois de criar a campanha (o §22.1 fez
+`revoke update`). Pra trocar o texto dos envios que faltam era preciso apagar e recriar a campanha.
+
+**Solução:** botão **Editar** na linha de cada campanha de e-mail (abre um painel com assunto e corpo, e
+"Salvar texto"). Vale só pros próximos envios; quem já recebeu não muda. O banco libera **só** essas duas
+colunas, e só pro gestor.
+
+### 43.1. SQL (rodar no SQL Editor)
+
+```sql
+grant update (assunto, corpo) on public.campanhas_email to authenticated;
+
+drop policy if exists "gestor edita campanhas" on public.campanhas_email;
+create policy "gestor edita campanhas" on public.campanhas_email
+  for update to authenticated
+  using (public.eh_gestor()) with check (public.eh_gestor());
+
+notify pgrst, 'reload schema';
+```
