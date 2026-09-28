@@ -104,6 +104,7 @@
   .badge.avancado{background:rgba(185,45,61,.13);color:var(--bordo-vivo);}
   .badge.origem{background:#efe8e4;color:var(--soft);}
   .badge.vsl{background:rgba(31,138,76,.13);color:var(--verde);}
+  .badge.compra{background:rgba(31,138,76,.2);color:var(--verde);font-weight:900;}
   .badge.campanha-wa{background:rgba(47,111,158,.14);color:var(--azul);}
   .badge.tempo-ok{background:rgba(31,138,76,.13);color:var(--verde);}
   .badge.tempo-espera{background:rgba(201,139,31,.16);color:var(--dourado);}
@@ -176,6 +177,12 @@
   .seat.aud-geral-seat.cheio{background:var(--bordo);border-color:var(--bordo-vivo);}
   .auditorio-legenda{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:16px;font-size:11px;color:var(--soft);}
   .auditorio-legenda .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px;}
+  .aud-vendas{display:flex;flex-direction:column;gap:8px;max-width:640px;margin:0 auto;}
+  .aud-venda{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border:1px solid var(--linha);border-radius:10px;background:var(--card);}
+  .aud-venda .nome{font-family:var(--tit);font-weight:700;font-size:12.5px;}
+  .aud-venda .produto{font-size:11px;color:var(--soft);margin-top:1px;}
+  .aud-venda .quando{font-size:11px;color:var(--faint);white-space:nowrap;flex-shrink:0;}
+  .aud-vendas-vazio{text-align:center;font-size:12px;color:var(--faint);padding:10px;}
   .dot.aud-vip-cheio{background:var(--dourado);}
   .dot.aud-vip-vazio{background:var(--track);border:1px solid #e4c583;}
   .dot.aud-geral-cheio{background:var(--bordo);}
@@ -676,6 +683,9 @@
       <span><i class="dot aud-geral-cheio"></i>Lote vendido</span>
       <span><i class="dot aud-geral-vazio"></i>Lote em aberto</span>
     </div>
+
+    <div class="sec-crm" style="margin-top:24px;"><span>Últimas compras</span></div>
+    <div class="aud-vendas" id="aud-vendas-lista"></div>
   </div>
 
   <div id="view-painel" class="painel">
@@ -1422,6 +1432,30 @@
     }).catch(function(err){
       $('aud-atualizado').textContent = 'erro ao carregar: ' + err.message;
     });
+
+    apiPost('rpc/rpc_vendas_recentes', {}).then(function(lista){
+      renderVendasRecentes(lista || []);
+    }).catch(function(err){
+      $('aud-vendas-lista').innerHTML = '<div class="aud-vendas-vazio">erro ao carregar compras: ' + esc(err.message) + '</div>';
+    });
+  }
+
+  // lista simples das últimas compras confirmadas (dia+hora), pra quem
+  // pergunta "quando essa pessoa comprou" sem precisar abrir o Supabase
+  function renderVendasRecentes(lista){
+    if (!lista.length){
+      $('aud-vendas-lista').innerHTML = '<div class="aud-vendas-vazio">Nenhuma compra confirmada ainda.</div>';
+      return;
+    }
+    $('aud-vendas-lista').innerHTML = lista.map(function(v){
+      var valor = v.valor != null ? 'R$ ' + Number(v.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '';
+      var produtoLinha = [v.produto, valor].filter(Boolean).join(' · ');
+      return '<div class="aud-venda">' +
+        '<div><div class="nome">' + esc(v.cliente_nome || '(sem nome)') + '</div>' +
+        (produtoLinha ? '<div class="produto">' + esc(produtoLinha) + '</div>' : '') + '</div>' +
+        '<div class="quando">' + esc(fmtDataHora(v.comprado_em)) + '</div>' +
+      '</div>';
+    }).join('');
   }
 
   // ---------- dados ----------
@@ -1770,7 +1804,8 @@
       var vslTxt = l.vsl_progress >= 100 ? 'VSL assistida' : (l.vsl_progress <= 0 ? 'VSL iniciada' : 'VSL ' + l.vsl_progress + '%');
       vslBadge = '<span class="badge vsl" title="Progresso assistido da VSL">' + ic('film', 10) + ' ' + vslTxt + '</span>';
     }
-    var badges = nivelBadge + vslBadge + tempoRespostaBadge(l) + (origem ? '<span class="badge origem">' + esc(origem) + '</span>' : '');
+    var compraBadge = l.comprado_em ? '<span class="badge compra" title="Comprou em ' + esc(fmtDataHora(l.comprado_em)) + '">' + ic('check', 10) + ' comprou ' + esc(fmtDataHora(l.comprado_em)) + '</span>' : '';
+    var badges = nivelBadge + vslBadge + compraBadge + tempoRespostaBadge(l) + (origem ? '<span class="badge origem">' + esc(origem) + '</span>' : '');
     var lembreteAlerta = lembreteVencido(l.lembrete_em);
     var tituloNota = (l.nota ? l.nota : 'Adicionar anotação') + (l.lembrete_em ? '\nLembrete: ' + fmtQuando(l.lembrete_em) : '');
     var ICON_WA = '<svg class="ic-wa" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm0 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 012.41 5.82c0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.4-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.188 8.188 0 01-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23zm-4.55 4.72c-.15 0-.4.06-.6.29-.21.23-.8.78-.8 1.91s.82 2.22.94 2.37c.11.15 1.6 2.57 3.97 3.5 1.96.77 2.36.62 2.78.58.42-.04 1.36-.55 1.55-1.09.19-.53.19-.99.14-1.09-.06-.1-.21-.15-.44-.27-.23-.11-1.36-.67-1.57-.75-.21-.08-.36-.11-.51.12-.15.23-.59.75-.72.9-.13.15-.26.17-.49.06-.23-.12-.96-.35-1.83-1.13-.68-.6-1.13-1.35-1.27-1.58-.13-.23-.01-.35.1-.47.11-.11.23-.27.35-.4.11-.13.15-.23.23-.38.08-.15.04-.29-.02-.4-.06-.11-.51-1.24-.71-1.7-.19-.45-.38-.39-.51-.4h-.44z"/></svg>';
@@ -1913,6 +1948,15 @@
     var hm = d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
     if (d.toDateString() === hoje.toDateString()) return hm;
     return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) + ' ' + hm;
+  }
+  // sempre dia+hora, mesmo se for hoje — diferente de fmtQuando() (que some o
+  // dia quando é hoje), porque uma data de compra precisa ficar inequívoca
+  // mesmo dias depois, sem precisar adivinhar se foi "hoje" pra quem olha.
+  function fmtDataHora(iso){
+    if (!iso) return '';
+    var d = new Date(iso);
+    return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) + ' ' +
+      d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
   }
   // lembrete da anotação: "vencido" = data/hora marcada já chegou (hoje ou antes) —
   // é o gatilho pro botão de anotação piscar como alerta.

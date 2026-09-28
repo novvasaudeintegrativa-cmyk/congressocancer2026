@@ -876,6 +876,11 @@ Deno.serve(async (req) => {
     status:        String(pick(body, ["data.status", "situacao", "status"]) ?? ""),
     cliente_nome:  pick(body, ["data.buyer.name", "nome_cliente", "customer_name"]),
     cliente_email: pick(body, ["data.buyer.email", "email_cliente", "customer_email"]),
+    // data/hora oficial do pagamento (chute de nomes comuns — mesma ressalva
+    // de honestidade do resto do mapeamento: confirme olhando a coluna `raw`
+    // depois de uma venda de teste). Se não achar nada, fica null e o CRM usa
+    // created_at (quando o webhook recebeu a notificação) como veio no §44.
+    pago_em:       pick(body, ["data.dates.paid", "data.paid_at", "data_pagamento", "date_paid"]),
     // UTM: a Eduzz so devolve isso se a URL do checkout ja chegou com os
     // parametros (ver index.html, que repassa os UTMs capturados no site
     // pro link chk.eduzz.com antes do clique) — path oficial em data.utm.*
@@ -7879,3 +7884,169 @@ create policy "gestor edita campanhas" on public.campanhas_email
 
 notify pgrst, 'reload schema';
 ```
+
+## 44. CRM — data/hora da compra no card do lead (Kanban)
+
+**Por quê (28/09/2026):** a tabela `vendas` (§11) já guarda `created_at`
+(quando o webhook da Eduzz gravou a venda), mas isso nunca aparecia em
+lugar nenhum do CRM — pra saber se e quando um lead comprou era preciso ir
+direto no Table Editor. Agora o `rpc_crm_pipeline()` cruza `lead_status`
+com `vendas` pelo e-mail e o card ganha um selo "comprou em dd/mm hh:mm".
+
+Também some uma coluna nova, `vendas.pago_em`, pro horário **oficial**
+que a Eduzz manda no payload (quando a gente descobrir o nome certo do
+campo — ver ressalva de honestidade do §11 e o `pick()` novo no
+`eduzz-webhook`). Até lá ela fica `null` e o selo cai pra `created_at`.
+
+### 44.1. SQL (rodar no SQL Editor)
+
+```sql
+alter table public.vendas add column if not exists pago_em timestamptz;
+
+create or replace function public.rpc_crm_pipeline()
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(row_to_json(t) order by t.captado_em desc nulls last), '[]'::json)
+  from (
+    select
+      s.whatsapp,
+      coalesce(l.nome, s.nome_whatsapp) as nome,
+      coalesce(s.canal, 'whatsapp') as canal,
+      l.email, l.profissao, l.nivel, l.pontuacao,
+      l.utm_source, l.utm_campaign,
+      coalesce(s.criado_em, l.captado_em) as captado_em,
+      coalesce(s.etapa, 'novo') as etapa,
+      s.nota, s.lembrete_em, coalesce(s.urgente, false) as urgente, s.atribuido_a,
+      pa.nome as atribuido_nome,
+      s.atualizado_em,
+      cw.nome as campanha_whatsapp_nome,
+      (select max(
+         case e.event
+           when 'VideoComplete' then 100
+           when 'VideoProgress' then (e.props->>'percent')::int
+           when 'VideoPlay' then 0
+           else null
+         end)
+       from public.events e
+       where e.visitor_id = l.visitor_id
+         and lower(coalesce(e.props->>'placement','')) = 'vsl'
+         and e.event in ('VideoPlay','VideoProgress','VideoComplete')
+      ) as vsl_progress,
+      (
+        select coalesce(m.wa_timestamp, m.criado_em)
+        from public.mensagens m
+        where public.wa_norm(m.lead_whatsapp) = public.wa_norm(s.whatsapp) and m.direcao = 'recebida'
+        order by coalesce(m.wa_timestamp, m.criado_em) desc
+        limit 1
+      ) as ultima_recebida_em,
+      (
+        select min(coalesce(m.wa_timestamp, m.criado_em))
+        from public.mensagens m
+        where public.wa_norm(m.lead_whatsapp) = public.wa_norm(s.whatsapp)
+          and m.direcao = 'enviada'
+          and coalesce(m.wa_timestamp, m.criado_em) >= (
+            select coalesce(m2.wa_timestamp, m2.criado_em)
+            from public.mensagens m2
+            where public.wa_norm(m2.lead_whatsapp) = public.wa_norm(s.whatsapp) and m2.direcao = 'recebida'
+            order by coalesce(m2.wa_timestamp, m2.criado_em) desc
+            limit 1
+          )
+      ) as respondido_em,
+      (
+        select coalesce(v.pago_em, v.created_at)
+        from public.vendas v
+        where l.email is not null
+          and lower(v.cliente_email) = lower(l.email)
+          and (v.status ilike 'pag%' or v.status ilike 'paid')
+        order by coalesce(v.pago_em, v.created_at) desc
+        limit 1
+      ) as comprado_em
+    from public.lead_status s
+    left join public.crm_leads l on public.wa_norm(l.whatsapp) = public.wa_norm(s.whatsapp)
+    left join public.perfis pa on pa.id = s.atribuido_a
+    left join public.campanhas_whatsapp cw on cw.id = s.campanha_whatsapp_id
+    where exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+  ) t;
+$$;
+
+notify pgrst, 'reload schema';
+```
+
+A única mudança real em relação à versão do §32.1 é o subselect novo
+`comprado_em` (cruza por e-mail com `vendas`, só considera pago) — resto
+idêntico, colado inteiro pelo mesmo motivo de sempre.
+
+### 44.2. Edge Function `eduzz-webhook` — redeploy
+
+O `pick()` pro campo `pago_em` já está na cópia mestre do §11 (paths
+chutados: `data.dates.paid`, `data.paid_at`, `data_pagamento`,
+`date_paid`). **Redeploy** a function com o código atualizado do §11 —
+sem isso a coluna `pago_em` fica sempre `null` (o card ainda funciona,
+só cai pro `created_at`).
+
+### 44.3. Front (`crm.html`) — já feito
+
+- Selo verde novo no card, só quando `comprado_em` vem preenchido:
+  "✓ comprou dd/mm hh:mm" — mesmo estilo dos outros badges (VSL, tempo
+  de resposta), ao lado deles.
+- Não depende da etapa do Kanban — aparece mesmo se o lead ainda estiver
+  em "novo"/"conversando" (às vezes a venda acontece antes de alguém
+  mover o card pra "Finalizado").
+
+### 44.4. Rodar
+
+1. SQL do §44.1 no SQL Editor.
+2. Redeploy do `eduzz-webhook` (§44.2) — opcional, sem isso o selo usa
+   `created_at`.
+3. Testar: um lead cujo e-mail já apareça em `vendas` com status pago
+   deve mostrar o selo assim que o Pipeline recarregar.
+
+## 45. CRM — lista "Últimas compras" na tela Auditório
+
+**Por quê (28/09/2026):** o selo do §44 só aparece no card de um lead que
+já esteja no Pipeline (whatsapp cadastrado) — quem comprou mas nunca
+virou lead no CRM não aparecia em lugar nenhum com data/hora. A tela
+**Auditório** (`view-auditorio`, o mapa de cadeiras) já é o lugar do CRM
+onde as vendas aparecem de verdade, então é ali que entra a lista.
+
+### 45.1. SQL (rodar no SQL Editor)
+
+```sql
+create or replace function public.rpc_vendas_recentes()
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(row_to_json(t)), '[]'::json)
+  from (
+    select
+      v.id, v.cliente_nome, v.produto, v.valor,
+      coalesce(v.pago_em, v.created_at) as comprado_em
+    from public.vendas v
+    where exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+      and (v.status ilike 'pag%' or v.status ilike 'paid')
+    order by coalesce(v.pago_em, v.created_at) desc
+    limit 15
+  ) t;
+$$;
+
+revoke all on function public.rpc_vendas_recentes() from public, anon;
+grant execute on function public.rpc_vendas_recentes() to authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+Mesma trava de acesso do `rpc_crm_pipeline` (só quem está em `perfis`
+ativo enxerga), porque `vendas` tem PII (nome do comprador).
+
+### 45.2. Front (`crm.html`) — já feito
+
+Embaixo da legenda do mapa de cadeiras, uma lista "Últimas compras" com
+até 15 linhas: nome do comprador, produto + valor, e dia/hora da compra
+(`comprado_em`, mesma regra do §44 — usa `pago_em` quando existir, senão
+`created_at`). Carrega junto com o resto do Auditório
+(`carregarAuditorio()`), sem filtro nem paginação — é só uma conferência
+rápida de "quem comprou por último".
+
+### 45.3. Rodar
+
+1. SQL do §45.1 no SQL Editor.
+2. Abrir o CRM → Auditório e conferir se a lista aparece embaixo do mapa
+   de cadeiras (vazio = "Nenhuma compra confirmada ainda.", normal se a
+   tabela `vendas` ainda não tem nenhuma linha com status pago).
