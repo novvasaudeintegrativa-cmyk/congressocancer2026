@@ -8050,3 +8050,108 @@ rápida de "quem comprou por último".
 2. Abrir o CRM → Auditório e conferir se a lista aparece embaixo do mapa
    de cadeiras (vazio = "Nenhuma compra confirmada ainda.", normal se a
    tabela `vendas` ainda não tem nenhuma linha com status pago).
+
+## 46. CRM — Pipeline estourando o tempo (erro 57014 "statement timeout")
+
+**Sintoma (29/09/2026):** o Pipeline mostra `Erro ao carregar: {"code":"57014",
+..."canceling statement due to statement timeout"}`.
+
+**Causa:** o `rpc_crm_pipeline()` do §44 roda 5 subselects **por lead**
+(`mensagens` ×3 com `wa_norm(...)` sem índice, `events` e `vendas` com
+`lower(email)` sem índice). Com a base grande depois das importações de
+campanha, isso vira milhões de leituras e passa do limite de tempo do
+role `authenticated`.
+
+**Correção:** (a) índices nas expressões usadas nos filtros e (b) a função
+reescrita pra calcular cada agregado **uma vez** (CTEs) e juntar por chave,
+em vez de rodar uma subconsulta por lead. O resultado (campos e regras) é
+idêntico ao do §44.1.
+
+### 46.1. SQL (rodar no SQL Editor)
+
+```sql
+create index if not exists mensagens_wa_norm_idx
+  on public.mensagens (public.wa_norm(lead_whatsapp), direcao, (coalesce(wa_timestamp, criado_em)));
+create index if not exists vendas_email_lower_idx
+  on public.vendas (lower(cliente_email));
+create index if not exists lead_status_wa_norm_idx
+  on public.lead_status (public.wa_norm(whatsapp));
+
+create or replace function public.rpc_crm_pipeline()
+returns json language sql stable security definer set search_path = public as $$
+  with
+  rec as (
+    select public.wa_norm(m.lead_whatsapp) as wa,
+           max(coalesce(m.wa_timestamp, m.criado_em)) as ultima
+    from public.mensagens m
+    where m.direcao = 'recebida'
+    group by 1
+  ),
+  resp as (
+    select public.wa_norm(m.lead_whatsapp) as wa,
+           min(coalesce(m.wa_timestamp, m.criado_em)) as primeira
+    from public.mensagens m
+    join rec on rec.wa = public.wa_norm(m.lead_whatsapp)
+    where m.direcao = 'enviada'
+      and coalesce(m.wa_timestamp, m.criado_em) >= rec.ultima
+    group by 1
+  ),
+  vsl as (
+    select e.visitor_id,
+           max(case e.event
+                 when 'VideoComplete' then 100
+                 when 'VideoProgress' then (e.props->>'percent')::int
+                 when 'VideoPlay' then 0
+               end) as progresso
+    from public.events e
+    where e.event in ('VideoPlay','VideoProgress','VideoComplete')
+      and lower(coalesce(e.props->>'placement','')) = 'vsl'
+    group by e.visitor_id
+  ),
+  compra as (
+    select lower(v.cliente_email) as email,
+           max(coalesce(v.pago_em, v.created_at)) as comprado_em
+    from public.vendas v
+    where v.cliente_email is not null
+      and (v.status ilike 'pag%' or v.status ilike 'paid')
+    group by 1
+  )
+  select coalesce(json_agg(row_to_json(t) order by t.captado_em desc nulls last), '[]'::json)
+  from (
+    select
+      s.whatsapp,
+      coalesce(l.nome, s.nome_whatsapp) as nome,
+      coalesce(s.canal, 'whatsapp') as canal,
+      l.email, l.profissao, l.nivel, l.pontuacao,
+      l.utm_source, l.utm_campaign,
+      coalesce(s.criado_em, l.captado_em) as captado_em,
+      coalesce(s.etapa, 'novo') as etapa,
+      s.nota, s.lembrete_em, coalesce(s.urgente, false) as urgente, s.atribuido_a,
+      pa.nome as atribuido_nome,
+      s.atualizado_em,
+      cw.nome as campanha_whatsapp_nome,
+      vsl.progresso as vsl_progress,
+      rec.ultima as ultima_recebida_em,
+      resp.primeira as respondido_em,
+      compra.comprado_em
+    from public.lead_status s
+    left join public.crm_leads l on public.wa_norm(l.whatsapp) = public.wa_norm(s.whatsapp)
+    left join public.perfis pa on pa.id = s.atribuido_a
+    left join public.campanhas_whatsapp cw on cw.id = s.campanha_whatsapp_id
+    left join vsl on vsl.visitor_id = l.visitor_id
+    left join rec on rec.wa = public.wa_norm(s.whatsapp)
+    left join resp on resp.wa = public.wa_norm(s.whatsapp)
+    left join compra on compra.email = lower(l.email)
+    where exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+  ) t;
+$$;
+
+notify pgrst, 'reload schema';
+```
+
+### 46.2. Rodar
+
+1. SQL do §46.1 no SQL Editor (a criação dos índices pode levar alguns
+   segundos).
+2. Recarregar o Pipeline. Se ainda estourar, rode `explain analyze select
+   public.rpc_crm_pipeline();` e mande o resultado.
