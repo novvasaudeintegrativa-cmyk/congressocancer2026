@@ -989,6 +989,14 @@
     object-fit:contain;
     opacity:0.25;
   }
+  .grupo-titulo{font-size:var(--text-h3);font-weight:800;margin:var(--space-lg) 0 4px;}
+  .grupo-sub{color:var(--texto-fraco);font-size:14px;margin:0 0 6px;}
+  .slot-grid.compacto .slot{min-height:150px;}
+  /* patrocinadores em 2 colunas (até segunda ordem); expositores seguem em 4 */
+  .slot-grid.dois{grid-template-columns:repeat(2, 1fr);max-width:640px;margin-left:auto;margin-right:auto;}
+  .slot.ativo{border-style:solid;border-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.04);}
+  .slot.ativo img{opacity:1;max-width:200px;max-height:120px;}
+  .grupo-cta{margin-top:var(--space-lg);}
 
   /* LOTES */
   .lotes{background:radial-gradient(circle at 50% 50%, rgba(184,45,61,0.45), transparent 65%), linear-gradient(180deg,#3C0101 0%, #170608 50%, #3C0101 100%);}
@@ -2271,13 +2279,23 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
   <section class="patrocinadores" id="patrocinadores">
     <div class="container">
       <h2 class="section-title">Patrocinadores &amp; Expositores</h2>
-      <p class="section-sub">Cotas de patrocínio da edição 2026 em aberto.</p>
-      <div class="slot-grid">
+
+      <h3 class="grupo-titulo">Patrocinadores</h3>
+      <p class="grupo-sub">Cotas de patrocínio da edição 2026 em aberto.</p>
+      <div class="slot-grid dois">
         <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="Logo de patrocinador (placeholder de layout)"></div>
+        <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
+      </div>
+
+      <h3 class="grupo-titulo">Expositores</h3>
+      <p class="grupo-sub">Feira com 30+ expositores.</p>
+      <div class="slot-grid compacto">
+        <div class="slot ativo"><img src="Imgs/Expositores/AmaliaTarallo.svg" alt="Amalia Tarallo" width="200" height="80"></div>
         <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
         <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
         <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
       </div>
+      <p class="grupo-cta"><a class="btn btn-laranja" href="ApresentacaoKitExpositores.html">Quero ser expositor</a></p>
     </div>
   </section>
 
