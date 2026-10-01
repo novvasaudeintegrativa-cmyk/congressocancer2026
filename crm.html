@@ -861,6 +861,16 @@
           <button type="button" id="wa-historico-mais" class="btn-atualizar" style="margin-top:10px;">Carregar mais</button>
         </div>
 
+        <div class="form-campanha" id="flow-teste-box" style="margin-bottom:16px;">
+          <label for="flow-numero">Enviar o Flow de cadastro (teste, 1 número)</label>
+          <input type="text" id="flow-numero" placeholder="ex: 5511999999999 (com DDI e DDD)">
+          <input type="text" id="flow-id" value="2127650164508667" placeholder="ID do Flow">
+          <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:normal;font-size:13px;color:var(--ink);"><input type="checkbox" id="flow-rascunho" checked style="width:auto;"> Enviar como rascunho (Flow ainda não publicado)</label>
+          <button type="button" id="flow-enviar-btn">Enviar Flow</button>
+          <div class="dica">A pessoa precisa ter mandado mensagem pro número da Novva nas últimas 24h, senão a Meta recusa. Só gestor.</div>
+          <div class="cp-msg" id="flow-msg"></div>
+        </div>
+
         <form id="form-campanha-whatsapp" class="form-campanha">
           <label for="cw-arquivo">Lista de contatos (CSV com colunas numero, nome, lote)</label>
           <input type="file" id="cw-arquivo" accept=".csv,text/csv" required>
@@ -3523,6 +3533,27 @@
       $('cw-teste-msg').style.color = 'var(--bordo-vivo)';
       $('cw-teste-msg').textContent = 'Erro: ' + err.message;
     }).finally(function(){ btn.disabled = false; btn.innerHTML = ic('send') + ' Enviar teste'; });
+  });
+
+  // ---------- Flow de cadastro: envio de teste (função enviar-flow, SUPABASE.md §51) ----------
+  $('flow-enviar-btn').addEventListener('click', function(){
+    var btn = this, msg = $('flow-msg');
+    var numero = $('flow-numero').value.trim();
+    if (!numero){ msg.style.color = 'var(--bordo-vivo)'; msg.textContent = 'Preenche o número.'; return; }
+    btn.disabled = true; msg.style.color = 'var(--soft)'; msg.textContent = 'Enviando…';
+    fetch(SUPABASE_URL + '/functions/v1/enviar-flow', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ numero: numero, flow_id: $('flow-id').value.trim(), rascunho: $('flow-rascunho').checked })
+    }).then(function(r){ return r.text().then(function(t){
+      var d; try { d = t ? JSON.parse(t) : null; } catch(e){ d = { erro: t }; }
+      if (!r.ok || !d || d.erro) throw new Error((d && d.erro) || ('HTTP ' + r.status));
+      return d;
+    }); }).then(function(){
+      msg.style.color = 'var(--verde)'; msg.textContent = 'Flow enviado pra +' + numero.replace(/\D/g, '') + '! Abre o WhatsApp.';
+    }).catch(function(err){
+      msg.style.color = 'var(--bordo-vivo)'; msg.textContent = 'Erro: ' + err.message;
+    }).finally(function(){ btn.disabled = false; });
   });
 
   var DICAS_CATEGORIA_WA = {

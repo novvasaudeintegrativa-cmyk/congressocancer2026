@@ -8368,3 +8368,21 @@ create trigger quiz_leads_optin after insert on public.quiz_leads
 
 Testar depois de ligar o quiz: preencher com um número seu, marcar o aceite e conferir uma linha
 nova em `whatsapp_marketing_optin` com `origem = 'quiz'`.
+
+## 51. Enviar o Flow de cadastro pra um número (teste) — Edge Function `enviar-flow`
+
+**Por quê (01/10/2026):** o Flow só chega ao webhook quando é aberto **numa conversa de WhatsApp**
+(a prévia do editor e o link "Compartilhar" não enviam nada). Esta função manda o Flow
+"Congresso Câncer 2026 – Cadastro" (ID `2127650164508667`) como mensagem interativa pra **um**
+número, inclusive em **rascunho** (`mode: draft`), pra testar a ponta a ponta: preencher →
+webhook grava o lead/opt-in → resposta com o link do site.
+
+**Deploy:** Supabase → Edge Functions → Deploy a new function → nome **`enviar-flow`** → colar o
+conteúdo de `docs/enviar-flow.ts` → **Verify JWT ligado**. Usa os mesmos secrets do webhook
+(`WHATSAPP_PERMANENT_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`). Sem SQL novo.
+
+**Como usar:** CRM → **Campanhas WhatsApp** → caixa "Enviar o Flow de cadastro (teste)": número com
+DDI+DDD, deixar "rascunho" marcado enquanto o Flow não estiver publicado, **Enviar Flow**.
+
+**Limites:** a pessoa precisa ter falado com o número da Novva nas últimas 24h (senão a Meta
+recusa — erro de "fora da janela"). Só gestor.
