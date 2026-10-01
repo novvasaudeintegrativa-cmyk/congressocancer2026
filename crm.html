@@ -490,6 +490,8 @@
   .nx-tile{background:var(--card);border-radius:22px;padding:14px 20px;box-shadow:var(--sombra);display:grid;gap:2px;}
   .nx-tile b{font:800 30px/1.05 var(--tit);}
   .nx-tile span{font-size:13px;color:var(--soft);}
+  .nx-tiles-disp{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .nx-tiles-disp[hidden]{display:none;}
   .nx-tile-forte{background:var(--bordo);color:#fff;box-shadow:0 16px 34px rgba(138,34,46,.28);}
   .nx-tile-forte span{color:#f3d9dc;}
   .nx-tile-claro{background:#f7e6e8;}
@@ -697,6 +699,7 @@
       <button type="button" data-dias="0">Tudo</button>
     </div>
     <div class="nx-tiles" id="painel-tiles"></div>
+    <div class="nx-tiles nx-tiles-disp" id="painel-disparos" hidden></div>
     <div class="nx-grid nx-grid-32">
       <section class="nx-cartao"><div class="nx-cab"><h3>Leads por dia</h3><span class="nx-sub">últimos 14 dias</span></div><div class="nx-colunas" id="painel-dias"></div></section>
       <section class="nx-cartao"><h3>Funil (carteira atual)</h3><div class="nx-funil" id="painel-funil"></div></section>
@@ -732,10 +735,11 @@
     <div class="sec-crm"><span>Contatos</span><span class="cont" id="contatos-cont"></span></div>
     <div class="filtros">
       <div class="busca-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="contatos-busca" placeholder="buscar por nome ou número…"></div>
+      <select id="contatos-fonte"><option value="pipeline">Quem respondeu (Pipeline)</option><option value="disparos" hidden>Disparos sem resposta</option></select>
       <select id="contatos-etapa"><option value="">Todas as etapas</option></select>
     </div>
     <div class="nx-rolagem"><table class="nx-tabela">
-      <thead><tr><th>Contato</th><th>Etapa</th><th>Origem</th><th>Responsável</th><th>Último contato</th><th></th></tr></thead>
+      <thead id="contatos-thead"><tr><th>Contato</th><th>Etapa</th><th>Origem</th><th>Responsável</th><th>Último contato</th><th></th></tr></thead>
       <tbody id="contatos-lista"></tbody>
     </table></div>
     <div class="nx-rodape"><span id="contatos-rodape"></span><button type="button" class="btn-atualizar" id="contatos-mais" hidden>Mostrar mais</button></div>
@@ -1534,6 +1538,24 @@
     return '<div class="avatar" style="background:' + avatarCor(nome || '?') + '">' + esc((nome || '?').trim().charAt(0).toUpperCase()) + '</div>';
   }
 
+  // Disparos de campanha WhatsApp (SUPABASE.md §47): enviados, lidos (abertura) e quem respondeu.
+  // "Lidos" soma quem teve confirmação de leitura + quem respondeu (responder implica ter lido);
+  // a confirmação some pra quem desligou o "recibo de leitura" no WhatsApp, então é piso, não teto.
+  var disparosSeq = 0;
+  function carregarDisparosPainel(){
+    var seq = ++disparosSeq, caixa = $('painel-disparos');
+    apiPost('rpc/rpc_disparos_resumo', { p_dias: extras.dias }).then(function(d){
+      if (seq !== disparosSeq || !d || !d.enviados){ caixa.hidden = true; return; }
+      function pct(n){ return Math.round(n * 100 / d.enviados) + '%'; }
+      function tile(n, r, cls){ return '<div class="nx-tile' + (cls ? ' ' + cls : '') + '"><b>' + n + '</b><span>' + r + '</span></div>'; }
+      caixa.innerHTML =
+        tile(Number(d.enviados).toLocaleString('pt-BR'), 'Disparos enviados no período', 'nx-tile-forte') +
+        tile(pct(d.lidos), 'Taxa de abertura (' + d.lidos + ' leram)') +
+        tile(pct(d.responderam), 'Taxa de resposta (' + d.responderam + ' responderam)', 'nx-tile-claro');
+      caixa.hidden = false;
+    }).catch(function(){ if (seq === disparosSeq) caixa.hidden = true; });
+  }
+
   function renderPainel(){
     var todos = leadsBase();
     var ini = inicioPeriodo(extras.dias);
@@ -1543,6 +1565,8 @@
     var taxa = doPeriodo.length ? Math.round(finalizados * 100 / doPeriodo.length) : 0;
     function tile(n, r, cls){ return '<div class="nx-tile' + (cls ? ' ' + cls : '') + '"><b>' + n + '</b><span>' + r + '</span></div>'; }
     $('painel-sub').textContent = todos.length + ' lead(s) no pipeline';
+    carregarDisparosPainel();
+    if (disparosSemResposta === null) carregarDisparosSemResposta();
     $('painel-tiles').innerHTML =
       tile(doPeriodo.length, 'Leads novos no período', 'nx-tile-forte') +
       tile(emAtendimento, 'Em atendimento agora') +
@@ -1602,7 +1626,45 @@
       '<div class="nx-linha-resp"><div class="nx-txt"><b>Aguardando resposta</b><div class="nx-sub">mensagens recebidas sem resposta</div></div><strong>' + pend + '</strong></div>';
   }
 
+  // ---- Contatos: modo "Disparos sem resposta" (SUPABASE.md §48) ----
+  var THEAD_PIPELINE = '<tr><th>Contato</th><th>Etapa</th><th>Origem</th><th>Responsável</th><th>Último contato</th><th></th></tr>';
+  var THEAD_DISPAROS = '<tr><th>Contato</th><th>Campanha</th><th>Enviado em</th><th>Leu?</th><th></th><th></th></tr>';
+  var disparosSemResposta = null; // null = ainda não buscou; [] = buscou e veio vazio
+
+  function carregarDisparosSemResposta(){
+    return apiPost('rpc/rpc_disparos_sem_resposta', {}).then(function(rows){
+      disparosSemResposta = rows || [];
+      $('contatos-fonte').querySelector('option[value="disparos"]').hidden = false;
+      renderContatos();
+    }).catch(function(){ /* SQL do §48 ainda não rodado ou não é gestor: mantém só o Pipeline */ });
+  }
+
+  function renderContatosDisparos(){
+    var termo = $('contatos-busca').value.trim().toLowerCase();
+    var digitos = termo.replace(/\D/g, '');
+    var v = (disparosSemResposta || []).filter(function(c){
+      if (!termo) return true;
+      if ((c.nome || '').toLowerCase().indexOf(termo) !== -1) return true;
+      return digitos.length > 0 && String(c.numero || '').replace(/\D/g, '').indexOf(digitos) !== -1;
+    });
+    var mostrar = v.slice(0, extras.contatosLimite);
+    $('contatos-thead').innerHTML = THEAD_DISPAROS;
+    $('contatos-lista').innerHTML = mostrar.map(function(c){
+      var leu = c.lido_em ? 'Leu · ' + fmtQuando(c.lido_em) : (c.entregue_em ? 'Entregue' : '—');
+      return '<tr><td><div class="nx-pessoa">' + avatarHtml(c.nome, c.numero, 'whatsapp') + '<div><b>' + esc(c.nome || 'Sem nome') + '</b><small>+' + esc(String(c.numero || '').replace(/\D/g, '')) + '</small></div></div></td>' +
+        '<td>' + esc(c.campanha || '—') + '</td>' +
+        '<td class="nx-sub">' + esc(fmtQuando(c.enviado_em)) + '</td>' +
+        '<td class="nx-sub">' + esc(leu) + '</td><td></td><td></td></tr>';
+    }).join('') || '<tr><td colspan="6" class="nx-vazio" style="text-align:center">Nenhum contato encontrado.</td></tr>';
+    $('contatos-cont').textContent = v.length + ' sem resposta';
+    $('contatos-rodape').textContent = 'Mostrando ' + mostrar.length + ' de ' + v.length;
+    $('contatos-mais').hidden = v.length <= extras.contatosLimite;
+  }
+
   function renderContatos(){
+    $('contatos-etapa').hidden = $('contatos-fonte').value === 'disparos';
+    if ($('contatos-fonte').value === 'disparos'){ renderContatosDisparos(); return; }
+    $('contatos-thead').innerHTML = THEAD_PIPELINE;
     var termo = $('contatos-busca').value.trim().toLowerCase();
     var digitos = termo.replace(/\D/g, '');
     var etapa = $('contatos-etapa').value;
@@ -1695,6 +1757,7 @@
     });
     $('contatos-busca').addEventListener('input', function(){ extras.contatosLimite = 50; renderContatos(); });
     $('contatos-etapa').addEventListener('change', function(){ extras.contatosLimite = 50; renderContatos(); });
+    $('contatos-fonte').addEventListener('change', function(){ extras.contatosLimite = 50; renderContatos(); });
     $('contatos-mais').addEventListener('click', function(){ extras.contatosLimite += 50; renderContatos(); });
     ['contatos-lista', 'tarefas-lista'].forEach(function(id){
       $(id).addEventListener('click', function(e){

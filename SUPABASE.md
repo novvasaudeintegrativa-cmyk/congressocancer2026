@@ -8155,3 +8155,148 @@ notify pgrst, 'reload schema';
    segundos).
 2. Recarregar o Pipeline. Se ainda estourar, rode `explain analyze select
    public.rpc_crm_pipeline();` e mande o resultado.
+
+## 47. CRM — Painel: disparos enviados, taxa de abertura e de resposta
+
+**Por quê (01/10/2026):** o Painel só mostrava os leads que **responderam**
+(Pipeline). O time quer ver também quantos disparos saíram e qual a taxa de
+abertura. Os cartões novos ficam logo abaixo dos 4 principais e seguem o
+filtro de período (Hoje / 7 / 30 / Tudo), só pro gestor.
+
+**Limite importante — "abertura" no WhatsApp:**
+- Abertura = confirmação de leitura (`read`) que a Meta devolve ao webhook.
+  Quem desligou o "recibo de leitura" no WhatsApp **nunca** aparece como lido,
+  então a taxa é um **piso**, não o número real.
+- Hoje o `status` de leitura dos disparos **não era guardado** (o webhook só
+  atualizava `mensagens`, e os disparos de campanha não gravam lá). Por isso
+  só os disparos **a partir do redeploy do §47.2** terão leitura medida.
+  Nos disparos antigos (ex.: os 706 de antes) a Meta não reenvia o status; o
+  cartão usa, no lugar, **quem respondeu** (responder implica ter lido), que é
+  o único dado seguro desses disparos.
+
+### 47.1. SQL (rodar no SQL Editor)
+
+```sql
+alter table public.campanha_whatsapp_contatos
+  add column if not exists entregue_em timestamptz,
+  add column if not exists lido_em     timestamptz;
+
+create index if not exists campanha_wa_contatos_wamid_idx
+  on public.campanha_whatsapp_contatos (wa_message_id);
+
+create or replace function public.rpc_disparos_resumo(p_dias int default 0)
+returns json language sql stable security definer set search_path = public as $$
+  with base as (
+    select
+      k.id,
+      k.lido_em is not null as lido_real,
+      exists (
+        select 1 from public.lead_status s
+        where s.campanha_whatsapp_id = k.campanha_id
+          and public.wa_norm(s.whatsapp) = public.wa_norm(k.numero)
+      ) as respondeu
+    from public.campanha_whatsapp_contatos k
+    where public.eh_gestor()
+      and k.status = 'enviado'
+      and (
+        coalesce(p_dias, 0) <= 0
+        or k.enviado_em >= ((now() at time zone 'America/Sao_Paulo')::date - (p_dias - 1))::timestamp
+                           at time zone 'America/Sao_Paulo'
+      )
+  )
+  select json_build_object(
+    'enviados',      count(*),
+    'lidos',         count(*) filter (where lido_real or respondeu),
+    'lidos_medidos', count(*) filter (where lido_real),
+    'responderam',   count(*) filter (where respondeu)
+  ) from base;
+$$;
+
+revoke all on function public.rpc_disparos_resumo(int) from public, anon;
+grant execute on function public.rpc_disparos_resumo(int) to authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+### 47.2. `whatsapp-webhook-v2` — guardar entrega/leitura dos disparos
+
+No código do §33, **troque os dois blocos abaixo** (o resto fica igual) e faça o
+redeploy da `whatsapp-webhook-v2`:
+
+1) Na leitura dos `statuses`, guarde também a hora:
+
+```ts
+      for (const s of v.statuses ?? []) {
+        if (s.id && s.status) statusUpdates.push({ id: s.id, status: s.status, ts: s.timestamp });
+      }
+```
+
+e no topo, o tipo do array vira:
+
+```ts
+  const statusUpdates: { id: string; status: string; ts?: string }[] = [];
+```
+
+2) No laço que aplica os status, acrescente o PATCH da campanha (logo depois do
+PATCH em `mensagens`, dentro do mesmo `for`):
+
+```ts
+    if (s.status === "delivered" || s.status === "read") {
+      const quando = s.ts ? new Date(Number(s.ts) * 1000).toISOString() : new Date().toISOString();
+      const corpo = s.status === "read" ? { lido_em: quando } : { entregue_em: quando };
+      await fetch(`${SUPABASE_URL}/rest/v1/campanha_whatsapp_contatos?wa_message_id=eq.${encodeURIComponent(s.id)}`, {
+        method: "PATCH",
+        headers: { ...svcHeaders, prefer: "return=minimal" },
+        body: JSON.stringify(corpo),
+      }).catch((e) => console.error("status campanha:", s.id, e));
+    }
+```
+
+### 47.3. Rodar
+
+1. SQL do §47.1.
+2. Redeploy do webhook (§47.2) — sem isso o cartão funciona, mas a leitura
+   fica só com "quem respondeu".
+3. Recarregar o CRM (Ctrl+F5): os 3 cartões aparecem abaixo dos principais.
+
+## 48. CRM — Contatos: lista "Disparos sem resposta"
+
+**Por quê (01/10/2026):** o Pipeline só tem quem respondeu. A tela **Contatos**
+ganha um seletor **"Disparos sem resposta"** com quem recebeu o disparo e
+ainda não respondeu (o público do follow-up), com campanha, data de envio e se
+leu. Só gestor. Usa `lido_em`/`entregue_em` do §47.1 (vazio nos disparos
+antigos).
+
+### 48.1. SQL (rodar no SQL Editor — depois do §47.1)
+
+```sql
+create or replace function public.rpc_disparos_sem_resposta()
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(row_to_json(t) order by t.enviado_em desc nulls last), '[]'::json)
+  from (
+    select k.numero, k.nome, c.nome as campanha, k.enviado_em, k.entregue_em, k.lido_em
+    from public.campanha_whatsapp_contatos k
+    join public.campanhas_whatsapp c on c.id = k.campanha_id
+    where public.eh_gestor()
+      and k.status = 'enviado'
+      and not exists (
+        select 1 from public.lead_status s
+        where s.campanha_whatsapp_id = k.campanha_id
+          and public.wa_norm(s.whatsapp) = public.wa_norm(k.numero)
+      )
+    limit 5000
+  ) t;
+$$;
+
+revoke all on function public.rpc_disparos_sem_resposta() from public, anon;
+grant execute on function public.rpc_disparos_sem_resposta() to authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+### 48.2. Front (`crm.html`) — já feito
+
+Contatos → seletor **"Quem respondeu (Pipeline)" / "Disparos sem resposta"**
+(a opção só aparece depois que o SQL acima estiver rodado). A lista é só de
+consulta: o contato fora da janela de 24h só recebe **template aprovado** —
+ver a conversa sobre follow-up antes de disparar de novo.
