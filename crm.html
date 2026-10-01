@@ -1550,12 +1550,6 @@
   }
   function carregarDisparosPainel(){
     var seq = ++disparosSeq, caixa = $('painel-disparos');
-    // disparos e detalhe são só do gestor de verdade: some também no modo "ver como vendedor"
-    if (!gestorAgora()){
-      caixa.hidden = true; $('painel-disparos-det').hidden = true;
-      painelDisparos = null; atualizarSubPainel();
-      return;
-    }
     apiPost('rpc/rpc_disparos_resumo', { p_dias: extras.dias }).then(function(d){
       if (seq !== disparosSeq) return;
       painelDisparos = d && d.enviados ? d.enviados : null; atualizarSubPainel();
@@ -1574,7 +1568,7 @@
         linha('Leitura confirmada', medidos + ' (' + pct(medidos) + ')', 'piso: quem desligou o recibo de leitura não aparece') +
         linha('Leram, contando quem respondeu', d.lidos + ' (' + pct(d.lidos) + ')', 'responder implica ter lido') +
         linha('Responderam', d.responderam + ' (' + pct(d.responderam) + ')');
-      det.hidden = false;
+      det.hidden = !gestorAgora(); // leitura/abertura é só do gestor; vendedor vê enviados e resposta
       caixa.hidden = false;
     }).catch(function(){ if (seq === disparosSeq){ caixa.hidden = true; $('painel-disparos-det').hidden = true; painelDisparos = null; atualizarSubPainel(); } });
   }

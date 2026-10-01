@@ -8197,7 +8197,7 @@ returns json language sql stable security definer set search_path = public as $$
           and public.wa_norm(s.whatsapp) = public.wa_norm(k.numero)
       ) as respondeu
     from public.campanha_whatsapp_contatos k
-    where public.eh_gestor()
+    where exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
       and k.status = 'enviado'
       and (
         coalesce(p_dias, 0) <= 0
@@ -8207,9 +8207,10 @@ returns json language sql stable security definer set search_path = public as $$
   )
   select json_build_object(
     'enviados',      count(*),
-    'lidos',         count(*) filter (where lido_real or respondeu),
-    'lidos_medidos', count(*) filter (where lido_real),
-    'entregues_medidos', count(*) filter (where entregue_real),
+    -- leitura/abertura só pro gestor (vendedor recebe null)
+    'lidos',         case when public.eh_gestor() then count(*) filter (where lido_real or respondeu) end,
+    'lidos_medidos', case when public.eh_gestor() then count(*) filter (where lido_real) end,
+    'entregues_medidos', case when public.eh_gestor() then count(*) filter (where entregue_real) end,
     'responderam',   count(*) filter (where respondeu)
   ) from base;
 $$;
