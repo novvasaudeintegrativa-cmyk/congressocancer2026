@@ -1810,18 +1810,12 @@
 
     ETAPAS.forEach(function(e){
       var doStage = leads.filter(function(l){ return l.etapa === e.id; });
-      // prioridade: 1º quem tem mensagem recebida ainda sem resposta (senão
-      // um lead antigo que recebeu mensagem nova hoje fica enterrado no
-      // meio da coluna, sem ninguém notar) — 2º quem veio de campanha do
-      // WhatsApp — dentro de cada grupo mantém a ordem por mais recente
-      // (já vem assim da RPC).
+      // ordem de chegada: quem mandou mensagem por último fica no topo da coluna
+      // (antes a ordem vinha da data de entrada no CRM e um lead antigo que
+      // voltou a falar hoje ficava enterrado no meio da coluna)
       doStage.sort(function(a, b){
-        var pendA = leadPendente(a) ? 1 : 0;
-        var pendB = leadPendente(b) ? 1 : 0;
-        if (pendA !== pendB) return pendB - pendA;
-        var pa = a.campanha_whatsapp_nome ? 1 : 0;
-        var pb = b.campanha_whatsapp_nome ? 1 : 0;
-        return pb - pa;
+        return tempoMs(b.ultima_recebida_em || b.atualizado_em || b.captado_em) -
+               tempoMs(a.ultima_recebida_em || a.atualizado_em || a.captado_em);
       });
       board.appendChild(coluna(e.rot, doStage, false, e.id));
     });
