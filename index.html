@@ -2642,10 +2642,22 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     var camp = {};
     try {
       var qs = new URLSearchParams(location.search);
-      var stored = JSON.parse(sessionStorage.getItem('cc_camp') || '{}');
+      /* Guarda a origem por 30 dias no navegador (localStorage), nao so na aba:
+         quem entra pelo disparo/anuncio e volta outro dia direto pra comprar
+         continua com a UTM na hora do checkout. */
+      var CAMP_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+      var stored = {};
+      try {
+        var salvo = JSON.parse(localStorage.getItem('cc_camp_v2') || 'null');
+        if (salvo && salvo.t && Date.now() - salvo.t < CAMP_TTL_MS) stored = salvo.d || {};
+      } catch(e){}
+      if (!Object.keys(stored).length) { try { stored = JSON.parse(sessionStorage.getItem('cc_camp') || '{}'); } catch(e){} }
       var temNaUrl = CAMP_KEYS.some(function(kk){ return qs.get(kk); });
       CAMP_KEYS.forEach(function(kk){ camp[kk] = qs.get(kk) || (temNaUrl ? null : stored[kk]) || null; });
-      if (temNaUrl) sessionStorage.setItem('cc_camp', JSON.stringify(camp));
+      if (temNaUrl) {
+        try { sessionStorage.setItem('cc_camp', JSON.stringify(camp)); } catch(e){}
+        try { localStorage.setItem('cc_camp_v2', JSON.stringify({ t: Date.now(), d: camp })); } catch(e){}
+      }
     } catch(e){ CAMP_KEYS.forEach(function(kk){ camp[kk] = null; }); }
 
     function sendToDB(event, props){
