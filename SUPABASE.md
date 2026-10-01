@@ -8190,6 +8190,7 @@ returns json language sql stable security definer set search_path = public as $$
     select
       k.id,
       k.lido_em is not null as lido_real,
+      (k.entregue_em is not null or k.lido_em is not null) as entregue_real,
       exists (
         select 1 from public.lead_status s
         where s.campanha_whatsapp_id = k.campanha_id
@@ -8208,6 +8209,7 @@ returns json language sql stable security definer set search_path = public as $$
     'enviados',      count(*),
     'lidos',         count(*) filter (where lido_real or respondeu),
     'lidos_medidos', count(*) filter (where lido_real),
+    'entregues_medidos', count(*) filter (where entregue_real),
     'responderam',   count(*) filter (where respondeu)
   ) from base;
 $$;
