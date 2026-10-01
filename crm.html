@@ -490,7 +490,7 @@
   .nx-tile{background:var(--card);border-radius:22px;padding:14px 20px;box-shadow:var(--sombra);display:grid;gap:2px;}
   .nx-tile b{font:800 30px/1.05 var(--tit);}
   .nx-tile span{font-size:13px;color:var(--soft);}
-  .nx-tiles-disp{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .nx-tiles-disp{grid-template-columns:repeat(2,minmax(0,1fr));}
   .nx-tiles-disp[hidden]{display:none;}
   .nx-tile-forte{background:var(--bordo);color:#fff;box-shadow:0 16px 34px rgba(138,34,46,.28);}
   .nx-tile-forte span{color:#f3d9dc;}
@@ -1542,18 +1542,24 @@
   // "Lidos" soma quem teve confirmação de leitura + quem respondeu (responder implica ter lido);
   // a confirmação some pra quem desligou o "recibo de leitura" no WhatsApp, então é piso, não teto.
   var disparosSeq = 0;
+  var painelLeads = 0, painelDisparos = null;
+  function atualizarSubPainel(){
+    $('painel-sub').textContent = painelLeads + ' lead(s) no pipeline' +
+      (painelDisparos != null ? ' · ' + Number(painelDisparos).toLocaleString('pt-BR') + ' disparo(s) enviado(s)' : '');
+  }
   function carregarDisparosPainel(){
     var seq = ++disparosSeq, caixa = $('painel-disparos');
     apiPost('rpc/rpc_disparos_resumo', { p_dias: extras.dias }).then(function(d){
-      if (seq !== disparosSeq || !d || !d.enviados){ caixa.hidden = true; return; }
+      if (seq !== disparosSeq) return;
+      painelDisparos = d && d.enviados ? d.enviados : null; atualizarSubPainel();
+      if (!d || !d.enviados){ caixa.hidden = true; return; }
       function pct(n){ return Math.round(n * 100 / d.enviados) + '%'; }
       function tile(n, r, cls){ return '<div class="nx-tile' + (cls ? ' ' + cls : '') + '"><b>' + n + '</b><span>' + r + '</span></div>'; }
       caixa.innerHTML =
         tile(Number(d.enviados).toLocaleString('pt-BR'), 'Disparos enviados no período', 'nx-tile-forte') +
-        tile(pct(d.lidos), 'Taxa de abertura (' + d.lidos + ' leram)') +
         tile(pct(d.responderam), 'Taxa de resposta (' + d.responderam + ' responderam)', 'nx-tile-claro');
       caixa.hidden = false;
-    }).catch(function(){ if (seq === disparosSeq) caixa.hidden = true; });
+    }).catch(function(){ if (seq === disparosSeq){ caixa.hidden = true; painelDisparos = null; atualizarSubPainel(); } });
   }
 
   function renderPainel(){
@@ -1564,7 +1570,7 @@
     var emAtendimento = todos.filter(function(l){ return l.etapa === 'conversando'; }).length;
     var taxa = doPeriodo.length ? Math.round(finalizados * 100 / doPeriodo.length) : 0;
     function tile(n, r, cls){ return '<div class="nx-tile' + (cls ? ' ' + cls : '') + '"><b>' + n + '</b><span>' + r + '</span></div>'; }
-    $('painel-sub').textContent = todos.length + ' lead(s) no pipeline';
+    painelLeads = todos.length; atualizarSubPainel();
     carregarDisparosPainel();
     if (disparosSemResposta === null) carregarDisparosSemResposta();
     $('painel-tiles').innerHTML =
