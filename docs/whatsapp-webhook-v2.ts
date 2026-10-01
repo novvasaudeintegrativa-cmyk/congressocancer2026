@@ -122,6 +122,47 @@ async function processarFlow(numero: string, waId: string, f: RespostaFlow) {
   } catch (e) { console.error("flow:", e); }
 }
 
+// ---- Entrada por anúncio / link de campanha: manda o Flow de cadastro sozinho ----
+// O link do tráfego pago é um wa.me com esta frase pré-preenchida (SUPABASE.md §52). Usamos só a
+// frase (e não o "referral" do anúncio) porque o mesmo número também recebe anúncio de outros eventos.
+const FLOW_ID_CADASTRO = "2127650164508667";
+const FRASE_ANUNCIO = "quero garantir minha vaga no congresso cancer 2026"; // já sem acento (normalizarTexto)
+const CORPO_FLOW_ANUNCIO =
+  "Oi! 👋 Que bom ter você por aqui. Preencha o cadastro rapidinho para receber as informações e garantir sua vaga no Congresso Câncer 2026 (20 e 21 de novembro, em São Paulo). 👇";
+
+async function enviarFlowCadastro(numero: string): Promise<boolean> {
+  try {
+    // não manda o Flow duas vezes pra mesma pessoa em 24h
+    const desde = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const rj = await fetch(
+      `${SUPABASE_URL}/rest/v1/mensagens?lead_whatsapp=eq.${numero}&direcao=eq.enviada&texto=like.${encodeURIComponent("[Flow]*")}&criado_em=gte.${desde}&select=id&limit=1`,
+      { headers: svcHeaders },
+    );
+    const ja = rj.ok ? await rj.json() : [];
+    if (ja.length) return false;
+
+    const r = await fetch(`https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${WA_TOKEN}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp", recipient_type: "individual", to: numero, type: "interactive",
+        interactive: {
+          type: "flow", body: { text: CORPO_FLOW_ANUNCIO },
+          action: { name: "flow", parameters: {
+            flow_message_version: "3", flow_token: "congresso-cancer-2026-anuncio", flow_id: FLOW_ID_CADASTRO,
+            flow_cta: "Quero minha vaga", flow_action: "navigate", flow_action_payload: { screen: "CADASTRO" },
+          } },
+        },
+      }),
+    });
+    const b = await r.json().catch(() => ({}));
+    if (!r.ok) { console.error("flow anuncio:", r.status, JSON.stringify(b)); return false; }
+    const waId = b.messages?.[0]?.id ?? null;
+    if (waId) await gravarEnviada(numero, waId, `[Flow] ${CORPO_FLOW_ANUNCIO}`);
+    return true;
+  } catch (e) { console.error("flow anuncio:", e); return false; }
+}
+
 const CRIS_INSTRUCOES = `Você é a Cris, da equipe do Congresso Câncer 2026 (congresso de práticas integrativas oncológicas, 2 dias em São Paulo). Sua função é criar uma conexão inicial calorosa com o lead e levar ele pra nossa página oficial — é lá que tem a apresentação completa (inclusive vídeo), que já responde as dúvidas mais comuns e foi feita pra converter. O site é: https://congressocancer.novvasaudeintegrativa.com.br
 
 Perfil de quem mais aproveita o congresso: médico(a)/dentista/farmacêutico(a)/enfermeiro(a)/fisioterapeuta/terapeuta que atende ou quer atender pacientes oncológicos e quer ampliar repertório em práticas integrativas.
@@ -430,7 +471,10 @@ Deno.serve(async (req) => {
         } else {
           await registrarOptinWhatsapp(m.from, texto);
           await marcarOrigemCampanha(m.from);
-          numerosRecebidos.add(m.from);
+          // chegou pelo link da campanha (frase pré-preenchida): o Flow responde, a Cris espera a pessoa falar
+          const doAnuncio = normalizarTexto(texto ?? "").includes(FRASE_ANUNCIO);
+          const flowEnviado = doAnuncio ? await enviarFlowCadastro(m.from) : false;
+          if (!flowEnviado) numerosRecebidos.add(m.from);
         }
       }
       for (const s of v.statuses ?? []) {

@@ -8386,3 +8386,29 @@ DDI+DDD, deixar "rascunho" marcado enquanto o Flow não estiver publicado, **Env
 
 **Limites:** a pessoa precisa ter falado com o número da Novva nas últimas 24h (senão a Meta
 recusa — erro de "fora da janela"). Só gestor.
+
+## 52. Link do tráfego pago → conversa → Flow de cadastro
+
+**Importante:** o Flow não tem link público pra anúncio. O que vai no tráfego é um link de WhatsApp
+(ou um anúncio Click-to-WhatsApp) com uma **mensagem pré-preenchida**. Quando a pessoa manda essa
+mensagem, a `whatsapp-webhook-v2` responde sozinha com o Flow de cadastro.
+
+**Link:** `https://wa.me/5511934873737?text=Quero%20garantir%20minha%20vaga%20no%20Congresso%20C%C3%A2ncer%202026`
+
+**No anúncio (Meta Ads):** campanha de mensagens/Click-to-WhatsApp, destino WhatsApp, número
++55 11 93487-3737, com a **mensagem pré-preenchida igual** a "Quero garantir minha vaga no
+Congresso Câncer 2026" (sem isso o gatilho não dispara).
+
+**Regra no webhook (`docs/whatsapp-webhook-v2.ts`):** mensagem recebida cujo texto, sem acento e em
+minúsculas, contém `quero garantir minha vaga no congresso cancer 2026` → envia o Flow
+(`enviarFlowCadastro`), no máximo 1 vez por pessoa a cada 24h, e a Cris não responde essa
+mensagem (continua atendendo se a pessoa seguir conversando). Usa só a frase, e não o `referral` do
+anúncio, porque o mesmo número também recebe anúncio de outros eventos (ex.: Autismo/TDAH).
+
+**Deploy:** colar `docs/whatsapp-webhook-v2.ts` inteiro na `whatsapp-webhook-v2` e fazer o Deploy.
+O Flow precisa estar **publicado** (ID `2127650164508667`).
+
+**Atribuição:** o link que a pessoa recebe depois do cadastro leva
+`utm_source=whatsapp&utm_medium=flow&utm_campaign=flow-congresso`; o canal do anúncio em si é
+medido pelo Gerenciador de Anúncios (conversas iniciadas) e pelo CRM (lead com origem
+`whatsapp-flow`).
