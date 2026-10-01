@@ -8211,7 +8211,7 @@ returns json language sql stable security definer set search_path = public as $$
     'lidos',         case when public.eh_gestor() then count(*) filter (where lido_real or respondeu) end,
     'lidos_medidos', case when public.eh_gestor() then count(*) filter (where lido_real) end,
     'entregues_medidos', case when public.eh_gestor() then count(*) filter (where entregue_real) end,
-    'responderam',   count(*) filter (where respondeu)
+    'responderam',   case when public.eh_gestor() then count(*) filter (where respondeu) end
   ) from base;
 $$;
 

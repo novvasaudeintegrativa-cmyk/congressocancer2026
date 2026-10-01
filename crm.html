@@ -1556,9 +1556,12 @@
       if (!d || !d.enviados){ caixa.hidden = true; $('painel-disparos-det').hidden = true; return; }
       function pct(n){ return Math.round(n * 100 / d.enviados) + '%'; }
       function tile(n, r, cls){ return '<div class="nx-tile' + (cls ? ' ' + cls : '') + '"><b>' + n + '</b><span>' + r + '</span></div>'; }
+      // vendedor vê só quantos disparos saíram; taxa de resposta e abertura são só do gestor
+      var verTaxas = gestorAgora();
+      caixa.style.gridTemplateColumns = verTaxas ? '' : 'minmax(0,1fr)';
       caixa.innerHTML =
         tile(Number(d.enviados).toLocaleString('pt-BR'), 'Disparos enviados no período', 'nx-tile-forte') +
-        tile(pct(d.responderam), 'Taxa de resposta (' + d.responderam + ' responderam)', 'nx-tile-claro');
+        (verTaxas ? tile(pct(d.responderam), 'Taxa de resposta (' + d.responderam + ' responderam)', 'nx-tile-claro') : '');
       var det = $('painel-disparos-det');
       var medidos = Number(d.lidos_medidos || 0), entMed = Number(d.entregues_medidos || 0);
       function linha(r, n, nota){ return '<div class="nx-linha-resp"><div class="nx-txt"><b>' + r + '</b>' + (nota ? '<div class="nx-sub">' + nota + '</div>' : '') + '</div><strong>' + n + '</strong></div>'; }
