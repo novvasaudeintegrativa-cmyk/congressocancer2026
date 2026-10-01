@@ -1550,6 +1550,12 @@
   }
   function carregarDisparosPainel(){
     var seq = ++disparosSeq, caixa = $('painel-disparos');
+    // disparos e detalhe são só do gestor de verdade: some também no modo "ver como vendedor"
+    if (!gestorAgora()){
+      caixa.hidden = true; $('painel-disparos-det').hidden = true;
+      painelDisparos = null; atualizarSubPainel();
+      return;
+    }
     apiPost('rpc/rpc_disparos_resumo', { p_dias: extras.dias }).then(function(d){
       if (seq !== disparosSeq) return;
       painelDisparos = d && d.enviados ? d.enviados : null; atualizarSubPainel();
@@ -1583,7 +1589,7 @@
     function tile(n, r, cls){ return '<div class="nx-tile' + (cls ? ' ' + cls : '') + '"><b>' + n + '</b><span>' + r + '</span></div>'; }
     painelLeads = todos.length; atualizarSubPainel();
     carregarDisparosPainel();
-    if (disparosSemResposta === null) carregarDisparosSemResposta();
+    if (disparosSemResposta === null && estado.ehGestor) carregarDisparosSemResposta();
     $('painel-tiles').innerHTML =
       tile(doPeriodo.length, 'Leads novos no período', 'nx-tile-forte') +
       tile(emAtendimento, 'Em atendimento agora') +
@@ -1651,7 +1657,6 @@
   function carregarDisparosSemResposta(){
     return apiPost('rpc/rpc_disparos_sem_resposta', {}).then(function(rows){
       disparosSemResposta = rows || [];
-      $('contatos-fonte').querySelector('option[value="disparos"]').hidden = false;
       renderContatos();
     }).catch(function(){ /* SQL do §48 ainda não rodado ou não é gestor: mantém só o Pipeline */ });
   }
@@ -1679,6 +1684,10 @@
   }
 
   function renderContatos(){
+    // "Disparos sem resposta" é só do gestor de verdade (some no "ver como vendedor" e pra vendedor)
+    var optDisp = $('contatos-fonte').querySelector('option[value="disparos"]');
+    optDisp.hidden = !(gestorAgora() && disparosSemResposta !== null);
+    if (optDisp.hidden && $('contatos-fonte').value === 'disparos') $('contatos-fonte').value = 'pipeline';
     $('contatos-etapa').hidden = $('contatos-fonte').value === 'disparos';
     if ($('contatos-fonte').value === 'disparos'){ renderContatosDisparos(); return; }
     $('contatos-thead').innerHTML = THEAD_PIPELINE;
