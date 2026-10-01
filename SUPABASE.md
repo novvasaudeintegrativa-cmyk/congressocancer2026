@@ -8303,3 +8303,32 @@ Contatos → seletor **"Quem respondeu (Pipeline)" / "Disparos sem resposta"**
 (a opção só aparece depois que o SQL acima estiver rodado). A lista é só de
 consulta: o contato fora da janela de 24h só recebe **template aprovado** —
 ver a conversa sobre follow-up antes de disparar de novo.
+
+## 49. WhatsApp Flow do Congresso Câncer 2026 (cadastro + opt-in)
+
+**O que é (01/10/2026):** Flow da Meta com 2 telas (cadastro → oferta). JSON pronto em
+`docs/whatsapp-flow-congresso-cancer.json` (versão 7.2); colar no editor de Flows do
+Gerenciador do WhatsApp, conferir "Erros no JSON do flow: 0" e publicar.
+
+**Campos:** `nome`, `email`, `area_atuacao`, `pacientes_oncologicos`, `aceite_termos`.
+Sem preços no Flow (mantém a regra da Cris de mandar o preço só pela página).
+
+**Webhook (`docs/whatsapp-webhook-v2.ts`, cópia completa e atual da `whatsapp-webhook-v2`):**
+quando chega a mensagem `interactive/nfm_reply` com esses campos, a função
+1. grava o lead em `quiz_leads` (`path = whatsapp-flow`, `utm = whatsapp/flow/flow-congresso`);
+2. se `aceite_termos = aceito`, grava em `whatsapp_marketing_optin` com `origem = whatsapp_flow`
+   e o texto do aceite;
+3. garante a linha em `lead_status` (aparece no Pipeline);
+4. responde na conversa com o link do site com UTM de origem;
+5. **não** chama a Cris nessa mensagem (evita resposta dupla) e ignora reenvios da Meta.
+Outros Flows (ex.: Autismo/TDAH) não têm esses campos e seguem o fluxo normal.
+
+**Deploy:** colar o arquivo inteiro na `whatsapp-webhook-v2` (Supabase → Edge Functions) e
+fazer o Deploy. Não precisa de SQL novo.
+
+**Opt-in por e-mail:** o botão "CTA de opt-in WhatsApp" do editor de e-mail está oculto e o
+opt-in passa a vir do Flow; o reconhecimento da frase antiga continua no webhook só pra
+e-mails já enviados.
+
+**Falta:** enviar o Flow (mensagem interativa dentro da janela de 24h, ou template de
+marketing com botão Flow) e confirmar o texto do aceite com quem responde pela empresa.

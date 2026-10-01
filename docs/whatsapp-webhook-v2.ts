@@ -59,6 +59,74 @@ async function marcarOrigemCampanha(numero: string) {
   } catch (e) { console.error("origem campanha:", e); }
 }
 
+// ---- WhatsApp Flow do Congresso Câncer 2026 (SUPABASE.md §49) ----
+// Quando a pessoa conclui o Flow, a Meta manda uma mensagem interativa "nfm_reply" com as
+// respostas em JSON. Aqui a gente grava o lead + opt-in e responde com o link do site (com UTM).
+const SITE_FLOW_URL = "https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=whatsapp&utm_medium=flow&utm_campaign=flow-congresso";
+const TEXTO_ACEITE_FLOW = "Autorizo o uso do meu nome, e-mail e área de atuação para contato sobre o Congresso Câncer 2026, por WhatsApp e e-mail, pela equipe organizadora (Novva Saúde Integrativa). Posso pedir a exclusão dos meus dados quando quiser.";
+const FLOW_AREAS: Record<string, string> = {
+  medico: "Médico(a)", dentista: "Dentista", farmaceutico: "Farmacêutico(a)", enfermeiro: "Enfermeiro(a)",
+  fisioterapeuta: "Fisioterapeuta", terapeuta: "Terapeuta", outra: "Outra área",
+};
+const FLOW_PACIENTES: Record<string, string> = {
+  atendo: "Atende pacientes oncológicos", quero_atender: "Quer passar a atender", nao_atendo: "Não atende",
+};
+
+type RespostaFlow = { nome: string; email: string; area: string; pacientes: string; aceitou: boolean };
+
+function lerRespostaFlow(nfm: any): RespostaFlow | null {
+  try {
+    const r = typeof nfm?.response_json === "string" ? JSON.parse(nfm.response_json) : nfm?.response_json;
+    // só o Flow do Congresso tem esses campos; qualquer outro Flow cai no fluxo normal
+    if (!r || typeof r.nome !== "string" || !r.nome.trim() || r.aceite_termos === undefined) return null;
+    return {
+      nome: r.nome.trim().slice(0, 120),
+      email: String(r.email ?? "").trim().slice(0, 200),
+      area: FLOW_AREAS[r.area_atuacao] ?? String(r.area_atuacao ?? "").slice(0, 80),
+      pacientes: FLOW_PACIENTES[r.pacientes_oncologicos] ?? String(r.pacientes_oncologicos ?? "").slice(0, 80),
+      aceitou: r.aceite_termos === "aceito",
+    };
+  } catch (e) { console.error("flow json:", e); return null; }
+}
+
+function resumoFlow(f: RespostaFlow): string {
+  return `📋 Preencheu o formulário (Flow): ${f.nome} · ${f.area || "área não informada"} · ${f.pacientes || "—"}`;
+}
+
+async function jaProcessada(waId: string): Promise<boolean> {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/mensagens?wa_message_id=eq.${encodeURIComponent(waId)}&select=id&limit=1`, { headers: svcHeaders });
+  const rows = r.ok ? await r.json() : [];
+  return rows.length > 0;
+}
+
+async function processarFlow(numero: string, waId: string, f: RespostaFlow) {
+  try {
+    if (await jaProcessada(waId)) return; // a Meta reenvia o webhook às vezes: não duplica lead nem resposta
+    const rl = await fetch(`${SUPABASE_URL}/rest/v1/quiz_leads`, {
+      method: "POST",
+      headers: { ...svcHeaders, prefer: "return=minimal" },
+      body: JSON.stringify([{
+        nome: f.nome, whatsapp: numero, email: f.email || null, profissao: f.area || null,
+        respostas: { origem: "whatsapp_flow", pacientes_oncologicos: f.pacientes },
+        path: "whatsapp-flow", utm_source: "whatsapp", utm_medium: "flow", utm_campaign: "flow-congresso",
+      }]),
+    });
+    if (!rl.ok) console.error("flow lead:", rl.status, await rl.text());
+    if (f.aceitou) {
+      await fetch(`${SUPABASE_URL}/rest/v1/whatsapp_marketing_optin?on_conflict=whatsapp`, {
+        method: "POST",
+        headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify([{ whatsapp: numero, origem: "whatsapp_flow", texto_recebido: TEXTO_ACEITE_FLOW }]),
+      });
+    }
+    await garantirLeadStatus(numero);
+    const primeiro = f.nome.split(/\s+/)[0];
+    const texto = `Obrigado, ${primeiro}! 🙌 Aqui está o link para conhecer os lotes e garantir sua vaga no Congresso Câncer 2026: ${SITE_FLOW_URL}`;
+    const resp = await mandarWhatsapp(numero, texto);
+    if (resp) await gravarEnviada(numero, resp, texto);
+  } catch (e) { console.error("flow:", e); }
+}
+
 const CRIS_INSTRUCOES = `Você é a Cris, da equipe do Congresso Câncer 2026 (congresso de práticas integrativas oncológicas, 2 dias em São Paulo). Sua função é criar uma conexão inicial calorosa com o lead e levar ele pra nossa página oficial — é lá que tem a apresentação completa (inclusive vídeo), que já responde as dúvidas mais comuns e foi feita pra converter. O site é: https://congressocancer.novvasaudeintegrativa.com.br
 
 Perfil de quem mais aproveita o congresso: médico(a)/dentista/farmacêutico(a)/enfermeiro(a)/fisioterapeuta/terapeuta que atende ou quer atender pacientes oncológicos e quer ampliar repertório em práticas integrativas.
@@ -346,7 +414,8 @@ Deno.serve(async (req) => {
       for (const m of v.messages ?? []) {
         const midia = m.image || m.video || m.audio || m.document || m.sticker;
         const midiaUrl = midia?.id ? await baixarEArmazenarMidia(midia.id, midia.mime_type) : null;
-        const texto = m.text?.body ?? m.button?.text ??
+        const flowResp = m.interactive?.type === "nfm_reply" ? lerRespostaFlow(m.interactive.nfm_reply) : null;
+        const texto = (flowResp ? resumoFlow(flowResp) : null) ?? m.text?.body ?? m.button?.text ??
                m.interactive?.button_reply?.title ??
                m.interactive?.list_reply?.title ?? midia?.caption ?? null;
         linhas.push({
@@ -359,9 +428,15 @@ Deno.serve(async (req) => {
           wa_timestamp: m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : null,
           raw: m,
         });
-        await registrarOptinWhatsapp(m.from, texto);
-        await marcarOrigemCampanha(m.from);
-        numerosRecebidos.add(m.from);
+        if (flowResp) {
+          // Flow do Congresso: grava lead + opt-in e responde com o link; a Cris não entra (evita resposta dupla)
+          await processarFlow(m.from, m.id, flowResp);
+          await marcarOrigemCampanha(m.from);
+        } else {
+          await registrarOptinWhatsapp(m.from, texto);
+          await marcarOrigemCampanha(m.from);
+          numerosRecebidos.add(m.from);
+        }
       }
       for (const s of v.statuses ?? []) {
         if (s.id && s.status) statusUpdates.push({ id: s.id, status: s.status, ts: s.timestamp });
