@@ -8412,3 +8412,13 @@ O Flow precisa estar **publicado** (ID `2127650164508667`).
 `utm_source=whatsapp&utm_medium=flow&utm_campaign=flow-congresso`; o canal do anúncio em si é
 medido pelo Gerenciador de Anúncios (conversas iniciadas) e pelo CRM (lead com origem
 `whatsapp-flow`).
+
+**Atualização (02/10/2026) — segunda frase de entrada (topo/meio de funil):** o webhook agora
+dispara o Flow com **duas** frases (lista `FRASES_ANUNCIO` em `docs/whatsapp-webhook-v2.ts`):
+- `Quero garantir minha vaga no Congresso Câncer 2026` (fundo de funil)
+- `Quero saber mais sobre o Congresso Câncer 2026` (topo/meio de funil)
+
+Link da segunda: `https://wa.me/5511934873737?text=Quero%20saber%20mais%20sobre%20o%20Congresso%20C%C3%A2ncer%202026`
+
+Em ambas vale o complemento depois da frase (ex.: ` - grupo`), pois o teste é "contém".
+Requer novo Deploy da `whatsapp-webhook-v2`.

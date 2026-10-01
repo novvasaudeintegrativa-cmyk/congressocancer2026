@@ -126,7 +126,11 @@ async function processarFlow(numero: string, waId: string, f: RespostaFlow) {
 // O link do tráfego pago é um wa.me com esta frase pré-preenchida (SUPABASE.md §52). Usamos só a
 // frase (e não o "referral" do anúncio) porque o mesmo número também recebe anúncio de outros eventos.
 const FLOW_ID_CADASTRO = "2127650164508667";
-const FRASE_ANUNCIO = "quero garantir minha vaga no congresso cancer 2026"; // já sem acento (normalizarTexto)
+// frases já sem acento e em minúsculas (normalizarTexto): "garantir vaga" = fundo de funil, "saber mais" = topo/meio
+const FRASES_ANUNCIO = [
+  "quero garantir minha vaga no congresso cancer 2026",
+  "quero saber mais sobre o congresso cancer 2026",
+];
 const CORPO_FLOW_ANUNCIO =
   "Oi! 👋 Que bom ter você por aqui. Preencha o cadastro rapidinho para receber as informações e garantir sua vaga no Congresso Câncer 2026 (20 e 21 de novembro, em São Paulo). 👇";
 
@@ -472,7 +476,8 @@ Deno.serve(async (req) => {
           await registrarOptinWhatsapp(m.from, texto);
           await marcarOrigemCampanha(m.from);
           // chegou pelo link da campanha (frase pré-preenchida): o Flow responde, a Cris espera a pessoa falar
-          const doAnuncio = normalizarTexto(texto ?? "").includes(FRASE_ANUNCIO);
+          const textoNorm = normalizarTexto(texto ?? "");
+          const doAnuncio = FRASES_ANUNCIO.some((f) => textoNorm.includes(f));
           const flowEnviado = doAnuncio ? await enviarFlowCadastro(m.from) : false;
           if (!flowEnviado) numerosRecebidos.add(m.from);
         }
