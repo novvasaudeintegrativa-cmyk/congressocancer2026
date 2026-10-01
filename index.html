@@ -995,7 +995,9 @@
   /* patrocinadores em 2 colunas (até segunda ordem); expositores seguem em 4 */
   .slot-grid.dois{grid-template-columns:repeat(2, 1fr);max-width:640px;margin-left:auto;margin-right:auto;}
   .slot.ativo{border-style:solid;border-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.04);}
-  .slot.ativo img{opacity:1;max-width:200px;max-height:120px;}
+  /* a logo da expositora é larga e tem margem transparente no arquivo: ocupa o quadro todo e
+     é ampliada pra o texto visível ficar do tamanho dos outros quadros */
+  .slot.ativo img{opacity:1;width:100%;height:auto;max-width:100%;max-height:200px;transform:scale(1.4);}
   .grupo-cta{margin-top:var(--space-lg);}
 
   /* LOTES */
