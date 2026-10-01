@@ -8310,7 +8310,8 @@ ver a conversa sobre follow-up antes de disparar de novo.
 `docs/whatsapp-flow-congresso-cancer.json` (versão 7.2); colar no editor de Flows do
 Gerenciador do WhatsApp, conferir "Erros no JSON do flow: 0" e publicar.
 
-**Campos:** `nome`, `email`, `area_atuacao`, `pacientes_oncologicos`, `aceite_termos`.
+**Campos:** `nome`, `email`, `area_atuacao`, `aceite_termos` (a pergunta "atende pacientes
+oncológicos?" foi retirada a pedido, 01/10/2026).
 Sem preços no Flow (mantém a regra da Cris de mandar o preço só pela página).
 
 **Webhook (`docs/whatsapp-webhook-v2.ts`, cópia completa e atual da `whatsapp-webhook-v2`):**
@@ -8332,3 +8333,38 @@ e-mails já enviados.
 
 **Falta:** enviar o Flow (mensagem interativa dentro da janela de 24h, ou template de
 marketing com botão Flow) e confirmar o texto do aceite com quem responde pela empresa.
+
+## 50. Quiz — aceite de contato vira opt-in de WhatsApp
+
+**Por quê (01/10/2026):** o quiz passou a ter um aceite marcado (mesmo texto do Flow, com
+"WhatsApp" incluído porque o quiz também coleta o número). O aceite fica em
+`quiz_leads.respostas` (`aceite_marketing: true` + `texto_aceite` com o texto exato que a pessoa
+viu). Como só o service role escreve em `whatsapp_marketing_optin`, este trigger copia o aceite pra
+lá (origem `quiz`). O quiz continua em `DEMO_MODE = true` até testarmos o envio.
+
+### 50.1. SQL (rodar no SQL Editor)
+
+```sql
+create or replace function public.quiz_lead_optin()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare d text;
+begin
+  if coalesce(new.respostas->>'aceite_marketing', '') = 'true' then
+    d := regexp_replace(coalesce(new.whatsapp, ''), '\D', '', 'g');
+    if length(d) in (10, 11) then d := '55' || d; end if;   -- número BR sem DDI
+    if length(d) >= 12 then
+      insert into public.whatsapp_marketing_optin (whatsapp, origem, texto_recebido)
+      values (d, 'quiz', new.respostas->>'texto_aceite')
+      on conflict (whatsapp) do nothing;
+    end if;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists quiz_leads_optin on public.quiz_leads;
+create trigger quiz_leads_optin after insert on public.quiz_leads
+  for each row execute function public.quiz_lead_optin();
+```
+
+Testar depois de ligar o quiz: preencher com um número seu, marcar o aceite e conferir uma linha
+nova em `whatsapp_marketing_optin` com `origem = 'quiz'`.

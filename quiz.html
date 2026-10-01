@@ -128,7 +128,10 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     outline:2px solid var(--bordo-vivo);outline-offset:2px;border-color:var(--bordo-vivo);
   }
   select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a222e' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:16px;}
+  .topo-img{display:block;width:100%;height:auto;border-radius:12px;margin:0 0 16px;}
   .lgpd{font-size:11px;color:var(--faint);margin-top:14px;}
+  .aceite{display:flex;gap:10px;align-items:flex-start;margin-top:16px;font-size:12px;line-height:1.45;color:var(--soft);text-transform:none;letter-spacing:0;font-weight:400;cursor:pointer;}
+  .aceite input{width:18px;height:18px;padding:0;flex:none;margin-top:2px;accent-color:var(--bordo-vivo);}
 
   .btn{
     display:block;width:100%;margin-top:20px;font-family:var(--fonte-titulo);
@@ -165,6 +168,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     <div class="progress" id="progress-wrap" hidden><i id="barra"></i></div>
 
     <form id="tela-form">
+      <img class="topo-img" src="Imgs/quiz-topo.jpg" alt="Congresso Câncer 2026 — o maior encontro da América Latina em práticas integrativas no tratamento e prevenção do câncer" width="900" height="506">
       <h2 style="font-size:19px;color:var(--bordo);">Vamos começar o Raio-X do Repertório Clínico?</h2>
       <p style="font-size:13px;color:var(--soft);margin-top:6px;">5 perguntas rápidas — seu nível de repertório sai na hora.</p>
 
@@ -190,7 +194,10 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       <label for="f-email">E-mail <span style="text-transform:none;color:var(--faint);">(opcional)</span></label>
       <input type="email" id="f-email" placeholder="seu@email.com" autocomplete="email">
 
-      <p class="lgpd">Usamos esses dados só para te contar sobre o Congresso — sem compartilhar com terceiros.</p>
+      <label class="aceite" for="f-aceite">
+        <input type="checkbox" id="f-aceite" required>
+        <span>Autorizo o uso do meu nome, WhatsApp, e-mail e área de atuação para contato sobre o Congresso Câncer 2026, por WhatsApp e e-mail, pela equipe organizadora (Novva Saúde Integrativa). Posso pedir a exclusão dos meus dados quando quiser.</span>
+      </label>
       <div class="erro" id="form-erro" hidden></div>
       <button type="submit" class="btn" id="btn-comecar">Começar o Raio-X</button>
     </form>
@@ -376,7 +383,15 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       $('form-erro').hidden = false;
       return;
     }
+    if (!$('f-aceite').checked){
+      $('form-erro').textContent = 'Marque o aceite pra continuar.';
+      $('form-erro').hidden = false;
+      return;
+    }
     contato = { nome: nome, whatsapp: whatsapp, email: email || null, profissao: profissao };
+    /* aceite de contato: guarda o texto exato que a pessoa viu (prova de consentimento) */
+    var aceite = { aceite_marketing: true, texto_aceite: document.querySelector('.aceite span').textContent.trim() };
+    contato.texto_aceite = aceite.texto_aceite;
 
     sendEvent('QuizContato', {});
     if (!DEMO_MODE && typeof fbq === 'function') fbq('track', 'Lead', { content_name:'Quiz - Contato' });
@@ -391,7 +406,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         body: JSON.stringify({
           visitor_id: visitorId, session_id: sessionId,
           nome: contato.nome, whatsapp: contato.whatsapp, email: contato.email, profissao: contato.profissao,
-          respostas: {}, pontuacao: null, nivel: null,
+          respostas: aceite, pontuacao: null, nivel: null,
           path: location.pathname + location.search,
           utm_source: camp.utm_source, utm_medium: camp.utm_medium, utm_campaign: camp.utm_campaign,
           utm_term: camp.utm_term, utm_content: camp.utm_content, gclid: camp.gclid, fbclid: camp.fbclid
@@ -418,7 +433,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     var row = {
       visitor_id: visitorId, session_id: sessionId,
       nome: contato.nome, whatsapp: contato.whatsapp, email: contato.email, profissao: contato.profissao,
-      respostas: { respostas: respostas, perguntas: PERGUNTAS.map(function(p){ return p.texto; }) },
+      respostas: { respostas: respostas, perguntas: PERGUNTAS.map(function(p){ return p.texto; }), aceite_marketing: true, texto_aceite: contato.texto_aceite },
       pontuacao: pontuacao, nivel: nivel,
       path: location.pathname + location.search,
       utm_source: camp.utm_source, utm_medium: camp.utm_medium, utm_campaign: camp.utm_campaign,

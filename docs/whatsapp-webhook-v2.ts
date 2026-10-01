@@ -65,14 +65,10 @@ async function marcarOrigemCampanha(numero: string) {
 const SITE_FLOW_URL = "https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=whatsapp&utm_medium=flow&utm_campaign=flow-congresso";
 const TEXTO_ACEITE_FLOW = "Autorizo o uso do meu nome, e-mail e área de atuação para contato sobre o Congresso Câncer 2026, por WhatsApp e e-mail, pela equipe organizadora (Novva Saúde Integrativa). Posso pedir a exclusão dos meus dados quando quiser.";
 const FLOW_AREAS: Record<string, string> = {
-  medico: "Médico(a)", dentista: "Dentista", farmaceutico: "Farmacêutico(a)", enfermeiro: "Enfermeiro(a)",
-  fisioterapeuta: "Fisioterapeuta", terapeuta: "Terapeuta", outra: "Outra área",
+  medicina: "Medicina", odontologia: "Odontologia", farmacia: "Farmácia", enfermagem: "Enfermagem",
+  fisioterapia: "Fisioterapia", nutricao: "Nutrição", terapias_integrativas: "Terapias integrativas", outra: "Outra",
 };
-const FLOW_PACIENTES: Record<string, string> = {
-  atendo: "Atende pacientes oncológicos", quero_atender: "Quer passar a atender", nao_atendo: "Não atende",
-};
-
-type RespostaFlow = { nome: string; email: string; area: string; pacientes: string; aceitou: boolean };
+type RespostaFlow = { nome: string; email: string; area: string; aceitou: boolean };
 
 function lerRespostaFlow(nfm: any): RespostaFlow | null {
   try {
@@ -83,14 +79,13 @@ function lerRespostaFlow(nfm: any): RespostaFlow | null {
       nome: r.nome.trim().slice(0, 120),
       email: String(r.email ?? "").trim().slice(0, 200),
       area: FLOW_AREAS[r.area_atuacao] ?? String(r.area_atuacao ?? "").slice(0, 80),
-      pacientes: FLOW_PACIENTES[r.pacientes_oncologicos] ?? String(r.pacientes_oncologicos ?? "").slice(0, 80),
       aceitou: r.aceite_termos === "aceito",
     };
   } catch (e) { console.error("flow json:", e); return null; }
 }
 
 function resumoFlow(f: RespostaFlow): string {
-  return `📋 Preencheu o formulário (Flow): ${f.nome} · ${f.area || "área não informada"} · ${f.pacientes || "—"}`;
+  return `📋 Preencheu o formulário (Flow): ${f.nome} · ${f.area || "área não informada"}`;
 }
 
 async function jaProcessada(waId: string): Promise<boolean> {
@@ -107,7 +102,7 @@ async function processarFlow(numero: string, waId: string, f: RespostaFlow) {
       headers: { ...svcHeaders, prefer: "return=minimal" },
       body: JSON.stringify([{
         nome: f.nome, whatsapp: numero, email: f.email || null, profissao: f.area || null,
-        respostas: { origem: "whatsapp_flow", pacientes_oncologicos: f.pacientes },
+        respostas: { origem: "whatsapp_flow" },
         path: "whatsapp-flow", utm_source: "whatsapp", utm_medium: "flow", utm_campaign: "flow-congresso",
       }]),
     });
