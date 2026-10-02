@@ -1482,6 +1482,8 @@
       dbg('pipeline ok: ' + (Array.isArray(data) ? data.length + ' leads' : typeof data));
       estado.leads = data || [];
       render();
+      // o nome vem do Pipeline: redesenha a lista de Conversas quando ele chega depois das mensagens
+      if (Object.keys(conversas).length) renderInboxLista();
     }).catch(function(err){
       dbg('pipeline ERRO: ' + (err && err.message ? err.message : String(err)));
       $('board').innerHTML = '<div class="vazio-col">Erro ao carregar: ' + err.message + '</div>';
@@ -2335,6 +2337,21 @@
       });
   }
 
+  // nome do contato vindo do Pipeline (quiz, Flow, lista de disparo ou nome de perfil do WhatsApp);
+  // compara só dígitos e, se o formato diferir (nono dígito, DDI), pelos últimos 8
+  function nomeDoContato(n){
+    var d = String(n || '').replace(/\D/g, '');
+    if (!d) return '';
+    var fim = d.slice(-8);
+    var achou = null;
+    (estado.leads || []).some(function(l){
+      var x = String(l.whatsapp || '').replace(/\D/g, '');
+      if (x && (x === d || x.slice(-8) === fim)){ achou = l; return !!l.nome; }
+      return false;
+    });
+    return achou && achou.nome ? String(achou.nome).trim() : '';
+  }
+
   function renderInboxLista(){
     var nums = Object.keys(conversas).sort(function(a,b){
       var ua = urgentesConversa[a] ? '1' : '0', ub = urgentesConversa[b] ? '1' : '0';
@@ -2350,10 +2367,12 @@
     $('inbox-lista').innerHTML = nums.map(function(n){
       var arr = conversas[n], u = arr[arr.length-1];
       var prev = (u.texto || '(' + (u.tipo || '?') + ')').replace(/\s+/g,' ');
+      var nome = nomeDoContato(n);
       return '<div class="inbox-item' + (n===conversaAtual?' on':'') + '" data-n="' + n + '">' +
-        avatarHtml(null, n) +
+        avatarHtml(nome || null, n) +
         '<div class="inbox-item-corpo">' +
-          '<div class="num">' + (urgentesConversa[n] ? '<span class="dot-urgente" title="Urgente"></span> ' : '') + '+' + esc(n) + '</div>' +
+          '<div class="num">' + (urgentesConversa[n] ? '<span class="dot-urgente" title="Urgente"></span> ' : '') +
+            (nome ? esc(nome) + ' <small style="font-weight:400;opacity:.65">+' + esc(n) + '</small>' : '+' + esc(n)) + '</div>' +
           '<div class="prev">' + (u.direcao==='enviada' ? (u.enviado_por ? 'Você: ' : 'Cris: ') : '') + esc(prev) + '</div>' +
           '<div class="qnd">' + fmtQuando(u.criado_em) + ' · ' + arr.length + ' msg</div>' +
         '</div>' +
@@ -2393,7 +2412,7 @@
     $('inbox-lista').querySelectorAll('.inbox-item').forEach(function(el){ el.classList.toggle('on', el.dataset.n === n); });
     var arr = conversas[n] || [];
     $('inbox-thread').innerHTML =
-      '<div class="thread-head">+' + esc(n) + '</div>' +
+      '<div class="thread-head">' + (nomeDoContato(n) ? esc(nomeDoContato(n)) + ' <small style="font-weight:400;opacity:.65">+' + esc(n) + '</small>' : '+' + esc(n)) + '</div>' +
       '<div class="thread-ia" id="thread-ia">carregando…</div>' +
       '<div class="thread-msgs" id="thread-msgs">' +
         arr.map(function(m){

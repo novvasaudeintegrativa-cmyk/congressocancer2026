@@ -63,10 +63,19 @@ async function marcarOrigemCampanha(numero: string) {
 async function garantirNomeWhatsapp(numero: string, nome: string | null) {
   if (!nome) return;
   try {
+    const n = nome.slice(0, 120);
+    // só preenche quem ainda não tem nome: não sobrescreve o nome vindo da lista de disparo (ou o primeiro
+    // nome de perfil) com o de uma resposta automática, que chega com o nome da clínica
+    await fetch(`${SUPABASE_URL}/rest/v1/lead_status?whatsapp=eq.${numero}&nome_whatsapp=is.null`, {
+      method: "PATCH",
+      headers: { ...svcHeaders, prefer: "return=minimal" },
+      body: JSON.stringify({ nome_whatsapp: n }),
+    });
+    // lead ainda sem linha em lead_status: cria; se já existe, não mexe
     await fetch(`${SUPABASE_URL}/rest/v1/lead_status?on_conflict=whatsapp`, {
       method: "POST",
-      headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
-      body: JSON.stringify([{ whatsapp: numero, nome_whatsapp: nome.slice(0, 120) }]),
+      headers: { ...svcHeaders, prefer: "resolution=ignore-duplicates,return=minimal" },
+      body: JSON.stringify([{ whatsapp: numero, nome_whatsapp: n }]),
     });
   } catch (e) { console.error("nome whatsapp:", e); }
 }
