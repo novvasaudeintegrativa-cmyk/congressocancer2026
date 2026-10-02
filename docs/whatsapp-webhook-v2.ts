@@ -59,6 +59,26 @@ async function marcarOrigemCampanha(numero: string) {
   } catch (e) { console.error("origem campanha:", e); }
 }
 
+// Nome de perfil do WhatsApp (value.contacts[].profile.name): o CRM usa como plano B quando a pessoa nunca preencheu o quiz (SUPABASE.md §29)
+async function garantirNomeWhatsapp(numero: string, nome: string | null) {
+  if (!nome) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/lead_status?on_conflict=whatsapp`, {
+      method: "POST",
+      headers: { ...svcHeaders, prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify([{ whatsapp: numero, nome_whatsapp: nome.slice(0, 120) }]),
+    });
+  } catch (e) { console.error("nome whatsapp:", e); }
+}
+
+function mapaContatos(v: any): Record<string, string> {
+  const mapa: Record<string, string> = {};
+  for (const c of v.contacts ?? []) {
+    if (c.wa_id && c.profile?.name) mapa[c.wa_id] = c.profile.name;
+  }
+  return mapa;
+}
+
 // ---- WhatsApp Flow do Congresso Câncer 2026 (SUPABASE.md §49) ----
 // Quando a pessoa conclui o Flow, a Meta manda uma mensagem interativa "nfm_reply" com as
 // respostas em JSON. Aqui a gente grava o lead + opt-in e responde com o link do site (com UTM).
@@ -451,6 +471,7 @@ Deno.serve(async (req) => {
   for (const entry of payload.entry ?? []) {
     for (const ch of entry.changes ?? []) {
       const v = ch.value ?? {};
+      const contatos = mapaContatos(v);
       for (const m of v.messages ?? []) {
         const midia = m.image || m.video || m.audio || m.document || m.sticker;
         const midiaUrl = midia?.id ? await baixarEArmazenarMidia(midia.id, midia.mime_type) : null;
@@ -468,6 +489,7 @@ Deno.serve(async (req) => {
           wa_timestamp: m.timestamp ? new Date(Number(m.timestamp) * 1000).toISOString() : null,
           raw: m,
         });
+        await garantirNomeWhatsapp(m.from, contatos[m.from] ?? null);
         if (flowResp) {
           // Flow do Congresso: grava lead + opt-in e responde com o link; a Cris não entra (evita resposta dupla)
           await processarFlow(m.from, m.id, flowResp);

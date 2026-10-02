@@ -1208,7 +1208,7 @@
       ligarPresenca();
       carregarAuditorio();
       carregarComentariosInstagram();
-      carregarQualidadeWhatsapp();
+      if (estado.ehGestor) carregarQualidadeWhatsapp();
       if (estado.ehGestor) {
         carregarEquipe();
         carregarCampanhas(); carregarGeracoesIA();
@@ -1306,6 +1306,8 @@
         $(id).hidden = simulando;
       });
     }
+    // nota de qualidade do número da Meta é informação de gestão: vendedor (e o "ver como vendedor") não vê
+    $('view-qualidade-whatsapp').hidden = !gestorAgora();
     render();
     avisarPapelAoPai(gestorAgora());
   }
