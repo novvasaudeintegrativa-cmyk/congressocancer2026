@@ -2401,6 +2401,7 @@
       '<div class="thread-rapidas" id="thread-rapidas">' +
         RESPOSTAS_RAPIDAS.map(function(r, i){ return '<button type="button" class="btn-rapida" data-i="' + i + '">' + esc(r.rotulo) + '</button>'; }).join('') +
       '</div>' +
+      '<div id="resp-erro" style="display:' + (respErro ? 'block' : 'none') + ';margin:6px 12px 0;padding:8px 10px;border-radius:8px;background:#fdecec;color:#8a1c1c;font-size:13px;word-break:break-word">' + esc(respErro) + '</div>' +
       '<div class="thread-resp" id="thread-resp"><textarea id="resp-texto" placeholder="responder…"></textarea><button type="button" id="resp-mic" class="thread-mic" title="Gravar áudio">' + ic('mic', 16) + '</button><button type="button" id="resp-enviar">Enviar</button></div>';
     var tm = $('thread-msgs');
     tm.scrollTop = pertoDoFim ? tm.scrollHeight : Math.min(scrollAnterior, tm.scrollHeight);
@@ -2422,13 +2423,18 @@
       var texto = (txt.value || '').trim();
       if (!texto) return;
       btn.disabled = true;
+      respErro = '';
+      var boxErro = $('resp-erro'); if (boxErro) boxErro.style.display = 'none';
       whatsappEnviar(n, texto).then(function(){
         txt.value = '';
         btn.disabled = false;
         return carregarConversas();
       }).catch(function(err){
         btn.disabled = false;
-        alert('Erro ao enviar: ' + err.message);
+        respErro = 'Erro ao enviar: ' + err.message;
+        console.error(respErro, err);
+        boxErro = $('resp-erro');
+        if (boxErro){ boxErro.textContent = respErro; boxErro.style.display = 'block'; }
       });
     });
     txt.addEventListener('keydown', function(e){
@@ -2474,6 +2480,8 @@
     v = String(v == null ? '' : v);
     return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
   }
+
+  var respErro = '';
 
   function whatsappEnviar(numero, texto){
     return fetch(SUPABASE_URL + '/functions/v1/whatsapp-send', {
