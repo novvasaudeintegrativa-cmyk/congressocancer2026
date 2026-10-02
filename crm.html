@@ -2311,13 +2311,15 @@
 
   function carregarConversas(){
     return Promise.all([
-      apiGet('mensagens?select=id,lead_whatsapp,direcao,tipo,texto,midia_url,status,wa_timestamp,criado_em,enviado_por&order=criado_em.asc'),
+      apiGet('mensagens?select=id,lead_whatsapp,direcao,tipo,texto,midia_url,status,wa_timestamp,criado_em,enviado_por&order=criado_em.desc&limit=1000'),
       apiGet('lead_status?select=whatsapp,urgente&urgente=eq.true'),
     ])
       .then(function(res){
         var msgs = res[0], urgentes = res[1];
         conversas = {};
-        (msgs || []).forEach(function(m){
+        // vem das mais novas pras mais antigas (o servidor corta em ~1000 linhas;
+        // em ordem crescente cortava justamente as mensagens mais recentes)
+        (msgs || []).slice().reverse().forEach(function(m){
           (conversas[m.lead_whatsapp] = conversas[m.lead_whatsapp] || []).push(m);
         });
         urgentesConversa = {};
