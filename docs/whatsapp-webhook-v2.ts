@@ -446,7 +446,7 @@ Deno.serve(async (req) => {
   try { payload = JSON.parse(bodyText); } catch { return new Response("bad json", { status: 400 }); }
 
   const linhas: Record<string, unknown>[] = [];
-  const statusUpdates: { id: string; status: string; ts?: string }[] = [];
+  const statusUpdates: { id: string; status: string; ts?: string; erro?: string }[] = [];
   const numerosRecebidos = new Set<string>();
   for (const entry of payload.entry ?? []) {
     for (const ch of entry.changes ?? []) {
@@ -483,7 +483,12 @@ Deno.serve(async (req) => {
         }
       }
       for (const s of v.statuses ?? []) {
-        if (s.id && s.status) statusUpdates.push({ id: s.id, status: s.status, ts: s.timestamp });
+        if (s.id && s.status) {
+          const e = Array.isArray(s.errors) ? s.errors[0] : null;
+          const erro = e ? `${e.code ?? ""} ${e.title ?? ""}${e.error_data?.details ? " — " + e.error_data.details : ""}`.trim() : undefined;
+          if (erro) console.error("status com erro:", s.id, s.status, erro);
+          statusUpdates.push({ id: s.id, status: s.status, ts: s.timestamp, erro });
+        }
       }
     }
   }
@@ -503,6 +508,15 @@ Deno.serve(async (req) => {
       headers: { ...svcHeaders, prefer: "return=minimal" },
       body: JSON.stringify({ status: s.status }),
     }).catch((e) => console.error("status update:", s.id, e));
+
+    // motivo da falha (ex.: 131047 fora da janela de 24h) — PATCH separado pra não quebrar o status se a coluna `erro` ainda não existir (SUPABASE.md §14.6)
+    if (s.erro) {
+      await fetch(`${SUPABASE_URL}/rest/v1/mensagens?wa_message_id=eq.${encodeURIComponent(s.id)}`, {
+        method: "PATCH",
+        headers: { ...svcHeaders, prefer: "return=minimal" },
+        body: JSON.stringify({ erro: s.erro }),
+      }).catch((e) => console.error("erro da mensagem:", s.id, e));
+    }
 
     // disparos de campanha: guarda entrega/leitura em campanha_whatsapp_contatos (SUPABASE.md §47)
     if (s.status === "delivered" || s.status === "read") {

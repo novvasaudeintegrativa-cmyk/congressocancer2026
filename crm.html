@@ -2311,7 +2311,7 @@
 
   function carregarConversas(){
     return Promise.all([
-      apiGet('mensagens?select=id,lead_whatsapp,direcao,tipo,texto,midia_url,status,wa_timestamp,criado_em,enviado_por&order=criado_em.desc&limit=1000'),
+      apiGet('mensagens?select=id,lead_whatsapp,direcao,tipo,texto,midia_url,status,wa_timestamp,criado_em,enviado_por,erro&order=criado_em.desc&limit=1000'),
       apiGet('lead_status?select=whatsapp,urgente&urgente=eq.true'),
     ])
       .then(function(res){
@@ -2397,6 +2397,7 @@
             conteudo +
             '<span class="hora">' + fmtQuando(m.wa_timestamp || m.criado_em) +
             (m.direcao==='enviada' && m.status ? ' · ' + esc(m.status) : '') + '</span>' +
+            (m.erro ? '<span class="hora" style="color:#8a1c1c;display:block">' + esc(m.erro) + '</span>' : '') +
           '</div>';
         }).join('') +
       '</div>' +
