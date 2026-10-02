@@ -1540,8 +1540,20 @@ Deno.serve(async (req) => {
 });
 ```
 
-**Deploy.** Mantém **"Verify JWT with legacy secret" LIGADO** (o CRM manda
-o JWT do usuário logado, igual o `equipe-admin`).
+**Deploy.** **"Verify JWT with legacy secret" DESLIGADO** (02/10/2026): a
+função já confere o usuário logado e se ele está ativo em `perfis`, então
+a verificação extra do Supabase só atrapalha (mesmo caso da `enviar-flow`,
+§51). Se uma reimplantação religar o toggle, desligue de novo.
+
+**Lição (02/10/2026): "não consigo responder" nem sempre é o envio.** A
+função respondia 200 e a mensagem chegava no WhatsApp (`status delivered`
+em `mensagens`), mas o CRM não mostrava a resposta: `carregarConversas`
+buscava `mensagens` em ordem crescente e o servidor corta em ~1000 linhas,
+descartando justamente as mais novas. Agora busca `order=criado_em.desc&limit=1000`
+e inverte na tela. Antes de mexer na função, confira no SQL Editor:
+`select criado_em, direcao, texto, status from mensagens where lead_whatsapp like '<numero>%' order by criado_em desc limit 5;`
+Pendente: carregar a conversa inteira só ao abrir (hoje o histórico mais
+antigo de leads velhos some quando passar de mil mensagens).
 
 **Secrets** (Edge Functions → Secrets):
 - `WHATSAPP_PERMANENT_TOKEN` — o token gerado no passo 1 (Usuário de
