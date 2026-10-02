@@ -2362,6 +2362,17 @@
     });
   }
 
+  // true quando já houve mensagem dele e a última passou de 24h (janela do WhatsApp fechada)
+  function foraDaJanela(arr){
+    for (var i = arr.length - 1; i >= 0; i--){
+      if (arr[i].direcao === 'recebida'){
+        var t = new Date(arr[i].wa_timestamp || arr[i].criado_em).getTime();
+        return !isNaN(t) && (Date.now() - t) > 24 * 60 * 60 * 1000;
+      }
+    }
+    return false;
+  }
+
   function renderThread(n){
     var rascunhoAnterior = '';
     var tinhaFoco = false;
@@ -2404,6 +2415,12 @@
       '<div class="thread-rapidas" id="thread-rapidas">' +
         RESPOSTAS_RAPIDAS.map(function(r, i){ return '<button type="button" class="btn-rapida" data-i="' + i + '">' + esc(r.rotulo) + '</button>'; }).join('') +
       '</div>' +
+      (foraDaJanela(arr)
+        ? '<div id="resp-janela" style="margin:6px 12px 0;padding:8px 10px;border-radius:8px;background:#fff6e0;color:#6b4a00;font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
+            '<span style="flex:1;min-width:200px"><b>Passou de 24h</b> desde a última mensagem dele: o WhatsApp bloqueia texto livre. Só dá pra retomar com a mensagem modelo.</span>' +
+            '<button type="button" id="resp-retomar" style="background:#8a1c1c;color:#fff;border:0;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer">Retomar conversa</button>' +
+          '</div>'
+        : '') +
       '<div id="resp-erro" style="display:' + (respErro ? 'block' : 'none') + ';margin:6px 12px 0;padding:8px 10px;border-radius:8px;background:#fdecec;color:#8a1c1c;font-size:13px;word-break:break-word">' + esc(respErro) + '</div>' +
       '<div class="thread-resp" id="thread-resp"><textarea id="resp-texto" placeholder="responder…"></textarea><button type="button" id="resp-mic" class="thread-mic" title="Gravar áudio">' + ic('mic', 16) + '</button><button type="button" id="resp-enviar">Enviar</button></div>';
     var tm = $('thread-msgs');
@@ -2437,6 +2454,20 @@
         respErro = 'Erro ao enviar: ' + err.message;
         console.error(respErro, err);
         boxErro = $('resp-erro');
+        if (boxErro){ boxErro.textContent = respErro; boxErro.style.display = 'block'; }
+      });
+    });
+    var btnRetomar = $('resp-retomar');
+    if (btnRetomar) btnRetomar.addEventListener('click', function(){
+      if (!confirm('Enviar a mensagem modelo "Retomar conversa" pra +' + n + '?\n\nÉ uma mensagem fixa e só deve ser usada uma vez. Quando ele responder, você volta a escrever normalmente.')) return;
+      btnRetomar.disabled = true;
+      respErro = '';
+      whatsappEnviar(n, '', true).then(function(){
+        return carregarConversas();
+      }).catch(function(err){
+        btnRetomar.disabled = false;
+        respErro = 'Erro ao retomar: ' + err.message;
+        var boxErro = $('resp-erro');
         if (boxErro){ boxErro.textContent = respErro; boxErro.style.display = 'block'; }
       });
     });
@@ -2486,11 +2517,11 @@
 
   var respErro = '';
 
-  function whatsappEnviar(numero, texto){
+  function whatsappEnviar(numero, texto, retomar){
     return fetch(SUPABASE_URL + '/functions/v1/whatsapp-send', {
       method: 'POST',
       headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ numero: numero, texto: texto })
+      body: JSON.stringify(retomar ? { numero: numero, retomar: true } : { numero: numero, texto: texto })
     }).then(function(r){ return r.text().then(function(t){
       var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
       if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));

@@ -1438,6 +1438,10 @@ const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!; // 1039296279
 
 const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
 
+// botão "Retomar conversa" do CRM (lead fora da janela de 24h): template aprovado na Meta, sem variáveis
+const TEMPLATE_RETOMAR = "retomar_conversa_congresso";
+const TEXTO_RETOMAR = "[Template] Olá! Tudo bem? 😊 Aqui é a equipe do Congresso Câncer 2026. Vimos que ficamos com uma conversa em aberto e queremos continuar te ajudando. Se ainda tiver interesse ou alguma dúvida, é só responder esta mensagem que a gente retoma por aqui.";
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
@@ -1473,11 +1477,12 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { return j({ erro: "bad body" }, 400); }
 
   const numero = String(body.numero || "").replace(/\D/g, "");
-  const texto = String(body.texto || "").trim();
+  let texto = String(body.texto || "").trim();
   const audioBase64 = body.audio_base64 ? String(body.audio_base64) : null;
   const mimeType = String(body.mime_type || "audio/ogg");
-  if (!numero || (!texto && !audioBase64)) {
-    return j({ erro: "numero e (texto ou audio_base64) obrigatórios" }, 400);
+  const retomar = body.retomar === true; // botão de emergência: lead fora da janela de 24h
+  if (!numero || (!texto && !audioBase64 && !retomar)) {
+    return j({ erro: "numero e (texto, audio_base64 ou retomar) obrigatórios" }, 400);
   }
 
   // áudio: sobe pro mesmo bucket público que já guarda mídia recebida
@@ -1486,7 +1491,14 @@ Deno.serve(async (req) => {
   let metaPayload: Record<string, unknown>;
   let tipoSalvo = "text";
   let midiaUrlSalva: string | null = null;
-  if (audioBase64) {
+  if (retomar) {
+    // template FIXO no servidor (o navegador não escolhe qual): só retoma conversa de quem já escreveu pra gente
+    const rr = await fetch(`${URL_}/rest/v1/mensagens?lead_whatsapp=eq.${numero}&direcao=eq.recebida&select=id&limit=1`, { headers: svcHeaders });
+    const jaEscreveu = rr.ok ? await rr.json() : [];
+    if (!jaEscreveu.length) return j({ erro: "só dá pra retomar a conversa de quem já escreveu pra gente" }, 403);
+    texto = TEXTO_RETOMAR;
+    metaPayload = { messaging_product: "whatsapp", to: numero, type: "template", template: { name: TEMPLATE_RETOMAR, language: { code: "pt_BR" } } };
+  } else if (audioBase64) {
     const bytes = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
     const ext = (mimeType.split("/")[1] || "ogg").split(";")[0];
     const path = `enviado-${crypto.randomUUID()}.${ext}`;
