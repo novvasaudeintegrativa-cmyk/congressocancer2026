@@ -8446,3 +8446,88 @@ Link da segunda: `https://wa.me/5511934873737?text=Quero%20saber%20mais%20sobre%
 
 Em ambas vale o complemento depois da frase (ex.: ` - grupo`), pois o teste é "contém".
 Requer novo Deploy da `whatsapp-webhook-v2`.
+
+## 53. CRM — Instagram: ocultar e excluir comentário
+
+Cada card da tela "Comentários do Instagram" ganha dois botões: **ocultar**
+(olho cortado — some pro público, não apaga, dá pra reverter no app) e
+**excluir** (lixeira — apaga de vez no Instagram, sem desfazer). Os dois
+pedem confirmação. Usam a permissão que já existe
+(`instagram_business_manage_comments`). **Posts em si não dá pra apagar pela
+API** — isso só no app/site do Instagram.
+
+### 53.1. SQL
+
+```sql
+alter table public.instagram_comentarios
+  add column if not exists oculto boolean not null default false;
+```
+
+### 53.2. Edge Function `instagram-moderar`
+
+Supabase → **Edge Functions** → **Deploy a new function** → nome
+**`instagram-moderar`** → cola:
+
+```ts
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const IG_TOKEN     = Deno.env.get("INSTAGRAM_ACCESS_TOKEN")?.trim();
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const ANON_KEY     = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+async function quemChamou(userToken: string) {
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: { apikey: ANON_KEY, authorization: `Bearer ${userToken}` },
+  });
+  if (!r.ok) return null;
+  const u = await r.json();
+  return u && u.id ? u : null;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  const j = (o: unknown, s = 200) =>
+    new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "content-type": "application/json" } });
+  if (req.method !== "POST") return j({ erro: "method not allowed" }, 405);
+
+  const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  const user = await quemChamou(token);
+  if (!user) return j({ erro: "não autenticado" }, 401);
+
+  const { comment_id, acao } = await req.json().catch(() => ({}));
+  if (!comment_id || !["ocultar", "excluir"].includes(acao)) {
+    return j({ erro: "comment_id e acao (ocultar|excluir) obrigatórios" }, 400);
+  }
+
+  const url = `https://graph.instagram.com/v23.0/${encodeURIComponent(comment_id)}`;
+  const r = acao === "excluir"
+    ? await fetch(url, { method: "DELETE", headers: { authorization: `Bearer ${IG_TOKEN}` } })
+    : await fetch(url, {
+        method: "POST",
+        headers: { authorization: `Bearer ${IG_TOKEN}`, "content-type": "application/json" },
+        body: JSON.stringify({ hide: true }),
+      });
+  const resultado = await r.json().catch(() => ({}));
+  if (!r.ok) return j({ erro: resultado }, 500);
+
+  const svc = {
+    apikey: SERVICE_ROLE, authorization: `Bearer ${SERVICE_ROLE}`,
+    "content-type": "application/json", prefer: "return=minimal",
+  };
+  const alvo = `${SUPABASE_URL}/rest/v1/instagram_comentarios?comment_id=eq.${encodeURIComponent(comment_id)}`;
+  // excluído no Instagram = some também daqui; ocultado = marca e sai da lista
+  if (acao === "excluir") await fetch(alvo, { method: "DELETE", headers: svc });
+  else await fetch(alvo, { method: "PATCH", headers: svc, body: JSON.stringify({ oculto: true }) });
+
+  return j({ ok: true });
+});
+```
+
+**Secret:** `INSTAGRAM_ACCESS_TOKEN` (o mesmo das outras functions de Instagram).

@@ -305,6 +305,9 @@
   .ig-item-dispensar:hover{color:var(--bordo);}
   .ig-item-historico{flex:none;background:none;border:0;color:var(--faint);cursor:pointer;padding:2px 4px;}
   .ig-item-historico:hover{color:var(--bordo);}
+  .ig-item-ocultar,.ig-item-excluir{flex:none;background:none;border:0;color:var(--faint);cursor:pointer;padding:2px 4px;}
+  .ig-item-ocultar:hover,.ig-item-excluir:hover{color:var(--bordo);}
+  .ig-item-ocultar:disabled,.ig-item-excluir:disabled{opacity:.5;cursor:wait;}
   .ig-item-post{flex:none;background:none;border:0;color:var(--faint);cursor:pointer;padding:2px 4px;}
   .ig-item-post:hover{color:var(--bordo);}
   .ig-item-post:disabled{opacity:.5;cursor:wait;}
@@ -994,6 +997,7 @@
     'alert-circle': '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
     x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     'trash-2': '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+    'eye-off': '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
     'external-link': '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
     mic: '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>'
   };
@@ -2161,8 +2165,24 @@
     }).finally(function(){ btn.disabled = false; });
   }
 
+  // ocultar = esconde do público (reversível no app); excluir = apaga de vez no Instagram
+  function instagramModerar(comment_id, acao){
+    return fetch(SUPABASE_URL + '/functions/v1/instagram-moderar', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comment_id: comment_id, acao: acao })
+    }).then(function(r){ return r.text().then(function(t){
+      var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
+      if (!r.ok || (data && data.erro)) {
+        var msg = data && data.erro && (data.erro.error_user_msg || data.erro.message || JSON.stringify(data.erro));
+        throw new Error(msg || ('HTTP ' + r.status));
+      }
+      return data;
+    }); });
+  }
+
   function renderComentariosInstagram(rows){
-    rows = (rows || []).filter(function(c){ return (c.autor_username || '').trim().toLowerCase() !== NOSSO_INSTAGRAM_USERNAME; });
+    rows = (rows || []).filter(function(c){ return !c.oculto && (c.autor_username || '').trim().toLowerCase() !== NOSSO_INSTAGRAM_USERNAME; });
     if (!rows.length){ $('ig-lista').innerHTML = '<div class="vazio-col">Nenhum comentário ainda.</div>'; return; }
     var limite = igColunas() * IG_LIMITE_LINHAS;
     var itensHtml = rows.map(function(c, i){
@@ -2179,6 +2199,8 @@
           (c.respondido ? '<span class="ig-badge-ok">' + ic('check', 11) + ' Respondido</span>' : '') +
           (c.media_id ? '<button type="button" class="ig-item-post" data-media="' + esc(c.media_id) + '" title="Abrir o post do Instagram onde essa pessoa comentou">' + ic('external-link', 12) + '</button>' : '') +
           (c.autor_ig_id ? '<button type="button" class="ig-item-historico" title="Ver histórico de comentários dessa pessoa">' + ic('message-circle', 12) + '</button>' : '') +
+          '<button type="button" class="ig-item-ocultar" title="Ocultar este comentário no Instagram (some pro público, não é apagado)">' + ic('eye-off', 12) + '</button>' +
+          '<button type="button" class="ig-item-excluir" title="Excluir este comentário do Instagram (não dá pra desfazer)">' + ic('trash-2', 12) + '</button>' +
           (c.respondido ? '' : '<button type="button" class="ig-item-dispensar" title="Já respondi isso fora do CRM (no app do Instagram) — marcar como respondido">' + ic('x', 12) + '</button>') +
         '</div>' +
         '<div class="ig-item-texto">' + esc(c.texto || '') + '</div>' +
@@ -2217,6 +2239,21 @@
         apiPatch('instagram_comentarios?comment_id=eq.' + encodeURIComponent(item.dataset.id), { respondido: true, respondido_em: new Date().toISOString() }, { Prefer: 'return=minimal' })
           .then(function(){ carregarComentariosInstagram(); })
           .catch(function(err){ alert('Não deu pra dispensar: ' + err.message); btnDispensar.disabled = false; });
+      });
+      [['.ig-item-ocultar', 'ocultar', 'Ocultar esse comentário no Instagram? Ele deixa de aparecer pro público, mas não é apagado.'],
+       ['.ig-item-excluir', 'excluir', 'Excluir esse comentário do Instagram? Isso apaga de verdade e não dá pra desfazer.']].forEach(function(def){
+        var b = item.querySelector(def[0]);
+        if (!b) return;
+        b.addEventListener('click', function(){
+          if (!confirm(def[2])) return;
+          item.querySelectorAll('.ig-item-ocultar,.ig-item-excluir').forEach(function(x){ x.disabled = true; });
+          instagramModerar(item.dataset.id, def[1])
+            .then(function(){ carregarComentariosInstagram(); })
+            .catch(function(err){
+              alert('Não deu pra ' + def[1] + ': ' + err.message);
+              item.querySelectorAll('.ig-item-ocultar,.ig-item-excluir').forEach(function(x){ x.disabled = false; });
+            });
+        });
       });
       var btnPost = item.querySelector('.ig-item-post');
       if (btnPost) btnPost.addEventListener('click', function(){ abrirPostInstagram(btnPost.dataset.media, btnPost); });
