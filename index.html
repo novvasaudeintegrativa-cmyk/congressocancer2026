@@ -1006,6 +1006,8 @@
   /* a logo da expositora é larga e tem margem transparente no arquivo: ocupa o quadro todo e
      é ampliada pra o texto visível ficar do tamanho dos outros quadros */
   .slot.ativo img{opacity:1;width:100%;height:auto;max-width:100%;max-height:200px;transform:scale(1.4);}
+  /* a logo da Acqua já vem recortada (sem margem): sem zoom, só cabe no quadro */
+  .slot.ativo img[src*="Acqua"]{transform:none;width:90%;max-height:150px;}
   .grupo-cta{margin-top:var(--space-lg);}
 
   /* LOTES */
@@ -2315,7 +2317,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       <h3 class="grupo-titulo">Patrocinadores</h3>
       <p class="grupo-sub">Cotas de patrocínio da edição 2026 em aberto.</p>
       <div class="slot-grid dois">
-        <div class="slot ativo"><img src="Imgs/Patrocinadores/Acqua.png" alt="Acqua Purificadores" width="200" height="200"></div>
+        <div class="slot ativo"><img src="Imgs/Patrocinadores/Acqua.png" alt="Acqua Purificadores" width="1041" height="550"></div>
         <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
       </div>
 
