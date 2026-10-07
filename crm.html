@@ -1594,6 +1594,7 @@
     }).catch(function(){ if (seq === disparosSeq){ caixa.hidden = true; $('painel-disparos-det').hidden = true; painelDisparos = null; atualizarSubPainel(); } });
   }
 
+  var iaDesligada = null, iaDesligadaEm = 0; // whatsapp -> true quando a equipe assumiu (ia_ativa=false)
   function renderPainel(){
     var todos = leadsBase();
     var ini = inicioPeriodo(extras.dias);
@@ -1641,15 +1642,31 @@
 
     // equipe (só gestor)
     $('painel-equipe-cartao').hidden = !gestorAgora();
-    var eq = {};
-    todos.forEach(function(l){
-      var k = l.atribuido_nome || 'Sem responsável';
-      eq[k] = eq[k] || { leads: 0, fin: 0 };
-      eq[k].leads++; if (l.etapa === 'ganho') eq[k].fin++;
-    });
-    var linhas = Object.keys(eq).sort(function(a, b){ return eq[b].leads - eq[a].leads; });
-    $('painel-equipe').innerHTML = '<table class="nx-tabela"><thead><tr><th>Nome</th><th>Leads</th><th>Finalizados</th></tr></thead><tbody>' +
-      linhas.map(function(k){ return '<tr><td><div class="nx-pessoa">' + nxAvatar(k) + '<b>' + esc(k) + '</b></div></td><td>' + eq[k].leads + '</td><td>' + eq[k].fin + '</td></tr>'; }).join('') + '</tbody></table>';
+    // sem vendedor atribuído: "IA (Cris)" se a IA ainda está no comando da conversa,
+    // "Time comercial" se a equipe já assumiu (lead_status.ia_ativa = false)
+    var desenharEquipe = function(){
+      var eq = {};
+      todos.forEach(function(l){
+        var k = l.atribuido_nome || (iaDesligada[l.whatsapp] ? 'Time comercial' : 'IA (Cris)');
+        eq[k] = eq[k] || { leads: 0, fin: 0 };
+        eq[k].leads++; if (l.etapa === 'ganho') eq[k].fin++;
+      });
+      var linhas = Object.keys(eq).sort(function(a, b){ return eq[b].leads - eq[a].leads; });
+      $('painel-equipe').innerHTML = '<table class="nx-tabela"><thead><tr><th>Nome</th><th>Leads</th><th>Finalizados</th></tr></thead><tbody>' +
+        linhas.map(function(k){ return '<tr><td><div class="nx-pessoa">' + nxAvatar(k) + '<b>' + esc(k) + '</b></div></td><td>' + eq[k].leads + '</td><td>' + eq[k].fin + '</td></tr>'; }).join('') + '</tbody></table>';
+    };
+    if (iaDesligada && Date.now() - iaDesligadaEm < 60000) desenharEquipe();
+    else if (gestorAgora()){
+      if (iaDesligada) desenharEquipe(); // mostra o último dado enquanto atualiza
+      apiGet('lead_status?select=whatsapp&ia_ativa=eq.false&limit=10000')
+        .then(function(rows){
+          var novo = {};
+          (rows || []).forEach(function(r){ novo[r.whatsapp] = true; });
+          iaDesligada = novo; iaDesligadaEm = Date.now();
+        })
+        .catch(function(){ if (!iaDesligada) iaDesligada = {}; /* sem o dado, tudo sem vendedor cai em "IA (Cris)" */ })
+        .then(desenharEquipe);
+    }
 
     // tempo até a 1ª resposta (Cris ou equipe) depois da última mensagem recebida
     var soma = 0, n = 0;
