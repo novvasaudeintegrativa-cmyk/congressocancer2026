@@ -565,6 +565,7 @@
   .foto-palestrante img[src*="alex-alves"]{ transform:scale(1.08); transform-origin:center 15%; }
   .foto-palestrante img[src*="alex-junior"]{ transform:scale(1.3); transform-origin:center 32%; }
   .foto-palestrante img[src*="luciano-pinheiro"]{ transform:scale(1.65); transform-origin:center 31%; }
+  .foto-palestrante img[src*="thais-bragatto"]{ transform:scale(1.1); transform-origin:55% 20%; }
   .foto-placeholder{ display:flex; align-items:center; justify-content:center; }
   .foto-placeholder svg{ width:54%; height:54%; color:rgba(255,255,255,0.32); }
   .btn-curriculo{
@@ -996,6 +997,9 @@
   .grupo-titulo{font-size:var(--text-h3);font-weight:800;margin:var(--space-lg) 0 4px;}
   .grupo-sub{color:var(--texto-fraco);font-size:14px;margin:0 0 6px;}
   .slot-grid.compacto .slot{min-height:150px;}
+  /* apoio: um quadro só, centralizado */
+  .slot-grid.um{grid-template-columns:1fr;max-width:300px;margin-left:auto;margin-right:auto;}
+  .slot-grid.um .slot{min-height:150px;}
   /* patrocinadores em 2 colunas (até segunda ordem); expositores seguem em 4 */
   .slot-grid.dois{grid-template-columns:repeat(2, 1fr);max-width:640px;margin-left:auto;margin-right:auto;}
   .slot.ativo{border-style:solid;border-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.04);}
@@ -1957,6 +1961,14 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
           <button type="button" class="btn-curriculo" data-curriculo="cv-luciano-pinheiro">Ver currículo</button>
         </div>
 
+        <div class="card-palestrante">
+          <div class="foto-palestrante"><img src="Imgs/Palestrantes/thais-bragatto.webp" alt="Dra. Thaís Bragatto"></div>
+          <h3>Dra. Thaís Bragatto</h3>
+          <div class="especialidade">Naturopata e Fisioterapeuta · Pós-graduada em Dermatofuncional</div>
+          <div class="tema"><span class="tema-k">Tema:</span> Detoxificação e Microbiota Intestinal na Prevenção e Remissão do Câncer</div>
+          <button type="button" class="btn-curriculo" data-curriculo="cv-thais-bragatto">Ver currículo</button>
+        </div>
+
       </div>
 
       <div style="text-align:center; margin-top:var(--space-xl);">
@@ -2307,10 +2319,15 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
       </div>
 
+      <h3 class="grupo-titulo">Apoio</h3>
+      <div class="slot-grid um">
+        <div class="slot ativo"><img src="Imgs/Expositores/AmaliaTarallo.svg" alt="Amalia Tarallo" width="200" height="80"></div>
+      </div>
+
       <h3 class="grupo-titulo">Expositores</h3>
       <p class="grupo-sub">Feira com 30+ expositores.</p>
       <div class="slot-grid compacto">
-        <div class="slot ativo"><img src="Imgs/Expositores/AmaliaTarallo.svg" alt="Amalia Tarallo" width="200" height="80"></div>
+        <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
         <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
         <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
         <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
@@ -2623,6 +2640,23 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
           <p>Atualmente, ocupa o cargo de CEO do Instituto Empresarial Global ALEF, onde promove ações estratégicas voltadas ao bem-estar integral e à saúde preventiva no ambiente corporativo.</p>
           <p>É fundador e principal dinamizador do inovador programa "Roda da Saúde Empresarial", iniciativa que une práticas integrativas e gestão estratégica para transformar a saúde corporativa e a qualidade de vida nas empresas.</p>
         </div>
+    </div>
+  </dialog>
+
+  <dialog class="cv-modal" id="cv-thais-bragatto">
+    <div class="cv-modal-inner">
+      <button type="button" class="cv-close" aria-label="Fechar">&times;</button>
+      <div class="cv-modal-head">
+        <div class="foto-palestrante"><img src="Imgs/Palestrantes/thais-bragatto.webp" alt="Dra. Thaís Bragatto"></div>
+        <div>
+          <h3>Dra. Thaís Bragatto</h3>
+          <p class="cv-role">Naturopata e Fisioterapeuta · Pós-graduada em Dermatofuncional</p>
+        </div>
+      </div>
+      <div class="cv-modal-body">
+        <p>Naturopata e fisioterapeuta, pós-graduada em Dermatofuncional, com mais de 20 anos de atuação na área da saúde. Criadora do Método Thaís Bragato e idealizadora da linha Kura-me, desenvolvendo uma abordagem integrativa voltada ao equilíbrio e à saúde do organismo.</p>
+        <p>Sua trajetória une conhecimento técnico, experiência clínica e práticas integrativas, trazendo uma visão ampliada para prevenção, cuidado e promoção da saúde.</p>
+      </div>
     </div>
   </dialog>
 

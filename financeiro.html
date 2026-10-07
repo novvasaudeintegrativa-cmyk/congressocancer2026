@@ -862,7 +862,11 @@
     var totalMesAtual = rows.filter(function(r){ return r.mes === mesAtual; })
       .reduce(function(s, r){ return s + Number(r.custo_usd || 0); }, 0);
 
-    var linhaTotal = '<tr class="total-row"><td>Total ' + esc(mesAtual) + '</td><td></td><td class="n">US$ ' + totalMesAtual.toFixed(2) + '</td></tr>';
+    var totalGeral = rows.reduce(function(s, r){ return s + Number(r.custo_usd || 0); }, 0);
+    var chamadasGeral = rows.reduce(function(s, r){ return s + Number(r.chamadas || 0); }, 0);
+
+    var linhaTotal = '<tr class="total-row"><td>Total geral (desde o início)</td><td>' + chamadasGeral + ' chamadas</td><td class="n">US$ ' + totalGeral.toFixed(4) + '</td></tr>' +
+      '<tr class="total-row"><td>Total ' + esc(mesAtual) + ' (mês atual)</td><td></td><td class="n">US$ ' + totalMesAtual.toFixed(4) + '</td></tr>';
 
     var linhas = rows.map(function(r){
       return '<tr>' +
