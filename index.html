@@ -43,7 +43,7 @@
     --text-body-5: clamp(1.27rem, 1.17rem + 0.5vw, 1.75rem);  /* meio-passo (corpo×√Φ) → 20.3px / 28px */
     --text-h4:    clamp(1.625rem, 1.4rem + 1.1vw, 2.225rem);  /* 26px   → 35.6px */
     --text-h3-5:  clamp(2.0625rem, 1.75rem + 1.55vw, 2.8325rem); /* meio-passo (H4×√Φ) → 33px / 45.3px */
-    --text-h3:    clamp(2.625rem, 2.2rem + 2vw, 3.6rem);      /* 42px   → 57.6px */
+    --text-h3:    clamp(1.84rem, 1.54rem + 1.4vw, 2.52rem);   /* 29px   → 40px (era 42px → 57.6px, -30%) */
     --text-h2:    clamp(4.25rem, 3.4rem + 4vw, 5.825rem);     /* 68px   → 93.2px */
     --text-h1:    clamp(6.875rem, 5.2rem + 7.5vw, 9.425rem);  /* 110px  → 150.8px */
 
@@ -995,12 +995,15 @@
     object-fit:contain;
     opacity:0.25;
   }
-  .grupo-titulo{font-size:var(--text-h3);font-weight:800;margin:var(--space-lg) 0 4px;}
-  .grupo-sub{color:var(--texto-fraco);font-size:14px;margin:0 0 6px;}
+  .grupo-titulo{font-size:var(--text-h3);font-weight:800;margin:var(--space-xl) 0 8px;line-height:1.25;}
+  .patrocinadores .container > .grupo-titulo:first-child{margin-top:var(--space-lg);}
+  .grupo-sub{color:var(--texto-fraco);font-size:14px;margin:0 0 var(--space-sm);}
   .slot-grid.compacto .slot{min-height:150px;}
   /* apoio: um quadro só, centralizado */
   .slot-grid.um{grid-template-columns:1fr;max-width:300px;margin-left:auto;margin-right:auto;}
   .slot-grid.um .slot{min-height:150px;}
+  /* patrocinadores e apoio: quadros quadrados */
+  .slot-grid.dois .slot,.slot-grid.um .slot{aspect-ratio:1/1;min-height:0;}
   /* patrocinadores em 2 colunas (até segunda ordem); expositores seguem em 4 */
   .slot-grid.dois{grid-template-columns:repeat(2, 1fr);max-width:640px;margin-left:auto;margin-right:auto;}
   .slot.ativo{border-style:solid;border-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.04);}
@@ -1009,6 +1012,8 @@
   .slot.ativo img{opacity:1;width:100%;height:auto;max-width:100%;max-height:200px;transform:scale(1.4);}
   /* a logo da Acqua já vem recortada (sem margem): sem zoom, só cabe no quadro */
   .slot.ativo img[src*="Acqua"]{transform:none;width:90%;max-height:150px;}
+  /* selo redondo da Terapia Plasmática: sem zoom, cabe inteiro no quadro */
+  .slot.ativo img[src*="TerapiaPlasmatica"]{transform:none;width:88%;max-height:none;}
   .grupo-cta{margin-top:var(--space-lg);}
 
   /* LOTES */
@@ -2333,7 +2338,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       <h3 class="grupo-titulo">Expositores</h3>
       <p class="grupo-sub">Feira com 30+ expositores.</p>
       <div class="slot-grid compacto">
-        <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
+        <div class="slot ativo"><img src="Imgs/Expositores/TerapiaPlasmatica.webp" alt="Terapia Plasmática — 10 anos de cuidado e transformação" width="600" height="600"></div>
         <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
         <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
         <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
