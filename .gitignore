@@ -19,3 +19,6 @@ Desktop.ini
 *.log
 _tmp*
 _qa_measure_tmp*.js
+
+# Rascunhos e artes de redes sociais (não vão pro site publicado)
+Instagram/

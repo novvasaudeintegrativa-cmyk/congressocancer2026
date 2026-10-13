@@ -415,6 +415,28 @@
   /* logo larga com margem transparente no arquivo: ocupa o quadro e é ampliada */
   .slot.ativo img{ opacity:1; height:auto; transform:scale(1.4); }
   @media (max-width:900px){ .slot-grid{ grid-template-columns:repeat(2, 1fr); } }
+
+  /* botão flutuante do WhatsApp (mesmo estilo do site principal) */
+  .whatsapp-flutuante{
+    position:fixed; right:20px; bottom:20px; z-index:60;
+    width:60px; height:60px; border-radius:50%;
+    background:var(--verde);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 10px 30px rgba(31,157,85,0.45), 0 0 0 0 rgba(31,157,85,0.55);
+    animation:pulse-whats 2.2s ease-in-out infinite;
+    transition:background .2s ease, transform .2s ease;
+  }
+  .whatsapp-flutuante:hover{background:var(--verde-escuro); transform:scale(1.06);}
+  .whatsapp-flutuante img{width:46px; height:46px; display:block;}
+  @keyframes pulse-whats{
+    0%,100%{ box-shadow:0 10px 30px rgba(31,157,85,0.45), 0 0 0 0 rgba(31,157,85,0.55); }
+    50%{ box-shadow:0 10px 30px rgba(31,157,85,0.45), 0 0 0 12px rgba(31,157,85,0); }
+  }
+  @media (prefers-reduced-motion:reduce){ .whatsapp-flutuante{animation:none;} }
+  @media (max-width:600px){
+    .whatsapp-flutuante{right:14px; bottom:14px; width:54px; height:54px;}
+    .whatsapp-flutuante img{width:38px; height:38px;}
+  }
 </style>
 </head>
 <body>
@@ -903,6 +925,10 @@
   }
 })();
 </script>
+
+  <a href="https://wa.me/5511934873737?text=Ol%C3%A1%21%20Estou%20na%20p%C3%A1gina%20do%20Kit%20do%20Expositor%20do%20Congresso%20C%C3%A2ncer%202026%20e%20quero%20entender%20como%20funciona%20para%20expor%20ou%20patrocinar.%20Podem%20me%20passar%20as%20informa%C3%A7%C3%B5es%20e%20os%20valores%3F" class="whatsapp-flutuante" target="_blank" rel="noopener" aria-label="Falar no WhatsApp sobre ser expositor ou patrocinador">
+    <img src="Imgs/3dWhatsApp.png" alt="">
+  </a>
 
 </body>
 </html>

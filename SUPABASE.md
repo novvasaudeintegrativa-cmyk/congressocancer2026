@@ -8531,3 +8531,42 @@ Deno.serve(async (req) => {
 ```
 
 **Secret:** `INSTAGRAM_ACCESS_TOKEN` (o mesmo das outras functions de Instagram).
+
+## 54. Tráfego: criar links de rastreamento direto no CRM
+
+Na tela **Tráfego** (seção ROI → "Links de rastreamento por vendedor/canal") agora existe o botão
+**"+ Criar novo link"**. Preenche o nome (vendedor ou canal), o tipo e, se quiser, a origem/campanha, e o
+link sai pronto: `https://congressocancer.novvasaudeintegrativa.com.br/?utm_source=...&utm_medium=...&utm_campaign=...`.
+Não precisa criar arquivo `.html` de redirecionamento: o site já guarda a UTM por 30 dias e a repassa ao
+checkout da Eduzz, então a venda volta com a origem no `eduzz-webhook` (§11).
+
+Os links criados ficam numa tabela e aparecem para todo o time. Os dois links antigos
+(`time-comercial.html` e `beteti.html`) continuam na lista.
+
+### 54.1. SQL
+
+```sql
+create table if not exists public.links_rastreamento (
+  id           bigint generated always as identity primary key,
+  criado_em    timestamptz not null default now(),
+  nome         text not null check (char_length(nome) between 1 and 80),
+  utm_source   text not null check (utm_source ~ '^[a-z0-9-]{1,60}$'),
+  utm_medium   text not null check (utm_medium ~ '^[a-z0-9-]{1,60}$'),
+  utm_campaign text not null check (utm_campaign ~ '^[a-z0-9-]{1,60}$'),
+  unique (utm_source, utm_medium, utm_campaign)
+);
+
+alter table public.links_rastreamento enable row level security;
+
+-- a tela de Tráfego roda com a chave pública (mesmo padrão da tabela investimentos):
+-- lê e cria; editar/apagar só pelo painel do Supabase.
+drop policy if exists "lê links" on public.links_rastreamento;
+create policy "lê links" on public.links_rastreamento for select to anon, authenticated using (true);
+drop policy if exists "cria links" on public.links_rastreamento;
+create policy "cria links" on public.links_rastreamento for insert to anon, authenticated with check (true);
+
+notify pgrst, 'reload schema';
+```
+
+Sem rodar esse SQL a tela continua funcionando (só mostra os 2 links antigos) e, ao tentar criar, avisa
+"falta rodar o SQL do §54".
