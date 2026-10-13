@@ -1016,6 +1016,10 @@
   .slot-grid.dois .slot,.slot-grid.um .slot{aspect-ratio:1/1;min-height:0;}
   /* patrocinadores em 2 colunas (até segunda ordem); expositores seguem em 4 */
   .slot-grid.dois{grid-template-columns:repeat(2, 1fr);max-width:640px;margin-left:auto;margin-right:auto;}
+  /* patrocinador Diamond: um quadro só, largo e em destaque (borda e brilho vermelhos) */
+  .slot-grid.destaque{grid-template-columns:1fr;max-width:600px;margin-left:auto;margin-right:auto;}
+  .slot-grid.destaque .slot{aspect-ratio:auto;min-height:280px;padding:36px;border:2px solid rgba(255,30,46,0.75);background:rgba(255,255,255,0.05);box-shadow:0 0 70px rgba(255,30,46,0.2);}
+  .slot-grid.destaque .slot.ativo img[src*="Acqua"]{width:80%;max-height:none;}
   .slot.ativo{border-style:solid;border-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.04);}
   /* a logo da expositora é larga e tem margem transparente no arquivo: ocupa o quadro todo e
      é ampliada pra o texto visível ficar do tamanho dos outros quadros */
@@ -2371,11 +2375,9 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
   <!-- PATROCINADORES -->
   <section class="patrocinadores" id="patrocinadores">
     <div class="container">
-      <h3 class="grupo-titulo">Patrocinadores</h3>
-      <p class="grupo-sub">Cotas de patrocínio da edição 2026 em aberto.</p>
-      <div class="slot-grid dois">
+      <h3 class="grupo-titulo">Patrocinador Diamond</h3>
+      <div class="slot-grid destaque">
         <div class="slot ativo"><img src="Imgs/Patrocinadores/Acqua.png" alt="Acqua Purificadores" width="1041" height="550"></div>
-        <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
       </div>
 
       <h3 class="grupo-titulo">Expositores</h3>
