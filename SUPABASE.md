@@ -8582,7 +8582,6 @@ ingresso?", com botões de resposta rápida e botão de site).
   na conversa ficam fixos no servidor** (`whatsapp-send`), numa lista fechada. Continua valendo: só retoma quem já
   escreveu pra gente.
 - **Ordem de publicação (§P-34): primeiro o Deploy da função, depois o front.** Copie `docs/whatsapp-send.ts` na
-  Edge Function `whatsapp-send` e clique em Deploy (config e secrets não mudam). Se o front subir antes, escolher um
-  modelo diferente do padrão dá erro, porque a função antiga só aceita `retomar: true`.
+  Edge Function `whatsapp-send` e clique em Deploy (config e secrets não mudam). Se o front subir antes, o modelo padrão continua funcionando (o CRM manda `retomar: true`, como antes), mas os outros dois dão erro até o Deploy.
 - Se mudar o texto de um modelo na Meta, atualize também o texto correspondente em `TEMPLATES_RETOMAR`, porque é
   ele que aparece na conversa do CRM.
