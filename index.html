@@ -529,6 +529,12 @@
     letter-spacing:0.06em;
     color:var(--texto-fraco);
   }
+  .card-palestrante .tema-desc{
+    font-size:12.5px;
+    line-height:1.45;
+    color:var(--texto-fraco);
+    margin:-6px 0 14px;
+  }
   .foto-palestrante{
     width:150px;height:150px;
     border-radius:50%;
@@ -567,6 +573,9 @@
   .foto-palestrante img[src*="luciano-pinheiro"]{ transform:scale(1.65); transform-origin:center 31%; }
   .foto-palestrante img[src*="thais-bragatto"]{ transform:scale(1.3); transform-origin:80% 50%; }
   .foto-palestrante img[src*="zeno-castilho"]{ transform:scale(1.65); transform-origin:58% 32%; }
+  .foto-palestrante img[src*="anilson-martins"]{ transform:scale(1.45); transform-origin:19% 37%; }
+  .foto-palestrante img[src*="lourival"]{ transform:scale(1.45); transform-origin:60% 68%; }
+  .foto-palestrante img[src*="valeria-martins"]{ transform:scale(1.2); transform-origin:24% 77%; }
   .foto-placeholder{ display:flex; align-items:center; justify-content:center; }
   .foto-placeholder svg{ width:54%; height:54%; color:rgba(255,255,255,0.32); }
   .btn-curriculo{
@@ -1985,6 +1994,31 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
           <button type="button" class="btn-curriculo" data-curriculo="cv-zeno-castilho">Ver currículo</button>
         </div>
 
+        <div class="card-palestrante">
+          <div class="foto-palestrante"><img src="Imgs/Palestrantes/anilson-martins.webp" alt="Dr. Prof. Anilson Martins"></div>
+          <h3>Dr. Prof. Anilson Martins</h3>
+          <div class="especialidade">Professor e Terapeuta · Pesquisador de tratamentos naturais</div>
+          <div class="tema"><span class="tema-k">Tema:</span> Câncer: o pH do Microambiente Tumoral Importa</div>
+          <div class="tema-desc">Acidez, oxigenação e matriz extracelular: o ambiente onde as células vivem influencia seu comportamento.</div>
+          <button type="button" class="btn-curriculo" data-curriculo="cv-anilson-martins">Ver currículo</button>
+        </div>
+
+        <div class="card-palestrante">
+          <div class="foto-palestrante"><img src="Imgs/Palestrantes/lourival.webp" alt="Dr. Lourival"></div>
+          <h3>Dr. Lourival</h3>
+          <div class="especialidade">Autor de "Dói na Alma" · CEO da BluAnt e da Treinamente</div>
+          <div class="tema"><span class="tema-k">Tema:</span> Quando o Corpo Fala o Que a Alma Não Suporta Mais Calar: Como os Conflitos Biológicos se Transformam em Doenças</div>
+          <button type="button" class="btn-curriculo" data-curriculo="cv-lourival">Ver currículo</button>
+        </div>
+
+        <div class="card-palestrante">
+          <div class="foto-palestrante"><img src="Imgs/Palestrantes/valeria-martins.webp" alt="Dra. Valéria Martins"></div>
+          <h3>Dra. Valéria Martins</h3>
+          <div class="especialidade">Terapeuta Quântica · Dra. H. C. em Constelação Sistêmica Quântica</div>
+          <div class="tema"><span class="tema-k">Tema:</span> Câncer: a quem você está honrando no seu sistema</div>
+          <button type="button" class="btn-curriculo" data-curriculo="cv-valeria-martins">Ver currículo</button>
+        </div>
+
       </div>
 
       <div style="text-align:center; margin-top:var(--space-xl);">
@@ -2690,6 +2724,63 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         <p>Zeno Castilho é inventor, pesquisador e terapeuta plasmático. Doutor Honoris Causa pela UniEnsino, no Brasil, e pela Erich Fromm University, nos EUA.</p>
         <p>Tem dezenas de milhares de aplicações realizadas, com resultados incríveis. Criou, em parceria com a Dra. Anna Helena, o curso profissionalizante em terapia plasmática.</p>
         <p>É CEO da Cristal Labs e palestrante em vários congressos no Brasil.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="cv-modal" id="cv-lourival">
+    <div class="cv-modal-inner">
+      <button type="button" class="cv-close" aria-label="Fechar">&times;</button>
+      <div class="cv-modal-head">
+        <div class="foto-palestrante"><img src="Imgs/Palestrantes/lourival.webp" alt="Dr. Lourival"></div>
+        <div>
+          <h3>Dr. Lourival</h3>
+          <p class="cv-role">Autor de "Dói na Alma" · CEO da BluAnt e da Treinamente</p>
+        </div>
+      </div>
+      <div class="cv-modal-body">
+        <p>Com mais de 30 mil pacientes atendidos em consultório, construiu sua carreira com o propósito de contribuir para a saúde e a qualidade de vida das pessoas.</p>
+        <p>É autor do livro <em>Dói na Alma</em> e CEO da BluAnt, empresa de suplementação que conecta pessoas a produtos, conhecimento, oportunidades e experiências que contribuem para uma vida melhor.</p>
+        <p>Também é CEO da Treinamente, especializada em desenvolvimento humano, avaliações neurométricas e treinamentos cerebrais.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="cv-modal" id="cv-anilson-martins">
+    <div class="cv-modal-inner">
+      <button type="button" class="cv-close" aria-label="Fechar">&times;</button>
+      <div class="cv-modal-head">
+        <div class="foto-palestrante"><img src="Imgs/Palestrantes/anilson-martins.webp" alt="Dr. Prof. Anilson Martins"></div>
+        <div>
+          <h3>Dr. Prof. Anilson Martins</h3>
+          <p class="cv-role">Professor e Terapeuta · Pesquisador de tratamentos naturais</p>
+        </div>
+      </div>
+      <div class="cv-modal-body">
+        <p>Anilson Antônio Martins é terapeuta e proprietário da empresa Biowelfare Cosméticos, distribuidora exclusiva dos produtos Bio Foton (cosméticos naturais).</p>
+        <p>É professor pela UNEMAT/MT, com formação em Letras, e também possui formação em Contabilidade.</p>
+        <p>Atualmente, dedica-se exclusivamente à pesquisa de tratamentos naturais e profere palestras por todo o Brasil, compartilhando experiências exitosas.</p>
+        <p>Ministra cursos sobre o sistema que desenvolve: THTC – Terapia de Hidratação dos Tecidos Conjuntivos.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="cv-modal" id="cv-valeria-martins">
+    <div class="cv-modal-inner">
+      <button type="button" class="cv-close" aria-label="Fechar">&times;</button>
+      <div class="cv-modal-head">
+        <div class="foto-palestrante"><img src="Imgs/Palestrantes/valeria-martins.webp" alt="Dra. Valéria Martins"></div>
+        <div>
+          <h3>Dra. Valéria Martins</h3>
+          <p class="cv-role">Terapeuta Quântica · Dra. H. C. em Constelação Sistêmica Quântica</p>
+        </div>
+      </div>
+      <div class="cv-modal-body">
+        <p>Valéria Martins é dirigente do GEAPOL — Grupo de Estudos Apométrico Ponto de Luz e idealizadora do Espaço Serra Quantum, dedicado às terapias integrativas, ao autoconhecimento e ao desenvolvimento humano.</p>
+        <p>Possui o título de Doutora Honoris Causa (Dra. H. C.) em Constelação Sistêmica Quântica e uma formação multidisciplinar que reúne estudos em Estatística, Análise de Sistemas, Ortomolecular, Constelação Familiar, PNL, Master Coaching, Hipnose Clínica e Ericksoniana, Psicologia Positiva, Bioalinhamento, Bioemoções, Biorressonância, Geobiologia e Radiestesia Radiônica, entre outras áreas.</p>
+        <p>Ao longo de sua trajetória, aprofundou conhecimentos relacionados ao comportamento humano, relações familiares, emoções, consciência, espiritualidade e desenvolvimento pessoal, participando também de cursos com nomes como Amit Goswami, Sophie Hellinger, Augusto Cury, Gregg Braden e Tony Robbins.</p>
+        <p>É cocriadora de projetos voltados à consciência e ao despertar humano, como Cocriadora de Sonhos, Código do Novo Humano, Consciência e Cocriação do Despertar, Holococriação e Reconectar o Cocriador Quântico.</p>
+        <p>Sua atuação integra diferentes campos de conhecimento com o propósito de promover autoconhecimento, expansão da consciência, transformação pessoal e uma visão integrada do ser humano e de suas relações.</p>
       </div>
     </div>
   </dialog>
