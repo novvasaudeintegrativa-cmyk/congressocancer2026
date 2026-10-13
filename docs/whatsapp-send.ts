@@ -8,9 +8,22 @@ const PHONE_NUMBER_ID = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!; // 1039296279
 
 const svcHeaders = { apikey: SVC, authorization: `Bearer ${SVC}`, "content-type": "application/json" };
 
-// botão "Retomar conversa" do CRM (lead fora da janela de 24h): template aprovado na Meta, sem variáveis
-const TEMPLATE_RETOMAR = "retomar_conversa_congresso";
-const TEXTO_RETOMAR = "[Template] Olá! Tudo bem? 😊 Aqui é a equipe do Congresso Câncer 2026. Vimos que ficamos com uma conversa em aberto e queremos continuar te ajudando. Se ainda tiver interesse ou alguma dúvida, é só responder esta mensagem que a gente retoma por aqui.";
+// botão "Retomar conversa" do CRM (lead fora da janela de 24h): templates aprovados na Meta, sem variáveis.
+// O navegador só manda a CHAVE; nome e texto ficam FIXOS aqui no servidor (lista fechada de 3 modelos).
+const TEMPLATES_RETOMAR: Record<string, { nome: string; texto: string }> = {
+  retomar: {
+    nome: "retomar_conversa_congresso",
+    texto: "[Template] Olá! Tudo bem? 😊 Aqui é a equipe do Congresso Câncer 2026. Vimos que ficamos com uma conversa em aberto e queremos continuar te ajudando. Se ainda tiver interesse ou alguma dúvida, é só responder esta mensagem que a gente retoma por aqui.",
+  },
+  instabilidade: {
+    nome: "instabilidade_whatsapp",
+    texto: "[Template] Olá! Tudo bem? 😊 Tivemos uma instabilidade no nosso WhatsApp, mas já estou aqui para te atender e ajudar no que precisar. Você poderia, por gentileza, me enviar novamente sua pergunta? Assim, consigo dar continuidade ao seu atendimento da melhor forma possível. Agradeço pela compreensão! 💙",
+  },
+  followup: {
+    nome: "followup_ingresso_congresso",
+    texto: "[Template] Olá, tudo bem? 😊 Estou passando para saber se você conseguiu acessar nosso site e realizar sua inscrição para o nosso evento. Estamos preparando uma edição incrível este ano, e será um prazer ter você conosco! Se precisar de ajuda com a inscrição ou tiver qualquer dúvida, estou à disposição para te auxiliar. Me conta, você já garantiu seu ingresso? Será muito bom te receber nesse grande encontro! 💚",
+  },
+};
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -50,7 +63,10 @@ Deno.serve(async (req) => {
   let texto = String(body.texto || "").trim();
   const audioBase64 = body.audio_base64 ? String(body.audio_base64) : null;
   const mimeType = String(body.mime_type || "audio/ogg");
-  const retomar = body.retomar === true; // botão de emergência: lead fora da janela de 24h
+  // botão de emergência: lead fora da janela de 24h. retomar:true = modelo padrão; retomar:"chave" = um dos modelos acima
+  const retomarChave: string | null = body.retomar === true ? "retomar" : (typeof body.retomar === "string" ? body.retomar : null);
+  if (retomarChave && !TEMPLATES_RETOMAR[retomarChave]) return j({ erro: "modelo de retomada inválido" }, 400);
+  const retomar = retomarChave !== null;
   if (!numero || (!texto && !audioBase64 && !retomar)) {
     return j({ erro: "numero e (texto, audio_base64 ou retomar) obrigatórios" }, 400);
   }
@@ -66,8 +82,9 @@ Deno.serve(async (req) => {
     const rr = await fetch(`${URL_}/rest/v1/mensagens?lead_whatsapp=eq.${numero}&direcao=eq.recebida&select=id&limit=1`, { headers: svcHeaders });
     const jaEscreveu = rr.ok ? await rr.json() : [];
     if (!jaEscreveu.length) return j({ erro: "só dá pra retomar a conversa de quem já escreveu pra gente" }, 403);
-    texto = TEXTO_RETOMAR;
-    metaPayload = { messaging_product: "whatsapp", to: numero, type: "template", template: { name: TEMPLATE_RETOMAR, language: { code: "pt_BR" } } };
+    const modelo = TEMPLATES_RETOMAR[retomarChave as string];
+    texto = modelo.texto;
+    metaPayload = { messaging_product: "whatsapp", to: numero, type: "template", template: { name: modelo.nome, language: { code: "pt_BR" } } };
   } else if (audioBase64) {
     const bytes = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
     const ext = (mimeType.split("/")[1] || "ogg").split(";")[0];

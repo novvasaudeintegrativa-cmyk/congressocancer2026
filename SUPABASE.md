@@ -8570,3 +8570,19 @@ notify pgrst, 'reload schema';
 
 Sem rodar esse SQL a tela continua funcionando (só mostra os 2 links antigos) e, ao tentar criar, avisa
 "falta rodar o SQL do §54".
+
+## 55. Retomar conversa com 3 modelos (fora da janela de 24h)
+
+O botão "Retomar conversa" do CRM agora tem uma lista com **3 modelos aprovados na Meta** (todos categoria
+Marketing, português, sem variável): `retomar_conversa_congresso` (padrão), `instabilidade_whatsapp` (aviso de
+instabilidade e pedido para reenviar a pergunta) e `followup_ingresso_congresso` (follow-up "você já garantiu seu
+ingresso?", com botões de resposta rápida e botão de site).
+
+- O navegador só manda a **chave** (`retomar`, `instabilidade` ou `followup`); o **nome do modelo e o texto salvo
+  na conversa ficam fixos no servidor** (`whatsapp-send`), numa lista fechada. Continua valendo: só retoma quem já
+  escreveu pra gente.
+- **Ordem de publicação (§P-34): primeiro o Deploy da função, depois o front.** Copie `docs/whatsapp-send.ts` na
+  Edge Function `whatsapp-send` e clique em Deploy (config e secrets não mudam). Se o front subir antes, escolher um
+  modelo diferente do padrão dá erro, porque a função antiga só aceita `retomar: true`.
+- Se mudar o texto de um modelo na Meta, atualize também o texto correspondente em `TEMPLATES_RETOMAR`, porque é
+  ele que aparece na conversa do CRM.

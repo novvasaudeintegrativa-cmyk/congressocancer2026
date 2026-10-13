@@ -2493,6 +2493,9 @@
       (foraDaJanela(arr)
         ? '<div id="resp-janela" style="margin:6px 12px 0;padding:8px 10px;border-radius:8px;background:#fff6e0;color:#6b4a00;font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
             '<span style="flex:1;min-width:200px"><b>Passou de 24h</b> desde a última mensagem dele: o WhatsApp bloqueia texto livre. Só dá pra retomar com a mensagem modelo.</span>' +
+            '<select id="resp-modelo" style="border:1px solid #d9c9a0;border-radius:8px;padding:6px 8px;font-size:13px;background:#fff;color:#3b2a00;max-width:100%">' +
+              MODELOS_RETOMAR.map(function(m){ return '<option value="' + m.chave + '">' + esc(m.rotulo) + '</option>'; }).join('') +
+            '</select>' +
             '<button type="button" id="resp-retomar" style="background:#8a1c1c;color:#fff;border:0;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer">Retomar conversa</button>' +
           '</div>'
         : '') +
@@ -2534,10 +2537,14 @@
     });
     var btnRetomar = $('resp-retomar');
     if (btnRetomar) btnRetomar.addEventListener('click', function(){
-      if (!confirm('Enviar a mensagem modelo "Retomar conversa" pra +' + n + '?\n\nÉ uma mensagem fixa e só deve ser usada uma vez. Quando ele responder, você volta a escrever normalmente.')) return;
+      var selModelo = $('resp-modelo');
+      var chave = selModelo ? selModelo.value : 'retomar';
+      var modelo = MODELOS_RETOMAR.filter(function(m){ return m.chave === chave; })[0] || MODELOS_RETOMAR[0];
+      if (!confirm('Enviar a mensagem modelo "' + modelo.rotulo + '" pra +' + n + '?\n\n' + modelo.texto + '\n\nÉ uma mensagem fixa e só deve ser usada uma vez. Quando ele responder, você volta a escrever normalmente.')) return;
       btnRetomar.disabled = true;
       respErro = '';
-      whatsappEnviar(n, '', true).then(function(){
+      // o modelo padrão segue mandando true: funciona mesmo com a versão antiga da função, até o Deploy novo
+      whatsappEnviar(n, '', modelo.chave === 'retomar' ? true : modelo.chave).then(function(){
         return carregarConversas();
       }).catch(function(err){
         btnRetomar.disabled = false;
@@ -2592,11 +2599,18 @@
 
   var respErro = '';
 
+  // modelos aprovados na Meta pra retomar conversa fora das 24h (nome e texto reais ficam no servidor: whatsapp-send)
+  var MODELOS_RETOMAR = [
+    { chave: 'retomar', rotulo: 'Retomar conversa (padrão)', texto: 'Olá! Tudo bem? Aqui é a equipe do Congresso Câncer 2026. Vimos que ficamos com uma conversa em aberto e queremos continuar te ajudando. Se ainda tiver interesse ou alguma dúvida, é só responder esta mensagem que a gente retoma por aqui.' },
+    { chave: 'instabilidade', rotulo: 'Aviso de instabilidade (pedir a pergunta de novo)', texto: 'Olá! Tudo bem? Tivemos uma instabilidade no nosso WhatsApp, mas já estou aqui para te atender e ajudar no que precisar. Você poderia, por gentileza, me enviar novamente sua pergunta?' },
+    { chave: 'followup', rotulo: 'Follow-up de ingresso (já garantiu?)', texto: 'Olá, tudo bem? Estou passando para saber se você conseguiu acessar nosso site e realizar sua inscrição para o nosso evento. Me conta, você já garantiu seu ingresso?' }
+  ];
+
   function whatsappEnviar(numero, texto, retomar){
     return fetch(SUPABASE_URL + '/functions/v1/whatsapp-send', {
       method: 'POST',
       headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' },
-      body: JSON.stringify(retomar ? { numero: numero, retomar: true } : { numero: numero, texto: texto })
+      body: JSON.stringify(retomar ? { numero: numero, retomar: retomar } : { numero: numero, texto: texto })
     }).then(function(r){ return r.text().then(function(t){
       var data; try { data = t ? JSON.parse(t) : null; } catch(e){ data = { erro: t }; }
       if (!r.ok || (data && data.erro)) throw new Error((data && data.erro) || ('HTTP ' + r.status));
