@@ -335,13 +335,25 @@
     border:1px solid var(--borda-card);
   }
   .tier.diamond{
-    background:transparent; border-color:rgba(255,255,255,.35);
-    flex-direction:row; flex-wrap:wrap; align-items:center; column-gap:32px; row-gap:16px;
+    background:rgba(255,255,255,.04); border:0;
+    flex-direction:row; flex-wrap:wrap; align-items:center; column-gap:36px; row-gap:22px;
+    padding:30px 30px 26px;
   }
-  .tier.diamond .diamond-logo{ max-height:64px; width:auto; flex:0 0 auto; }
-  .tier.diamond .diamond-head{ display:flex; flex-direction:column; gap:6px; flex:0 0 auto; }
-  .tier.diamond ul{ flex:1 1 280px; }
+  /* logo da Acqua grande, em quadro próprio (mesmo visual dos quadros de expositores) */
+  .tier.diamond .diamond-logo-box{
+    flex:0 0 300px; max-width:100%; min-height:190px; padding:20px;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,.05); border-radius:14px;
+  }
+  .tier.diamond .diamond-logo{ width:100%; height:auto; max-height:none; }
+  .tier.diamond .diamond-head{ display:flex; flex-direction:column; gap:8px; flex:0 0 auto; }
+  .tier.diamond ul{ flex:1 1 300px; }
   .tier.diamond .pay{ flex-basis:100%; }
+  @media (max-width:760px){
+    .tier.diamond{ flex-direction:column; align-items:stretch; }
+    .tier.diamond .diamond-logo-box{ flex:none; width:100%; }
+    .tier.diamond .diamond-head{ align-items:flex-start; }
+  }
   .tier.master{ background:var(--glow), linear-gradient(160deg, var(--vermelho-vivo), var(--bordo-escuro)); }
   .tier.gold{ background:var(--glow), var(--card-bg); border-color:rgba(242,199,68,.5); }
   .tier .badge{
@@ -414,6 +426,13 @@
   .slot.ativo{ background:rgba(255,255,255,.04); }
   /* logo larga com margem transparente no arquivo: ocupa o quadro e é ampliada */
   .slot.ativo img{ opacity:1; height:auto; transform:scale(1.4); }
+  /* patrocinador Diamond + botão: espelho da seção do index.html */
+  .slot-grid.destaque{ grid-template-columns:1fr; max-width:600px; margin-left:auto; margin-right:auto; }
+  .slot-grid.destaque .slot{ aspect-ratio:auto; min-height:280px; padding:22px; border:0; background:rgba(255,255,255,.05); }
+  .slot-grid.destaque .slot.ativo img[src*="Acqua"]{ width:94%; max-height:none; transform:none; }
+  .grupo-cta{ margin-top:34px; text-align:center; }
+  .kit-btn{ display:inline-flex; align-items:center; justify-content:center; height:62px; padding:0 34px; border-radius:14px; background:#ff6a00; color:#fff; font-family:var(--fonte-titulo, inherit); font-weight:700; font-size:1.05rem; text-decoration:none; box-shadow:0 10px 30px rgba(255,106,0,.45); }
+  .kit-btn:hover{ background:#e85d00; }
   /* selo redondo da Terapia Plasmática: sem zoom, cabe inteiro no quadro */
   .slot.ativo img[src*="TerapiaPlasmatica"]{ transform:none; width:88%; max-height:none; }
   /* colaboradora de produção: um quadro quadrado e centralizado */
@@ -750,10 +769,10 @@
 
     <div class="tiers">
       <div class="tier diamond">
-        <img class="diamond-logo" src="Imgs/LogoAcqua.png" alt="Exemplo de patrocinador Diamond — Acqua Purificadores">
+        <div class="diamond-logo-box"><img class="diamond-logo" src="Imgs/Patrocinadores/Acqua.png" alt="Acqua Purificadores, Expositor Diamante" width="1041" height="550"></div>
         <div class="diamond-head">
-          <span class="badge">Expositor Diamond</span>
-          <h3>Diamond</h3>
+          <span class="badge">Expositor Diamante</span>
+          <h3>Diamante</h3>
           <div class="price">R$ 40.000<small>investimento total</small></div>
         </div>
         <ul>
@@ -805,6 +824,15 @@
   </div>
 </section>
 
+<section aria-label="Expositor Diamante">
+  <div class="container reveal">
+    <h2 class="section-title">Expositor Diamante</h2>
+    <div class="slot-grid destaque">
+      <div class="slot ativo"><img src="Imgs/Patrocinadores/Acqua.png" alt="Acqua Purificadores" width="1041" height="550"></div>
+    </div>
+  </div>
+</section>
+
 <section aria-label="Expositores">
   <div class="container reveal">
     <span class="eyebrow">Feira do congresso</span>
@@ -816,6 +844,7 @@
       <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
       <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
     </div>
+    <p class="grupo-cta"><a class="kit-btn" href="https://wa.me/5511934873737?text=Ol%C3%A1%21%20Estou%20na%20p%C3%A1gina%20do%20Kit%20do%20Expositor%20do%20Congresso%20C%C3%A2ncer%202026%20e%20quero%20entender%20como%20funciona%20para%20expor%20ou%20patrocinar.%20Podem%20me%20passar%20as%20informa%C3%A7%C3%B5es%20e%20os%20valores%3F" target="_blank" rel="noopener">Quero ser expositor</a></p>
   </div>
 </section>
 
