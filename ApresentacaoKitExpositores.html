@@ -334,26 +334,24 @@
     position:relative;
     border:1px solid var(--borda-card);
   }
+  /* cartão Diamante em UMA coluna: selo, nome grande, logo, valor, benefícios, pagamento */
   .tier.diamond{
     background:rgba(255,255,255,.04); border:0;
-    flex-direction:row; flex-wrap:wrap; align-items:center; column-gap:36px; row-gap:22px;
+    flex-direction:column; align-items:stretch; gap:18px;
     padding:30px 30px 26px;
   }
-  /* logo da Acqua grande, em quadro próprio (mesmo visual dos quadros de expositores) */
+  .tier.diamond .diamond-head{ display:contents; }
+  .tier.diamond .badge{ order:1; }
+  .tier.diamond h3{ order:2; font-size:clamp(3rem, 9vw, 4.6rem); }
   .tier.diamond .diamond-logo-box{
-    flex:0 0 300px; max-width:100%; min-height:190px; padding:20px;
+    order:3; width:100%; max-width:380px; min-height:200px; padding:20px;
     display:flex; align-items:center; justify-content:center;
     background:rgba(255,255,255,.05); border-radius:14px;
   }
   .tier.diamond .diamond-logo{ width:100%; height:auto; max-height:none; }
-  .tier.diamond .diamond-head{ display:flex; flex-direction:column; gap:8px; flex:0 0 auto; }
-  .tier.diamond ul{ flex:1 1 300px; }
-  .tier.diamond .pay{ flex-basis:100%; }
-  @media (max-width:760px){
-    .tier.diamond{ flex-direction:column; align-items:stretch; }
-    .tier.diamond .diamond-logo-box{ flex:none; width:100%; }
-    .tier.diamond .diamond-head{ align-items:flex-start; }
-  }
+  .tier.diamond .price{ order:4; }
+  .tier.diamond ul{ order:5; flex:none; }
+  .tier.diamond .pay{ order:6; }
   .tier.master{ background:var(--glow), linear-gradient(160deg, var(--vermelho-vivo), var(--bordo-escuro)); }
   .tier.gold{ background:var(--glow), var(--card-bg); border-color:rgba(242,199,68,.5); }
   .tier .badge{
@@ -365,7 +363,8 @@
   .tier.diamond .badge{ background:rgba(255,255,255,.12); color:#e8f2ff; }
   .tier.master .badge{ background:rgba(0,0,0,.3); color:#fff; }
   .tier.gold .badge{ background:rgba(242,199,68,.14); color:var(--dourado); }
-  .tier h3{ font-size:1.4rem; }
+  /* nome da cota (Diamante, Master, Gold) bem grande */
+  .tier h3{ font-size:clamp(2.4rem, 6vw, 3.4rem); font-weight:800; line-height:1; letter-spacing:-.01em; margin:0; }
   .tier .price{ font-family:var(--fonte-titulo); font-size:2.1rem; font-weight:800; }
   .tier.diamond .price{ color:#e8f2ff; }
   .tier.master .price{ color:#fff; }
