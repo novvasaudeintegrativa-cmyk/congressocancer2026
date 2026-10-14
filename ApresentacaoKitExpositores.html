@@ -342,7 +342,7 @@
   }
   .tier.diamond .diamond-head{ display:contents; }
   .tier.diamond .badge{ order:1; }
-  .tier.diamond h3{ order:2; font-size:clamp(3rem, 9vw, 4.6rem); }
+  .tier.diamond h3{ order:2; font-size:clamp(2.1rem, 7vw, 4rem); }
   .tier.diamond .diamond-logo-box{
     order:3; width:100%; max-width:380px; min-height:200px; padding:20px;
     display:flex; align-items:center; justify-content:center;
@@ -352,6 +352,12 @@
   .tier.diamond .price{ order:4; }
   .tier.diamond ul{ order:5; flex:none; }
   .tier.diamond .pay{ order:6; }
+  /* tudo centralizado no cartão Diamante */
+  .tier.diamond{ align-items:center; text-align:center; }
+  .tier.diamond .badge{ align-self:center; }
+  .tier.diamond .diamond-logo-box{ margin-inline:auto; }
+  .tier.diamond ul{ width:fit-content; max-width:100%; margin-inline:auto; text-align:left; }
+  .tier.diamond .pay{ width:100%; }
   .tier.master{ background:var(--glow), linear-gradient(160deg, var(--vermelho-vivo), var(--bordo-escuro)); }
   .tier.gold{ background:var(--glow), var(--card-bg); border-color:rgba(242,199,68,.5); }
   .tier .badge{
@@ -364,7 +370,7 @@
   .tier.master .badge{ background:rgba(0,0,0,.3); color:#fff; }
   .tier.gold .badge{ background:rgba(242,199,68,.14); color:var(--dourado); }
   /* nome da cota (Diamante, Master, Gold) bem grande */
-  .tier h3{ font-size:clamp(2.4rem, 6vw, 3.4rem); font-weight:800; line-height:1; letter-spacing:-.01em; margin:0; }
+  .tier h3{ font-size:clamp(1.9rem, 3.6vw, 2.8rem); font-weight:800; line-height:1; letter-spacing:-.01em; margin:0; }
   .tier .price{ font-family:var(--fonte-titulo); font-size:2.1rem; font-weight:800; }
   .tier.diamond .price{ color:#e8f2ff; }
   .tier.master .price{ color:#fff; }
@@ -770,8 +776,7 @@
       <div class="tier diamond">
         <div class="diamond-logo-box"><img class="diamond-logo" src="Imgs/Patrocinadores/Acqua.png" alt="Acqua Purificadores, Expositor Diamante" width="1041" height="550"></div>
         <div class="diamond-head">
-          <span class="badge">Expositor Diamante</span>
-          <h3>Diamante</h3>
+          <h3>Expositor Diamante</h3>
           <div class="price">R$ 40.000<small>investimento total</small></div>
         </div>
         <ul>
@@ -785,9 +790,8 @@
 
       <div class="tiers-duo">
         <div class="tier master">
-          <span class="badge">Expositor Master</span>
           <div>
-            <h3>Master</h3>
+            <h3>Expositor Master</h3>
             <div class="price">R$ 15.000<small>investimento total</small></div>
           </div>
           <ul>
@@ -803,9 +807,8 @@
         </div>
 
         <div class="tier gold">
-          <span class="badge">Expositor Gold</span>
           <div>
-            <h3>Gold</h3>
+            <h3>Expositor Gold</h3>
             <div class="price">R$ 6.000<small>investimento total</small></div>
           </div>
           <ul>
