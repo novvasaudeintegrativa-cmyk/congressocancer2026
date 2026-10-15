@@ -8658,15 +8658,16 @@ rodar antes da coluna existir, o insert falha.
 Primeiro **veja a venda** e confirme na Eduzz que são 2 ingressos (2 participantes ou a oferta "2 ingressos"):
 
 ```sql
-select id, cliente_nome, produto, valor, ingressos, raw->'data'->'items' as itens
+-- a Eduzz grava o status como "paid" (não "pago"): procure pelo produto, não pelo status
+select id, cliente_nome, produto, valor, status, ingressos, raw->'data'->'items' as itens
 from public.vendas
-where status ilike 'pag%' and valor = 795.20;
+where produto ilike '%Bônus 20%';
 ```
 
 Se confirmado, corrija (troque o id pelo da consulta acima):
 
 ```sql
-update public.vendas set ingressos = 2 where id = 123;  -- id da venda de R$ 795,20
+update public.vendas set ingressos = 2 where id = 39;  -- venda de R$ 795,20 (Denise Satirio Paiva), 2 ingressos
 ```
 
 Conferência rápida do preço: Lote 1 = R$ 497; 2 ingressos com 20% = R$ 795,20; 1 ingresso com 15% (Homeopatas) = R$ 422,45.
