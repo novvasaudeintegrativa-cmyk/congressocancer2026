@@ -8676,3 +8676,120 @@ Conferência rápida do preço: Lote 1 = R$ 497; 2 ingressos com 20% = R$ 795,20
 
 - **Auditório** (`crm.html`): pinta as cadeiras pela soma de `ingressos` (sem o SQL, continua usando pedidos).
 - **Tráfego** (`trafego.html`): o cartão "Vendas" mostra "N venda(s) · M ingresso(s)" quando os números diferem.
+
+## 57. CRM: busca de compradores da Eduzz (tela Contatos)
+
+**Por quê (15/10/2026):** quem comprou direto na Eduzz, sem passar pelo quiz nem pelo WhatsApp, não é um contato do
+Pipeline e não aparecia em busca nenhuma. Agora, ao digitar 3 letras ou mais na busca de **Contatos**, aparece abaixo da
+tabela o bloco **"Compradores na Eduzz"**: nome, e-mail, produto, ingressos, valor e data da compra.
+
+- **Só gestor** (a função confere `eh_gestor()`). Vendedor e "ver como vendedor" não veem o bloco.
+- **Sem CPF e sem telefone:** a função devolve só nome, e-mail, produto, valor, ingressos e data. Dados completos ficam no
+  painel da Eduzz e na coluna `raw` (SQL Editor).
+- Procura por nome, e-mail e produto; vários termos precisam bater todos ("denise gmail").
+
+### 57.1. SQL (rodar ANTES de publicar o front; sem ele o bloco simplesmente não aparece)
+
+```sql
+create or replace function public.rpc_buscar_compradores(termo text)
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(row_to_json(t)), '[]'::json)
+  from (
+    select v.id, v.cliente_nome, v.cliente_email, v.produto, v.valor, v.ingressos,
+           coalesce(v.pago_em, v.created_at) as comprado_em
+    from public.vendas v
+    where public.eh_gestor()
+      and (v.status ilike 'pag%' or v.status ilike 'paid')
+      and length(trim(coalesce(termo, ''))) >= 3
+      and not exists (
+        select 1
+        from unnest(string_to_array(trim(termo), ' ')) w
+        where w <> ''
+          and not (
+            coalesce(v.cliente_nome, '')  ilike '%' || replace(replace(w, '%', '\%'), '_', '\_') || '%'
+            or coalesce(v.cliente_email, '') ilike '%' || replace(replace(w, '%', '\%'), '_', '\_') || '%'
+            or coalesce(v.produto, '')       ilike '%' || replace(replace(w, '%', '\%'), '_', '\_') || '%'
+          )
+      )
+    order by coalesce(v.pago_em, v.created_at) desc
+    limit 20
+  ) t;
+$$;
+
+revoke all on function public.rpc_buscar_compradores(text) from public, anon;
+grant execute on function public.rpc_buscar_compradores(text) to authenticated;
+
+notify pgrst, 'reload schema';
+```
+
+### 57.2. Testar
+
+No CRM, logado como gestor, abra **Contatos** e digite parte do nome ou do e-mail de alguém que comprou. Se o bloco não
+aparecer: confira se o SQL rodou e se você está logado como gestor (e não em "ver como vendedor").
+
+## 58. Ingressos calculados pelo preço (a Eduzz não manda a quantidade)
+
+**Por quê (15/10/2026):** o aviso `myeduzz.invoice_paid` não traz a quantidade do item: só `name`, `price.value` (o TOTAL do
+item), `productId` etc. A fatura da Eduzz mostra "quantidade 2 x R$ 397,60", mas isso não chega pelo webhook. Então a coluna
+`ingressos` (§56) fica 1 em compras de vários ingressos.
+
+**Solução:** guardar o **preço de 1 ingresso** de cada oferta e deixar o banco calcular `ingressos = valor / preço`. Vale também
+para quem comprar 2 do mesmo lote. Correção manual (`update ... set ingressos = ...`) continua funcionando: o cálculo só roda
+quando o **valor** ou o **produto** da venda muda, nunca por cima de uma correção à mão.
+
+### 58.1. SQL (nesta ordem)
+
+```sql
+-- 1) preço de UM ingresso por oferta (produto_cod = data.items.0.productId da Eduzz)
+create table if not exists public.preco_unitario_ingresso (
+  produto_cod text primary key,
+  preco       numeric(10,2) not null check (preco > 0),
+  nome        text
+);
+alter table public.preco_unitario_ingresso enable row level security;
+revoke all on public.preco_unitario_ingresso from anon, authenticated;
+
+insert into public.preco_unitario_ingresso (produto_cod, preco, nome) values
+  ('3127327', 397.60, 'Lote 1 - Bônus 20% (combo: 2 ingressos = R$ 795,20)')
+on conflict (produto_cod) do update set preco = excluded.preco, nome = excluded.nome;
+
+-- 2) trigger: calcula os ingressos quando entra (ou muda o valor/produto de) uma venda
+create or replace function public.vendas_calcula_ingressos()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare p numeric;
+begin
+  select preco into p from public.preco_unitario_ingresso where produto_cod = new.produto_cod;
+  -- só reconhece 2 ou mais (valor >= 1,5x o preço): evita arredondar 1 ingresso com juros de parcelamento
+  if p is not null and new.valor is not null and new.valor >= p * 1.5 then
+    new.ingressos := greatest(1, round(new.valor / p)::int);
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists vendas_ingressos on public.vendas;
+create trigger vendas_ingressos
+  before insert or update of valor, produto_cod on public.vendas
+  for each row execute function public.vendas_calcula_ingressos();
+
+-- 3) vendas que já existem
+update public.vendas v
+set ingressos = greatest(1, round(v.valor / p.preco)::int)
+from public.preco_unitario_ingresso p
+where p.produto_cod = v.produto_cod and v.valor >= p.preco * 1.5;
+
+-- 4) conferir
+select id, cliente_nome, produto_cod, valor, ingressos from public.vendas where ingressos > 1;
+```
+
+### 58.2. Outras ofertas
+
+Para cada oferta onde alguém possa comprar mais de 1 (Lote 1, Lote VIP etc.), cadastre o preço de 1 ingresso. Veja os códigos:
+
+```sql
+select produto_cod, produto, min(valor) as menor_valor, count(*) as vendas
+from public.vendas where status ilike 'pag%' or status ilike 'paid'
+group by 1, 2 order by 3;
+```
+
+e insira, por exemplo: `insert into public.preco_unitario_ingresso (produto_cod, preco, nome) values ('CODIGO', 497.00, 'Lote 1');`
+Quando um lote novo abrir (Lote 2, Lote 3), cadastre o preço dele aqui antes de vender.
