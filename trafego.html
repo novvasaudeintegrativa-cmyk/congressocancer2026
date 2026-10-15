@@ -475,7 +475,7 @@
     var roiTxt = roi == null ? '—' : (roi >= 0 ? '+' : '') + Math.round(roi) + '%';
     var itens = [
       ['Investido', fmtMoeda(investido), ''],
-      ['Vendas', fmtMoeda(vendas), fmt(d.qtd_vendas||0) + ' venda(s)'],
+      ['Vendas', fmtMoeda(vendas), fmt(d.qtd_vendas||0) + ' venda(s)' + ((d.qtd_ingressos != null && d.qtd_ingressos > (d.qtd_vendas||0)) ? ' · ' + fmt(d.qtd_ingressos) + ' ingresso(s)' : '')],
       ['Retorno (ROI)', roiTxt, roi == null ? 'sem investimento lançado' : (roi >= 0 ? 'positivo' : 'negativo')]
     ];
     $('roi-kpis').innerHTML = itens.map(function(it, i){

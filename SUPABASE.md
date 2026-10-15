@@ -889,6 +889,9 @@ Deno.serve(async (req) => {
     utm_campaign:  pick(body, ["data.utm.campaign", "utm_campaign"]),
     utm_content:   pick(body, ["data.utm.content", "utm_content"]),
     utm_term:      pick(body, ["data.utm.term", "utm_term"]),
+    // ingressos (§56): soma das quantidades dos itens (padrão 1). Oferta "2 ingressos" que a Eduzz
+    // registra com quantidade 1 NÃO é detectada aqui: corrigir à mão (§56.3).
+    ingressos:     Math.max(1, ((body as any)?.data?.items ?? []).reduce((t: number, i: any) => t + (Number(i?.quantity) || 1), 0) || 1),
     raw: body
   };
 
@@ -8585,3 +8588,90 @@ ingresso?", com botões de resposta rápida e botão de site).
   Edge Function `whatsapp-send` e clique em Deploy (config e secrets não mudam). Se o front subir antes, o modelo padrão continua funcionando (o CRM manda `retomar: true`, como antes), mas os outros dois dão erro até o Deploy.
 - Se mudar o texto de um modelo na Meta, atualize também o texto correspondente em `TEMPLATES_RETOMAR`, porque é
   ele que aparece na conversa do CRM.
+
+## 56. Vendas contam INGRESSOS, não só pedidos
+
+**Por quê (15/10/2026):** o painel contava **pedidos** (`count(*)` em `vendas`). Um pedido de "Lote 1 - Bônus 20%"
+a R$ 795,20 = 2 ingressos (2 x R$ 497 x 0,8) entrava como 1, porque a Eduzz mostra quantidade 1 nesse produto.
+Isso também subcontava as cadeiras do mapa do Auditório.
+
+**Limite importante:** quando a Eduzz registra a oferta com quantidade 1 (como nesse caso), o webhook não tem como
+saber que são 2 ingressos. Por isso a coluna `ingressos` pode ser corrigida à mão (56.3).
+
+### 56.1. SQL (rodar ANTES do redeploy da função)
+
+```sql
+alter table public.vendas add column if not exists ingressos int not null default 1 check (ingressos >= 1);
+
+-- vendas antigas: soma das quantidades dos itens guardados em raw (só mexe onde a soma é maior que 1)
+update public.vendas v
+set ingressos = s.q
+from (
+  select id, sum(coalesce(nullif(i->>'quantity','')::int, 1)) as q
+  from public.vendas, jsonb_array_elements(raw->'data'->'items') i
+  where jsonb_typeof(raw->'data'->'items') = 'array'
+  group by id
+) s
+where v.id = s.id and s.q > 1;
+
+-- painel: acrescenta qtd_ingressos e ingressos por produto (as chaves antigas continuam iguais)
+create or replace function public.rpc_roi()
+returns json language sql stable
+security definer set search_path = public
+as $$
+  select json_build_object(
+    'total_investido', (select coalesce(sum(valor),0) from public.investimentos),
+    'total_vendas',    (select coalesce(sum(valor),0) from public.vendas where status ilike 'pag%' or status ilike 'paid'),
+    'qtd_vendas',      (select count(*) from public.vendas where status ilike 'pag%' or status ilike 'paid'),
+    'qtd_ingressos',   (select coalesce(sum(ingressos),0) from public.vendas where status ilike 'pag%' or status ilike 'paid'),
+    'por_produto', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
+        select coalesce(produto,'(sem produto)') as produto,
+               count(*) as qtd,
+               sum(ingressos) as ingressos,
+               sum(valor) as total
+        from public.vendas
+        where status ilike 'pag%' or status ilike 'paid'
+        group by 1) t),
+    'por_canal', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
+        select coalesce(nullif(utm_campaign,''), '(direto)') as canal,
+               coalesce(nullif(utm_source,''), '')            as origem,
+               count(*) as qtd,
+               sum(ingressos) as ingressos,
+               sum(valor) as total
+        from public.vendas
+        where status ilike 'pag%' or status ilike 'paid'
+        group by 1, 2) t)
+  );
+$$;
+
+grant execute on function public.rpc_roi() to anon;
+notify pgrst, 'reload schema';
+```
+
+### 56.2. Redeploy do `eduzz-webhook`
+
+Cole o código do §11 (agora com a linha `ingressos:`) e clique em Deploy. **Só depois do SQL do 56.1**: se a função nova
+rodar antes da coluna existir, o insert falha.
+
+### 56.3. Conferir e corrigir o caso de 2 ingressos com quantidade 1
+
+Primeiro **veja a venda** e confirme na Eduzz que são 2 ingressos (2 participantes ou a oferta "2 ingressos"):
+
+```sql
+select id, cliente_nome, produto, valor, ingressos, raw->'data'->'items' as itens
+from public.vendas
+where status ilike 'pag%' and valor = 795.20;
+```
+
+Se confirmado, corrija (troque o id pelo da consulta acima):
+
+```sql
+update public.vendas set ingressos = 2 where id = 123;  -- id da venda de R$ 795,20
+```
+
+Conferência rápida do preço: Lote 1 = R$ 497; 2 ingressos com 20% = R$ 795,20; 1 ingresso com 15% (Homeopatas) = R$ 422,45.
+
+### 56.4. Front (já feito)
+
+- **Auditório** (`crm.html`): pinta as cadeiras pela soma de `ingressos` (sem o SQL, continua usando pedidos).
+- **Tráfego** (`trafego.html`): o cartão "Vendas" mostra "N venda(s) · M ingresso(s)" quando os números diferem.

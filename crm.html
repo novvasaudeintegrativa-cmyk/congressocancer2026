@@ -1430,7 +1430,8 @@
       var vip = 0, geral = 0;
       produtos.forEach(function(p){
         var nome = (p.produto || '').toLowerCase();
-        if (nome.indexOf('vip') !== -1) vip += p.qtd || 0; else geral += p.qtd || 0;
+        var ing = (p.ingressos != null ? p.ingressos : p.qtd) || 0; // ingressos (§56); sem o SQL, cai pra qtd de vendas
+        if (nome.indexOf('vip') !== -1) vip += ing; else geral += ing;
       });
       vip = Math.min(vip, AUD_VIP_TOTAL);
       geral = Math.min(geral, AUD_GERAL_TOTAL);
