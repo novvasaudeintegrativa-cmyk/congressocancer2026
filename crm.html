@@ -614,7 +614,7 @@
     <div class="filtros">
       <div class="busca-wrap">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-        <input type="search" id="f-busca" placeholder="buscar por nome ou número…">
+        <input type="search" id="f-busca" placeholder="buscar por nome, e-mail, número, profissão…">
       </div>
     </div>
 
@@ -738,7 +738,7 @@
   <div id="view-contatos" class="painel">
     <div class="sec-crm"><span>Contatos</span><span class="cont" id="contatos-cont"></span></div>
     <div class="filtros">
-      <div class="busca-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="contatos-busca" placeholder="buscar por nome ou número…"></div>
+      <div class="busca-wrap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input type="search" id="contatos-busca" placeholder="buscar por nome, e-mail, número, profissão…"></div>
       <select id="contatos-fonte"><option value="pipeline">Quem respondeu (Pipeline)</option><option value="disparos" hidden>Disparos sem resposta</option></select>
       <select id="contatos-etapa"><option value="">Todas as etapas</option></select>
     </div>
@@ -1509,18 +1509,30 @@
       .catch(function(err){ alert('Não deu pra apagar: ' + err.message); throw err; });
   }
 
+  // ---------- busca de leads (Pipeline e Contatos) ----------
+  // Procura por nome, e-mail, número, profissão, campanha, origem, vendedor e anotação.
+  // Vários termos separados por espaço precisam bater TODOS (ex.: "maria dentista").
+  function semAcento(t){ return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+  function leadCombinaBusca(l, termoBruto){
+    var termo = semAcento(termoBruto).trim();
+    if (!termo) return true;
+    var texto = semAcento([l.nome, l.nome_whatsapp, l.email, l.profissao, l.nivel, l.campanha_whatsapp_nome,
+                           l.utm_source, l.utm_campaign, l.atribuido_nome, l.nota].join(' '));
+    var numeroLead = String(l.whatsapp || '').replace(/\D/g, '');
+    return termo.split(/\s+/).every(function(parte){
+      if (texto.indexOf(parte) !== -1) return true;
+      // número: só quando o termo é feito de dígitos (e pontuação de telefone), pra "a1" não casar com número
+      var soDigitos = /^[\d()+\-.]+$/.test(parte) ? parte.replace(/\D/g, '') : '';
+      return soDigitos.length > 0 && numeroLead.indexOf(soDigitos) !== -1;
+    });
+  }
+
   // ---------- render ----------
   function leadVisivelNoFiltro(l){
     // Pipeline é só WhatsApp — leads antigos vindos de comentário do
     // Instagram (canal='instagram') não aparecem mais aqui.
     if (l.canal === 'instagram') return false;
-    var fb = $('f-busca').value.trim().toLowerCase();
-    if (fb){
-      var achouNome = (l.nome || '').toLowerCase().indexOf(fb) !== -1;
-      var digitos = fb.replace(/\D/g, '');
-      var achouNumero = digitos.length > 0 && (l.whatsapp || '').replace(/\D/g, '').indexOf(digitos) !== -1;
-      if (!achouNome && !achouNumero) return false;
-    }
+    if (!leadCombinaBusca(l, $('f-busca').value)) return false;
     // simulando "ver como vendedor": só mostra o que é meu ou está livre pra assumir
     if (estado.ehGestor && estado.verComoVendedor && l.atribuido_a && l.atribuido_a !== estado.eu.id) return false;
     return true;
@@ -1730,9 +1742,7 @@
     var todos = leadsBase();
     var v = todos.filter(function(l){
       if (etapa && l.etapa !== etapa) return false;
-      if (!termo) return true;
-      if ((l.nome || '').toLowerCase().indexOf(termo) !== -1) return true;
-      return digitos.length > 0 && String(l.whatsapp || '').replace(/\D/g, '').indexOf(digitos) !== -1;
+      return leadCombinaBusca(l, termo);
     });
     v.sort(function(a, b){
       return tempoMs(b.ultima_recebida_em || b.atualizado_em || b.captado_em) - tempoMs(a.ultima_recebida_em || a.atualizado_em || a.captado_em);
