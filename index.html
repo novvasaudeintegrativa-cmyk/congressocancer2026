@@ -1029,13 +1029,13 @@
   /* patrocinadores e apoio: quadros quadrados */
   .slot-grid.dois .slot,.slot-grid.um .slot{aspect-ratio:1/1;min-height:0;}
   /* patrocinadores em 2 colunas (até segunda ordem); expositores seguem em 4 */
-  .slot-grid.dois{grid-template-columns:repeat(2, 1fr);max-width:640px;margin-left:auto;margin-right:auto;}
+  .slot-grid.dois{grid-template-columns:repeat(3, 1fr);max-width:960px;margin-left:auto;margin-right:auto;}
   /* patrocinador Diamond: um quadro só, largo e em destaque (sem borda) */
   .slot-grid.destaque{grid-template-columns:1fr;max-width:600px;margin-left:auto;margin-right:auto;}
   .slot-grid.destaque .slot{aspect-ratio:auto;min-height:280px;padding:22px;border:0;background:rgba(255,255,255,0.05);box-shadow:none;}
   .slot-grid.destaque .slot.ativo img[src*="Acqua"]{width:94%;max-height:none;}
   /* logos brancos dos Expositores Master: sem zoom, cabem inteiros no quadro */
-  .slot.ativo img[src*="meu-h2"],.slot.ativo img[src*="bio-rife"],.slot.ativo img[src*="thtc"],.slot.ativo img[src*="kura-me"]{transform:none;width:82%;max-height:none;}
+  .slot.ativo img[src*="meu-h2"],.slot.ativo img[src*="bio-rife"],.slot.ativo img[src*="thtc"],.slot.ativo img[src*="kura-me"],.slot.ativo img[src*="catalmedic"]{transform:none;width:82%;max-height:none;}
   /* quinto logo sozinho na última linha: centralizado */
   .slot-grid.dois > .slot:last-child:nth-child(odd){grid-column:1 / -1;width:calc(50% - 10px);justify-self:center;}
   .slot.ativo{background:rgba(255,255,255,0.04);}
@@ -1739,7 +1739,7 @@
     .grid-lotes-3{grid-template-columns:1fr;}
   }
   @media (max-width: 640px){
-    .slot-grid{grid-template-columns:repeat(2, 1fr);}
+    .slot-grid,.slot-grid.dois{grid-template-columns:repeat(2, 1fr);}
   }
   @media (max-width: 520px){
     .grid-palestrantes{grid-template-columns:1fr;}
@@ -2499,13 +2499,6 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         <div class="slot ativo"><img src="Imgs/Expositores/catalmedic.webp" alt="Catalmedic — Promovendo saúde integral" width="826" height="372"></div>
       </div>
 
-      <h3 class="grupo-titulo">Expositores</h3>
-      <p class="grupo-sub">Feira com 30+ expositores.</p>
-      <div class="slot-grid compacto">
-        <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
-        <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
-        <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
-      </div>
       <p class="grupo-cta"><a class="btn btn-laranja" href="ApresentacaoKitExpositores.html">Quero ser expositor</a></p>
 
       <h3 class="grupo-titulo">Colaboradora de Produção</h3>

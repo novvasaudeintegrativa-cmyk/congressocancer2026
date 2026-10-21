@@ -443,15 +443,15 @@
   /* colaboradora de produção: um quadro quadrado e centralizado */
   .slot-grid.um{ grid-template-columns:1fr; max-width:300px; margin-left:auto; margin-right:auto; }
   /* Expositores Master: 2 quadros quadrados, logos brancos sem zoom */
-  .slot-grid.dois{ grid-template-columns:repeat(2, 1fr); max-width:640px; margin-left:auto; margin-right:auto; }
+  .slot-grid.dois{ grid-template-columns:repeat(3, 1fr); max-width:960px; margin-left:auto; margin-right:auto; }
   .slot-grid.dois .slot{ aspect-ratio:1/1; min-height:0; }
   /* quinto logo sozinho na última linha: centralizado */
   .slot-grid.dois > .slot:last-child:nth-child(odd){ grid-column:1 / -1; width:calc(50% - 10px); justify-self:center; }
   @media (max-width:520px){ .slot-grid.dois > .slot:last-child:nth-child(odd){ width:calc(50% - 6px); } }
-  .slot.ativo img[src*="meu-h2"], .slot.ativo img[src*="bio-rife"], .slot.ativo img[src*="thtc"], .slot.ativo img[src*="kura-me"]{ transform:none; width:82%; max-height:none; }
+  .slot.ativo img[src*="meu-h2"], .slot.ativo img[src*="bio-rife"], .slot.ativo img[src*="thtc"], .slot.ativo img[src*="kura-me"], .slot.ativo img[src*="catalmedic"]{ transform:none; width:82%; max-height:none; }
   @media (max-width:520px){ .slot-grid.dois{ grid-template-columns:1fr 1fr; gap:12px; } }
   .slot-grid.um .slot{ aspect-ratio:1/1; min-height:0; }
-  @media (max-width:900px){ .slot-grid{ grid-template-columns:repeat(2, 1fr); } }
+  @media (max-width:900px){ .slot-grid, .slot-grid.dois{ grid-template-columns:repeat(2, 1fr); } }
 
   /* botão flutuante do WhatsApp (mesmo estilo do site principal) */
   .whatsapp-flutuante{
@@ -859,14 +859,6 @@
 
 <section aria-label="Expositores">
   <div class="container reveal">
-    <span class="eyebrow">Feira do congresso</span>
-    <h2 class="section-title">Expositores</h2>
-    <p class="section-sub">Feira com 30+ expositores.</p>
-    <div class="slot-grid">
-      <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
-      <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
-      <div class="slot"><img src="Imgs/Simbol_NovvaSaude.png" alt="" aria-hidden="true"></div>
-    </div>
     <p class="grupo-cta"><a class="kit-btn" href="https://wa.me/5511934873737?text=Ol%C3%A1%21%20Estou%20na%20p%C3%A1gina%20do%20Kit%20do%20Expositor%20do%20Congresso%20C%C3%A2ncer%202026%20e%20quero%20entender%20como%20funciona%20para%20expor%20ou%20patrocinar.%20Podem%20me%20passar%20as%20informa%C3%A7%C3%B5es%20e%20os%20valores%3F" target="_blank" rel="noopener">Quero ser expositor</a></p>
   </div>
 </section>
