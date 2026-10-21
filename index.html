@@ -2120,9 +2120,17 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
 
       <div class="crono-stats">
         <div class="crono-stat"><b>2</b><span>Dias</span></div>
-        <div class="crono-stat"><b>15</b><span>Palestrantes</span></div>
+        <div class="crono-stat"><b id="crono-n-palestrantes">29</b><span>Palestrantes</span></div>
       </div>
 
+      <script>
+    /* contador de palestrantes = número de cards da seção Palestrantes (nunca fica defasado; o 29 no HTML é só reserva) */
+    (function(){
+      var el = document.getElementById("crono-n-palestrantes");
+      var n = document.querySelectorAll(".card-palestrante").length;
+      if (el && n > 0) el.textContent = n;
+    })();
+      </script>
       <div class="crono-tabs">
         <button type="button" class="crono-tab ativo" data-dia="sexta">Sexta · 20/11</button>
         <button type="button" class="crono-tab" data-dia="sabado">Sábado · 21/11</button>
