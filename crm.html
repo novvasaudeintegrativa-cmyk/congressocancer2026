@@ -195,6 +195,7 @@
   .aud-vendas-duo .aud-vendas{max-width:none;margin:0;}
   .aud-vendas-tit{font-family:var(--tit);font-weight:800;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--bordo);margin:0 0 8px;}
   .aud-vendas-tit span{font-weight:700;color:var(--faint);margin-left:4px;}
+  .aud-vendas-mais{display:block;margin:10px auto 0;}
   .aud-vendas-cort .aud-venda{border-style:dashed;border-color:#9fc9ab;}
   .dot.aud-vip-cheio{background:var(--dourado);}
   .dot.aud-vip-vazio{background:var(--track);border:1px solid #e4c583;}
@@ -1515,13 +1516,36 @@
       '<div class="quando">' + esc(fmtDataHora(v.comprado_em)) + '</div>' +
     '</div>';
   }
-  function renderVendasRecentes(lista){
-    var pagas = lista.filter(function(v){ return !ehCortesiaVenda(v); });
-    var cort = lista.filter(ehCortesiaVenda);
-    $('aud-vendas-lista').innerHTML = pagas.length ? pagas.map(linhaVenda).join('') : '<div class="aud-vendas-vazio">Nenhuma compra paga ainda.</div>';
-    $('aud-cortesias-lista').innerHTML = cort.length ? cort.map(linhaVenda).join('') : '<div class="aud-vendas-vazio">Nenhuma cortesia.</div>';
-    $('aud-cortesias-cont').textContent = cort.length ? '(' + cort.length + ')' : '';
+  // mostra no máximo 10 linhas; passou disso, aparece o botão "Ver todas" (e "Ver menos")
+  var AUD_LINHAS_MAX = 10;
+  var audVendasAbertas = { pagas: false, cort: false };
+  var audVendasDados = { pagas: [], cort: [] };
+  function desenharListaVendas(chave, boxId, vazio){
+    var itens = audVendasDados[chave];
+    var aberta = audVendasAbertas[chave];
+    var visiveis = aberta ? itens : itens.slice(0, AUD_LINHAS_MAX);
+    var html = itens.length ? visiveis.map(linhaVenda).join('') : '<div class="aud-vendas-vazio">' + vazio + '</div>';
+    if (itens.length > AUD_LINHAS_MAX){
+      html += '<button type="button" class="btn-atualizar aud-vendas-mais" data-lista="' + chave + '">' +
+        (aberta ? 'Ver menos' : 'Ver todas (' + itens.length + ')') + '</button>';
+    }
+    $(boxId).innerHTML = html;
   }
+  function renderVendasRecentes(lista){
+    audVendasDados.pagas = lista.filter(function(v){ return !ehCortesiaVenda(v); });
+    audVendasDados.cort = lista.filter(ehCortesiaVenda);
+    desenharListaVendas('pagas', 'aud-vendas-lista', 'Nenhuma compra paga ainda.');
+    desenharListaVendas('cort', 'aud-cortesias-lista', 'Nenhuma cortesia.');
+    $('aud-cortesias-cont').textContent = audVendasDados.cort.length ? '(' + audVendasDados.cort.length + ')' : '';
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target.closest && e.target.closest('.aud-vendas-mais');
+    if (!b) return;
+    var chave = b.getAttribute('data-lista');
+    audVendasAbertas[chave] = !audVendasAbertas[chave];
+    if (chave === 'pagas') desenharListaVendas('pagas', 'aud-vendas-lista', 'Nenhuma compra paga ainda.');
+    else desenharListaVendas('cort', 'aud-cortesias-lista', 'Nenhuma cortesia.');
+  });
 
   // ---------- dados ----------
   function carregarPipeline(){
