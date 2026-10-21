@@ -1035,6 +1035,8 @@
   .slot-grid.destaque .slot.ativo img[src*="Acqua"]{width:94%;max-height:none;}
   /* logos brancos dos Expositores Master: sem zoom, cabem inteiros no quadro */
   .slot.ativo img[src*="meu-h2"],.slot.ativo img[src*="bio-rife"],.slot.ativo img[src*="thtc"],.slot.ativo img[src*="kura-me"]{transform:none;width:82%;max-height:none;}
+  /* quinto logo sozinho na última linha: centralizado */
+  .slot-grid.dois > .slot:last-child:nth-child(odd){grid-column:1 / -1;width:calc(50% - 10px);justify-self:center;}
   .slot.ativo{background:rgba(255,255,255,0.04);}
   /* a logo da expositora é larga e tem margem transparente no arquivo: ocupa o quadro todo e
      é ampliada pra o texto visível ficar do tamanho dos outros quadros */
@@ -2484,6 +2486,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         <div class="slot ativo"><img src="Imgs/Expositores/bio-rife.webp" alt="BioRife — Emissor frequencial" width="1001" height="401"></div>
         <div class="slot ativo"><img src="Imgs/Expositores/thtc.webp" alt="THTC — Terapia de Hidratação dos Tecidos Conjuntivos" width="612" height="218"></div>
         <div class="slot ativo"><img src="Imgs/Expositores/kura-me.webp" alt="Kura-me — Método Thaís Bragatto" width="1100" height="724"></div>
+        <div class="slot ativo"><img src="Imgs/Expositores/TerapiaPlasmatica.webp" alt="Terapia Plasmática — 10 anos de cuidado e transformação" width="600" height="600"></div>
       </div>
 
       <h3 class="grupo-titulo">Expositores</h3>
