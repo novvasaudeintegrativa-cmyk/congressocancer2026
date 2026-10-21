@@ -550,6 +550,10 @@
     object-position:center;
     margin:0;
   }
+  /* foto provisória (recorte do site antigo): fundo vinho-escuro chapado, o círculo usa a mesma cor */
+  .foto-palestrante:has(img[src*="alexandre-tavola"]){ background:#290404; }
+  .foto-palestrante img[src*="alexandre-tavola"]{ transform:scale(1.2); transform-origin:60% 20%; }
+  .foto-palestrante img[src*="lis-curay"]{ transform:scale(1.2); transform-origin:32% -8%; }
   .foto-palestrante img[src*="marcelo-nonato-recortada"]{ object-position:center top; }
   /* fotos que vêm com mais headroom que o padrão (Dr. Conrado) —
      leve zoom ancorado no topo pra "comer" o espaço acima da cabeça */
@@ -2068,6 +2072,23 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
           <div class="tema"><span class="tema-k">Tema:</span> Uso dos Peptídeos na Saúde Mitocondrial.</div>
         </div>
 
+        <div class="card-palestrante">
+          <div class="foto-palestrante"><img src="Imgs/Palestrantes/alexandre-tavola.webp" alt="Dr. Alexandre Távola"></div>
+          <h3>Dr. Alexandre Távola</h3>
+          <div class="especialidade">Cientista, Engenheiro e CEO · Tecnologia e Medicina Integrativa</div>
+          <div class="tema"><span class="tema-k">Tema:</span> Abordagem biofísica no Câncer</div>
+          <button type="button" class="btn-curriculo" data-curriculo="cv-alexandre-tavola">Ver currículo</button>
+        </div>
+
+        <div class="card-palestrante">
+          <div class="foto-palestrante"><img src="Imgs/Palestrantes/lis-curay.webp" alt="Lis Curay"></div>
+          <h3>Lis Curay</h3>
+          <div class="especialidade">Artista da Cura · Fundadora do Instituto Curay</div>
+          <div class="tema"><span class="tema-k">Tema:</span> O Cântico da Origem — A Vida que Permanece</div>
+          <div class="tema-desc">Uma experiência do retorno ao sagrado essencial.</div>
+          <button type="button" class="btn-curriculo" data-curriculo="cv-lis-curay">Ver currículo</button>
+        </div>
+
       </div>
 
       <div style="text-align:center; margin-top:var(--space-xl);">
@@ -2094,34 +2115,52 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
 
       <div class="crono-dia ativo" id="crono-sexta">
         <div class="timeline">
-          <div class="titem break"><span class="thora">07:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Credenciamento</p></div></div>
+          <div class="titem break"><span class="thora">07:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Credenciamento e entrega de material</p></div></div>
           <div class="titem confirm"><span class="thora">08:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Geisa Quental <span class="tbadge confirm">Abertura</span></p><p class="ttema">Mestre de Cerimônia</p></div></div>
-          <div class="titem"><span class="thora">08:15</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Juan Carlos Llanos</p><p class="ttema tbd">Tema: Em breve</p></div></div>
-          <div class="titem break"><span class="thora">10:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
-          <div class="titem"><span class="thora">11:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Claudinei Rodrigues</p><p class="ttema tbd">Tema: Em breve</p></div></div>
-          <div class="titem break"><span class="thora">12:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Almoço</p></div></div>
-          <div class="titem"><span class="thora">13:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Lucy Kerr</p><p class="ttema tbd">Tema: Em breve</p></div></div>
-          <div class="titem break"><span class="thora">15:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
-          <div class="titem"><span class="thora">15:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Sara Lambert</p><p class="ttema">Epigenética: Modulação Celular e Proteção do Terreno Biológico</p></div></div>
-          <div class="titem"><span class="thora">16:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Alessandro Loiola</p><p class="ttema tbd">Tema: Em breve</p></div></div>
-          <div class="titem break"><span class="thora">17:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Encerramento do dia</p></div></div>
+          <div class="titem"><span class="thora">08:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Juan Carlos Llanos</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">08:50</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Lourival Gonçalves</p><p class="ttema">Quando o Corpo Fala o Que a Alma Não Suporta Mais Calar: Como os Conflitos Biológicos se Transformam em Doença</p></div></div>
+          <div class="titem"><span class="thora">09:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Claudinei Rodrigues</p><p class="ttema">Água e Câncer: o Poder do Cuidado</p></div></div>
+          <div class="titem break"><span class="thora">10:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+          <div class="titem"><span class="thora">10:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Luciane C. Stern</p><p class="ttema">Para Além do Diagnóstico: o Sujeito Diante do Câncer</p></div></div>
+          <div class="titem"><span class="thora">11:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Luis Stern</p><p class="ttema">Homeopatia e Câncer: a Evolução Clínica em Casos Reais Filmados</p></div></div>
+          <div class="titem"><span class="thora">12:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Prof. Alexandre Távola</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem break"><span class="thora">12:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Almoço</p></div></div>
+          <div class="titem"><span class="thora">14:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Prof. Dr. José de Felippe Jr</p><p class="ttema">Se conseguirmos afastar a causa do câncer, estaremos tendo mais êxito no tratamento desta doença, e o nosso obstáculo é o vírus Epstein-Barr</p></div></div>
+          <div class="titem"><span class="thora">14:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Thaís Bragatto</p><p class="ttema">Destoxificação e Microbiota Intestinal na Prevenção e Remissão do Câncer</p></div></div>
+          <div class="titem"><span class="thora">15:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Daniela Belisario Baroni</p><p class="ttema">Câncer Além da Célula: Biofísica e Frequências na Visão Integrativa</p></div></div>
+          <div class="titem"><span class="thora">16:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Prof. Anilson Martins</p><p class="ttema">Câncer: o pH do Microambiente Tumoral Importa</p></div></div>
+          <div class="titem"><span class="thora">16:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Lucy Kerr</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem break"><span class="thora">17:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+          <div class="titem"><span class="thora">17:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Alessandro Loiola</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">18:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. José Augusto Nasser dos Santos</p><p class="ttema">Abordagem Metabólica Integrativa do Câncer</p></div></div>
+          <div class="titem"><span class="thora">18:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Fernanda Moraes</p><p class="ttema">Uso dos Peptídeos na Saúde Mitocondrial</p></div></div>
+          <div class="titem"><span class="thora">19:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Lis Curay</p><p class="ttema">O Cântico da Origem — A Vida que Permanece</p></div></div>
+          <div class="titem"><span class="thora">20:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Cristina Cairo</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem break"><span class="thora">21:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Jantar com palestrantes e ingressos VIP</p></div></div>
         </div>
       </div>
 
       <div class="crono-dia" id="crono-sabado">
         <div class="timeline">
           <div class="titem break"><span class="thora">07:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Credenciamento</p></div></div>
-          <div class="titem"><span class="thora">08:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Juan Lambert</p><p class="ttema tbd">Tema: Em breve</p></div></div>
-          <div class="titem"><span class="thora">09:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Daniela Belisario Baroni</p><p class="ttema">Biofísica e Frequências na Visão Integrativa</p></div></div>
-          <div class="titem break"><span class="thora">10:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
-          <div class="titem"><span class="thora">10:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Cláudia B. S. Pacheco</p><p class="ttema">A Vida Após a Vida: o que a Ciência Descobriu</p></div></div>
-          <div class="titem"><span class="thora">11:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Luciane C. Stern</p><p class="ttema">Para Além do Diagnóstico: o Sujeito Diante do Câncer</p></div></div>
-          <div class="titem break"><span class="thora">12:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Almoço</p></div></div>
-          <div class="titem"><span class="thora">13:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Uronal Zancan</p><p class="ttema tbd">Tema: Em breve</p></div></div>
-          <div class="titem"><span class="thora">14:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Luis Stern</p><p class="ttema">Homeopatia e Câncer: a Evolução Clínica em Casos Reais Filmados</p></div></div>
-          <div class="titem break"><span class="thora">15:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
-          <div class="titem open"><span class="thora">15:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Espaço livre <span class="tbadge open">Feira &amp; Networking</span></p></div></div>
-          <div class="titem confirm"><span class="thora">18:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Sérgio Felipe de Oliveira e Dra. Marina Renault</p><p class="ttema">Meditação com equipe de músicos</p></div></div>        </div>
+          <div class="titem"><span class="thora">08:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Luciano Pinheiro</p><p class="ttema">Programa de Práticas Integrativas e Suporte ao Tratamento do Câncer</p></div></div>
+          <div class="titem"><span class="thora">08:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Sara Lambert</p><p class="ttema">Epigenética: Modulação Celular e Proteção do Terreno Biológico</p></div></div>
+          <div class="titem"><span class="thora">09:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Juan Lambert</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">10:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Claudinei Rodrigues</p><p class="ttema">Água, Saúde e Vida: um Olhar sobre o Câncer</p></div></div>
+          <div class="titem break"><span class="thora">10:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+          <div class="titem"><span class="thora">11:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Cláudia B. S. Pacheco</p><p class="ttema">A Vida Após a Vida: o que a Ciência Descobriu</p></div></div>
+          <div class="titem"><span class="thora">11:50</span><span class="tdot"></span><div class="tcard"><p class="tnome">Miguel Galli</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">12:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Uronal Zancan</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem break"><span class="thora">13:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Almoço</p></div></div>
+          <div class="titem"><span class="thora">14:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Zeno Castilho</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">15:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Alex Júnior</p><p class="ttema">Epigenética Digital Aplicada ao Câncer e à Terapêutica: Saindo do Labirinto</p></div></div>
+          <div class="titem"><span class="thora">15:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Alex Alves</p><p class="ttema">Degradação Psicobioeletromagnética: a Fórmula do Câncer x a Fórmula da Vida</p></div></div>
+          <div class="titem"><span class="thora">16:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Marcelo Nonato</p><p class="ttema">Hidrogênio Molecular VS Câncer</p></div></div>
+          <div class="titem"><span class="thora">17:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Míria de Amorim</p><p class="ttema">BioFAO na Oncologia Integrativa: do Modelo Experimental à Experiência Clínica</p></div></div>
+          <div class="titem break"><span class="thora">17:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+          <div class="titem"><span class="thora">18:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Valéria Martins</p><p class="ttema">Câncer: a Quem Você Está Honrando no Seu Sistema</p></div></div>
+          <div class="titem confirm"><span class="thora">18:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Sérgio Felipe de Oliveira e Dra. Marina Renault</p><p class="ttema">Palestra com musical</p></div></div>
+        </div>
       </div>
 
       <div class="crono-legenda">
@@ -2882,6 +2921,44 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         <p>Ao longo de sua trajetória, aprofundou conhecimentos relacionados ao comportamento humano, relações familiares, emoções, consciência, espiritualidade e desenvolvimento pessoal, participando também de cursos com nomes como Amit Goswami, Sophie Hellinger, Augusto Cury, Gregg Braden e Tony Robbins.</p>
         <p>É cocriadora de projetos voltados à consciência e ao despertar humano, como Cocriadora de Sonhos, Código do Novo Humano, Consciência e Cocriação do Despertar, Holococriação e Reconectar o Cocriador Quântico.</p>
         <p>Sua atuação integra diferentes campos de conhecimento com o propósito de promover autoconhecimento, expansão da consciência, transformação pessoal e uma visão integrada do ser humano e de suas relações.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="cv-modal" id="cv-lis-curay">
+    <div class="cv-modal-inner">
+      <button type="button" class="cv-close" aria-label="Fechar">&times;</button>
+      <div class="cv-modal-head">
+        <div class="foto-palestrante"><img src="Imgs/Palestrantes/lis-curay.webp" alt="Lis Curay"></div>
+        <div>
+          <h3>Lis Curay</h3>
+          <p class="cv-role">Artista da Cura · Fundadora do Instituto Curay</p>
+        </div>
+      </div>
+      <div class="cv-modal-body">
+        <p>Lis Curay é Artista da Cura, palestrante e fundadora do Instituto Curay. Sua trajetória integra ciência, arte e consciência, tendo como essência o reconhecimento do Sagrado Essencial que habita cada ser humano.</p>
+        <p>Com formação em Nutrição Clínica, especialização em Medicina Tradicional Chinesa, é herdeira de uma linhagem ancestral de mulheres curadoras.</p>
+        <p>Sua arte encontra expressão na voz, no canto, no silêncio, na respiração e na presença, conduzindo experiências profundas de reconexão com a essência da vida.</p>
+        <p>Criadora do Retiro Curay e de <em>O Cântico da Origem</em>, convida cada pessoa a reconhecer a centelha divina que permanece em seu interior, independentemente das circunstâncias que atravessa.</p>
+        <p><em>A Origem em expressão na Vida.</em></p>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="cv-modal" id="cv-alexandre-tavola">
+    <div class="cv-modal-inner">
+      <button type="button" class="cv-close" aria-label="Fechar">&times;</button>
+      <div class="cv-modal-head">
+        <div class="foto-palestrante"><img src="Imgs/Palestrantes/alexandre-tavola.webp" alt="Dr. Alexandre Távola"></div>
+        <div>
+          <h3>Dr. Alexandre Távola</h3>
+          <p class="cv-role">Cientista, Engenheiro e CEO: Tecnologia e Medicina Integrativa</p>
+        </div>
+      </div>
+      <div class="cv-modal-body">
+        <p><strong>Formação e especialização:</strong> Cientista da Computação e Engenheiro Aeroespacial (Mecatrônica) pelo ITA-SP. Doutor, Mestre e Pós-Graduado em Biotecnologia e Genômica Tumoral pela Universidade Federal de Lavras. Especialista em inteligência artificial e interação de eletrônicos com tecidos biológicos.</p>
+        <p><strong>Liderança e inovação:</strong> CEO da NOVA CIÊNCIA e proprietário da NCTec Indústria e Comércio Ltda. Desenvolve produtos e tecnologias para Medicina Complementar, Medicina Quântica, Sensoriamento avançado para medicina, Radiofrequência e sistemas ópticos e eletrônicos para aviônica avançada.</p>
+        <p><strong>Experiência:</strong> Atua na área de desenvolvimento eletrônico e medicina complementar desde 1999.</p>
       </div>
     </div>
   </dialog>
