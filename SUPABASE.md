@@ -8793,3 +8793,88 @@ group by 1, 2 order by 3;
 
 e insira, por exemplo: `insert into public.preco_unitario_ingresso (produto_cod, preco, nome) values ('CODIGO', 497.00, 'Lote 1');`
 Quando um lote novo abrir (Lote 2, Lote 3), cadastre o preço dele aqui antes de vender.
+
+## 59. Cortesias separadas das vendas pagas
+
+**Por quê (21/10/2026):** ingressos "Entrada - Cortesia" (R$ 0,00) entravam como venda paga: inflavam o "Total vendido" do
+Auditório, o contador de vendas do Tráfego e a lista "Últimas compras". Agora:
+- **Auditório:** cartão novo **Cortesias** (tracejado, verde), e as cortesias **não** entram em "Total vendido", "VIP" nem "Lotes".
+- **Lista de baixo:** duas colunas, **Compras pagas** (últimas 15) e **Cortesias** (últimas 50).
+- **Tráfego:** `qtd_vendas`, `qtd_ingressos` e "vendas por canal" ignoram cortesias. Valor total não muda (cortesia é R$ 0).
+
+Cortesia = venda paga com **valor 0** ou produto com "cortesia" no nome.
+
+### 59.1. SQL (rodar antes de publicar o front; sem ele o front já separa as colunas, mas a lista fica limitada a 15 no total)
+
+```sql
+create or replace function public.rpc_vendas_recentes()
+returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(row_to_json(t) order by t.comprado_em desc), '[]'::json)
+  from (
+    select * from (
+      select v.id, v.cliente_nome, v.produto, v.valor, v.ingressos,
+             coalesce(v.pago_em, v.created_at) as comprado_em,
+             (coalesce(v.valor, 0) = 0 or v.produto ilike '%cortesia%') as cortesia,
+             row_number() over (
+               partition by (coalesce(v.valor, 0) = 0 or v.produto ilike '%cortesia%')
+               order by coalesce(v.pago_em, v.created_at) desc
+             ) as rn
+      from public.vendas v
+      where exists (select 1 from public.perfis me where me.id = auth.uid() and me.ativo)
+        and (v.status ilike 'pag%' or v.status ilike 'paid')
+    ) x
+    where (x.cortesia and x.rn <= 50) or (not x.cortesia and x.rn <= 15)
+  ) t;
+$$;
+
+revoke all on function public.rpc_vendas_recentes() from public, anon;
+grant execute on function public.rpc_vendas_recentes() to authenticated;
+
+create or replace function public.rpc_roi()
+returns json language sql stable
+security definer set search_path = public
+as $$
+  select json_build_object(
+    'total_investido', (select coalesce(sum(valor),0) from public.investimentos),
+    'total_vendas',    (select coalesce(sum(valor),0) from public.vendas where status ilike 'pag%' or status ilike 'paid'),
+    'qtd_vendas',      (select count(*) from public.vendas
+                        where (status ilike 'pag%' or status ilike 'paid')
+                          and not (coalesce(valor,0) = 0 or produto ilike '%cortesia%')),
+    'qtd_ingressos',   (select coalesce(sum(ingressos),0) from public.vendas
+                        where (status ilike 'pag%' or status ilike 'paid')
+                          and not (coalesce(valor,0) = 0 or produto ilike '%cortesia%')),
+    'qtd_cortesias',   (select coalesce(sum(ingressos),0) from public.vendas
+                        where (status ilike 'pag%' or status ilike 'paid')
+                          and (coalesce(valor,0) = 0 or produto ilike '%cortesia%')),
+    'por_produto', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
+        select coalesce(produto,'(sem produto)') as produto,
+               count(*) as qtd,
+               sum(ingressos) as ingressos,
+               sum(valor) as total
+        from public.vendas
+        where status ilike 'pag%' or status ilike 'paid'
+        group by 1) t),
+    'por_canal', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
+        select coalesce(nullif(utm_campaign,''), '(direto)') as canal,
+               coalesce(nullif(utm_source,''), '')            as origem,
+               count(*) as qtd,
+               sum(ingressos) as ingressos,
+               sum(valor) as total
+        from public.vendas
+        where (status ilike 'pag%' or status ilike 'paid')
+          and not (coalesce(valor,0) = 0 or produto ilike '%cortesia%')
+        group by 1, 2) t)
+  );
+$$;
+
+grant execute on function public.rpc_roi() to anon;
+notify pgrst, 'reload schema';
+```
+
+`por_produto` continua trazendo a linha "Entrada - Cortesia" de propósito: é dela que o cartão Cortesias do Auditório tira o número.
+
+### 59.2. Cadeiras
+
+As cortesias **ocupam cadeira** (decisão do usuário, 21/10/2026): entram nas cadeiras em aberto do cartão Total vendido e do cartão 
+Lotes e ocupam lugar no mapa do auditório do lote geral, **iguais às pagas, sem cor própria**. O número do cartão "Total vendido" 
+continua sendo só de vendas pagas.

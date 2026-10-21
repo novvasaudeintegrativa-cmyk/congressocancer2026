@@ -63,6 +63,9 @@
   .filtros{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
   .filtros select,.filtros input{font-family:var(--corpo);font-size:12.5px;padding:7px 10px;border-radius:8px;border:1px solid var(--linha);background:#fff;color:var(--ink);}
   .filtros .cont{font-size:11.5px;color:var(--faint);margin-left:auto;}
+  .compradores-eduzz{margin-top:22px;padding-top:16px;border-top:1px dashed var(--linha);}
+  .compradores-eduzz h4{margin:0 0 4px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--bordo);}
+  .compradores-eduzz .nx-sub{font-size:12px;color:var(--soft);margin:0 0 10px;}
   .busca-wrap{position:relative;}
   .fora-da-tela{display:none !important;}
   .busca-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint);pointer-events:none;}
@@ -149,12 +152,15 @@
 
   /* ---- auditório: mapa de cadeiras que preenche conforme as vendas ---- */
   .auditorio-kpis{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:18px;}
-  @media (min-width:700px){ .auditorio-kpis{grid-template-columns:repeat(3,1fr);} }
+  @media (min-width:700px){ .auditorio-kpis{grid-template-columns:repeat(2,1fr);} }
+  @media (min-width:1000px){ .auditorio-kpis{grid-template-columns:repeat(4,1fr);} }
   .aud-kpi{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:14px 16px;}
   .aud-kpi .l{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);font-weight:700;}
   .aud-kpi .n{font-family:var(--tit);font-weight:800;font-size:26px;color:var(--ink);margin-top:5px;line-height:1;font-variant-numeric:tabular-nums;}
   .aud-kpi .n .de{font-size:14px;font-weight:700;color:var(--faint);margin-left:2px;}
   .aud-kpi .s{font-size:11.5px;color:var(--faint);margin-top:6px;}
+  .aud-kpi.cortesia{border:1.5px dashed #6aa77a;}
+  .aud-kpi.cortesia .n{color:#2f7a45;}
   .aud-kpi.vip{border-color:#e4c583;}
   .aud-kpi.vip .n{color:var(--dourado);}
   .aud-kpi.total{background:var(--bordo);border-color:var(--bordo);}
@@ -183,6 +189,13 @@
   .aud-venda .produto{font-size:11px;color:var(--soft);margin-top:1px;}
   .aud-venda .quando{font-size:11px;color:var(--faint);white-space:nowrap;flex-shrink:0;}
   .aud-vendas-vazio{text-align:center;font-size:12px;color:var(--faint);padding:10px;}
+  /* compras pagas e cortesias, lado a lado */
+  .aud-vendas-duo{display:grid;grid-template-columns:1fr;gap:20px;align-items:start;}
+  @media (min-width:900px){ .aud-vendas-duo{grid-template-columns:1fr 1fr;} }
+  .aud-vendas-duo .aud-vendas{max-width:none;margin:0;}
+  .aud-vendas-tit{font-family:var(--tit);font-weight:800;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--bordo);margin:0 0 8px;}
+  .aud-vendas-tit span{font-weight:700;color:var(--faint);margin-left:4px;}
+  .aud-vendas-cort .aud-venda{border-style:dashed;border-color:#9fc9ab;}
   .dot.aud-vip-cheio{background:var(--dourado);}
   .dot.aud-vip-vazio{background:var(--track);border:1px solid #e4c583;}
   .dot.aud-geral-cheio{background:var(--bordo);}
@@ -661,6 +674,11 @@
         <div class="n" id="aud-geral-n">0<span class="de">/460</span></div>
         <div class="s" id="aud-geral-restam">460 em aberto</div>
       </div>
+      <div class="aud-kpi cortesia">
+        <div class="l">Cortesias</div>
+        <div class="n" id="aud-cortesia-n">0</div>
+        <div class="s">ocupam cadeira, mas não entram no total vendido</div>
+      </div>
     </div>
 
     <div class="auditorio-palco">Palco</div>
@@ -689,8 +707,17 @@
       <span><i class="dot aud-geral-vazio"></i>Lote em aberto</span>
     </div>
 
-    <div class="sec-crm" style="margin-top:24px;"><span>Últimas compras</span></div>
-    <div class="aud-vendas" id="aud-vendas-lista"></div>
+    <div class="sec-crm" style="margin-top:24px;"><span>Compras e cortesias recentes</span></div>
+    <div class="aud-vendas-duo">
+      <div>
+        <div class="aud-vendas-tit">Compras pagas</div>
+        <div class="aud-vendas" id="aud-vendas-lista"></div>
+      </div>
+      <div class="aud-vendas-cort">
+        <div class="aud-vendas-tit">Cortesias <span id="aud-cortesias-cont"></span></div>
+        <div class="aud-vendas" id="aud-cortesias-lista"></div>
+      </div>
+    </div>
   </div>
 
   <div id="view-painel" class="painel">
@@ -747,6 +774,7 @@
       <tbody id="contatos-lista"></tbody>
     </table></div>
     <div class="nx-rodape"><span id="contatos-rodape"></span><button type="button" class="btn-atualizar" id="contatos-mais" hidden>Mostrar mais</button></div>
+    <div id="contatos-compradores" class="compradores-eduzz" hidden></div>
   </div>
 
   <div id="view-tarefas" class="painel">
@@ -1395,11 +1423,13 @@
   construirAssentos('auditorio-vip-esq', AUD_VIP_POR_LADO, 'aud-vip-seat', false);
   construirAssentos('auditorio-vip-dir', AUD_VIP_POR_LADO, 'aud-vip-seat', true);
 
-  function pintarAssentos(id, vendidos){
+  // vendidos = lugares pagos; cortesias também ocupam cadeira e ficam iguais às pagas no mapa (sem cor própria)
+  function pintarAssentos(id, vendidos, cortesias){
+    var ocupados = vendidos + (cortesias || 0);
     var els = $(id).children;
     var ordem = ordemAssentos[id] || [];
     var preenchido = {};
-    for (var k = 0; k < vendidos && k < ordem.length; k++) preenchido[ordem[k]] = true;
+    for (var k = 0; k < ocupados && k < ordem.length; k++) preenchido[ordem[k]] = true;
     for (var i = 0; i < els.length; i++) els[i].classList.toggle('cheio', !!preenchido[i]);
   }
 
@@ -1411,12 +1441,13 @@
 
   // reconstrói o bloco geral de um lado só com as fileiras necessárias pro que já
   // foi vendido (+ sobra), mostra o número grande de fundo e o aviso "+N cadeiras"
-  function montarBlocoGeral(id, vendidos, ladoDireito){
-    var necessario = Math.min(AUD_GERAL_POR_LADO, vendidos + AUD_GERAL_SOBRA);
+  function montarBlocoGeral(id, vendidos, ladoDireito, cortesias){
+    cortesias = cortesias || 0;
+    var necessario = Math.min(AUD_GERAL_POR_LADO, vendidos + cortesias + AUD_GERAL_SOBRA);
     var linhas = Math.max(2, Math.ceil(necessario / AUD_COLS));
     var visiveis = Math.min(AUD_GERAL_POR_LADO, linhas * AUD_COLS);
     construirAssentos(id, visiveis, 'aud-geral-seat', ladoDireito);
-    pintarAssentos(id, vendidos);
+    pintarAssentos(id, vendidos, cortesias);
 
     var faltam = AUD_GERAL_POR_LADO - visiveis;
     var elMais = $(id + '-mais');
@@ -1427,12 +1458,14 @@
   function carregarAuditorio(){
     apiPost('rpc/rpc_roi', {}).then(function(d){
       var produtos = (d && d.por_produto) || [];
-      var vip = 0, geral = 0;
+      var vip = 0, geral = 0, cortesias = 0;
       produtos.forEach(function(p){
         var nome = (p.produto || '').toLowerCase();
         var ing = (p.ingressos != null ? p.ingressos : p.qtd) || 0; // ingressos (§56); sem o SQL, cai pra qtd de vendas
-        if (nome.indexOf('vip') !== -1) vip += ing; else geral += ing;
+        if (nome.indexOf('cortesia') !== -1) cortesias += ing;      // cortesia não conta como venda paga (§59)
+        else if (nome.indexOf('vip') !== -1) vip += ing; else geral += ing;
       });
+      $('aud-cortesia-n').textContent = cortesias;
       vip = Math.min(vip, AUD_VIP_TOTAL);
       geral = Math.min(geral, AUD_GERAL_TOTAL);
 
@@ -1441,15 +1474,19 @@
       pintarAssentos('auditorio-vip-dir', vipLados[1]);
 
       var geralLados = dividirEmDoisLados(geral, AUD_GERAL_POR_LADO);
-      montarBlocoGeral('auditorio-geral-esq', geralLados[0], false);
-      montarBlocoGeral('auditorio-geral-dir', geralLados[1], true);
+      // cortesias ocupam cadeira do lote geral: vão logo depois dos pagos, dos dois lados
+      cortesias = Math.min(cortesias, AUD_GERAL_TOTAL - geral);
+      var cortEsq = Math.min(Math.ceil(cortesias / 2), AUD_GERAL_POR_LADO - geralLados[0]);
+      var cortDir = Math.min(cortesias - cortEsq, AUD_GERAL_POR_LADO - geralLados[1]);
+      montarBlocoGeral('auditorio-geral-esq', geralLados[0], false, cortEsq);
+      montarBlocoGeral('auditorio-geral-dir', geralLados[1], true, cortDir);
 
       $('aud-total-n').innerHTML = (vip + geral) + '<span class="de">/' + (AUD_VIP_TOTAL + AUD_GERAL_TOTAL) + '</span>';
-      $('aud-total-restam').textContent = (AUD_VIP_TOTAL + AUD_GERAL_TOTAL - vip - geral) + ' cadeiras em aberto';
+      $('aud-total-restam').textContent = (AUD_VIP_TOTAL + AUD_GERAL_TOTAL - vip - geral - cortesias) + ' cadeiras em aberto' + (cortesias ? ' (' + cortesias + ' de cortesia já descontadas)' : '');
       $('aud-vip-n').innerHTML = vip + '<span class="de">/' + AUD_VIP_TOTAL + '</span>';
       $('aud-vip-restam').textContent = (AUD_VIP_TOTAL - vip) + ' em aberto';
       $('aud-geral-n').innerHTML = geral + '<span class="de">/' + AUD_GERAL_TOTAL + '</span>';
-      $('aud-geral-restam').textContent = (AUD_GERAL_TOTAL - geral) + ' em aberto';
+      $('aud-geral-restam').textContent = (AUD_GERAL_TOTAL - geral - cortesias) + ' em aberto' + (cortesias ? ' (descontadas as cortesias)' : '');
       $('aud-atualizado').textContent = 'atualizado ' + new Date().toLocaleTimeString('pt-BR');
     }).catch(function(err){
       $('aud-atualizado').textContent = 'erro ao carregar: ' + err.message;
@@ -1464,20 +1501,26 @@
 
   // lista simples das últimas compras confirmadas (dia+hora), pra quem
   // pergunta "quando essa pessoa comprou" sem precisar abrir o Supabase
+  function ehCortesiaVenda(v){
+    return v.cortesia === true || (v.cortesia == null && (Number(v.valor || 0) === 0 || /cortesia/i.test(v.produto || '')));
+  }
+  function linhaVenda(v){
+    var valor = v.valor != null ? 'R$ ' + Number(v.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '';
+    var ing = Number(v.ingressos || 1) > 1 ? v.ingressos + ' ingressos' : '';
+    var produto = String(v.produto || '').replace(/^4º Congresso[^-]*-\s*/, '');
+    var produtoLinha = [produto, ehCortesiaVenda(v) ? '' : valor, ing].filter(Boolean).join(' · ');
+    return '<div class="aud-venda">' +
+      '<div><div class="nome">' + esc(v.cliente_nome || '(sem nome)') + '</div>' +
+      (produtoLinha ? '<div class="produto">' + esc(produtoLinha) + '</div>' : '') + '</div>' +
+      '<div class="quando">' + esc(fmtDataHora(v.comprado_em)) + '</div>' +
+    '</div>';
+  }
   function renderVendasRecentes(lista){
-    if (!lista.length){
-      $('aud-vendas-lista').innerHTML = '<div class="aud-vendas-vazio">Nenhuma compra confirmada ainda.</div>';
-      return;
-    }
-    $('aud-vendas-lista').innerHTML = lista.map(function(v){
-      var valor = v.valor != null ? 'R$ ' + Number(v.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '';
-      var produtoLinha = [v.produto, valor].filter(Boolean).join(' · ');
-      return '<div class="aud-venda">' +
-        '<div><div class="nome">' + esc(v.cliente_nome || '(sem nome)') + '</div>' +
-        (produtoLinha ? '<div class="produto">' + esc(produtoLinha) + '</div>' : '') + '</div>' +
-        '<div class="quando">' + esc(fmtDataHora(v.comprado_em)) + '</div>' +
-      '</div>';
-    }).join('');
+    var pagas = lista.filter(function(v){ return !ehCortesiaVenda(v); });
+    var cort = lista.filter(ehCortesiaVenda);
+    $('aud-vendas-lista').innerHTML = pagas.length ? pagas.map(linhaVenda).join('') : '<div class="aud-vendas-vazio">Nenhuma compra paga ainda.</div>';
+    $('aud-cortesias-lista').innerHTML = cort.length ? cort.map(linhaVenda).join('') : '<div class="aud-vendas-vazio">Nenhuma cortesia.</div>';
+    $('aud-cortesias-cont').textContent = cort.length ? '(' + cort.length + ')' : '';
   }
 
   // ---------- dados ----------
@@ -1728,13 +1771,45 @@
     $('contatos-mais').hidden = v.length <= extras.contatosLimite;
   }
 
+  // ---------- compradores da Eduzz na busca de Contatos (só gestor; SUPABASE.md §57) ----------
+  var compradoresSeq = 0, compradoresTimer = null;
+  function limparCompradores(){
+    var box = $('contatos-compradores');
+    if (box){ box.hidden = true; box.innerHTML = ''; }
+  }
+  function buscarCompradores(termo){
+    clearTimeout(compradoresTimer);
+    var box = $('contatos-compradores');
+    if (!box) return;
+    if (!gestorAgora() || termo.length < 3 || $('contatos-fonte').value === 'disparos'){ compradoresSeq++; limparCompradores(); return; }
+    var minha = ++compradoresSeq;
+    compradoresTimer = setTimeout(function(){
+      apiPost('rpc/rpc_buscar_compradores', { termo: termo }).then(function(rows){
+        if (minha !== compradoresSeq) return; // resposta antiga, o usuário já digitou outra coisa
+        rows = rows || [];
+        if (!rows.length){ limparCompradores(); return; }
+        box.hidden = false;
+        box.innerHTML = '<h4>Compradores na Eduzz (' + rows.length + ')</h4>' +
+          '<p class="nx-sub">Quem pagou ingresso, mesmo sem ter falado com a gente. Dados da compra, sem CPF nem telefone.</p>' +
+          '<div class="nx-rolagem"><table class="nx-tabela"><thead><tr><th>Comprador</th><th>Produto</th><th>Ingressos</th><th>Valor</th><th>Comprou em</th></tr></thead><tbody>' +
+          rows.map(function(r){
+            return '<tr><td><div class="nx-pessoa"><div><b>' + esc(r.cliente_nome || 'Sem nome') + '</b><small>' + esc(r.cliente_email || '') + '</small></div></div></td>' +
+              '<td>' + esc((r.produto || '').replace(/^4º Congresso[^-]*- /, '')) + '</td>' +
+              '<td>' + esc(String(r.ingressos != null ? r.ingressos : 1)) + '</td>' +
+              '<td>R$ ' + esc(Number(r.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })) + '</td>' +
+              '<td class="nx-sub">' + esc(fmtDataHora(r.comprado_em)) + '</td></tr>';
+          }).join('') + '</tbody></table></div>';
+      }).catch(function(){ if (minha === compradoresSeq) limparCompradores(); /* SQL do §57 ainda não rodado: some em silêncio */ });
+    }, 350);
+  }
+
   function renderContatos(){
     // "Disparos sem resposta" é só do gestor de verdade (some no "ver como vendedor" e pra vendedor)
     var optDisp = $('contatos-fonte').querySelector('option[value="disparos"]');
     optDisp.hidden = !(gestorAgora() && disparosSemResposta !== null);
     if (optDisp.hidden && $('contatos-fonte').value === 'disparos') $('contatos-fonte').value = 'pipeline';
     $('contatos-etapa').hidden = $('contatos-fonte').value === 'disparos';
-    if ($('contatos-fonte').value === 'disparos'){ renderContatosDisparos(); return; }
+    if ($('contatos-fonte').value === 'disparos'){ buscarCompradores(''); renderContatosDisparos(); return; }
     $('contatos-thead').innerHTML = THEAD_PIPELINE;
     var termo = $('contatos-busca').value.trim().toLowerCase();
     var digitos = termo.replace(/\D/g, '');
@@ -1759,6 +1834,7 @@
     $('contatos-cont').textContent = v.length + ' contato(s)';
     $('contatos-rodape').textContent = 'Mostrando ' + mostrar.length + ' de ' + v.length;
     $('contatos-mais').hidden = v.length <= extras.contatosLimite;
+    buscarCompradores(termo);
   }
 
   function renderTarefas(){
