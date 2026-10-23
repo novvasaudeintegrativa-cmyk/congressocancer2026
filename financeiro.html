@@ -516,7 +516,7 @@
     renderResumoTipos(Object.keys(porTipo).map(function(t){ return porTipo[t]; }));
   }
   function rotuloTipo(t){
-    return t==='expositor' ? 'Expositores' : (t==='investimento' ? 'Investimento do sócio' : 'Outras receitas');
+    return t==='ingressos' ? 'Ingressos (Eduzz)' : t==='expositor' ? 'Expositores' : (t==='investimento' ? 'Investimento do sócio' : 'Outras receitas');
   }
   function renderResumoTipos(porTipo){
     if (!porTipo.length){ $('resumo-tipos').innerHTML = ''; return; }
@@ -804,10 +804,13 @@
   });
 
   // ---------- resumo / KPIs / gráfico ----------
+  // Total recebido = receitas lançadas (expositores etc.) + vendas de ingressos da Eduzz (rpc_roi, só pagas; cortesia é R$ 0)
   function carregarResumo(){
-    return apiPost('rpc/rpc_financeiro_resumo', {}).then(function(d){
-      d = d || {};
-      var receitas = d.total_receitas || 0, despesas = d.total_despesas || 0, saldo = receitas - despesas;
+    var vendasP = apiPost('rpc/rpc_roi', {}).catch(function(){ return null; });
+    return Promise.all([apiPost('rpc/rpc_financeiro_resumo', {}), vendasP]).then(function(res){
+      var d = res[0] || {}, roi = res[1] || {};
+      var vendas = Number(roi.total_vendas || 0);
+      var receitas = (d.total_receitas || 0) + vendas, despesas = d.total_despesas || 0, saldo = receitas - despesas;
       $('k-receitas').textContent = fmtMoeda(receitas);
       $('k-receitas-pend').textContent = d.pendente_receitas ? (fmtMoeda(d.pendente_receitas) + ' pendente') : '';
       $('k-despesas').textContent = fmtMoeda(despesas);
@@ -818,7 +821,9 @@
       $('k-expositores').textContent = d.qtd_expositores_pagos || 0;
       renderGrafico(d.despesas_por_grupo || []);
       renderTabelaMensal(d.despesas_por_mes || []);
-      renderResumoTipos(d.receitas_por_tipo || []);
+      var tipos = (d.receitas_por_tipo || []).slice();
+      if (vendas > 0) tipos.unshift({ tipo:'ingressos', qtd:Number(roi.qtd_ingressos || roi.qtd_vendas || 0), total:vendas });
+      renderResumoTipos(tipos);
     }).catch(function(err){
       $('grafico-grupos').innerHTML = '<p class="vazio">Erro ao carregar resumo: '+esc(err.message)+'</p>';
     });
