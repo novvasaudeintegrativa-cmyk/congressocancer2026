@@ -8878,3 +8878,60 @@ notify pgrst, 'reload schema';
 As cortesias **ocupam cadeira** (decisão do usuário, 21/10/2026): entram nas cadeiras em aberto do cartão Total vendido e do cartão 
 Lotes e ocupam lugar no mapa do auditório do lote geral, **iguais às pagas, sem cor própria**. O número do cartão "Total vendido" 
 continua sendo só de vendas pagas.
+
+## 60. ROI: "Investido" soma as despesas de Marketing Digital do Financeiro
+
+**Por quê (23/10/2026):** o cartão **Investido** do ROI (Tráfego) lia só a tabela `investimentos` (lançamento manual) e
+mostrava R$ 0,00, enquanto o Financeiro já tinha R$ 5.031,76 de despesas de **Marketing Digital**. Agora:
+
+`total_investido` = `investimentos` + despesas **pagas** do grupo **Marketing Digital** (`fin_despesas`).
+
+- Só entra despesa com status `pago` e grupo começando com "Marketing" (infraestrutura, equipe e evento ficam de fora).
+- **Cuidado com duplicidade:** se um mesmo gasto for lançado nos dois lugares (Financeiro e "Lançar investimento"), conta em dobro. Lance só no Financeiro.
+- A função é `security definer` e o resultado é um total único (sem lista de despesas), igual ao que o `investimentos` já expunha.
+
+### 60.1. SQL
+
+```sql
+create or replace function public.rpc_roi()
+returns json language sql stable
+security definer set search_path = public
+as $$
+  select json_build_object(
+    'total_investido', (select coalesce(sum(valor),0) from public.investimentos)
+                     + (select coalesce(sum(valor),0) from public.fin_despesas
+                        where status = 'pago' and grupo ilike 'marketing%'),
+    'total_vendas',    (select coalesce(sum(valor),0) from public.vendas where status ilike 'pag%' or status ilike 'paid'),
+    'qtd_vendas',      (select count(*) from public.vendas
+                        where (status ilike 'pag%' or status ilike 'paid')
+                          and not (coalesce(valor,0) = 0 or produto ilike '%cortesia%')),
+    'qtd_ingressos',   (select coalesce(sum(ingressos),0) from public.vendas
+                        where (status ilike 'pag%' or status ilike 'paid')
+                          and not (coalesce(valor,0) = 0 or produto ilike '%cortesia%')),
+    'qtd_cortesias',   (select coalesce(sum(ingressos),0) from public.vendas
+                        where (status ilike 'pag%' or status ilike 'paid')
+                          and (coalesce(valor,0) = 0 or produto ilike '%cortesia%')),
+    'por_produto', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
+        select coalesce(produto,'(sem produto)') as produto,
+               count(*) as qtd,
+               sum(ingressos) as ingressos,
+               sum(valor) as total
+        from public.vendas
+        where status ilike 'pag%' or status ilike 'paid'
+        group by 1) t),
+    'por_canal', (select coalesce(json_agg(t order by t.total desc), '[]'::json) from (
+        select coalesce(nullif(utm_campaign,''), '(direto)') as canal,
+               coalesce(nullif(utm_source,''), '')            as origem,
+               count(*) as qtd,
+               sum(ingressos) as ingressos,
+               sum(valor) as total
+        from public.vendas
+        where (status ilike 'pag%' or status ilike 'paid')
+          and not (coalesce(valor,0) = 0 or produto ilike '%cortesia%')
+        group by 1, 2) t)
+  );
+$$;
+
+grant execute on function public.rpc_roi() to anon;
+notify pgrst, 'reload schema';
+```
