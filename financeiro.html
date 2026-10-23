@@ -61,7 +61,8 @@
   .restrito p{font-size:13.5px;color:var(--soft);margin-top:10px;}
 
   .kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
-  @media (min-width:760px){.kpis{grid-template-columns:repeat(4,1fr);}}
+  @media (min-width:760px){.kpis{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));}}
+  .kpi.roi .n.pos{color:var(--verde);} .kpi.roi .n.neg{color:var(--bordo-vivo);}
   .kpi{background:var(--card);border:1px solid var(--linha);border-radius:14px;padding:16px 18px;}
   .kpi .l{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);}
   .kpi .n{font-family:var(--tit);font-weight:800;font-size:24px;color:var(--ink);margin-top:6px;line-height:1;font-variant-numeric:tabular-nums;}
@@ -197,6 +198,13 @@
       <div class="kpi"><div class="l">Total gasto</div><div class="n" id="k-despesas">—</div><div class="s" id="k-despesas-pend"></div></div>
       <div class="kpi saldo"><div class="l">Saldo</div><div class="n" id="k-saldo">—</div><div class="s">recebido − gasto</div></div>
       <div class="kpi"><div class="l">Expositores</div><div class="n" id="k-expositores">—</div><div class="s">categorias cadastradas: <span id="k-cats"></span></div></div>
+    </div>
+    <div class="sec" style="margin-top:4px;"><span class="t"><span class="bar"></span>ROI do marketing</span><span class="hint">vendas de ingressos × despesas pagas de Marketing</span></div>
+    <div class="kpis">
+      <div class="kpi"><div class="l">Investido</div><div class="n" id="k-roi-inv">—</div><div class="s">despesas pagas de Marketing</div></div>
+      <div class="kpi"><div class="l">Vendas</div><div class="n" id="k-roi-vendas">—</div><div class="s" id="k-roi-vendas-sub"></div></div>
+      <div class="kpi roi"><div class="l">Retorno (ROI)</div><div class="n" id="k-roi">—</div><div class="s" id="k-roi-sub"></div></div>
+      <div class="kpi roi"><div class="l">Resultado</div><div class="n" id="k-roi-res">—</div><div class="s">vendas − investido</div></div>
     </div>
 
     <section>
@@ -819,6 +827,7 @@
     var vendasP = apiPost('rpc/rpc_roi', {}).catch(function(){ return null; });
     return Promise.all([apiPost('rpc/rpc_financeiro_resumo', {}), vendasP]).then(function(res){
       var d = res[0] || {}, roi = res[1] || {};
+      function roi_ingressos(r){ return r.qtd_ingressos != null ? r.qtd_ingressos : (r.qtd_vendas || 0); }
       var vendas = Number(roi.total_vendas || 0);
       var receitas = (d.total_receitas || 0) + vendas, despesas = d.total_despesas || 0, saldo = receitas - despesas;
       $('k-receitas').textContent = fmtMoeda(receitas);
@@ -829,6 +838,25 @@
       kSaldo.textContent = fmtMoeda(saldo);
       kSaldo.className = 'n ' + (saldo >= 0 ? 'pos' : 'neg');
       $('k-expositores').textContent = d.qtd_expositores_pagos || 0;
+      // ROI = (vendas de ingressos − marketing pago) ÷ marketing pago; marketing = grupos "Marketing…" das despesas pagas
+      var marketing = (d.despesas_por_grupo || []).filter(function(g){ return /^marketing/i.test(g.grupo || ''); })
+        .reduce(function(a,g){ return a + Number(g.total || 0); }, 0);
+      var kRoi = $('k-roi'), kRes = $('k-roi-res');
+      var ing = Number(roi_ingressos(roi));
+      $('k-roi-inv').textContent = fmtMoeda(marketing);
+      $('k-roi-vendas').textContent = fmtMoeda(vendas);
+      $('k-roi-vendas-sub').textContent = (roi.qtd_vendas || 0) + ' venda(s)' + (ing > (roi.qtd_vendas || 0) ? ' · ' + ing + ' ingresso(s)' : '');
+      var res = vendas - marketing;
+      kRes.textContent = fmtMoeda(res); kRes.className = 'n ' + (res >= 0 ? 'pos' : 'neg');
+      if (marketing > 0){
+        var pct = res / marketing * 100;
+        kRoi.textContent = (pct >= 0 ? '+' : '') + Math.round(pct) + '%';
+        kRoi.className = 'n ' + (pct >= 0 ? 'pos' : 'neg');
+        $('k-roi-sub').textContent = pct >= 0 ? 'positivo' : 'negativo';
+      } else {
+        kRoi.textContent = '—'; kRoi.className = 'n';
+        $('k-roi-sub').textContent = 'sem investimento lançado';
+      }
       renderGrafico(d.despesas_por_grupo || []);
       renderTabelaMensal(d.despesas_por_mes || []);
       var tipos = (d.receitas_por_tipo || []).slice();
