@@ -79,6 +79,12 @@
   }
   .autoridade{ max-width:760px; margin:0 auto 36px; text-align:center; color:#fff; font-size:clamp(1.05rem, 2.4vw, 1.35rem); line-height:1.5; }
   .autoridade b{ font-weight:800; }
+  .ig-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px 10px; max-width:1000px; margin:0 auto 40px; }
+  .ig-item{ display:flex; align-items:center; gap:8px; padding:5px 10px 5px 5px; border:1px solid var(--borda-card); border-radius:999px; background:rgba(255,255,255,.03); color:#fff; text-decoration:none; min-width:0; }
+  .ig-item img{ width:30px; height:30px; border-radius:50%; object-fit:cover; flex:none; }
+  .ig-handle{ font-size:11.5px; color:rgba(255,255,255,.75); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
+  .ig-seg{ font-size:13px; color:#f2c744; flex:none; }
+  @media (max-width:900px){ .ig-grid{ grid-template-columns:repeat(2,1fr); } }
   .hero-photo{ position:relative; overflow:hidden; }
   .hero-photo img{
     width:100%;
@@ -524,6 +530,37 @@
 <section aria-label="Capacidade do evento">
   <div class="container reveal">
     <p class="autoridade"><b>30 palestrantes</b>, referência e autoridade na área da saúde com mais de <b>7 MILHÕES</b> de seguidores no Instagram.</p>
+    <div class="ig-grid" aria-label="Perfis dos palestrantes no Instagram e seguidores">
+      <a class="ig-item" href="https://www.instagram.com/drjuanlambert/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/drjuanlambert.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@drjuanlambert</span><b class="ig-seg">2 mi</b></a>
+      <a class="ig-item" href="https://www.instagram.com/alessandro_l_loiola/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/alessandro_l_loiola.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@alessandro_l_loiola</span><b class="ig-seg">749 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/dr.uronalzancan/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/dr-uronalzancan.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@dr.uronalzancan</span><b class="ig-seg">707 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/dralexalves/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/dralexalves.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@dralexalves</span><b class="ig-seg">603 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/alexbilljr/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/alexbilljr.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@alexbilljr</span><b class="ig-seg">541 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/joseanasser/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/joseanasser.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@joseanasser</span><b class="ig-seg">423 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/claudia.bernhardt.pacheco/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/claudia-bernhardt-pacheco.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@claudia.bernhardt.pacheco</span><b class="ig-seg">400 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/drsergiofelipedeoliveira/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/drsergiofelipedeoliveira.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@drsergiofelipedeoliveira</span><b class="ig-seg">369 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/fernandobeteti/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/fernandobeteti.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@fernandobeteti</span><b class="ig-seg">182 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/liscuray/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/liscuray.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@liscuray</span><b class="ig-seg">83 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/lucykerr2020/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/lucykerr2020.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@lucykerr2020</span><b class="ig-seg">77 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/thtcterapiaoficial/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/thtcterapiaoficial.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@thtcterapiaoficial</span><b class="ig-seg">54 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/aletavola/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/aletavola.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@aletavola</span><b class="ig-seg">37 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/josedefelippejr/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/josedefelippejr.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@josedefelippejr</span><b class="ig-seg">31 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/drafernandamoraes/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/drafernandamoraes.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@drafernandamoraes</span><b class="ig-seg">30 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/miriadeamorim/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/miriadeamorim.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@miriadeamorim</span><b class="ig-seg">18 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/giselemartinsbiomedica/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/giselemartinsbiomedica.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@giselemartinsbiomedica</span><b class="ig-seg">16 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/geisaquental/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/geisaquental.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@geisaquental</span><b class="ig-seg">15 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/dradanielabaroni/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/dradanielabaroni.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@dradanielabaroni</span><b class="ig-seg">14 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/metodothaisbragatto/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/metodothaisbragatto.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@metodothaisbragatto</span><b class="ig-seg">13 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/acqua.mafra/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/acqua-mafra.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@acqua.mafra</span><b class="ig-seg">6,9 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/zeno.castilho/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/zeno-castilho.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@zeno.castilho</span><b class="ig-seg">6,6 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/luizstern/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/luizstern.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@luizstern</span><b class="ig-seg">5,3 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/clinica.stern/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/clinica-stern.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@clinica.stern</span><b class="ig-seg">4,7 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/nutrisaralambert/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/nutrisaralambert.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@nutrisaralambert</span><b class="ig-seg">3,1 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/juancarlosllanos_md_phd/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/juancarlosllanos_md_phd.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@juancarlosllanos_md_phd</span><b class="ig-seg">3 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/beto_deandrade/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/beto_deandrade.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@beto_deandrade</span><b class="ig-seg">1,4 mil</b></a>
+      <a class="ig-item" href="https://www.instagram.com/marcelo_abn/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/marcelo_abn.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@marcelo_abn</span><b class="ig-seg">687</b></a>
+      <a class="ig-item" href="https://www.instagram.com/valeriaquantica520/" target="_blank" rel="noopener"><img src="Imgs/PerfisIG/valeriaquantica520.webp" alt="" width="40" height="40" loading="lazy"><span class="ig-handle">@valeriaquantica520</span><b class="ig-seg">487</b></a>
+    </div>
     <span class="eyebrow">O Congresso em números</span>
     <h2 class="section-title">Auditório e feira</h2>
     <div class="stats">
