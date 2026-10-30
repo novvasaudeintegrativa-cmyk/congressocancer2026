@@ -457,6 +457,7 @@
   .kit-btn:hover{ background:#e85d00; }
   /* selo redondo da Terapia Plasmática: sem zoom, cabe inteiro no quadro */
   .slot.ativo img[src*="TerapiaPlasmatica"]{ transform:none; width:88%; max-height:none; }
+  .nome-equipe{ font-family:var(--fonte-titulo); font-weight:800; font-size:clamp(2rem,6vw,2.6rem); line-height:1.05; text-transform:uppercase; text-align:center; color:#fff; letter-spacing:.01em; }
   /* colaboradora de produção: um quadro quadrado e centralizado */
   .slot-grid.um{ grid-template-columns:1fr; max-width:300px; margin-left:auto; margin-right:auto; }
   /* Expositores Master: 2 quadros quadrados, logos brancos sem zoom */
@@ -925,9 +926,13 @@
   </div>
 </section>
 
-<section aria-label="Colaboradora de Produção">
+<section aria-label="Equipe de produção e comercial">
   <div class="container reveal">
-    <h2 class="section-title">Colaboradora de Produção</h2>
+    <h2 class="section-title">Produtora Executiva do Evento</h2>
+    <div class="slot-grid um">
+      <div class="slot ativo"><span class="nome-equipe">Gisele<br>Walter</span></div>
+    </div>
+    <h2 class="section-title" style="margin-top:48px;">Consultora comercial de Expositores</h2>
     <div class="slot-grid um">
       <div class="slot ativo"><img src="Imgs/Expositores/AmaliaTarallo.svg" alt="Amalia Tarallo" width="200" height="80"></div>
     </div>
