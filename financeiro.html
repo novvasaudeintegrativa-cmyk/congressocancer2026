@@ -339,18 +339,38 @@
   function apiHeaders(extra){
     return Object.assign({ apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (TOKEN || SUPABASE_KEY), 'Content-Type': 'application/json' }, extra || {});
   }
-  function apiGet(pathq){
-    return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { headers: apiHeaders() })
-      .then(function(r){ return r.text().then(function(t){ if(!r.ok) throw new Error((t&&t.slice(0,200))||('HTTP '+r.status)); return t?JSON.parse(t):null; }); });
+  // Toda chamada passa por aqui: se o token venceu ("JWT expired", PGRST303), renova a sessão e tenta de novo
+  // uma vez; se nem assim, volta pra tela de login (em vez de ficar mostrando o erro cru na tela).
+  function chamar(method, pathq, body, extra){
+    function uma(){
+      return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { method: method, headers: apiHeaders(extra), body: body!=null?JSON.stringify(body):undefined })
+        .then(function(r){ return r.text().then(function(t){ if(!r.ok) throw new Error((t&&t.slice(0,200))||('HTTP '+r.status)); return t?JSON.parse(t):null; }); });
+    }
+    return uma().catch(function(err){
+      if (!/JWT expired|PGRST303/.test(String(err && err.message))) throw err;
+      return sb.auth.refreshSession().then(function(res){
+        var sess = res && res.data && res.data.session;
+        if (!sess || !sess.access_token) throw new Error('sessao_expirada');
+        TOKEN = sess.access_token;
+        return uma();
+      }).catch(function(e2){
+        if (String(e2 && e2.message) === 'sessao_expirada' || /JWT expired|PGRST303|refresh/i.test(String(e2 && e2.message))){
+          mostrarLogin();
+          erroLogin('Sua sessão expirou. Entre de novo.');
+          throw new Error('Sessão expirada. Entre de novo.');
+        }
+        throw e2;
+      });
+    });
   }
-  function apiWrite(method, pathq, body, extra){
-    return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { method: method, headers: apiHeaders(extra), body: body!=null?JSON.stringify(body):undefined })
-      .then(function(r){ return r.text().then(function(t){ if(!r.ok) throw new Error((t&&t.slice(0,200))||('HTTP '+r.status)); return t?JSON.parse(t):null; }); });
-  }
-  function apiPost(pathq, body, extra){
-    return fetch(SUPABASE_URL + '/rest/v1/' + pathq, { method:'POST', headers: apiHeaders(extra), body: JSON.stringify(body) })
-      .then(function(r){ return r.text().then(function(t){ if(!r.ok) throw new Error((t&&t.slice(0,200))||('HTTP '+r.status)); return t?JSON.parse(t):null; }); });
-  }
+  function apiGet(pathq){ return chamar('GET', pathq); }
+  function apiWrite(method, pathq, body, extra){ return chamar(method, pathq, body, extra); }
+  function apiPost(pathq, body, extra){ return chamar('POST', pathq, body, extra); }
+
+  // o supabase-js renova o token sozinho em segundo plano; sem isso, TOKEN ficava preso no valor do login
+  sb.auth.onAuthStateChange(function(event, session){
+    if ((event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') && session && session.access_token) TOKEN = session.access_token;
+  });
 
   // ---------- auth ----------
   function diag(msg){ $('li-erro').style.color='var(--soft)'; $('li-erro').textContent = msg; }
