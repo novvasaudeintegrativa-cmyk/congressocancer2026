@@ -461,12 +461,15 @@
   /* colaboradora de produção: um quadro quadrado e centralizado */
   .slot-grid.um{ grid-template-columns:1fr; max-width:300px; margin-left:auto; margin-right:auto; }
   /* Expositores Master: 2 quadros quadrados, logos brancos sem zoom */
-  .slot-grid.dois{ grid-template-columns:repeat(3, 1fr); max-width:960px; margin-left:auto; margin-right:auto; }
+  .slot-grid.dois{ grid-template-columns:repeat(6, 1fr); max-width:960px; margin-left:auto; margin-right:auto; }
   .slot-grid.dois .slot{ aspect-ratio:1/1; min-height:0; }
   /* quinto logo sozinho na última linha: centralizado */
-  .slot-grid.dois > .slot:last-child:nth-child(3n+1){ grid-column:2; }
-  @media (max-width:900px){ .slot-grid.dois > .slot:last-child:nth-child(3n+1){ grid-column:auto; } .slot-grid.dois > .slot:last-child:nth-child(odd){ grid-column:1 / -1; width:calc(50% - 6px); justify-self:center; } }
-  .slot.ativo img[src*="meu-h2"], .slot.ativo img[src*="bio-rife"], .slot.ativo img[src*="thtc"], .slot.ativo img[src*="kura-me"], .slot.ativo img[src*="catalmedic"], .slot.ativo img[src*="souleve"]{ transform:none; width:82%; max-height:none; }
+  .slot-grid.dois > .slot{ grid-column:span 2; }
+  .slot-grid.dois > .slot:nth-last-child(2):nth-child(3n+1){ grid-column:2 / span 2; }
+  .slot-grid.dois > .slot:last-child:nth-child(3n+2){ grid-column:4 / span 2; }
+  .slot-grid.dois > .slot:last-child:nth-child(3n+1){ grid-column:3 / span 2; }
+  @media (max-width:900px){ .slot-grid.dois > .slot{ grid-column:auto !important; } .slot-grid.dois > .slot:last-child:nth-child(3n+1){ grid-column:auto; } .slot-grid.dois > .slot:last-child:nth-child(odd){ grid-column:1 / -1; width:calc(50% - 6px); justify-self:center; } }
+  .slot.ativo img[src*="meu-h2"], .slot.ativo img[src*="bio-rife"], .slot.ativo img[src*="thtc"], .slot.ativo img[src*="kura-me"], .slot.ativo img[src*="catalmedic"], .slot.ativo img[src*="souleve"], .slot.ativo img[src*="novaciencia"]{ transform:none; width:82%; max-height:none; }
   @media (max-width:520px){ .slot-grid.dois{ grid-template-columns:1fr 1fr; gap:12px; } }
   .slot-grid.um .slot{ aspect-ratio:1/1; min-height:0; }
   @media (max-width:900px){ .slot-grid, .slot-grid.dois{ grid-template-columns:repeat(2, 1fr); } }
@@ -923,6 +926,7 @@
       <div class="slot ativo"><img src="Imgs/Expositores/TerapiaPlasmatica.webp" alt="Terapia Plasmática — 10 anos de cuidado e transformação" width="600" height="600"></div>
       <div class="slot ativo"><img src="Imgs/Expositores/catalmedic.webp" alt="Catalmedic — Promovendo saúde integral" width="826" height="372"></div>
       <div class="slot ativo"><img src="Imgs/Patrocinadores/souleve.webp" alt="Soul.eve — Quântica Global" width="934" height="389"></div>
+      <div class="slot ativo"><img src="Imgs/Patrocinadores/novaciencia.webp" alt="Nova Ciência" width="931" height="370"></div>
     </div>
   </div>
 </section>
