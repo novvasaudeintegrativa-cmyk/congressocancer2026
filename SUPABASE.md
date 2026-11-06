@@ -8935,3 +8935,60 @@ $$;
 grant execute on function public.rpc_roi() to anon;
 notify pgrst, 'reload schema';
 ```
+
+## 61. Venda de expositor na Eduzz vira receita no Financeiro (automático + manual)
+
+**Por quê (05/11/2026):** a cota de expositor é vendida na Eduzz ("Ingresso - Expositor 10K", R$ 10.000). Ela entrava como ingresso
+(inflava ingressos, ROI e Auditório) e a tabela "Receita de Expositores" ficava vazia. Agora, quando chega uma venda **paga** cujo produto
+tem "expositor" no nome, o banco cria sozinho a receita (tipo `expositor`, nome = comprador, categoria = a que tiver o mesmo nome do produto).
+
+- **Os dois jeitos continuam valendo:** o lançamento manual no formulário segue igual (expositor que paga por fora, transferência etc.).
+- **Duplicidade:** a receita automática guarda `venda_id` (único): a mesma venda nunca vira duas linhas. **Não lance à mão uma venda que veio da
+  Eduzz**, senão conta em dobro. Se já lançou à mão, apague a linha manual.
+- **Categoria:** o nome da categoria em `fin_categorias_expositor` precisa estar **contido** no nome do produto da Eduzz (ex.: categoria
+  "Expositor 10K" casa com "… - Ingresso - Expositor 10K"). Sem categoria igual, a receita entra sem categoria.
+- **Fora de ingressos:** vendas com "expositor" no nome saem da conta de ingressos/ROI/Auditório (front: `financeiro.html`, `crm.html`).
+
+### 61.1. SQL (rodar uma vez; sem ele o Financeiro continua mostrando a linha automática só de leitura)
+
+```sql
+-- 1) ligação receita ↔ venda (uma venda = no máximo uma receita)
+alter table public.fin_receitas add column if not exists venda_id bigint unique references public.vendas(id) on delete set null;
+
+-- 2) função: venda paga de expositor → receita
+create or replace function public.vendas_expositor_vira_receita()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare cat bigint;
+begin
+  if new.produto ilike '%expositor%' and (new.status ilike 'pag%' or new.status ilike 'paid') then
+    select c.id into cat from public.fin_categorias_expositor c
+      where c.ativo and new.produto ilike '%' || c.nome || '%'
+      order by length(c.nome) desc limit 1;
+    insert into public.fin_receitas (data, tipo, expositor_nome, categoria_id, descricao, valor, status, venda_id)
+    values (coalesce(new.pago_em, new.created_at)::date, 'expositor', new.cliente_nome, cat,
+            'Eduzz: ' || new.produto, new.valor, 'pago', new.id)
+    on conflict (venda_id) do update set valor = excluded.valor, status = 'pago';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists vendas_expositor on public.vendas;
+create trigger vendas_expositor
+  after insert or update of status, valor, produto on public.vendas
+  for each row execute function public.vendas_expositor_vira_receita();
+
+-- 3) vendas de expositor que já existem (ex.: Expositor 10K)
+insert into public.fin_receitas (data, tipo, expositor_nome, categoria_id, descricao, valor, status, venda_id)
+select coalesce(v.pago_em, v.created_at)::date, 'expositor', v.cliente_nome,
+       (select c.id from public.fin_categorias_expositor c
+         where c.ativo and v.produto ilike '%' || c.nome || '%' order by length(c.nome) desc limit 1),
+       'Eduzz: ' || v.produto, v.valor, 'pago', v.id
+from public.vendas v
+where v.produto ilike '%expositor%' and (v.status ilike 'pag%' or v.status ilike 'paid')
+on conflict (venda_id) do nothing;
+
+-- 4) conferir
+select r.id, r.data, r.expositor_nome, c.nome as categoria, r.valor, r.venda_id
+from public.fin_receitas r left join public.fin_categorias_expositor c on c.id = r.categoria_id
+where r.venda_id is not null order by r.data desc;
+```

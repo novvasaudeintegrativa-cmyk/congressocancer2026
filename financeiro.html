@@ -545,7 +545,7 @@
     renderResumoTipos(Object.keys(porTipo).map(function(t){ return porTipo[t]; }));
   }
   function rotuloTipo(t){
-    return t==='ingressos' ? 'Ingressos (Eduzz)' : t==='expositor' ? 'Expositores' : (t==='investimento' ? 'Investimento do sócio' : 'Outras receitas');
+    return t==='expositor_eduzz' ? 'Expositores (Eduzz)' : t==='ingressos' ? 'Ingressos (Eduzz)' : t==='expositor' ? 'Expositores' : (t==='investimento' ? 'Investimento do sócio' : 'Outras receitas');
   }
   function renderResumoTipos(porTipo){
     if (!porTipo.length){ $('resumo-tipos').innerHTML = ''; return; }
@@ -667,8 +667,19 @@
     if (r.tipo === 'investimento') return 'Investimento do sócio';
     return 'Outra receita';
   }
+  // vendas de "Expositor …" que chegam sozinhas da Eduzz (por produto); só leitura, não se apaga nem edita aqui
+  function linhasEduzzExpositor(){
+    return (estado.receitasEduzz || []).map(function(p){
+      return '<tr class="auto"><td>'+esc(p.nome)+' <small style="color:var(--soft);">· '+p.qtd+' venda(s)</small></td>'+
+        '<td>Expositor · Eduzz</td>'+
+        '<td class="col-status"><span class="pill pago">pago</span></td>'+
+        '<td class="n col-valor">'+fmtMoeda(p.total)+'</td>'+
+        '<td class="col-acoes"><small style="color:var(--soft);">automático</small></td></tr>';
+    }).join('');
+  }
   function renderReceitas(rows){
-    $('tabela-receitas').innerHTML = rows.length ? rows.map(function(r){
+    var auto = linhasEduzzExpositor();
+    $('tabela-receitas').innerHTML = (rows.length || auto) ? auto + rows.map(function(r){
       return '<tr data-id="'+r.id+'"><td>'+esc(r.expositor_nome || r.descricao || '(sem nome)')+'</td>'+
         '<td>'+rotuloTipoReceita(r)+'</td>'+
         '<td class="col-status"><span class="pill '+r.status+'">'+r.status+'</span></td>'+
@@ -845,11 +856,26 @@
   // Total recebido = receitas lançadas (expositores etc.) + vendas de ingressos da Eduzz (rpc_roi, só pagas; cortesia é R$ 0)
   function carregarResumo(){
     var vendasP = apiPost('rpc/rpc_roi', {}).catch(function(){ return null; });
-    return Promise.all([apiPost('rpc/rpc_financeiro_resumo', {}), vendasP]).then(function(res){
-      var d = res[0] || {}, roi = res[1] || {};
+    // receitas de expositor criadas sozinhas a partir das vendas da Eduzz (§61: coluna venda_id); sem o SQL, volta null
+    var autoP = apiGet('fin_receitas?select=valor&venda_id=not.is.null&status=eq.pago').catch(function(){ return null; });
+    return Promise.all([apiPost('rpc/rpc_financeiro_resumo', {}), vendasP, autoP]).then(function(res){
+      var d = res[0] || {}, roi = res[1] || {}, autoRows = res[2];
       function roi_ingressos(r){ return r.qtd_ingressos != null ? r.qtd_ingressos : (r.qtd_vendas || 0); }
-      var vendas = Number(roi.total_vendas || 0);
-      var receitas = (d.total_receitas || 0) + vendas, despesas = d.total_despesas || 0, saldo = receitas - despesas;
+      var vendasTotal = Number(roi.total_vendas || 0);
+      // vendas de produto "Expositor …" na Eduzz não são ingresso: vão para Receita de Expositores e saem da conta de ingressos/ROI
+      var expo = (roi.por_produto || []).filter(function(p){ return /expositor/i.test(p.produto || ''); }).map(function(p){
+        return { nome: String(p.produto || '').replace(/^.*?(Ingresso|Entrada) - /, ''), qtd: Number(p.qtd || 0), ingressos: Number(p.ingressos || p.qtd || 0), total: Number(p.total || 0) };
+      });
+      var expoTotal = expo.reduce(function(a,p){ return a + p.total; }, 0);
+      // já lançadas como receita de verdade (trigger do §61)? então não mostra linha automática nem soma de novo
+      var autoTotal = (autoRows || []).reduce(function(a,r){ return a + Number(r.valor || 0); }, 0);
+      var lancadas = !!autoRows && autoTotal >= expoTotal - 0.01;
+      estado.receitasEduzz = lancadas ? [] : expo;
+      var expoQtd = expo.reduce(function(a,p){ return a + p.qtd; }, 0);
+      var expoIng = expo.reduce(function(a,p){ return a + p.ingressos; }, 0);
+      var vendas = vendasTotal - expoTotal;
+      renderReceitas(estado.receitas || []);
+      var receitas = (d.total_receitas || 0) + (lancadas ? vendas : vendasTotal), despesas = d.total_despesas || 0, saldo = receitas - despesas;
       $('k-receitas').textContent = fmtMoeda(receitas);
       $('k-receitas-pend').textContent = d.pendente_receitas ? (fmtMoeda(d.pendente_receitas) + ' pendente') : '';
       $('k-despesas').textContent = fmtMoeda(despesas);
@@ -857,15 +883,16 @@
       var kSaldo = $('k-saldo');
       kSaldo.textContent = fmtMoeda(saldo);
       kSaldo.className = 'n ' + (saldo >= 0 ? 'pos' : 'neg');
-      $('k-expositores').textContent = d.qtd_expositores_pagos || 0;
+      $('k-expositores').textContent = (d.qtd_expositores_pagos || 0) + (lancadas ? 0 : expoQtd);
       // ROI = (vendas de ingressos − marketing pago) ÷ marketing pago; marketing = grupos "Marketing…" das despesas pagas
       var marketing = (d.despesas_por_grupo || []).filter(function(g){ return /^marketing/i.test(g.grupo || ''); })
         .reduce(function(a,g){ return a + Number(g.total || 0); }, 0);
       var kRoi = $('k-roi'), kRes = $('k-roi-res');
-      var ing = Number(roi_ingressos(roi));
+      var ing = Number(roi_ingressos(roi)) - expoIng;
+      var qtdVendas = (roi.qtd_vendas || 0) - expoQtd;
       $('k-roi-inv').textContent = fmtMoeda(marketing);
       $('k-roi-vendas').textContent = fmtMoeda(vendas);
-      $('k-roi-vendas-sub').textContent = (roi.qtd_vendas || 0) + ' venda(s)' + (ing > (roi.qtd_vendas || 0) ? ' · ' + ing + ' ingresso(s)' : '');
+      $('k-roi-vendas-sub').textContent = qtdVendas + ' venda(s)' + (ing > qtdVendas ? ' · ' + ing + ' ingresso(s)' : '');
       var res = vendas - marketing;
       kRes.textContent = fmtMoeda(res); kRes.className = 'n ' + (res >= 0 ? 'pos' : 'neg');
       if (marketing > 0){
@@ -880,7 +907,8 @@
       renderGrafico(d.despesas_por_grupo || []);
       renderTabelaMensal(d.despesas_por_mes || []);
       var tipos = (d.receitas_por_tipo || []).slice();
-      if (vendas > 0) tipos.unshift({ tipo:'ingressos', qtd:Number(roi.qtd_ingressos || roi.qtd_vendas || 0), total:vendas });
+      if (vendas > 0) tipos.unshift({ tipo:'ingressos', qtd:ing, total:vendas });
+      if (expoQtd > 0 && !lancadas) tipos.unshift({ tipo:'expositor_eduzz', qtd:expoQtd, total:expoTotal });
       renderResumoTipos(tipos);
     }).catch(function(err){
       $('grafico-grupos').innerHTML = '<p class="vazio">Erro ao carregar resumo: '+esc(err.message)+'</p>';

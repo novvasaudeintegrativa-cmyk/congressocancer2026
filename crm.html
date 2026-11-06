@@ -1463,7 +1463,8 @@
       produtos.forEach(function(p){
         var nome = (p.produto || '').toLowerCase();
         var ing = (p.ingressos != null ? p.ingressos : p.qtd) || 0; // ingressos (§56); sem o SQL, cai pra qtd de vendas
-        if (nome.indexOf('cortesia') !== -1) cortesias += ing;      // cortesia não conta como venda paga (§59)
+        if (nome.indexOf('expositor') !== -1) return;               // cota de expositor não ocupa cadeira de ingresso
+        if (nome.indexOf('cortesia') !== -1 || nome.indexOf('gratuidade') !== -1) cortesias += ing;      // cortesia/gratuidade não conta como venda paga (§59)
         else if (nome.indexOf('vip') !== -1) vip += ing; else geral += ing;
       });
       $('aud-cortesia-n').textContent = cortesias;

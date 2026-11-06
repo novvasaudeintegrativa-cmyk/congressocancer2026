@@ -472,6 +472,10 @@
   .slot.ativo img[src*="meu-h2"], .slot.ativo img[src*="bio-rife"], .slot.ativo img[src*="thtc"], .slot.ativo img[src*="kura-me"], .slot.ativo img[src*="catalmedic"], .slot.ativo img[src*="souleve"], .slot.ativo img[src*="novaciencia"]{ transform:none; width:82%; max-height:none; }
   @media (max-width:520px){ .slot-grid.dois{ grid-template-columns:1fr 1fr; gap:12px; } }
   .slot-grid.um .slot{ aspect-ratio:1/1; min-height:0; }
+  .slot-grid.gold{ grid-template-columns:repeat(2, 1fr); max-width:640px; margin-left:auto; margin-right:auto; }
+  .slot-grid.gold .slot{ aspect-ratio:1/1; min-height:0; }
+  .slot.ativo img[src*="avalon"]{ transform:none; width:auto; max-width:72%; max-height:86%; }
+  .slot.ativo img[src*="nemasway"]{ transform:none; width:84%; max-height:none; }
   @media (max-width:900px){ .slot-grid, .slot-grid.dois{ grid-template-columns:repeat(2, 1fr); } }
 
   /* botão flutuante do WhatsApp (mesmo estilo do site principal) */
@@ -911,6 +915,16 @@
     <h2 class="section-title">Expositor Diamante</h2>
     <div class="slot-grid destaque">
       <div class="slot ativo"><img src="Imgs/Patrocinadores/Acqua.png" alt="Acqua Purificadores" width="1041" height="550"></div>
+    </div>
+  </div>
+</section>
+
+<section aria-label="Expositores Gold">
+  <div class="container reveal">
+    <h2 class="section-title">Expositores Gold</h2>
+    <div class="slot-grid gold">
+      <div class="slot ativo"><img src="Imgs/Patrocinadores/avalon.webp" alt="Avalon — Terapias Integrativas" width="739" height="928"></div>
+      <div class="slot ativo"><img src="Imgs/Patrocinadores/nemasway.webp" alt="NemasWay — saúde e transformação" width="760" height="447"></div>
     </div>
   </div>
 </section>
