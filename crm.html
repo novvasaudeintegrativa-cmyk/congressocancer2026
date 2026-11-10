@@ -178,6 +178,8 @@
   .auditorio-geral-wrap{position:relative;-webkit-mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);}
   .auditorio-mais{text-align:center;font-size:10.5px;color:var(--faint);margin-top:7px;font-weight:600;}
   .seat{aspect-ratio:1/1;border-radius:3px 3px 1px 1px;background:var(--track);border:1px solid var(--linha);transition:background .4s,border-color .4s;}
+  /* sala larga: cadeira fica mais LARGA, mas com a mesma altura de antes (não vira quadrado gigante) */
+  @media (min-width:600px){ .seat{aspect-ratio:auto;height:26px;} }
   .seat.aud-vip-seat{border-color:#e4c583;}
   .seat.aud-vip-seat.cheio{background:var(--dourado);border-color:#a8730f;}
   .seat.aud-geral-seat.cheio{background:var(--bordo);border-color:var(--bordo-vivo);}
