@@ -170,11 +170,11 @@
 
   .auditorio-palco{text-align:center;font-family:var(--tit);font-weight:800;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--soft);background:var(--track);border-radius:999px;padding:7px;margin-bottom:16px;}
   .auditorio-sala{display:grid;grid-template-columns:1fr 26px 1fr;align-items:start;max-width:640px;margin:0 auto;}
-  @media (min-width:600px){ .auditorio-sala{grid-template-columns:1fr 56px 1fr;} }
+  @media (min-width:600px){ .auditorio-sala{grid-template-columns:1fr 56px 1fr;width:80%;max-width:none;} }
   .auditorio-lado{display:flex;flex-direction:column;gap:16px;min-width:0;}
   .auditorio-corredor{position:relative;}
   .auditorio-corredor::after{content:'';position:absolute;top:0;bottom:0;left:50%;width:1px;background:repeating-linear-gradient(to bottom,var(--linha) 0 6px,transparent 6px 12px);transform:translateX(-50%);}
-  .auditorio-bloco{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;position:relative;z-index:1;}
+  .auditorio-bloco{display:grid;grid-template-columns:repeat(var(--aud-cols,10),1fr);gap:4px;position:relative;z-index:1;}
   .auditorio-geral-wrap{position:relative;-webkit-mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);}
   .auditorio-mais{text-align:center;font-size:10.5px;color:var(--faint);margin-top:7px;font-weight:600;}
   .seat{aspect-ratio:1/1;border-radius:3px 3px 1px 1px;background:var(--track);border:1px solid var(--linha);transition:background .4s,border-color .4s;}
@@ -1398,7 +1398,9 @@
   // corredor, no centro da sala). O bloco geral (460 cadeiras) não renderiza tudo de
   // cara — só as fileiras já vendidas + uma sobra de respiro, senão vira uma parede
   // gigante de cadeiras vazias logo no início; o resto aparece conforme vende.
-  var AUD_COLS = 10;
+  // computador: 20 cadeiras por fileira em cada lado (sala larga, cadeira do mesmo tamanho); celular: 10, como sempre foi
+  var AUD_COLS = window.matchMedia && window.matchMedia('(min-width:600px)').matches ? 20 : 10;
+  document.documentElement.style.setProperty('--aud-cols', AUD_COLS);
   var AUD_VIP_TOTAL = 40, AUD_GERAL_TOTAL = 460;
   var AUD_VIP_POR_LADO = AUD_VIP_TOTAL / 2, AUD_GERAL_POR_LADO = AUD_GERAL_TOTAL / 2;
   var AUD_GERAL_SOBRA = 10; // ~1 fileira extra vazia, só pra dar ideia de que cabe mais
