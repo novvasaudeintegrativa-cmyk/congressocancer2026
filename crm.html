@@ -174,13 +174,14 @@
   .auditorio-lado{display:flex;flex-direction:column;gap:16px;min-width:0;}
   .auditorio-corredor{position:relative;}
   .auditorio-corredor::after{content:'';position:absolute;top:0;bottom:0;left:50%;width:1px;background:repeating-linear-gradient(to bottom,var(--linha) 0 6px,transparent 6px 12px);transform:translateX(-50%);}
-  .auditorio-bloco{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;position:relative;z-index:1;}
+  .auditorio-bloco{display:grid;grid-template-columns:repeat(10,1fr);gap:4px 12px;position:relative;z-index:1;}
   .auditorio-geral-wrap{position:relative;-webkit-mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);}
   .auditorio-mais{text-align:center;font-size:10.5px;color:var(--faint);margin-top:7px;font-weight:600;}
   .seat{aspect-ratio:1/1;border-radius:3px 3px 1px 1px;background:var(--track);border:1px solid var(--linha);transition:background .4s,border-color .4s;}
   .seat.aud-vip-seat{border-color:#e4c583;}
   .seat.aud-vip-seat.cheio{background:var(--dourado);border-color:#a8730f;}
   .seat.aud-geral-seat.cheio{background:var(--bordo);border-color:var(--bordo-vivo);}
+  .seat.aud-geral-seat.cortesia{background:#c8b6ea;border-color:#a68fd6;}
   .auditorio-legenda{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:16px;font-size:11px;color:var(--soft);}
   .auditorio-legenda .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px;}
   .aud-vendas{display:flex;flex-direction:column;gap:8px;max-width:640px;margin:0 auto;}
@@ -705,6 +706,7 @@
       <span><i class="dot aud-vip-cheio"></i>VIP vendido</span>
       <span><i class="dot aud-vip-vazio"></i>VIP em aberto</span>
       <span><i class="dot aud-geral-cheio"></i>Lote vendido</span>
+      <span><i class="dot" style="background:#c8b6ea;border:1px solid #a68fd6"></i>Cortesia</span>
       <span><i class="dot aud-geral-vazio"></i>Lote em aberto</span>
     </div>
 
@@ -1424,14 +1426,17 @@
   construirAssentos('auditorio-vip-esq', AUD_VIP_POR_LADO, 'aud-vip-seat', false);
   construirAssentos('auditorio-vip-dir', AUD_VIP_POR_LADO, 'aud-vip-seat', true);
 
-  // vendidos = lugares pagos; cortesias também ocupam cadeira e ficam iguais às pagas no mapa (sem cor própria)
+  // vendidos = lugares pagos (vinho/dourado); cortesias também ocupam cadeira, em lilás claro, logo depois das pagas
   function pintarAssentos(id, vendidos, cortesias){
     var ocupados = vendidos + (cortesias || 0);
     var els = $(id).children;
     var ordem = ordemAssentos[id] || [];
-    var preenchido = {};
-    for (var k = 0; k < ocupados && k < ordem.length; k++) preenchido[ordem[k]] = true;
-    for (var i = 0; i < els.length; i++) els[i].classList.toggle('cheio', !!preenchido[i]);
+    var pago = {}, cort = {};
+    for (var k = 0; k < ocupados && k < ordem.length; k++){ if (k < vendidos) pago[ordem[k]] = true; else cort[ordem[k]] = true; }
+    for (var i = 0; i < els.length; i++){
+      els[i].classList.toggle('cheio', !!pago[i]);
+      els[i].classList.toggle('cortesia', !!cort[i]);
+    }
   }
 
   function dividirEmDoisLados(total, capacidadePorLado){
