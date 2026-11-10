@@ -169,8 +169,8 @@
   .aud-kpi.total .n .de{color:rgba(255,255,255,.6);}
 
   .auditorio-palco{text-align:center;font-family:var(--tit);font-weight:800;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--soft);background:var(--track);border-radius:999px;padding:7px;margin-bottom:16px;}
-  .auditorio-sala{display:grid;grid-template-columns:1fr 26px 1fr;align-items:start;max-width:none;margin:0 auto;}
-  @media (min-width:600px){ .auditorio-sala{grid-template-columns:1fr 80px 1fr;width:80%;} }
+  .auditorio-sala{display:grid;grid-template-columns:1fr 26px 1fr;align-items:start;max-width:640px;margin:0 auto;}
+  @media (min-width:600px){ .auditorio-sala{grid-template-columns:1fr 56px 1fr;} }
   .auditorio-lado{display:flex;flex-direction:column;gap:16px;min-width:0;}
   .auditorio-corredor{position:relative;}
   .auditorio-corredor::after{content:'';position:absolute;top:0;bottom:0;left:50%;width:1px;background:repeating-linear-gradient(to bottom,var(--linha) 0 6px,transparent 6px 12px);transform:translateX(-50%);}
@@ -178,8 +178,6 @@
   .auditorio-geral-wrap{position:relative;-webkit-mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);mask-image:linear-gradient(to bottom,#000 88%,transparent 100%);}
   .auditorio-mais{text-align:center;font-size:10.5px;color:var(--faint);margin-top:7px;font-weight:600;}
   .seat{aspect-ratio:1/1;border-radius:3px 3px 1px 1px;background:var(--track);border:1px solid var(--linha);transition:background .4s,border-color .4s;}
-  /* sala larga: cadeira fica mais LARGA, mas com a mesma altura de antes (não vira quadrado gigante) */
-  @media (min-width:600px){ .seat{aspect-ratio:auto;height:26px;} }
   .seat.aud-vip-seat{border-color:#e4c583;}
   .seat.aud-vip-seat.cheio{background:var(--dourado);border-color:#a8730f;}
   .seat.aud-geral-seat.cheio{background:var(--bordo);border-color:var(--bordo-vivo);}
