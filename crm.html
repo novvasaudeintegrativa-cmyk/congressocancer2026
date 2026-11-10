@@ -160,7 +160,7 @@
   .aud-kpi .n .de{font-size:14px;font-weight:700;color:var(--faint);margin-left:2px;}
   .aud-kpi .s{font-size:11.5px;color:var(--faint);margin-top:6px;}
   .aud-kpi.cortesia{border:1.5px dashed rgba(139,34,46,.55);}
-  .aud-kpi.cortesia .n{color:rgba(139,34,46,.7);}
+  .aud-kpi.cortesia .n{color:rgba(139,34,46,.5);}
   .aud-kpi.vip{border-color:#e4c583;}
   .aud-kpi.vip .n{color:var(--dourado);}
   .aud-kpi.total{background:var(--bordo);border-color:var(--bordo);}
@@ -181,7 +181,7 @@
   .seat.aud-vip-seat{border-color:#e4c583;}
   .seat.aud-vip-seat.cheio{background:var(--dourado);border-color:#a8730f;}
   .seat.aud-geral-seat.cheio{background:var(--bordo);border-color:var(--bordo-vivo);}
-  .seat.aud-geral-seat.cortesia{background:rgba(139,34,46,.7);border-color:rgba(184,45,61,.7);}
+  .seat.aud-geral-seat.cortesia{background:rgba(139,34,46,.5);border-color:rgba(184,45,61,.5);}
   .auditorio-legenda{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:16px;font-size:11px;color:var(--soft);}
   .auditorio-legenda .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px;}
   .aud-vendas{display:flex;flex-direction:column;gap:8px;max-width:640px;margin:0 auto;}
@@ -706,7 +706,7 @@
       <span><i class="dot aud-vip-cheio"></i>VIP vendido</span>
       <span><i class="dot aud-vip-vazio"></i>VIP em aberto</span>
       <span><i class="dot aud-geral-cheio"></i>Lote vendido</span>
-      <span><i class="dot" style="background:rgba(139,34,46,.7)"></i>Cortesia</span>
+      <span><i class="dot" style="background:rgba(139,34,46,.5)"></i>Cortesia</span>
       <span><i class="dot aud-geral-vazio"></i>Lote em aberto</span>
     </div>
 
@@ -1485,8 +1485,10 @@
       var geralLados = dividirEmDoisLados(geral, AUD_GERAL_POR_LADO);
       // cortesias ocupam cadeira do lote geral: vão logo depois dos pagos, dos dois lados
       cortesias = Math.min(cortesias, AUD_GERAL_TOTAL - geral);
-      var cortEsq = Math.min(Math.ceil(cortesias / 2), AUD_GERAL_POR_LADO - geralLados[0]);
-      var cortDir = Math.min(cortesias - cortEsq, AUD_GERAL_POR_LADO - geralLados[1]);
+      // o total preenchido (pagas + cortesias) fica igual nos dois lados; as cortesias compensam a diferença
+      var ocupadosEsq = Math.min(Math.ceil((geral + cortesias) / 2), AUD_GERAL_POR_LADO);
+      var cortEsq = Math.max(0, Math.min(ocupadosEsq - geralLados[0], AUD_GERAL_POR_LADO - geralLados[0]));
+      var cortDir = Math.max(0, Math.min(cortesias - cortEsq, AUD_GERAL_POR_LADO - geralLados[1]));
       montarBlocoGeral('auditorio-geral-esq', geralLados[0], false, cortEsq);
       montarBlocoGeral('auditorio-geral-dir', geralLados[1], true, cortDir);
 
