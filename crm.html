@@ -169,8 +169,8 @@
   .aud-kpi.total .n .de{color:rgba(255,255,255,.6);}
 
   .auditorio-palco{text-align:center;font-family:var(--tit);font-weight:800;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--soft);background:var(--track);border-radius:999px;padding:7px;margin-bottom:16px;}
-  .auditorio-sala{display:grid;grid-template-columns:1fr 26px 1fr;align-items:start;max-width:980px;margin:0 auto;}
-  @media (min-width:600px){ .auditorio-sala{grid-template-columns:1fr 80px 1fr;} }
+  .auditorio-sala{display:grid;grid-template-columns:1fr 26px 1fr;align-items:start;max-width:none;margin:0 auto;}
+  @media (min-width:600px){ .auditorio-sala{grid-template-columns:1fr 80px 1fr;width:80%;} }
   .auditorio-lado{display:flex;flex-direction:column;gap:16px;min-width:0;}
   .auditorio-corredor{position:relative;}
   .auditorio-corredor::after{content:'';position:absolute;top:0;bottom:0;left:50%;width:1px;background:repeating-linear-gradient(to bottom,var(--linha) 0 6px,transparent 6px 12px);transform:translateX(-50%);}
