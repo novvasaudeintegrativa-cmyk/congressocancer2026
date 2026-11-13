@@ -591,6 +591,8 @@
   .foto-palestrante img[src*="Jose-de-Felippe"]{ transform:scale(1.5); transform-origin:38% -4%; }
   .foto-palestrante img[src*="valeria-martins"]{ transform:scale(1.4); transform-origin:36% -6.5%; }
   .foto-palestrante img[src*="gisele-martins"]{ transform:scale(1.5); transform-origin:56% 18%; }
+  .foto-palestrante img[src*="elisabete-oliveira"]{ transform:scale(1.5); transform-origin:50% 28%; }
+  .foto-palestrante img[src*="aline-varricchio"]{ transform:scale(1.5); transform-origin:53% 28%; }
   .foto-placeholder{ display:flex; align-items:center; justify-content:center; }
   .foto-placeholder svg{ width:54%; height:54%; color:rgba(255,255,255,0.32); }
   .btn-curriculo{
@@ -2137,6 +2139,22 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
           <button type="button" class="btn-curriculo" data-curriculo="cv-gisele-martins">Ver currículo</button>
         </div>
 
+        <div class="card-palestrante">
+          <div class="foto-palestrante"><img src="Imgs/Palestrantes/elisabete-oliveira.webp" alt="Elisabete Oliveira"></div>
+          <h3>Elisabete Oliveira</h3>
+          <div class="especialidade">Sexóloga · Especialista em Saúde Íntima Feminina</div>
+          <div class="tema"><span class="tema-k">Tema:</span> Em Breve!</div>
+          <button type="button" class="btn-curriculo" data-curriculo="cv-elisabete-oliveira">Ver currículo</button>
+        </div>
+
+        <div class="card-palestrante">
+          <div class="foto-palestrante"><img src="Imgs/Palestrantes/aline-varricchio.webp" alt="Dra. Aline Varricchio"></div>
+          <h3>Dra. Aline Varricchio</h3>
+          <div class="especialidade">PhD em Naturopatia Clínica · Nutrição de Precisão e Oncologia Integrativa</div>
+          <div class="tema"><span class="tema-k">Tema:</span> Do Câncer à Regeneração: Cuidado integral e esperança na jornada do câncer</div>
+          <button type="button" class="btn-curriculo" data-curriculo="cv-aline-varricchio">Ver currículo</button>
+        </div>
+
       </div>
 
       <div style="text-align:center; margin-top:var(--space-xl);">
@@ -2228,35 +2246,78 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     </div>
   </section>
 
-  <!-- CRONOGRAMA — AUDITÓRIO NSI -->
-  <section class="programacao crono-nsi" id="programacao-nsi">
-    <div class="container">
-      <div style="text-align:center;"><span class="crono-nsi-tag">Auditório NSI · Novva Saúde Integrativa</span></div>
-      <h2 class="section-title">Cronograma do Auditório NSI</h2>
-      <p class="section-sub">Palestras e entrevistas · Sexta, 20/11</p>
-
-      <div class="crono-nsi-dia">
-        <div class="timeline">
-          <div class="titem"><span class="thora">09:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Sarah</p></div></div>
-          <div class="titem"><span class="thora">09:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Carina</p></div></div>
-          <div class="titem"><span class="thora">10:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">João Ricardo</p></div></div>
-          <div class="titem"><span class="thora">10:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Beto</p></div></div>
-          <div class="titem"><span class="thora">11:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Juliana Freitas</p></div></div>
-          <div class="titem"><span class="thora">11:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Paulo Silva</p></div></div>
-          <div class="titem"><span class="thora">13:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Flavia Cucolo</p></div></div>
-          <div class="titem"><span class="thora">13:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Fábio</p></div></div>
-          <div class="titem"><span class="thora">14:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Ozônio</p></div></div>
-          <div class="titem"><span class="thora">14:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Daniel Kovacsik</p></div></div>
-          <div class="titem"><span class="thora">15:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Will</p></div></div>
-          <div class="titem"><span class="thora">15:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Marcelo</p></div></div>
-          <div class="titem"><span class="thora">16:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Anderson Heller</p></div></div>
-          <div class="titem"><span class="thora">16:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Bacteria</p></div></div>
-          <div class="titem"><span class="thora">17:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Entrevista</p></div></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
+  <!-- CRONOGRAMA — AUDITÓRIO NSI -->
+
+  <section class="programacao crono-nsi" id="programacao-nsi">
+
+    <div class="container">
+
+      <div style="text-align:center;"><span class="crono-nsi-tag">Auditório NSI · Novva Saúde Integrativa</span></div>
+
+      <h2 class="section-title">Cronograma do Auditório NSI</h2>
+
+      <p class="section-sub">Palestras e entrevistas · Sexta, 20/11</p>
+
+
+
+      <div class="crono-nsi-dia">
+
+        <div class="timeline">
+
+          <div class="titem"><span class="thora">09:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Sarah</p></div></div>
+
+
+          <div class="titem"><span class="thora">09:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Carina</p></div></div>
+
+
+          <div class="titem"><span class="thora">10:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">João Ricardo</p></div></div>
+
+
+          <div class="titem"><span class="thora">10:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Beto</p></div></div>
+
+
+          <div class="titem"><span class="thora">11:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Juliana Freitas</p></div></div>
+
+
+          <div class="titem"><span class="thora">11:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Paulo Silva</p></div></div>
+
+
+          <div class="titem"><span class="thora">13:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Flavia Cucolo</p></div></div>
+
+
+          <div class="titem"><span class="thora">13:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Fábio</p></div></div>
+
+
+          <div class="titem"><span class="thora">14:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Ozônio</p></div></div>
+
+
+          <div class="titem"><span class="thora">14:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Daniel Kovacsik</p></div></div>
+
+
+          <div class="titem"><span class="thora">15:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Will</p></div></div>
+
+
+          <div class="titem"><span class="thora">15:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Marcelo</p></div></div>
+
+
+          <div class="titem"><span class="thora">16:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Anderson Heller</p></div></div>
+
+
+          <div class="titem"><span class="thora">16:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Bacteria</p></div></div>
+
+
+          <div class="titem"><span class="thora">17:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Entrevista</p></div></div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+
   <!-- PODCAST -->
   <section class="podcast" id="podcast">
     <div class="container">
@@ -3078,6 +3139,44 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         <p>Biomédica, farmacêutica e doutora em Naturopatia, com mais de 20 anos de experiência em saúde, pesquisa e prática clínica. Possui especializações em Medicina Tradicional Chinesa, Homeopatia e Biomedicina Estética, além de aperfeiçoamento internacional em Medicina Chinesa, realizado em Beijing, China.</p>
         <p>Pesquisadora e autora de artigos científicos publicados nas áreas de fitoterapia, estresse oxidativo e biologia redox, com investigação sobre o potencial de fitoterápicos como terapias adjuvantes no tratamento do câncer.</p>
         <p>Atua em Saúde Integrativa, integrando conhecimentos biomédicos, mecanismos fisiológicos e estratégias complementares de cuidado individualizado e promoção da qualidade de vida.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="cv-modal" id="cv-elisabete-oliveira">
+    <div class="cv-modal-inner">
+      <button type="button" class="cv-close" aria-label="Fechar">&times;</button>
+      <div class="cv-modal-head">
+        <div class="foto-palestrante"><img src="Imgs/Palestrantes/elisabete-oliveira.webp" alt="Elisabete Oliveira"></div>
+        <div>
+          <h3>Elisabete Oliveira</h3>
+          <p class="cv-role">Sexóloga · Especialista em Saúde Íntima Feminina</p>
+        </div>
+      </div>
+      <div class="cv-modal-body">
+        <p>Especialista em Saúde Íntima Feminina, com mais de 12 anos de experiência. Sexóloga Cristã, palestrante e graduanda em Neurociências.</p>
+        <p>Atua na área da sexualidade, integrando conhecimento, acolhimento e cuidado com a saúde íntima e emocional da mulher.</p>
+        <p>Defende que o diagnóstico de câncer não deve apagar a feminilidade, a identidade, o amor, a intimidade e o direito da mulher de viver plenamente sua sexualidade.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="cv-modal" id="cv-aline-varricchio">
+    <div class="cv-modal-inner">
+      <button type="button" class="cv-close" aria-label="Fechar">&times;</button>
+      <div class="cv-modal-head">
+        <div class="foto-palestrante"><img src="Imgs/Palestrantes/aline-varricchio.webp" alt="Dra. Aline Varricchio"></div>
+        <div>
+          <h3>Dra. Aline Varricchio, PhD</h3>
+          <p class="cv-role">PhD em Naturopatia Clínica</p>
+        </div>
+      </div>
+      <div class="cv-modal-body">
+        <p>Especialista em Nutrição de Precisão, Nutrigenômica, Terapia Ortomolecular e Biofísica. Escritora, palestrante nacional e internacional, e especialista no tratamento do Câncer, Doenças Crônicas e Autoimunes.</p>
+        <p>Complementou sua formação com programas internacionais de aperfeiçoamento executivo pela Babson College (Estados Unidos), referência mundial em empreendedorismo e inovação, e pela Columbia University (Estados Unidos), na área de Gestão de Riscos, ampliando sua visão interdisciplinar sobre liderança, inovação, desenvolvimento humano e gestão em saúde.</p>
+        <p>É fundadora do Método Bio Cura Natural®, um modelo clínico autoral que integra Nutrição de Precisão, Epigenética, saúde intestinal, modulação do terreno biológico, biofísica, biohacking e terapias integrativas, com foco na prevenção, regeneração celular, longevidade e promoção da qualidade de vida.</p>
+        <p>Ao longo de sua trajetória, consolidou sua atuação como referência em Oncologia Integrativa, dedicando-se ao acompanhamento complementar de pacientes com câncer durante todas as etapas do tratamento.</p>
+        <p>Sua trajetória profissional foi profundamente transformada pela própria experiência ao superar um câncer intestinal por meio de uma abordagem integrativa. Essa vivência fortaleceu sua missão de unir conhecimento científico, experiência clínica e cuidado humanizado, dedicando-se à educação em saúde e ao acompanhamento de pacientes que buscam uma abordagem complementar baseada na individualidade biológica.</p>
       </div>
     </div>
   </dialog>
