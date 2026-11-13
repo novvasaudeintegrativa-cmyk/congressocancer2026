@@ -1052,9 +1052,13 @@
   .slot-grid.destaque .slot.ativo img[src*="Acqua"]{width:94%;max-height:none;}
   /* logos brancos dos Patrocinadores Master: sem zoom, cabem inteiros no quadro */
   .slot.ativo img[src*="meu-h2"],.slot.ativo img[src*="bio-rife"],.slot.ativo img[src*="thtc"],.slot.ativo img[src*="kura-me"],.slot.ativo img[src*="catalmedic"],.slot.ativo img[src*="souleve"],.slot.ativo img[src*="novaciencia"]{transform:none;width:82%;max-height:none;}
-  .slot-grid.gold{grid-template-columns:repeat(2, 1fr);max-width:640px;margin-left:auto;margin-right:auto;}
+  .slot-grid.gold{grid-template-columns:repeat(8, 1fr);max-width:960px;margin-left:auto;margin-right:auto;}
+  .slot-grid.gold > .slot{grid-column:span 2;}
+  .slot-grid.gold > .slot:last-child:nth-child(4n+1){grid-column:4 / span 2;}
+  .slot-grid.gold > .slot:nth-last-child(2):nth-child(4n+1){grid-column:3 / span 2;}
+  .slot-grid.gold > .slot:nth-last-child(3):nth-child(4n+1){grid-column:2 / span 2;}
+  @media (max-width:900px){ .slot-grid.gold{grid-template-columns:repeat(2, 1fr);max-width:640px;} .slot-grid.gold > .slot{grid-column:auto !important;} .slot-grid.gold > .slot:last-child:nth-child(odd){grid-column:1 / -1 !important;justify-self:center;width:calc(50% - 10px);} }
   .slot-grid.gold .slot{aspect-ratio:1/1;min-height:0;}
-  .slot-grid.gold > .slot:last-child:nth-child(odd){grid-column:1 / -1; justify-self:center; width:calc(50% - 10px);}
   .slot.ativo img[src*="avalon"]{transform:none;width:auto;max-width:72%;max-height:86%;}
   .slot.ativo img[src*="nemasway"]{transform:none;width:84%;max-height:none;}
   /* quinto logo sozinho na última linha: centralizado */
