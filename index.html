@@ -825,6 +825,15 @@
     .timeline::before{left:49px;}
   }
 
+  /* Cronograma do Auditório NSI (Novva Saúde Integrativa): mesma linha do tempo, cards em azul pra diferenciar do auditório principal */
+  .crono-nsi{padding-top:48px;}
+  .crono-nsi-tag{display:inline-block; font-family:var(--fonte-titulo); font-weight:700; font-size:12px; letter-spacing:0.06em; text-transform:uppercase; color:#9fd0f2; background:rgba(98,166,214,0.14); border:1px solid rgba(98,166,214,0.4); border-radius:999px; padding:6px 16px; margin-bottom:12px;}
+  .crono-nsi-dia{max-width:760px; margin:0 auto;}
+  .crono-nsi .tcard{background:linear-gradient(180deg, rgba(36,120,190,0.55), rgba(8,40,72,0.55)); border-color:rgba(110,180,235,0.75);}
+  .crono-nsi .titem .tdot{background:#62a6d6;}
+  .crono-nsi .titem.break .tcard{background:rgba(255,255,255,0.02); border-color:rgba(255,255,255,0.15);}
+  .crono-nsi .tbadge{background:rgba(98,166,214,0.2); color:#9fd0f2;}
+
   /* PODCAST */
   .podcast{
     position:relative;
@@ -2219,6 +2228,35 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     </div>
   </section>
 
+  <!-- CRONOGRAMA — AUDITÓRIO NSI -->
+  <section class="programacao crono-nsi" id="programacao-nsi">
+    <div class="container">
+      <div style="text-align:center;"><span class="crono-nsi-tag">Auditório NSI · Novva Saúde Integrativa</span></div>
+      <h2 class="section-title">Cronograma do Auditório NSI</h2>
+      <p class="section-sub">Palestras e entrevistas · Sexta, 20/11</p>
+
+      <div class="crono-nsi-dia">
+        <div class="timeline">
+          <div class="titem"><span class="thora">09:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Sarah</p></div></div>
+          <div class="titem"><span class="thora">09:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Carina</p></div></div>
+          <div class="titem"><span class="thora">10:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">João Ricardo</p></div></div>
+          <div class="titem"><span class="thora">10:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Beto</p></div></div>
+          <div class="titem"><span class="thora">11:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Juliana Freitas</p></div></div>
+          <div class="titem"><span class="thora">11:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Paulo Silva</p></div></div>
+          <div class="titem"><span class="thora">13:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Flavia Cucolo</p></div></div>
+          <div class="titem"><span class="thora">13:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Fábio</p></div></div>
+          <div class="titem"><span class="thora">14:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Ozônio</p></div></div>
+          <div class="titem"><span class="thora">14:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Daniel Kovacsik</p></div></div>
+          <div class="titem"><span class="thora">15:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Will</p></div></div>
+          <div class="titem"><span class="thora">15:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Marcelo</p></div></div>
+          <div class="titem"><span class="thora">16:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Anderson Heller</p></div></div>
+          <div class="titem"><span class="thora">16:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Bacteria</p></div></div>
+          <div class="titem"><span class="thora">17:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Entrevista</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- PODCAST -->
   <section class="podcast" id="podcast">
     <div class="container">
