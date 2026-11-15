@@ -839,8 +839,12 @@
   /* Cronograma do Auditório NSI (Novva Saúde Integrativa): mesma linha do tempo, cards em laranja escuro (50% transparente) pra diferenciar do auditório principal */
   .crono-nsi{padding-top:48px;}
   .crono-nsi-tag{display:inline-block; font-family:var(--fonte-titulo); font-weight:700; font-size:12px; letter-spacing:0.06em; text-transform:uppercase; color:#ffb27a; background:rgba(193,68,14,0.18); border:1px solid rgba(224,122,60,0.5); border-radius:999px; padding:6px 16px; margin-bottom:12px;}
-  .crono-nsi-dia{max-width:760px; margin:0 auto;}
-  .crono-nsi-diatit{font-size:1.15rem; color:#ffb27a; text-align:center; margin:0 0 20px; letter-spacing:.04em; text-transform:uppercase;}
+  .crono-nsi-dia{display:none; max-width:760px; margin:0 auto;}
+  .crono-nsi-dia.ativo{display:block;}
+  .nsi-tabs{display:flex; justify-content:center; gap:10px; margin-bottom:var(--space-xl); flex-wrap:wrap;}
+  .nsi-tab{font-family:var(--fonte-titulo); font-weight:700; font-size:14px; letter-spacing:0.02em; padding:11px 26px; border-radius:10px; border:1.5px solid rgba(255,255,255,0.2); background:transparent; color:var(--texto-suave); cursor:pointer; transition:all .15s ease;}
+  .nsi-tab:hover{border-color:#e07a3c; color:#fff;}
+  .nsi-tab.ativo{background:#c1440e; border-color:#e07a3c; color:#fff;}
   .crono-nsi .tcard{background:rgba(193,68,14,0.5); border-color:rgba(224,122,60,0.8);}
   .crono-nsi .titem .tdot{background:#e07a3c;}
   .crono-nsi .titem.break .tcard{background:rgba(255,255,255,0.02); border-color:rgba(255,255,255,0.15);}
@@ -2348,8 +2352,12 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
 
       <p class="section-sub">Palestras e entrevistas</p>
 
-      <div class="crono-nsi-dia">
-        <h3 class="crono-nsi-diatit">Sexta · 20/11</h3>
+      <div class="nsi-tabs">
+        <button type="button" class="nsi-tab ativo" data-nsi="sexta">Sexta · 20/11</button>
+        <button type="button" class="nsi-tab" data-nsi="sabado">Sábado · 21/11</button>
+      </div>
+
+      <div class="crono-nsi-dia ativo" id="nsi-sexta">
         <div class="timeline">
           <div class="titem"><span class="thora">09:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Sarah Melo</p><p class="ttema">Muito além do prato: consciência alimentar e saúde ao longo da vida</p></div></div>
           <div class="titem"><span class="thora">09:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Carina</p></div></div>
@@ -2369,8 +2377,7 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         </div>
       </div>
 
-      <div class="crono-nsi-dia" style="margin-top:48px;">
-        <h3 class="crono-nsi-diatit">Sábado · 21/11</h3>
+      <div class="crono-nsi-dia" id="nsi-sabado">
         <div class="timeline">
           <div class="titem"><span class="thora">09:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Daniel Mariotine</p></div></div>
           <div class="titem"><span class="thora">09:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Aline</p></div></div>
@@ -3574,6 +3581,20 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
           document.querySelectorAll('.crono-dia').forEach(function(d){ d.classList.remove('ativo'); });
           tab.classList.add('ativo');
           var dia = document.getElementById('crono-' + tab.dataset.dia);
+          if (dia) dia.classList.add('ativo');
+        });
+      });
+    })();
+
+    (function(){
+      var tabs = document.querySelectorAll('.nsi-tab');
+      if (!tabs.length) return;
+      tabs.forEach(function(tab){
+        tab.addEventListener('click', function(){
+          tabs.forEach(function(t){ t.classList.remove('ativo'); });
+          document.querySelectorAll('.crono-nsi-dia').forEach(function(d){ d.classList.remove('ativo'); });
+          tab.classList.add('ativo');
+          var dia = document.getElementById('nsi-' + tab.dataset.nsi);
           if (dia) dia.classList.add('ativo');
         });
       });
