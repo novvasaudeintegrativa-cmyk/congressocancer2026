@@ -2158,7 +2158,94 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
         </div>
 
       </div>
+    </div>
+  </section>
 
+  <!-- PROGRAMAÇÃO -->
+  <section class="programacao" id="programacao">
+    <div class="container">
+      <h2 class="section-title">Cronograma do Auditório Principal</h2>
+      <p class="section-sub">Dois dias de programação. Confira os horários e quem já está confirmado.</p>
+
+      <div class="crono-stats">
+        <div class="crono-stat"><b>2</b><span>Dias</span></div>
+        <div class="crono-stat"><b id="crono-n-palestrantes">29</b><span>Palestrantes</span></div>
+      </div>
+
+      <script>
+    /* contador de palestrantes = número de cards da seção Palestrantes (nunca fica defasado; o 29 no HTML é só reserva) */
+    document.addEventListener("DOMContentLoaded", function(){
+      var el = document.getElementById("crono-n-palestrantes");
+      var n = document.querySelectorAll("#palestrantes .card-palestrante").length;
+      if (el && n > 0) el.textContent = n;
+    });
+      </script>
+      <div class="crono-tabs">
+        <button type="button" class="crono-tab ativo" data-dia="sexta">Sexta · 20/11</button>
+        <button type="button" class="crono-tab" data-dia="sabado">Sábado · 21/11</button>
+      </div>
+
+      <div class="crono-dia ativo" id="crono-sexta">
+        <div class="timeline">
+          <div class="titem break"><span class="thora">07:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Credenciamento e entrega de material</p></div></div>
+          <div class="titem confirm"><span class="thora">08:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Geisa Quental <span class="tbadge confirm">Abertura</span></p><p class="ttema">Mestre de Cerimônia</p></div></div>
+          <div class="titem"><span class="thora">08:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Juan Carlos Llanos</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">08:50</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Lourival Gonçalves</p><p class="ttema">Quando o Corpo Fala o Que a Alma Não Suporta Mais Calar: Como os Conflitos Biológicos se Transformam em Doença</p></div></div>
+          <div class="titem"><span class="thora">09:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Claudinei Rodrigues</p><p class="ttema">Água e Câncer: o Poder do Cuidado</p></div></div>
+          <div class="titem break"><span class="thora">10:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+          <div class="titem"><span class="thora">10:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Luciane C. Stern</p><p class="ttema">Para Além do Diagnóstico: o Sujeito Diante do Câncer</p></div></div>
+          <div class="titem"><span class="thora">11:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Luis Stern</p><p class="ttema">Homeopatia e Câncer: a Evolução Clínica em Casos Reais Filmados</p></div></div>
+          <div class="titem"><span class="thora">12:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Prof. Alexandre Távola</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem break"><span class="thora">12:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Almoço</p></div></div>
+          <div class="titem"><span class="thora">14:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Prof. Dr. José de Felippe Jr</p><p class="ttema">Se conseguirmos afastar a causa do câncer, estaremos tendo mais êxito no tratamento desta doença, e o nosso obstáculo é o vírus Epstein-Barr</p></div></div>
+          <div class="titem"><span class="thora">14:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Thaís Bragatto</p><p class="ttema">Destoxificação e Microbiota Intestinal na Prevenção e Remissão do Câncer</p></div></div>
+          <div class="titem"><span class="thora">15:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Daniela Belisario Baroni</p><p class="ttema">Câncer Além da Célula: Biofísica e Frequências na Visão Integrativa</p></div></div>
+          <div class="titem"><span class="thora">16:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Prof. Anilson Martins</p><p class="ttema">Câncer: o pH do Microambiente Tumoral Importa</p></div></div>
+          <div class="titem"><span class="thora">16:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Lucy Kerr</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem break"><span class="thora">17:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+          <div class="titem"><span class="thora">17:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Alessandro Loiola</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">18:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. José Augusto Nasser dos Santos</p><p class="ttema">Abordagem Metabólica Integrativa do Câncer</p></div></div>
+          <div class="titem"><span class="thora">18:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Fernanda Moraes</p><p class="ttema">Uso dos Peptídeos na Saúde Mitocondrial</p></div></div>
+          <div class="titem"><span class="thora">19:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Lis Curay</p><p class="ttema">O Cântico da Origem — A Vida que Permanece</p></div></div>
+          <div class="titem"><span class="thora">20:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Cristina Cairo</p><p class="ttema">A Regeneração Celular pela Linguagem do Corpo</p></div></div>
+          <div class="titem break"><span class="thora">21:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Jantar com palestrantes e ingressos VIP</p></div></div>
+        </div>
+      </div>
+
+      <div class="crono-dia" id="crono-sabado">
+        <div class="timeline">
+          <div class="titem break"><span class="thora">07:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Credenciamento</p></div></div>
+          <div class="titem"><span class="thora">08:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Luciano Pinheiro</p><p class="ttema">Programa de Práticas Integrativas e Suporte ao Tratamento do Câncer</p></div></div>
+          <div class="titem"><span class="thora">08:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Sara Lambert</p><p class="ttema">Epigenética: Modulação Celular e Proteção do Terreno Biológico</p></div></div>
+          <div class="titem"><span class="thora">09:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Juan Lambert</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem"><span class="thora">10:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Claudinei Rodrigues</p><p class="ttema">Água, Saúde e Vida: um Olhar sobre o Câncer</p></div></div>
+          <div class="titem break"><span class="thora">10:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+          <div class="titem"><span class="thora">11:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Cláudia B. S. Pacheco</p><p class="ttema">A Vida Após a Vida: o que a Ciência Descobriu</p></div></div>
+          <div class="titem"><span class="thora">11:50</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Gisele Martins</p><p class="ttema">Além do Diagnóstico: Fisiologia Digestiva, Estresse Oxidativo e Suporte Nutricional no Cuidado Integrativo em Oncologia</p></div></div>
+          <div class="titem"><span class="thora">12:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Fernanda Ben</p><p class="ttema tbd">Tema: Em breve</p></div></div>
+          <div class="titem break"><span class="thora">13:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Almoço</p></div></div>
+          <div class="titem"><span class="thora">14:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Zeno Castilho</p><p class="ttema">Como amenizar os efeitos colaterais da quimioterapia!</p></div></div>
+          <div class="titem"><span class="thora">15:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Alex Júnior</p><p class="ttema">Epigenética Digital Aplicada ao Câncer e à Terapêutica: Saindo do Labirinto</p></div></div>
+          <div class="titem"><span class="thora">15:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Alex Alves</p><p class="ttema">Degradação Psicobioeletromagnética: a Fórmula do Câncer x a Fórmula da Vida</p></div></div>
+          <div class="titem"><span class="thora">16:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Marcelo Nonato</p><p class="ttema">Hidrogênio Molecular VS Câncer</p></div></div>
+          <div class="titem"><span class="thora">17:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Míria de Amorim</p><p class="ttema">BioFAO na Oncologia Integrativa: do Modelo Experimental à Experiência Clínica</p></div></div>
+          <div class="titem break"><span class="thora">17:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+          <div class="titem"><span class="thora">18:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Valéria Martins</p><p class="ttema">Câncer: a Quem Você Está Honrando no Seu Sistema</p></div></div>
+        </div>
+      </div>
+
+      <div class="crono-legenda">
+        <span><i style="background:var(--dourado);"></i> Abertura / obrigatório por compromisso do palestrante</span>
+        <span><i style="background:var(--vermelho-vivo);"></i> Espaço aberto</span>
+        <span><i style="background:rgba(255,255,255,0.25);"></i> Intervalo</span>
+      </div>
+      <p class="crono-aviso">Versão de trabalho — sujeita a alterações.</p>
+    </div>
+  </section>
+
+  <!-- PALESTRANTES — AUDITÓRIO NSI -->
+  <section class="palestrantes" id="palestrantes-nsi">
+    <div class="container">
       <h3 class="aud-grupo-titulo nsi">Auditório NSI · Novva Saúde Integrativa</h3>
       <div class="grid-palestrantes">
 
@@ -2267,88 +2354,6 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
       <div style="text-align:center; margin-top:var(--space-xl);">
         <a href="#lotes" class="btn btn-laranja btn-cta-hero btn-pulse-laranja">Inscrever-se no Congresso</a>
       </div>
-    </div>
-  </section>
-
-  <!-- PROGRAMAÇÃO -->
-  <section class="programacao" id="programacao">
-    <div class="container">
-      <h2 class="section-title">Cronograma</h2>
-      <p class="section-sub">Dois dias, um único auditório. Confira os horários e quem já está confirmado.</p>
-
-      <div class="crono-stats">
-        <div class="crono-stat"><b>2</b><span>Dias</span></div>
-        <div class="crono-stat"><b id="crono-n-palestrantes">29</b><span>Palestrantes</span></div>
-      </div>
-
-      <script>
-    /* contador de palestrantes = número de cards da seção Palestrantes (nunca fica defasado; o 29 no HTML é só reserva) */
-    (function(){
-      var el = document.getElementById("crono-n-palestrantes");
-      var n = document.querySelectorAll(".card-palestrante").length;
-      if (el && n > 0) el.textContent = n;
-    })();
-      </script>
-      <div class="crono-tabs">
-        <button type="button" class="crono-tab ativo" data-dia="sexta">Sexta · 20/11</button>
-        <button type="button" class="crono-tab" data-dia="sabado">Sábado · 21/11</button>
-      </div>
-
-      <div class="crono-dia ativo" id="crono-sexta">
-        <div class="timeline">
-          <div class="titem break"><span class="thora">07:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Credenciamento e entrega de material</p></div></div>
-          <div class="titem confirm"><span class="thora">08:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Geisa Quental <span class="tbadge confirm">Abertura</span></p><p class="ttema">Mestre de Cerimônia</p></div></div>
-          <div class="titem"><span class="thora">08:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Juan Carlos Llanos</p><p class="ttema tbd">Tema: Em breve</p></div></div>
-          <div class="titem"><span class="thora">08:50</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Lourival Gonçalves</p><p class="ttema">Quando o Corpo Fala o Que a Alma Não Suporta Mais Calar: Como os Conflitos Biológicos se Transformam em Doença</p></div></div>
-          <div class="titem"><span class="thora">09:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Claudinei Rodrigues</p><p class="ttema">Água e Câncer: o Poder do Cuidado</p></div></div>
-          <div class="titem break"><span class="thora">10:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
-          <div class="titem"><span class="thora">10:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Luciane C. Stern</p><p class="ttema">Para Além do Diagnóstico: o Sujeito Diante do Câncer</p></div></div>
-          <div class="titem"><span class="thora">11:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Luis Stern</p><p class="ttema">Homeopatia e Câncer: a Evolução Clínica em Casos Reais Filmados</p></div></div>
-          <div class="titem"><span class="thora">12:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Prof. Alexandre Távola</p><p class="ttema tbd">Tema: Em breve</p></div></div>
-          <div class="titem break"><span class="thora">12:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Almoço</p></div></div>
-          <div class="titem"><span class="thora">14:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Prof. Dr. José de Felippe Jr</p><p class="ttema">Se conseguirmos afastar a causa do câncer, estaremos tendo mais êxito no tratamento desta doença, e o nosso obstáculo é o vírus Epstein-Barr</p></div></div>
-          <div class="titem"><span class="thora">14:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Thaís Bragatto</p><p class="ttema">Destoxificação e Microbiota Intestinal na Prevenção e Remissão do Câncer</p></div></div>
-          <div class="titem"><span class="thora">15:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Daniela Belisario Baroni</p><p class="ttema">Câncer Além da Célula: Biofísica e Frequências na Visão Integrativa</p></div></div>
-          <div class="titem"><span class="thora">16:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Prof. Anilson Martins</p><p class="ttema">Câncer: o pH do Microambiente Tumoral Importa</p></div></div>
-          <div class="titem"><span class="thora">16:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Lucy Kerr</p><p class="ttema tbd">Tema: Em breve</p></div></div>
-          <div class="titem break"><span class="thora">17:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
-          <div class="titem"><span class="thora">17:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Alessandro Loiola</p><p class="ttema tbd">Tema: Em breve</p></div></div>
-          <div class="titem"><span class="thora">18:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. José Augusto Nasser dos Santos</p><p class="ttema">Abordagem Metabólica Integrativa do Câncer</p></div></div>
-          <div class="titem"><span class="thora">18:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Fernanda Moraes</p><p class="ttema">Uso dos Peptídeos na Saúde Mitocondrial</p></div></div>
-          <div class="titem"><span class="thora">19:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Lis Curay</p><p class="ttema">O Cântico da Origem — A Vida que Permanece</p></div></div>
-          <div class="titem"><span class="thora">20:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Cristina Cairo</p><p class="ttema">A Regeneração Celular pela Linguagem do Corpo</p></div></div>
-          <div class="titem break"><span class="thora">21:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Jantar com palestrantes e ingressos VIP</p></div></div>
-        </div>
-      </div>
-
-      <div class="crono-dia" id="crono-sabado">
-        <div class="timeline">
-          <div class="titem break"><span class="thora">07:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Credenciamento</p></div></div>
-          <div class="titem"><span class="thora">08:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Luciano Pinheiro</p><p class="ttema">Programa de Práticas Integrativas e Suporte ao Tratamento do Câncer</p></div></div>
-          <div class="titem"><span class="thora">08:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Sara Lambert</p><p class="ttema">Epigenética: Modulação Celular e Proteção do Terreno Biológico</p></div></div>
-          <div class="titem"><span class="thora">09:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Juan Lambert</p><p class="ttema tbd">Tema: Em breve</p></div></div>
-          <div class="titem"><span class="thora">10:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Claudinei Rodrigues</p><p class="ttema">Água, Saúde e Vida: um Olhar sobre o Câncer</p></div></div>
-          <div class="titem break"><span class="thora">10:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
-          <div class="titem"><span class="thora">11:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Cláudia B. S. Pacheco</p><p class="ttema">A Vida Após a Vida: o que a Ciência Descobriu</p></div></div>
-          <div class="titem"><span class="thora">11:50</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Gisele Martins</p><p class="ttema">Além do Diagnóstico: Fisiologia Digestiva, Estresse Oxidativo e Suporte Nutricional no Cuidado Integrativo em Oncologia</p></div></div>
-          <div class="titem"><span class="thora">12:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Fernanda Ben</p><p class="ttema tbd">Tema: Em breve</p></div></div>
-          <div class="titem break"><span class="thora">13:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Almoço</p></div></div>
-          <div class="titem"><span class="thora">14:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Zeno Castilho</p><p class="ttema">Como amenizar os efeitos colaterais da quimioterapia!</p></div></div>
-          <div class="titem"><span class="thora">15:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Alex Júnior</p><p class="ttema">Epigenética Digital Aplicada ao Câncer e à Terapêutica: Saindo do Labirinto</p></div></div>
-          <div class="titem"><span class="thora">15:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Alex Alves</p><p class="ttema">Degradação Psicobioeletromagnética: a Fórmula do Câncer x a Fórmula da Vida</p></div></div>
-          <div class="titem"><span class="thora">16:20</span><span class="tdot"></span><div class="tcard"><p class="tnome">Marcelo Nonato</p><p class="ttema">Hidrogênio Molecular VS Câncer</p></div></div>
-          <div class="titem"><span class="thora">17:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Míria de Amorim</p><p class="ttema">BioFAO na Oncologia Integrativa: do Modelo Experimental à Experiência Clínica</p></div></div>
-          <div class="titem break"><span class="thora">17:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
-          <div class="titem"><span class="thora">18:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Valéria Martins</p><p class="ttema">Câncer: a Quem Você Está Honrando no Seu Sistema</p></div></div>
-        </div>
-      </div>
-
-      <div class="crono-legenda">
-        <span><i style="background:var(--dourado);"></i> Abertura / obrigatório por compromisso do palestrante</span>
-        <span><i style="background:var(--vermelho-vivo);"></i> Espaço aberto</span>
-        <span><i style="background:rgba(255,255,255,0.25);"></i> Intervalo</span>
-      </div>
-      <p class="crono-aviso">Versão de trabalho — sujeita a alterações.</p>
     </div>
   </section>
 
