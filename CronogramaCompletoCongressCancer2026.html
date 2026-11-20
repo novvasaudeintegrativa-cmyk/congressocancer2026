@@ -16,6 +16,8 @@
   --c:#8a222e;--t:#f7ecee;
 }
 body.aud-nsi{--c:#c9631b;--t:#fbefe3}
+body.aud-a3{--c:#1f6f78;--t:#e6f2f3}
+.vazio{padding:28px 16px;text-align:center;color:var(--soft);font-size:15px}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--corpo);font-size:16px;line-height:1.35;padding-bottom:env(safe-area-inset-bottom)}
 header.top{background:#fff;padding:18px 16px 12px;text-align:center;border-bottom:1px solid var(--linha)}
@@ -28,6 +30,7 @@ header.top::after{content:"";display:block;width:56px;height:3px;border-radius:3
 .tabs button{flex:1;cursor:pointer;font-family:var(--tit);font-weight:700;letter-spacing:.02em;border:1.5px solid var(--linha);background:#fff;color:var(--soft);border-radius:12px;min-height:44px;padding:6px 8px;font-size:14px;line-height:1.1;transition:background .15s,color .15s,border-color .15s}
 .tabs.aud button[data-aud="pri"].on{background:#8a222e;border-color:#8a222e;color:#fff}
 .tabs.aud button[data-aud="nsi"].on{background:#c9631b;border-color:#c9631b;color:#fff}
+.tabs.aud button[data-aud="a3"].on{background:#1f6f78;border-color:#1f6f78;color:#fff}
 .tabs.dia{padding-top:0}
 .tabs.dia button{min-height:40px;font-size:13px}
 .tabs.dia button.on{background:var(--t);border-color:var(--c);color:var(--c)}
@@ -72,7 +75,8 @@ main{max-width:720px;margin:0 auto;padding:14px 12px 96px}
   main{max-width:none;padding:0}
   .painel{display:none}
   body.p-one .painel.on{display:block}
-  body.p-all .painel{display:block;page-break-after:always;break-after:page}
+  body.p-all .painel.vz{display:none}
+  body.p-all .painel:not(.vz){display:block;page-break-after:always;break-after:page}
   body.p-all .painel:last-child{page-break-after:auto;break-after:auto}
   .pt{display:block;border-bottom:2px solid var(--gold);padding-bottom:6px;margin-bottom:10px}
   .pt p{margin:0;font-family:var(--tit);font-weight:800;font-size:14pt;color:#8a222e}
@@ -94,6 +98,7 @@ main{max-width:720px;margin:0 auto;padding:14px 12px 96px}
   <div class="tabs aud" role="tablist" aria-label="Auditório">
     <button type="button" role="tab" data-aud="pri" class="on">Auditório 1</button>
     <button type="button" role="tab" data-aud="nsi">Auditório 2</button>
+    <button type="button" role="tab" data-aud="a3">Auditório 3</button>
   </div>
   <div class="tabs dia" role="tablist" aria-label="Dia">
     <button type="button" role="tab" data-dia="sexta" class="on">Sexta <small>20/11</small></button>
@@ -188,18 +193,26 @@ sabado:[
 ["15:30","Mauro Wilson Schmitt Obregon","C.E.R.-G5D: O campo que restaura"],
 ["16:00","Painel Wellness com Ciência","Mediação: Carla Souza Jardon"],
 ["17:00","Experiência Vivencial","Wellness com Ciência na Prática, com Carla Souza Jardon"]
-]}}};
+]}},
+a3:{nome:"Auditório 3",sub:"",dias:{
+sexta:[
+["14:00","Dr. Daniel Magano","Atualizações no tratamento de pacientes com câncer"],
+["15:00","Dr. Luis Stern","Casos clínicos de Homeopatia em câncer"],
+["16:00","Dra. Adriana Bertocco","Viver não apenas sobreviver: saúde emocional, qualidade de vida e propósito depois do câncer de mama"]
+],
+sabado:[]
+}}};
 var DIAS={sexta:["Sexta-feira","20 de novembro de 2026"],sabado:["Sábado","21 de novembro de 2026"]};
 
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 
 var html="";
-["pri","nsi"].forEach(function(a){
+["pri","nsi","a3"].forEach(function(a){
   ["sexta","sabado"].forEach(function(d){
     var itens=D[a].dias[d].map(function(r){
       return '<div class="it'+(r[3]==="b"?" br":"")+'"><span class="h">'+r[0]+'</span><div class="t"><b>'+esc(r[1])+'</b>'+(r[2]?'<i>'+esc(r[2])+'</i>':'')+'</div></div>';
-    }).join("");
-    html+='<section class="painel" data-aud="'+a+'" data-dia="'+d+'" id="p-'+a+'-'+d+'">'+
+    }).join("")||'<div class="vazio">Programação em breve.</div>';
+    html+='<section class="painel'+(D[a].dias[d].length?'':' vz')+'" data-aud="'+a+'" data-dia="'+d+'" id="p-'+a+'-'+d+'">'+
       '<div class="pt"><p>4º Congresso sobre Câncer 2026 — '+D[a].nome+'</p><span>'+DIAS[d][0]+' · '+DIAS[d][1]+'</span></div>'+
       '<div class="cab"><span class="dot"></span>'+D[a].nome+'<small>'+DIAS[d][0]+'<br>'+DIAS[d][1]+'</small></div>'+
       '<div class="lista">'+itens+'</div></section>';
@@ -212,6 +225,7 @@ var st={aud:"pri",dia:"sexta"};
 try{var s=JSON.parse(localStorage.getItem("crono26")||"null");if(s&&D[s.aud]&&DIAS[s.dia])st=s;}catch(e){}
 function render(){
   document.body.classList.toggle("aud-nsi",st.aud==="nsi");
+  document.body.classList.toggle("aud-a3",st.aud==="a3");
   document.querySelectorAll(".painel").forEach(function(p){p.classList.toggle("on",p.dataset.aud===st.aud&&p.dataset.dia===st.dia);});
   document.querySelectorAll(".tabs.aud button").forEach(function(b){var on=b.dataset.aud===st.aud;b.classList.toggle("on",on);b.setAttribute("aria-selected",on);});
   document.querySelectorAll(".tabs.dia button").forEach(function(b){var on=b.dataset.dia===st.dia;b.classList.toggle("on",on);b.setAttribute("aria-selected",on);});
