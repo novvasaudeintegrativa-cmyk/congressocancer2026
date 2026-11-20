@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cronograma Completo — 4º Congresso sobre Câncer 2026</title>
+<meta name="theme-color" content="#8a222e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+:root{
+  --bg:#f4f2ef;--card:#fff;--linha:#e8e3dd;--ink:#2a2320;--soft:#7a706a;--faint:#afa59d;
+  --gold:#c98b1f;--tit:'League Spartan','Segoe UI',sans-serif;--corpo:'Roboto','Segoe UI',system-ui,sans-serif;
+  --c:#8a222e;--t:#f7ecee;
+}
+body.aud-nsi{--c:#c9631b;--t:#fbefe3}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--corpo);font-size:16px;line-height:1.35;padding-bottom:env(safe-area-inset-bottom)}
+header.top{background:#fff;padding:18px 16px 12px;text-align:center;border-bottom:1px solid var(--linha)}
+header.top .ev{margin:0;font-family:var(--tit);font-weight:800;font-size:20px;color:#8a222e}
+header.top .sub{margin:2px 0 0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft)}
+header.top::after{content:"";display:block;width:56px;height:3px;border-radius:3px;background:var(--gold);margin:10px auto 0}
+
+.nav{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--linha);box-shadow:0 2px 10px rgba(42,35,32,.06)}
+.tabs{display:flex;gap:6px;padding:8px 12px}
+.tabs button{flex:1;cursor:pointer;font-family:var(--tit);font-weight:700;letter-spacing:.02em;border:1.5px solid var(--linha);background:#fff;color:var(--soft);border-radius:12px;min-height:44px;padding:6px 8px;font-size:14px;line-height:1.1;transition:background .15s,color .15s,border-color .15s}
+.tabs.aud button[data-aud="pri"].on{background:#8a222e;border-color:#8a222e;color:#fff}
+.tabs.aud button[data-aud="nsi"].on{background:#c9631b;border-color:#c9631b;color:#fff}
+.tabs.dia{padding-top:0}
+.tabs.dia button{min-height:40px;font-size:13px}
+.tabs.dia button.on{background:var(--t);border-color:var(--c);color:var(--c)}
+.tabs button small{display:block;font-family:var(--corpo);font-weight:500;font-size:11px;opacity:.85;margin-top:2px}
+
+main{max-width:720px;margin:0 auto;padding:14px 12px 96px}
+.painel{display:none}
+.painel.on{display:block}
+.pt{display:none;margin:0 0 10px}
+.cab{display:flex;align-items:center;gap:8px;margin:2px 4px 12px;font-family:var(--tit);font-weight:800;font-size:18px;color:var(--c)}
+.cab .dot{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+.cab small{font-family:var(--corpo);font-weight:500;font-size:12px;color:var(--soft);margin-left:auto;text-align:right}
+
+.lista{background:var(--card);border:1px solid var(--linha);border-radius:16px;overflow:hidden}
+.it{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid #f1ece7;break-inside:avoid}
+.it:last-child{border-bottom:0}
+.h{flex:0 0 58px;text-align:center;font-family:var(--tit);font-weight:700;font-size:15px;color:var(--c);background:var(--t);border-radius:999px;padding:3px 0;margin-top:1px}
+.t b{display:block;font-weight:700;font-size:16px;line-height:1.25}
+.t i{display:block;font-style:normal;color:var(--soft);font-size:14px;line-height:1.35;margin-top:3px}
+.it.br{background:#faf8f6}
+.it.br .h{color:var(--faint);background:#efe8e4}
+.it.br b{font-weight:500;font-style:italic;color:var(--soft)}
+.aviso{margin:14px 6px 0;text-align:center;font-size:12px;color:var(--faint)}
+
+.fab{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(255,255,255,.96);border-top:1px solid var(--linha);backdrop-filter:blur(6px)}
+.fab button{flex:1;cursor:pointer;font-family:var(--tit);font-weight:700;font-size:13px;letter-spacing:.03em;text-transform:uppercase;min-height:46px;border-radius:999px;border:1.5px solid var(--c);background:#fff;color:var(--c);padding:0 10px}
+.fab button.pri{background:var(--c);color:#fff}
+.fab button:active{transform:scale(.97)}
+
+@media (min-width:640px){
+  .tabs button{font-size:16px;min-height:48px}
+  .tabs.dia button{font-size:14px}
+  .it{padding:14px 18px}
+  .fab{position:static;max-width:720px;margin:0 auto;border:0;background:none;padding:0 12px 40px;backdrop-filter:none}
+  main{padding-bottom:16px}
+}
+
+@page{size:A4 portrait;margin:12mm}
+@media print{
+  body{background:#fff;font-size:11pt}
+  header.top,.nav,.fab,.aviso{display:none!important}
+  main{max-width:none;padding:0}
+  .painel{display:none}
+  body.p-one .painel.on{display:block}
+  body.p-all .painel{display:block;page-break-after:always;break-after:page}
+  body.p-all .painel:last-child{page-break-after:auto;break-after:auto}
+  .pt{display:block;border-bottom:2px solid var(--gold);padding-bottom:6px;margin-bottom:10px}
+  .pt p{margin:0;font-family:var(--tit);font-weight:800;font-size:14pt;color:#8a222e}
+  .pt span{font-size:9pt;color:var(--soft);letter-spacing:.1em;text-transform:uppercase}
+  .it{padding:6px 10px}
+  .h{font-size:10pt;flex-basis:44px}
+  .t b{font-size:10.5pt}.t i{font-size:9pt}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <p class="ev">4º Congresso sobre Câncer 2026</p>
+  <p class="sub">Cronograma completo · 20 e 21 de novembro</p>
+</header>
+
+<div class="nav">
+  <div class="tabs aud" role="tablist" aria-label="Auditório">
+    <button type="button" role="tab" data-aud="pri" class="on">Auditório Principal</button>
+    <button type="button" role="tab" data-aud="nsi">Auditório NSI</button>
+  </div>
+  <div class="tabs dia" role="tablist" aria-label="Dia">
+    <button type="button" role="tab" data-dia="sexta" class="on">Sexta <small>20/11</small></button>
+    <button type="button" role="tab" data-dia="sabado">Sábado <small>21/11</small></button>
+  </div>
+</div>
+
+<main id="main"></main>
+
+<div class="fab">
+  <button type="button" id="pdf-um">PDF desta aba</button>
+  <button type="button" id="pdf-todos" class="pri">PDF completo</button>
+</div>
+
+<script>
+// [hora, nome, tema, tipo]  tipo: "b" = intervalo
+var D={
+pri:{nome:"Auditório Principal",sub:"Palestrantes",dias:{
+sexta:[
+["07:10","Credenciamento e entrega de material","","b"],
+["08:00","Dra. Geisa Quental — Abertura","Mestre de Cerimônia"],
+["08:10","Dr. Juan Carlos Llanos","Câncer: da Origem Metabólica à Prevenção"],
+["08:50","Dr. Lourival Gonçalves","Quando o Corpo Fala o Que a Alma Não Suporta Mais Calar: Como os Conflitos Biológicos se Transformam em Doença"],
+["09:30","Dr. Claudinei Rodrigues","Água e Câncer: o Poder do Cuidado"],
+["10:10","Coffee break","","b"],
+["10:40","Dra. Luciane C. Stern","Para Além do Diagnóstico: o Sujeito Diante do Câncer"],
+["11:20","Dr. Luis Stern","Homeopatia e Câncer: a Evolução Clínica em Casos Reais Filmados"],
+["12:00","Prof. Alexandre Távola",""],
+["12:40","Almoço","","b"],
+["14:00","Dr. Alessandro Loiola","Testosterona e Câncer: desconstruindo mitos"],
+["14:40","Dra. Thaís Bragatto","Destoxificação e Microbiota Intestinal na Prevenção e Remissão do Câncer"],
+["15:20","Dra. Daniela Belisario Baroni","Câncer Além da Célula: Biofísica e Frequências na Visão Integrativa"],
+["16:00","Dr. Prof. Anilson Martins","Câncer: o pH do Microambiente Tumoral Importa"],
+["16:40","Dra. Lucy Kerr","Própolis verde"],
+["17:00","Coffee break","","b"],
+["17:20","Dr. José Augusto Nasser dos Santos","Abordagem Metabólica Integrativa do Câncer"],
+["18:00","Dra. Fernanda Moraes","Uso dos Peptídeos na Saúde Mitocondrial"],
+["18:40","Lis Curay","O Cântico da Origem — A Vida que Permanece"],
+["19:20","Dra. Claudia Riecken","A regeneração da família na cura do câncer e leucemia nas crianças"],
+["20:00","Jantar com palestrantes e ingressos VIP","","b"]
+],
+sabado:[
+["07:00","Credenciamento","","b"],
+["08:00","Dr. Luciano Pinheiro","Programa de Práticas Integrativas e Suporte ao Tratamento do Câncer"],
+["08:40","Dra. Sara Lambert","Epigenética: Modulação Celular e Proteção do Terreno Biológico"],
+["09:20","Dr. Juan Lambert","Mentalidade Anticâncer: Como as Emoções Influenciam Nossa Saúde e o Enfrentamento do Câncer"],
+["10:00","Dr. Claudinei Rodrigues","Água, Saúde e Vida: um Olhar sobre o Câncer"],
+["10:40","Coffee break","","b"],
+["11:10","Dra. Cláudia B. S. Pacheco","A Vida Após a Vida: o que a Ciência Descobriu"],
+["11:50","Dra. Gisele Martins","Além do Diagnóstico: Fisiologia Digestiva, Estresse Oxidativo e Suporte Nutricional no Cuidado Integrativo em Oncologia"],
+["12:30","Dra. Janaina Pimenta","Antes do Câncer: O Que está acontecendo no seu terreno biológico e quais estratégias adotar"],
+["13:10","Almoço","","b"],
+["14:30","Zeno Castilho","Como amenizar os efeitos colaterais da quimioterapia!"],
+["15:00","Alex Júnior","Epigenética Digital Aplicada ao Câncer e à Terapêutica: Saindo do Labirinto"],
+["15:40","Dr. Alex Alves","Degradação Psicobioeletromagnética: a Fórmula do Câncer x a Fórmula da Vida"],
+["16:20","Marcelo Nonato e Dr. Hugo Felipe","Hidrogênio Molecular VS Câncer"],
+["17:00","Dra. Míria de Amorim","BioFAO na Oncologia Integrativa: do Modelo Experimental à Experiência Clínica"],
+["17:40","Coffee break","","b"],
+["18:00","Dra. Valéria Martins","Câncer: a Quem Você Está Honrando no Seu Sistema"],
+["18:30","Dr. Sérgio Felipe de Oliveira e Marina Renault","Vida: sua maior Missão"],
+["19:10","Encerramento com musical","","b"]
+]}},
+nsi:{nome:"Auditório NSI",sub:"Novva Saúde Integrativa",dias:{
+sexta:[
+["09:00","Juliana Freitas","Saúde mental, equilíbrio do organismo e longevidade: o poder de cuidar de si para viver melhor"],
+["09:30","Carina Freire","Entre um ciclo e outro: quem cuida do paciente?"],
+["10:00","Dr. João Ricardo Yamasita","CER-G5D: Câmara de Energização e Reequilíbrio: Inovação Tecnológica Avançada Cuidado Complementar ao Paciente Oncológico"],
+["10:30","Dra. Aline Varricchio","Do Câncer à Regeneração: Cuidado integral e esperança na jornada do câncer"],
+["11:00","Dra. Sarah Melo","Muito além do prato: consciência alimentar e saúde ao longo da vida"],
+["11:30","Paulo Silva","Câncer: Uma nova abordagem utilizando Orgonites, Táquions e frequências"],
+["13:00","João Baldan","Acupuntura e Tchi Kun no tratamento e prevenção do câncer"],
+["13:30","Wolf von Glasenapp","A descoberta do câncer e a perseguição às terapias do câncer"],
+["14:00","Ozônio",""],
+["14:30","Daniel Kovacsik","Se o Método Kovacsik para Câncer funciona, por que eu não o conheço?"],
+["15:00","William Anolin","Além dos Fios: cuidando da autoestima de quem enfrenta o câncer"],
+["15:30","Dr. Marcelo (Privilege)","A Inteligência Artificial de Terceira Geração: uma nova fronteira na comunicação com seus clientes. Atende, agenda, busca novos clientes e trata de fidelizá-los"],
+["16:00","Anderson Heller","Tratar o tumor sem perder o corpo: Pró-Colágenos Especializados na preservação estrutural do paciente oncológico"],
+["16:30","Dr. Bacteria","Café na calça: oportunidades"],
+["17:00","Painel Healthspan","Mediação: Juliana Freitas"]
+],
+sabado:[
+["09:00","Daniel Mariotine","Você não é o seu diagnóstico"],
+["09:30","Fábio Torrens","Suplementação Nutricional na Oncologia: Ciência, suporte e segurança no cuidado ao paciente"],
+["10:00","Flávia Souza","Micropigmentação Paramédica em reconstrução areolar"],
+["10:30","Dra. Ágata Castro","Para além do diagnóstico: O papel dos Códigos Invisíveis™ na adaptação emocional ao câncer"],
+["11:00","Dra. Flávia Cucolo","Respirar Mal Adoece: A Respiração na Integralidade da Saúde"],
+["13:00","Dra. Huang Wei Ling","O câncer começa antes do tumor"],
+["13:30","Elisabete Oliveira","A mulher com câncer pode continuar vivendo sua sexualidade e sentindo prazer?"],
+["14:00","Dra. Camila Balbi","O que a boca revela sobre a saúde? Da inflamação à homeostase no cuidado oncológico"],
+["14:30","Juliano","Células-tronco, terapia celular e genética (edição genética por CRISPR, células CAR-T), imunoterapia na prevenção e tratamento do câncer. Um paralelo com a MTC — Medicina Tradicional Chinesa"],
+["15:00","Dra. Gabriela Mattos","Laserpuntura Oncológica e Florais: A contribuição biofísica no manejo dos sintomas associados à quimioterapia"],
+["15:30","Mauro Wilson Schmitt Obregon","C.E.R.-G5D: O campo que restaura"],
+["16:00","Painel Wellness com Ciência","Mediação: Carla Souza Jardon"],
+["17:00","Experiência Vivencial","Wellness com Ciência na Prática, com Carla Souza Jardon"]
+]}}};
+var DIAS={sexta:["Sexta-feira","20 de novembro de 2026"],sabado:["Sábado","21 de novembro de 2026"]};
+
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+
+var html="";
+["pri","nsi"].forEach(function(a){
+  ["sexta","sabado"].forEach(function(d){
+    var itens=D[a].dias[d].map(function(r){
+      return '<div class="it'+(r[3]==="b"?" br":"")+'"><span class="h">'+r[0]+'</span><div class="t"><b>'+esc(r[1])+'</b>'+(r[2]?'<i>'+esc(r[2])+'</i>':'')+'</div></div>';
+    }).join("");
+    html+='<section class="painel" data-aud="'+a+'" data-dia="'+d+'" id="p-'+a+'-'+d+'">'+
+      '<div class="pt"><p>4º Congresso sobre Câncer 2026 — '+D[a].nome+'</p><span>'+DIAS[d][0]+' · '+DIAS[d][1]+'</span></div>'+
+      '<div class="cab"><span class="dot"></span>'+D[a].nome+'<small>'+DIAS[d][0]+'<br>'+DIAS[d][1]+'</small></div>'+
+      '<div class="lista">'+itens+'</div></section>';
+  });
+});
+html+='<p class="aviso">Programação em versão de trabalho, sujeita a alterações.<br>Novva Saúde Integrativa</p>';
+document.getElementById("main").innerHTML=html;
+
+var st={aud:"pri",dia:"sexta"};
+try{var s=JSON.parse(localStorage.getItem("crono26")||"null");if(s&&D[s.aud]&&DIAS[s.dia])st=s;}catch(e){}
+function render(){
+  document.body.classList.toggle("aud-nsi",st.aud==="nsi");
+  document.querySelectorAll(".painel").forEach(function(p){p.classList.toggle("on",p.dataset.aud===st.aud&&p.dataset.dia===st.dia);});
+  document.querySelectorAll(".tabs.aud button").forEach(function(b){var on=b.dataset.aud===st.aud;b.classList.toggle("on",on);b.setAttribute("aria-selected",on);});
+  document.querySelectorAll(".tabs.dia button").forEach(function(b){var on=b.dataset.dia===st.dia;b.classList.toggle("on",on);b.setAttribute("aria-selected",on);});
+  try{localStorage.setItem("crono26",JSON.stringify(st));}catch(e){}
+}
+document.querySelectorAll(".tabs.aud button").forEach(function(b){b.addEventListener("click",function(){st.aud=b.dataset.aud;render();window.scrollTo({top:0});});});
+document.querySelectorAll(".tabs.dia button").forEach(function(b){b.addEventListener("click",function(){st.dia=b.dataset.dia;render();window.scrollTo({top:0});});});
+
+function imprimir(modo){
+  document.body.classList.add("p-"+modo);
+  window.print();
+}
+window.addEventListener("afterprint",function(){document.body.classList.remove("p-one","p-all");});
+document.getElementById("pdf-um").addEventListener("click",function(){imprimir("one");});
+document.getElementById("pdf-todos").addEventListener("click",function(){imprimir("all");});
+render();
+</script>
+</body>
+</html>
