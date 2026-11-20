@@ -855,6 +855,12 @@
   .nsi-tab{font-family:var(--fonte-titulo); font-weight:700; font-size:14px; letter-spacing:0.02em; padding:11px 26px; border-radius:10px; border:1.5px solid rgba(255,255,255,0.2); background:transparent; color:var(--texto-suave); cursor:pointer; transition:all .15s ease;}
   .nsi-tab:hover{border-color:var(--laranja); color:#fff;}
   .nsi-tab.ativo{background:var(--laranja); border-color:var(--laranja); color:#fff;}
+  .aud-dia{display:none; max-width:760px; margin:0 auto;}
+  .aud-dia.ativo{display:block;}
+  .aud-tabs{display:flex; justify-content:center; gap:10px; margin-bottom:var(--space-xl); flex-wrap:wrap;}
+  .aud-tab{font-family:var(--fonte-titulo); font-weight:700; font-size:14px; letter-spacing:0.02em; padding:11px 26px; border-radius:10px; border:1.5px solid rgba(255,255,255,0.2); background:transparent; color:var(--texto-suave); cursor:pointer; transition:all .15s ease;}
+  .aud-tab:hover{border-color:var(--laranja); color:#fff;}
+  .aud-tab.ativo{background:var(--laranja); border-color:var(--laranja); color:#fff;}
   .crono-nsi .tcard{background:var(--laranja); border-color:var(--laranja-escuro);}
   .crono-nsi .titem .tdot{background:var(--laranja);}
   .crono-nsi .titem.break .tcard{background:rgba(255,255,255,0.02); border-color:rgba(255,255,255,0.15);}
@@ -2521,6 +2527,50 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
     </div>
   </section>
 
+  <!-- CRONOGRAMA — AUDITÓRIO 3 -->
+  <section class="programacao crono-nsi" id="programacao-a3">
+    <div class="container">
+      <h2 class="section-title">Cronograma do Auditório 3</h2>
+      <div class="aud-tabs">
+        <button type="button" class="aud-tab ativo" data-dia="sexta">Sexta · 20/11</button>
+        <button type="button" class="aud-tab" data-dia="sabado">Sábado · 21/11</button>
+      </div>
+      <div class="aud-dia ativo" data-dia="sexta">
+        <div class="timeline">
+          <div class="titem"><span class="thora">14:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Daniel Magano</p><p class="ttema">Atualizações no tratamento de pacientes com câncer</p></div></div>
+          <div class="titem"><span class="thora">15:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Luis Stern</p><p class="ttema">Casos clínicos de Homeopatia em câncer</p></div></div>
+          <div class="titem"><span class="thora">16:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Adriana Bertocco</p><p class="ttema">Viver não apenas sobreviver: saúde emocional, qualidade de vida e propósito depois do câncer de mama</p></div></div>
+        </div>
+      </div>
+      <div class="aud-dia" data-dia="sabado">
+        <div class="timeline">
+          <div class="titem"><span class="thora">08:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Tina Carmignani</p><p class="ttema">Terapia Complementar voltada a milivoltagem e energia de oxigenação do Sangue</p></div></div>
+          <div class="titem"><span class="thora">09:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Terapeuta Nereide Kalman</p><p class="ttema">Mini curso: Câncer no fígado</p></div></div>
+          <div class="titem break"><span class="thora">10:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+          <div class="titem"><span class="thora">11:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Gisele D'Angelo</p><p class="ttema">Enquanto você dorme, seu corpo trabalha pela vida. Sono, imunidade e ritmo circadiano — conexões essenciais para a saúde e prevenção do câncer</p></div></div>
+          <div class="titem"><span class="thora">11:50</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Sandra Nogueira</p><p class="ttema">Desintoxicar para poder nutrir: experiência clínica e abordagem prática na eliminação de biofilmes intestinais (SIBO/SIFO) para prevenção e tratamento do câncer</p></div></div>
+          <div class="titem"><span class="thora">12:30</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dra. Maria Luiza Xavier</p><p class="ttema">Conexão mente corpo — fisiologia da transformação</p></div></div>
+          <div class="titem break"><span class="thora">13:10</span><span class="tdot"></span><div class="tcard"><p class="tnome">Almoço</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CRONOGRAMA — AUDITÓRIO 4 -->
+  <section class="programacao crono-nsi" id="programacao-a4">
+    <div class="container">
+      <h2 class="section-title">Cronograma do Auditório 4</h2>
+      <div class="aud-dia ativo" data-dia="sexta">
+        <div class="timeline">
+          <div class="titem"><span class="thora">14:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Alex Alves e Tiago Lima</p><p class="ttema">Apocalipse: Antes que tudo se acabe</p></div></div>
+          <div class="titem"><span class="thora">16:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Dr. Luis Manoel</p><p class="ttema">A íris desvelando a alma e o corpo</p></div></div>
+          <div class="titem"><span class="thora">17:00</span><span class="tdot"></span><div class="tcard"><p class="tnome">Roberto Manjoli</p><p class="ttema">O poder da consciência e da intenção na nossa saúde e o avanço na comunicação entre campos biológicos</p></div></div>
+          <div class="titem break"><span class="thora">17:40</span><span class="tdot"></span><div class="tcard"><p class="tnome">Coffee break</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- PODCAST -->
   <section class="podcast" id="podcast">
     <div class="container">
@@ -3846,6 +3896,20 @@ src="https://www.facebook.com/tr?id=1519435041949261&ev=PageView&noscript=1"/></
           tab.classList.add('ativo');
           var dia = document.getElementById('nsi-' + tab.dataset.nsi);
           if (dia) dia.classList.add('ativo');
+        });
+      });
+    })();
+
+    (function(){
+      document.querySelectorAll('.aud-tabs').forEach(function(box){
+        var sec = box.closest('section');
+        var tabs = box.querySelectorAll('.aud-tab');
+        tabs.forEach(function(tab){
+          tab.addEventListener('click', function(){
+            tabs.forEach(function(t){ t.classList.remove('ativo'); });
+            sec.querySelectorAll('.aud-dia').forEach(function(d){ d.classList.toggle('ativo', d.dataset.dia === tab.dataset.dia); });
+            tab.classList.add('ativo');
+          });
         });
       });
     })();
