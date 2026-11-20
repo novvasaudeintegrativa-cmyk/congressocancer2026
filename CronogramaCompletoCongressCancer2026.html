@@ -232,7 +232,7 @@ var html="";
   ["sexta","sabado"].forEach(function(d){
     var itens=D[a].dias[d].map(function(r){
       return '<div class="it'+(r[3]==="b"?" br":"")+'"><span class="h">'+r[0]+'</span><div class="t"><b>'+esc(r[1])+'</b>'+(r[2]?'<i>'+esc(r[2])+'</i>':'')+'</div></div>';
-    }).join("")||'<div class="vazio">Programação em breve.</div>';
+    }).join("")||'<div class="vazio">Sem programação neste dia.</div>';
     html+='<section class="painel'+(D[a].dias[d].length?'':' vz')+'" data-aud="'+a+'" data-dia="'+d+'" id="p-'+a+'-'+d+'">'+
       '<div class="pt"><p>4º Congresso sobre Câncer 2026 — '+D[a].nome+'</p><span>'+DIAS[d][0]+' · '+DIAS[d][1]+'</span></div>'+
       '<div class="cab"><span class="dot"></span>'+D[a].nome+'<small>'+DIAS[d][0]+'<br>'+DIAS[d][1]+'</small></div>'+
