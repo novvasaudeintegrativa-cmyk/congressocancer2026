@@ -39,7 +39,7 @@ header.top::after{content:"";display:block;width:56px;height:3px;border-radius:3
 .tabs.dia button.on{background:var(--t);border-color:var(--c);color:var(--c)}
 .tabs button small{display:block;font-family:var(--corpo);font-weight:500;font-size:11px;opacity:.85;margin-top:2px}
 
-main{max-width:720px;margin:0 auto;padding:14px 12px 96px}
+main{max-width:720px;margin:0 auto;padding:14px 12px 32px}
 .painel{display:none}
 .painel.on{display:block}
 .pt{display:none;margin:0 0 10px}
@@ -58,8 +58,8 @@ main{max-width:720px;margin:0 auto;padding:14px 12px 96px}
 .it.br b{font-weight:500;font-style:italic;color:var(--soft)}
 .aviso{margin:14px 6px 0;text-align:center;font-size:12px;color:var(--faint)}
 
-.fab{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(255,255,255,.96);border-top:1px solid var(--linha);backdrop-filter:blur(6px)}
-.fab button{flex:1;cursor:pointer;font-family:var(--tit);font-weight:700;font-size:13px;letter-spacing:.03em;text-transform:uppercase;min-height:46px;border-radius:999px;border:1.5px solid var(--c);background:#fff;color:var(--c);padding:0 10px}
+.fab{display:flex;justify-content:center;gap:8px;margin-top:10px}
+.fab button{cursor:pointer;font-family:var(--tit);font-weight:700;font-size:11px;letter-spacing:.03em;text-transform:uppercase;min-height:32px;border-radius:999px;border:1.5px solid var(--c);background:#fff;color:var(--c);padding:0 14px}
 .fab button.pri{background:var(--c);color:#fff}
 .fab button:active{transform:scale(.97)}
 
@@ -67,8 +67,6 @@ main{max-width:720px;margin:0 auto;padding:14px 12px 96px}
   .tabs button{font-size:16px;min-height:48px}
   .tabs.dia button{font-size:14px}
   .it{padding:14px 18px}
-  .fab{position:static;max-width:720px;margin:0 auto;border:0;background:none;padding:0 12px 40px;backdrop-filter:none}
-  main{padding-bottom:16px}
 }
 
 @page{size:A4 portrait;margin:12mm}
@@ -95,6 +93,10 @@ main{max-width:720px;margin:0 auto;padding:14px 12px 96px}
 <header class="top">
   <p class="ev">4º Congresso sobre Câncer 2026</p>
   <p class="sub">Cronograma completo · 20 e 21 de novembro</p>
+  <div class="fab">
+    <button type="button" id="pdf-um">PDF desta aba</button>
+    <button type="button" id="pdf-todos" class="pri">PDF completo</button>
+  </div>
 </header>
 
 <div class="nav">
@@ -111,11 +113,6 @@ main{max-width:720px;margin:0 auto;padding:14px 12px 96px}
 </div>
 
 <main id="main"></main>
-
-<div class="fab">
-  <button type="button" id="pdf-um">PDF desta aba</button>
-  <button type="button" id="pdf-todos" class="pri">PDF completo</button>
-</div>
 
 <script>
 // [hora, nome, tema, tipo]  tipo: "b" = intervalo
